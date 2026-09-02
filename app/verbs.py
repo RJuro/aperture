@@ -98,6 +98,23 @@ def check(request: Request, pid: str, question: str = Form(...), material_id: st
     return _back(request, f"/p/{pid}")
 
 
+@router.post("/p/{pid}/refresh")
+def refresh(request: Request, pid: str, material_id: str = Form("")):
+    """Read a material again against the themes as they now stand.
+
+    Deliberately NOT a piece of feedback. An earlier version posted this as a note whose words the
+    app had written, which put sentences the researcher never typed into the record of what the
+    researcher said — and that record is the audit trail of the analysis. A re-read is work, so it
+    goes straight to the work.
+    """
+    conn = connection()
+    stale = [m["id"] for m in store.out_of_date(conn, pid)]
+    targets = [material_id] if material_id else stale
+    if runs := [{"kind": "doc", "material_id": mid} for mid in targets if mid in stale]:
+        jobs.start(db.connect, pid, runs + [{"kind": "project"}])
+    return _back(request, f"/p/{pid}")
+
+
 @router.post("/p/{pid}/focus")
 def focus(request: Request, pid: str, focus: str = Form("")):
     """What the researcher is looking for. Nothing re-runs: it shapes the next reading, and

@@ -213,9 +213,25 @@ def merge_theme(conn: sqlite3.Connection, tid: str, into: str) -> None:
     conn.commit()
 
 
-def theme_codes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT c.* FROM theme_code tc JOIN code c ON c.id=tc.code_id "
-                        "WHERE tc.theme_id=? ORDER BY c.name", (tid,)).fetchall()
+def theme_codes(conn: sqlite3.Connection, tid: str,
+                mid: str | None = None) -> list[sqlite3.Row]:
+    """The codes this theme gathers. With `mid`, only those that actually fired in that material.
+
+    Without the filter a line through one interview claimed to rest on codes drawn from every
+    other interview in the project — provenance for evidence that is not there. A researcher
+    reading "based on 40 codes" under a list of seven claims is being told something false.
+    """
+    sql = ("SELECT c.*, COUNT(h.sid) AS hits FROM theme_code tc JOIN code c ON c.id=tc.code_id "
+           "LEFT JOIN code_hit h ON h.code_id = c.id")
+    args: list = []
+    if mid:
+        sql += " AND h.material_id=?"
+        args.append(mid)
+    sql += " WHERE tc.theme_id=? GROUP BY c.id"
+    args.append(tid)
+    if mid:
+        sql += " HAVING hits > 0"
+    return conn.execute(sql + " ORDER BY c.name", args).fetchall()
 
 
 # ---- moments and threads ----------------------------------------------------------------------

@@ -75,7 +75,7 @@ def cite(text: str, index: dict, pid: str) -> Markup:
                 continue
             out.append(f'<span class="summary">{_esc(part[at:m.start()])}</span>')
             out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
-                       f'?thread={t["theme_id"]}#{t["sid"]}">[{t["sid"]}]</a>')
+                       f'?thread={t["theme_id"]}#{t["sid"]}">{t["sid"]}</a>')
             at = m.end()
         out.append(f'<span class="summary">{_esc(part[at:])}</span>')
         return "".join(out)
@@ -203,6 +203,13 @@ def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
             d["anchors"] = json.loads(d.get("anchors_json") or "[]")
         except ValueError:
             d["anchors"] = []
+        # A check on the project page is otherwise an orphaned question: at twenty materials the
+        # list says what was asked and never of what.
+        if c["scope"] == "material":
+            m = store.material(conn, c["ref_id"])
+            d["material_name"] = (m["title"] or m["name"]) if m else ""
+        else:
+            d["material_name"] = ""
         out.append(d)
     return out
 
@@ -266,7 +273,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         for x in ms:
             x["reactions"] = [dict(f) for f in store.feedback_for(conn, "moment", x["id"])]
         cards.append({**dict(t), "moments": ms,
-                      "codes": [dict(c) for c in store.theme_codes(conn, t["id"])]})
+                      "codes": [dict(c) for c in store.theme_codes(conn, t["id"], mid)]})
     selected = next((c for c in cards if c["id"] == theme_id), None) or (cards[0] if cards else None)
     quotes: dict[str, list[str]] = {}
     for x in (selected["moments"] if selected else []):

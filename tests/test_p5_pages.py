@@ -126,7 +126,7 @@ def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back
     and real money, so the researcher is told rather than charged for it silently."""
     pid, mid = analysed["pid"], analysed["grande"]
     html = client.get(f"/p/{pid}").text
-    assert "Bring up to date" not in html, "nothing has run yet, so nothing can be out of date"
+    assert "Read it again" not in html, "nothing has run yet, so nothing can be out of date"
 
     doc = store.start_run(conn, pid, "doc", mid, "x")
     store.finish_run(conn, doc)
@@ -136,7 +136,7 @@ def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back
     stale = [m["id"] for m in store.out_of_date(conn, pid)]
     assert stale == [mid], "only the material read before the change is out of date"
     html = client.get(f"/p/{pid}").text
-    assert "Bring up to date" in html and mid in html
+    assert "Read it again" in html and mid in html
 
 
 def test_a_failed_run_does_not_make_everything_look_out_of_date(conn, analysed):

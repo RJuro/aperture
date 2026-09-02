@@ -129,3 +129,24 @@ def test_a_post_redirects_so_a_refresh_never_repeats_the_work(app, analysed):
     r = app.post(f"/p/{analysed['pid']}/react",
                  data={"kind": "note", "text": "x", "material_id": analysed["grande"]})
     assert r.status_code == 303 and r.headers["location"]
+
+
+def test_reading_again_is_work_not_something_the_researcher_said(app, analysed, conn):
+    """The re-read button used to post a note whose words the app had written, which put
+    sentences the researcher never typed into the record of what the researcher said. That record
+    is the audit trail; a re-read is work and goes straight to the work."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    doc = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, doc)
+    later = store.start_run(conn, pid, "themes", None, "x")
+    store.finish_run(conn, later)
+    before = len(store.project_feedback(conn, pid))
+
+    app.post(f"/p/{pid}/refresh", data={"material_id": mid})
+    assert kinds(app.planned) == [["doc", "project"]]
+    assert len(store.project_feedback(conn, pid)) == before, "no feedback may be invented"
+
+
+def test_reading_again_ignores_a_material_that_is_already_current(app, analysed):
+    app.post(f"/p/{analysed['pid']}/refresh", data={"material_id": analysed["grande"]})
+    assert app.planned == []

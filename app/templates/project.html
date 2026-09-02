@@ -19,7 +19,10 @@
 </form>
 {% if checks %}
 <ul class="dim small">
-{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}</li>{% endfor %}
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+  {% if k.anchors %}<ul class="found">{% for a in k.anchors %}
+    <li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>
+  {% endfor %}</ul>{% endif %}</li>{% endfor %}
 </ul>
 {% endif %}
 
@@ -64,13 +67,10 @@
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ (m.title or m.name) | txt }}</a>
       <span class="dim">{{ m.kind }} · {{ m.state }} · {{ m.derivation }}</span>
       {% if m.out_of_date %}
-      <form method="post" action="/p/{{ project.id }}/react" class="row inline">
+      <form method="post" action="/p/{{ project.id }}/refresh" class="row inline">
         <input type="hidden" name="material_id" value="{{ m.id }}">
-        <input type="hidden" name="kind" value="note">
-        <input type="hidden" name="text"
-               value="The themes have changed since this was read. Read it again against them.">
         <span class="dim">read before the themes last changed</span>
-        <button>Bring up to date</button>
+        <button>Read it again</button>
       </form>
       {% endif %}</li>
 {% else %}

@@ -84,7 +84,10 @@ of the material, written from its shape.</p>{% endif %}
 </form>
 {% if checks %}
 <ul class="dim small">
-{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}</li>{% endfor %}
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+  {% if k.anchors %}<ul class="found">{% for a in k.anchors %}
+    <li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>
+  {% endfor %}</ul>{% endif %}</li>{% endfor %}
 </ul>
 {% endif %}
 <details>

@@ -130,7 +130,10 @@ def test_a_project_claim_links_to_the_material_it_rests_on(conn, analysed, clien
     html = client.get(f"/p/{analysed['pid']}").text
     assert f'?thread={mo["theme_id"]}#{mo["sid"]}' in html
     assert f'/m/{analysed["grande"]}' in html
-    assert f'>[{mo["sid"]}]<' in html
+    # The link is the bare id: the model writes its own brackets around a run of
+    # citations, and adding another pair inside them rendered [[S255], [S275]].
+    assert f'>{mo["sid"]}<' in html
+    assert f'>[{mo["sid"]}]<' not in html
     from tests.test_p5_pages import strip_material
     said = strip_material(html).lower()
     for word in context._BANNED:
