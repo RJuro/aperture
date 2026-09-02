@@ -117,3 +117,32 @@ def test_no_javascript_anywhere(client, analysed):
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
         html = client.get(url).text
         assert "<script" not in html.lower()
+
+
+def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back(client, conn,
+                                                                                 analysed):
+    """Themes go on changing as material arrives. A material synthesised against an older set is
+    not wrong, but it answered a different question — and re-running one is minutes of thinking
+    and real money, so the researcher is told rather than charged for it silently."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    html = client.get(f"/p/{pid}").text
+    assert "Bring up to date" not in html, "nothing has run yet, so nothing can be out of date"
+
+    doc = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, doc)
+    later = store.start_run(conn, pid, "themes", None, "x")
+    store.finish_run(conn, later)
+
+    stale = [m["id"] for m in store.out_of_date(conn, pid)]
+    assert stale == [mid], "only the material read before the change is out of date"
+    html = client.get(f"/p/{pid}").text
+    assert "Bring up to date" in html and mid in html
+
+
+def test_a_failed_run_does_not_make_everything_look_out_of_date(conn, analysed):
+    pid, mid = analysed["pid"], analysed["grande"]
+    doc = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, doc)
+    bad = store.start_run(conn, pid, "themes", None, "x")
+    store.finish_run(conn, bad, error="the model fell over")
+    assert store.out_of_date(conn, pid) == []

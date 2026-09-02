@@ -22,12 +22,20 @@ for the themes listed below.
 Return JSON in exactly this shape, and nothing else:
 
 {
-  "summary": "At most 250 words on what the project shows so far — what runs across materials,
-              where they disagree, what is thin — with every claim carrying moment ids in
-              brackets like this [mo1a2b3c4d5], and no quotes of its own.",
+  "summary": "At most 400 words on what the corpus shows so far. Write about the CORPUS, not
+              about each piece in turn. Do not walk the materials one by one; a summary shaped as
+              'the first account does X, the second does Y' stops working the moment a third
+              arrives, and this project will have many. Instead name the patterns: what recurs
+              across materials and how widely, where they diverge and along what axis, what
+              appears in only one and is therefore not yet a pattern, and what is thin everywhere.
+              Reach for the material's own names when a pattern needs one. Every statement carries
+              moment ids in brackets like this [mo1a2b3c4d5] as its evidence, drawn from more than
+              one material wherever the pattern spans them. No quotes of your own: at this level
+              your claims rest on claims below.",
   "theme_gists": [
     {"theme_id": "t1a2b3c4d5",
-     "gist": "At most 40 words saying what this theme amounts to across the project.",
+     "gist": "At most 40 words saying what this theme amounts to across the corpus — including how
+              much of it the theme actually reaches.",
      "moment_ids": ["mo1a2b3c4d5", "mo6e7f8g9h0"]}
   ]
 }

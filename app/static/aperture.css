@@ -81,3 +81,5 @@ summary { cursor: pointer; color: var(--dim) }
 .summary { max-width: 34rem; font-size: 1.02rem; line-height: 1.65; }
 .summary p { margin: 0 0 .8em; }
 .provisional { max-width: 34rem; color: var(--dim); font-size: .85rem; margin: 0 0 .4em; }
+
+.row.inline { display: inline-flex; gap: .4rem; align-items: baseline; margin-left: .3rem }

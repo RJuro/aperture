@@ -20,7 +20,10 @@ from . import db
 
 
 def now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    """Milliseconds, not seconds. Two runs of a chain can finish inside the same second, and
+    `out_of_date` compares their times to decide whether a material was read before the themes
+    changed — at second precision that comparison silently answers "no" every time."""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
 # ---- projects and material --------------------------------------------------------------------
@@ -362,6 +365,39 @@ def finish_run(conn: sqlite3.Connection, rid: str, *, error: str | None = None,
 def active_runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM run WHERE project_id=? AND finished IS NULL "
                         "ORDER BY started", (pid,)).fetchall()
+
+
+def last_run(conn: sqlite3.Connection, pid: str, kind: str,
+             mid: str | None = None) -> sqlite3.Row | None:
+    """The most recent run of this kind that finished without error."""
+    sql = ("SELECT rowid AS seq, * FROM run WHERE project_id=? AND kind=? "
+           "AND finished IS NOT NULL AND error IS NULL")
+    args: list = [pid, kind]
+    if mid:
+        sql += " AND material_id=?"
+        args.append(mid)
+    # Ordered by insertion, not by clock: a chain's steps routinely finish inside the same
+    # millisecond, and comparing their timestamps then answers "no earlier" for both.
+    return conn.execute(sql + " ORDER BY seq DESC LIMIT 1", args).fetchone()
+
+
+def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
+    """Materials whose lines were written before the themes last changed.
+
+    Themes are project-wide and go on changing as material arrives — widening, merging, splitting.
+    A material synthesised against an older set is not wrong, but it was written to a different
+    question, and the researcher should be told rather than have it silently re-run: bringing one
+    up to date is minutes of thinking and real money, so it is their call, not ours.
+    """
+    themes = last_run(conn, pid, "themes")
+    if themes is None:
+        return []
+    stale = []
+    for m in materials(conn, pid):
+        doc = last_run(conn, pid, "doc", m["id"])
+        if doc is not None and doc["seq"] < themes["seq"]:
+            stale.append(m)
+    return stale
 
 
 def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:

@@ -233,8 +233,10 @@ def project_page(conn, pid: str) -> dict:
     if p is None:
         return {}
     mats = [dict(m) for m in store.materials(conn, pid)]
+    stale = {m["id"] for m in store.out_of_date(conn, pid)}
     for m in mats:
         m["derivation"] = derivation(conn, m["id"])
+        m["out_of_date"] = m["id"] in stale
     themes = []
     for t in store.live_themes(conn, pid):
         row = dict(t)

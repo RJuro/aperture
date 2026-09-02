@@ -69,8 +69,13 @@ Return JSON in exactly this shape, and nothing else:
       ]
     }
   ],
-  "brief": "At most 120 words for whoever reads the next piece: what this corpus is like, and
-            what to look for next.",
+  "brief": "At most 120 words for whoever reads the NEXT piece of material, about the CORPUS and
+            not about the piece you have just read. You were shown the brief as it stood; revise
+            it, do not replace it. Keep what still holds across everything read so far, drop what
+            the newest material has contradicted, and add only what changes how the next piece
+            should be approached — a recurring shape to expect, a question that keeps going
+            unanswered, a kind of passage that keeps being missed. If this brief could only have
+            been written about the material in front of you, it is the wrong brief."
   "people": [{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}]
 }
 

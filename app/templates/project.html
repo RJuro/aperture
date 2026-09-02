@@ -62,7 +62,17 @@
 <ul class="mats">
 {% for m in materials %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ (m.title or m.name) | txt }}</a>
-      <span class="dim">{{ m.kind }} · {{ m.state }} · {{ m.derivation }}</span></li>
+      <span class="dim">{{ m.kind }} · {{ m.state }} · {{ m.derivation }}</span>
+      {% if m.out_of_date %}
+      <form method="post" action="/p/{{ project.id }}/react" class="row inline">
+        <input type="hidden" name="material_id" value="{{ m.id }}">
+        <input type="hidden" name="kind" value="note">
+        <input type="hidden" name="text"
+               value="The themes have changed since this was read. Read it again against them.">
+        <span class="dim">read before the themes last changed</span>
+        <button>Bring up to date</button>
+      </form>
+      {% endif %}</li>
 {% else %}
   <li class="dim">Nothing added yet.</li>
 {% endfor %}
