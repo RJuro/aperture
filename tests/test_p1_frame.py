@@ -53,6 +53,17 @@ def test_with_no_speaker_surviving_the_display_falls_back_to_plain(conn, project
     assert store.material(conn, mid)["display"] == "plain"
 
 
+def test_with_no_section_surviving_the_display_falls_back_to_plain(conn, grande, model):
+    """The symmetric case to the speaker fallback, and for the same reason: a structured display
+    with nothing left to structure is one the page cannot render."""
+    model.queue(_answer(display="segments",
+                        segments=[{"anchor": "words that appear nowhere at all", "label": "Ghost"}]))
+    out = frame.run(conn, grande)
+    assert out["display"] == "plain"
+    assert store.material(conn, grande)["display"] == "plain"
+    assert store.segments(conn, grande) == []
+
+
 def test_a_segment_whose_quote_is_not_there_is_dropped_and_a_real_one_is_bound(conn, grande,
                                                                               model, quote):
     sid, text = quote(grande)
