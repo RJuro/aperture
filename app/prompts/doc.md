@@ -22,7 +22,7 @@ Return JSON in exactly this shape and nothing else:
 
 {
   "summary": "...",
-  "questions": "Why does the family choose the port rather than Genoa? What happened to the brother
+  "questions": "Why does the family leave from one port and not the nearer one? What happened to the brother
                 who stayed? Whether the wage was ever enough is asked and never answered.",
   "people": [{"name": "R. Okafor", "aliases": ["Okafor"], "role": "participant"}]
 }
