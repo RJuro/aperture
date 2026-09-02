@@ -215,7 +215,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         if only_theme and tid != only_theme:
             continue
         kept = []
-        for m in (t.get("moments") or [])[:MAX_MOMENTS]:
+        # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw
+        # away untested moments and could then leave the line under the floor — a thread dropped
+        # for thinness that was never actually thin.
+        for m in (t.get("moments") or []):
             if not isinstance(m, dict):
                 continue
             claim = words(m.get("claim"), CLAIM_WORDS)
@@ -232,6 +235,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 continue
             quote, sids = bound
             kept.append({"claim": claim, "anchor": quote, "sid": sids[0]})
+        if len(kept) > MAX_MOMENTS:
+            dropped.append(f'the line for "{live[tid]["name"]}" kept the first '
+                           f'{MAX_MOMENTS} of {len(kept)} claims')
+            kept = kept[:MAX_MOMENTS]
         if len(kept) < MIN_MOMENTS:
             dropped.append(f'the thread for "{live[tid]["name"]}" was dropped: {len(kept)} moment'
                            f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '

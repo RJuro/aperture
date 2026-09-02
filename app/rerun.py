@@ -79,6 +79,10 @@ TABLE = [
     ("*",                "check",    _check),            # "check this against the material"
     ("moment",           "doubt",    _check),            # CHECK, not a rerun
     ("moment",           "*",        _nothing),          # agree / note: stored, rides the next DOC
+    ("thread",           "agree",    _nothing),          # assent is not an instruction
+    ("material_summary", "agree",    _nothing),
+    ("theme",            "agree",    _nothing),
+    ("project_summary",  "agree",    _nothing),
     ("thread",           "*",        _doc_thread),       # DOC, that material, that theme
     ("material_summary", "*",        _doc_material),     # DOC, that material whole
     ("theme",            "*",        _themes_then_docs), # THEMES, then DOC where it appears
