@@ -134,3 +134,14 @@ def test_a_full_theme_set_can_turn_over(conn, project, model):
     live = {t["name"] for t in store.live_themes(conn, project)}
     assert "Brand new" in live and "T0" not in live
     assert len(live) == themes.MAX_THEMES
+
+
+def test_the_codebook_shown_to_themes_carries_counts_not_material_names(conn, analysed):
+    """Handed material titles, the theme step wrote them straight back into gists — 'absent from
+    the bakery interview' — a conclusion in the slot meant for a definition. Counts are
+    structure; a title is an invitation."""
+    from app.engine import themes
+    block = themes._codebook_block(conn, analysed["pid"])
+    for m in store.materials(conn, analysed["pid"]):
+        assert (m["title"] or m["name"]) not in block
+    assert "marked in" in block and "of 2 materials" in block

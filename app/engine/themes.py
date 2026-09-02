@@ -38,19 +38,22 @@ def _codebook_block(conn: sqlite3.Connection, pid: str) -> str:
     codes = store.codebook(conn, pid)
     if not codes:
         return "The codebook is empty; nothing has been read yet."
+    # Spread as counts, never as names. Handed material titles, the model wrote them straight
+    # back into gists — "absent from the bakery interview" — which is a conclusion in the slot
+    # meant for a definition. "marked in 2 of 3 materials, 7 passages" is structure; a title is
+    # an invitation. (It is also what keeps this block flat at fifty materials.)
+    n_mats = len(store.materials(conn, pid))
     counts: dict[str, dict[str, int]] = {}
     for m in store.materials(conn, pid):
-        label = m["title"] or m["name"]
         for h in store.hits(conn, m["id"]):
             counts.setdefault(h["id"], {})
-            counts[h["id"]][label] = counts[h["id"]].get(label, 0) + 1
+            counts[h["id"]][m["id"]] = counts[h["id"]].get(m["id"], 0) + 1
     out = []
     for c in codes:
         where = counts.get(c["id"]) or {}
-        spread = ("; ".join(f"{k} {v}" for k, v in where.items())
-                  if where else "no sentences yet")
-        out.append(f"- {c['name']} — {c['definition'] or 'no definition recorded'}\n"
-                   f"  found in: {spread}")
+        spread = (f"marked in {len(where)} of {n_mats} materials, {sum(where.values())} passages"
+                  if where else "no passages yet")
+        out.append(f"- {c['name']} — {c['definition'] or 'no definition recorded'}\n  {spread}")
     return "\n".join(out)
 
 

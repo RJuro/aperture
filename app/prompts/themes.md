@@ -13,9 +13,9 @@ only have been written about the materials in front of you is a finding in the w
 2. Return the whole theme set, not only what changed: every theme that should be live afterwards appears in your answer, keeping its `id` when it already has one and carrying `"new": true` instead when it does not.
 3. Gather codes by name: `code_names` holds names copied exactly from the codebook below, and a name that is not in that codebook is ignored.
 4. Keep at most {{max_themes}} themes live. Fewer, well-populated themes beat many thin ones.
-5. Give every theme a gist of one sentence saying what the theme claims about the material, not what its codes are called.
+5. Give every theme a gist of one sentence DEFINING it: what belongs to this theme and what would count as an instance. Not what its codes are called, and not what was found — a definition, so that a stranger could sort a new passage into it or out of it.
 6. Fold a theme into another by giving it `"merge_into": "<the id it becomes part of>"` — never by leaving it out of your answer. A theme that is dropped silently strands everything already written under it.
-7. Build a theme on codes that recur across more than one material where the codes allow it; say so in the gist when a theme belongs to a single material only.
+7. Build a theme on codes that recur across more than one material where the codes allow it. How many materials a theme currently reaches is not the gist's business and must not appear in it — that is a fact the accounts state later, over the evidence.
 8. Keep each theme at one level of abstraction — a pattern the codes share, not a summary of one passage and not a restatement of a single code's name.
 9. Leave a code out rather than force it: a code that fits nowhere stays ungathered, and that is a finding.
 10. Change a live theme's name or gist only when the codes give you a reason to; a researcher who has read a theme should still recognise it.
