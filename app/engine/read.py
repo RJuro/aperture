@@ -98,6 +98,18 @@ def _sids_of(entry: dict, valid: set[str], dropped: list[str]) -> list[str]:
     return out
 
 
+def _angles_block(conn: sqlite3.Connection, mid: str) -> str:
+    """What the ideation step said might be worth looking for here.
+
+    Places to look, never things to find. The reading is told so in the prompt, and the material
+    is still the only thing that can put a code on the page. A material read before this step
+    existed simply has none, and reads as it always did.
+    """
+    row = store.get_summary(conn, "material", mid, "angles")
+    return (row["text"] if row and row["text"].strip() else
+            "No angles were worked out for this material. Read it on its own terms.")
+
+
 def run(conn: sqlite3.Connection, mid: str) -> dict:
     """Code one material. Returns {new, reused, hits, dropped_sids}."""
     m = store.material(conn, mid)
@@ -115,6 +127,7 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
         codebook=_codebook_block(store.codebook(conn, pid)),
         frame=_frame_block(m, store.speakers(conn, mid), segments),
         material=_material_block(m, rows, segments),
+        angles=_angles_block(conn, mid),
         max_codes=MAX_CODES, max_new=MAX_NEW)
     out = llm.chat_json(system, user, label="read")
 

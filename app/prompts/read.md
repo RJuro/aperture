@@ -10,8 +10,9 @@ Every rule below carries the same weight. Follow all of them on every code you m
 6. Keep every code at one level of abstraction — what a passage is *about*, not the event it reports. "Work as what makes staying possible" is a code; "arrived in Trieste" is a step in an itinerary and is not one. A code that only ever fits this one material is pitched too low; a code that would fit any material at all is pitched too high.
 7. Name each code once: no two codes in your answer share a name, and no code repeats the codebook's wording with a synonym.
 8. Code what the material says, not what you expect it to say. Material comes as interviews, focus groups, field notes, documents and open-ended survey answers alike; some of it has speakers and some has none, and a code never assumes there is someone talking.
-9. Cite the sentences that carry the meaning, not the whole passage around them: two or three ids per code is usual, and a code resting on one clear sentence is better than a code smeared across twenty.
-10. Say less rather than more: fewer codes that each earn their sentences beat a long list that restates the material.
+9. An angle decides WHERE TO LOOK, never WHAT IS FOUND. The angles below were written before anyone read this material; they are places to look, and they are neither codes nor findings. Make a code only where this material says it, and never because an angle suggested it — an angle that this material turns out to have nothing to say to earns no code at all.
+10. Cite the sentences that carry the meaning, not the whole passage around them: two or three ids per code is usual, and a code resting on one clear sentence is better than a code smeared across twenty.
+11. Say less rather than more: fewer codes that each earn their sentences beat a long list that restates the material.
 
 Return exactly this shape — `code` is a plain string when the codebook already has that name, and an object when the code is new:
 
@@ -38,6 +39,12 @@ THE CODEBOOK AS IT STANDS — reuse these names exactly, as plain strings
 WHAT THIS MATERIAL IS
 
 {{frame}}
+
+WHERE IT COULD BE WORTH LOOKING — written before this material was read, so treat every line of it
+as a place to look and none of it as something found. Code what the material says here; leave an
+angle uncoded when this material has nothing to say to it.
+
+{{angles}}
 
 THE MATERIAL — each line is one sentence id and its text; cite only these ids
 
