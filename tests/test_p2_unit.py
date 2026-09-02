@@ -108,17 +108,17 @@ def test_a_merge_into_a_theme_that_is_not_live_is_refused(conn, project, model):
     assert conn.execute("SELECT status FROM theme WHERE id=?", (a,)).fetchone()[0] == "live"
 
 
-def test_the_codebook_shows_which_materials_a_code_spans(conn, project, grande, rodwin, model):
-    for mid, title in ((grande, "Grande, M."), (rodwin, "Rodwin")):
-        store.save_frame(conn, mid, kind="interview", display="turns", title=title,
-                         speakers=[], segments=[])
-        model.queue({"codes": [{"code": {"name": "Work", "definition": "d"}, "sids": ["S050"]}]})
-        read.run(conn, mid)
-    model.calls.clear()
-    model.queue({"themes": []})
-    themes.run(conn, project)
-    shown = model.shown()
-    assert "Grande" in shown and "Rodwin" in shown
+def test_the_codebook_shows_how_widely_a_code_spans_but_never_where(conn, project, grande, rodwin,
+                                                                     model):
+    """Counts, not names. Handed material titles beside each code, the theme step wrote them back
+    into gists as 'absent from the bakery interview' — a conclusion in a definition's slot."""
+    from app.engine import themes
+    store.save_codes(conn, project, grande, [{"name": "Work", "definition": "d", "sids": ["S050", "S060"]}])
+    store.save_codes(conn, project, rodwin, [{"name": "Work", "definition": "d", "sids": ["S070"]}])
+    block = themes._codebook_block(conn, project)
+    assert "marked in 2 of 2 materials, 3 passages" in block
+    for m in store.materials(conn, project):
+        assert (m["title"] or m["name"]) not in block
 
 
 def test_a_full_theme_set_can_turn_over(conn, project, model):
@@ -141,7 +141,9 @@ def test_the_codebook_shown_to_themes_carries_counts_not_material_names(conn, an
     the bakery interview' — a conclusion in the slot meant for a definition. Counts are
     structure; a title is an invitation."""
     from app.engine import themes
-    block = themes._codebook_block(conn, analysed["pid"])
-    for m in store.materials(conn, analysed["pid"]):
+    pid = analysed["pid"]
+    store.save_codes(conn, pid, analysed["grande"], [{"name": "Crossing", "definition": "d", "sids": ["S050"]}])
+    block = themes._codebook_block(conn, pid)
+    for m in store.materials(conn, pid):
         assert (m["title"] or m["name"]) not in block
-    assert "marked in" in block and "of 2 materials" in block
+    assert "marked in 1 of 2 materials, 1 passages" in block
