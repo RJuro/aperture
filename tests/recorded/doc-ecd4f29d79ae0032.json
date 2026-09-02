@@ -1,0 +1,180 @@
+{
+ "summary": "This is a 1997 National Park Service oral history with Minnie Rodwin (née Mary Floun), recorded at her daughter's home in Sunrise, Florida when she was ninety. Born Christmas morning 1907 in London's East End to Polish-Jewish parents who ran a bakery on Commercial Road, she crossed on the Philadelphia in September 1910 at age three. Her father Morris had left the year before, called back into the Russian army — conscription, not persecution, was the precipitating motive. The family followed once he had purchased tickets and had kin waiting in New York.\n\nFour threads carry the material. The departure-costs thread follows the staged exit: army recall, purchased tickets, a year alone in New York, the steerage crossing at the bottom of the ship, and a mother who forbade tip-taking. The livelihoods thread is almost entirely about baking — mother Sophie carried the trade from Warsaw through London to 141 Essex Street, where the bakery became Floun's and lasted about fifteen years before moving it to Rockaway Beach; father Morris, originally a tailor, learned the trade from his wife. School authorities directed the older brothers to stay home and help; children topped macaroons at the holidays. The regional-networks thread shows Polish-Jewish kin across New York (Forty-Second Street, the Bronx, 'all over') gathering every Friday at the father's bakery, with Rodwin's home later serving as the standing meeting place. The toll thread holds two separations — daughters left with grandmother until one was seven — and the family's resettlement into a four-story walkup tenement with shared bathrooms and coin-operated gas meters.\n\nWhat is thin: the bureaucratic and economic texture of departure — no Ellis Island memory, no fare specifics beyond 'tickets.' What is unresolved: whether the planned reunion with the sisters ever happened. What is missing: any sense of how the bakery fared economically beyond its name and fifteen-year run.",
+ "threads": [
+  {
+   "theme_id": "tb2402c0b3d",
+   "moments": [
+    {
+     "claim": "Father was recalled to the army when the twin sons were thirteen, precipitating the family's exit.",
+     "anchor": "my father was called in—into—back to the army",
+     "sid": "S238"
+    },
+    {
+     "claim": "Her memory of the army is so vague she calls it 'underground.'",
+     "anchor": "It was underground",
+     "sid": "S252"
+    },
+    {
+     "claim": "He traveled to New York on tickets, ahead of the rest.",
+     "anchor": "So my father got tickets, went to the United States",
+     "sid": "S256"
+    },
+    {
+     "claim": "He crossed a full year before sending for the family.",
+     "anchor": "The year before",
+     "sid": "S261"
+    },
+    {
+     "claim": "Tickets were in hand before father could arrange the reunion.",
+     "anchor": "He had the tickets, yeah",
+     "sid": "S281"
+    },
+    {
+     "claim": "The family crossed in steerage at the bottom of the ship.",
+     "anchor": "we were in the bottom",
+     "sid": "S304"
+    },
+    {
+     "claim": "Mother Sophie forbade the children from accepting tips passengers threw down.",
+     "anchor": "My mother wouldn't let—let us",
+     "sid": "S311"
+    }
+   ]
+  },
+  {
+   "theme_id": "t0066187b81",
+   "moments": [
+    {
+     "claim": "A bakery was opened in New York within months of arrival.",
+     "anchor": "He opened up a bakery",
+     "sid": "S265"
+    },
+    {
+     "claim": "Father Morris was originally a tailor, not a baker.",
+     "anchor": "He was a—a—a tailor",
+     "sid": "S395"
+    },
+    {
+     "claim": "Mother Sophie, not Morris, was the family's trained baker.",
+     "anchor": "My mother was the b—the baker",
+     "sid": "S397"
+    },
+    {
+     "claim": "School authorities directed the older brothers to stay home and help in the bakery.",
+     "anchor": "Let them stay home and help you",
+     "sid": "S447"
+    },
+    {
+     "claim": "Children's holiday labor included topping macaroons with almonds and cherries.",
+     "anchor": "we used to you put almonds and cherries on the macaroons",
+     "sid": "S486"
+    },
+    {
+     "claim": "The family opened a second bakery after moving to Rockaway Beach.",
+     "anchor": "we had—we had a bakery there",
+     "sid": "S514"
+    },
+    {
+     "claim": "The Lower East Side bakery lasted about fifteen years before the move.",
+     "anchor": "about fifteen years",
+     "sid": "S536"
+    }
+   ]
+  },
+  {
+   "theme_id": "t2766457640",
+   "moments": [
+    {
+     "claim": "Pre-existing relatives in New York anchored the family's arrival.",
+     "anchor": "He had some rel—relatives in the—in New--New York",
+     "sid": "S257"
+    },
+    {
+     "claim": "Kin lived on Forty-Second Street, in the Bronx, and elsewhere across the city.",
+     "anchor": "One was on Forty second Street",
+     "sid": "S355"
+    },
+    {
+     "claim": "Aunts, uncles, and cousins were scattered through New York's Polish-Jewish neighborhoods.",
+     "anchor": "One was in the Bronx",
+     "sid": "S356"
+    },
+    {
+     "claim": "Family stretched 'all over' the metropolitan area, not in one cluster.",
+     "anchor": "They were all over",
+     "sid": "S357"
+    },
+    {
+     "claim": "Relatives are remembered as 'very nice' upon arrival.",
+     "anchor": "Relatives were very nice",
+     "sid": "S545"
+    },
+    {
+     "claim": "Friday gatherings at the father's bakery were the weekly social routine.",
+     "anchor": "Friday, they'd come to my—my father's bakery",
+     "sid": "S546"
+    },
+    {
+     "claim": "Rodwin's own home later became the standing meeting place for relatives.",
+     "anchor": "they were al—always my house",
+     "sid": "S553"
+    }
+   ]
+  },
+  {
+   "theme_id": "t76bfbf57e5",
+   "moments": [
+    {
+     "claim": "Two sisters were left in Poland when the family emigrated.",
+     "anchor": "We had two sisters in Poland—",
+     "sid": "S166"
+    },
+    {
+     "claim": "The daughters were deliberately left behind when the family left.",
+     "anchor": "we had two sisters in Poland we left there—",
+     "sid": "S181"
+    },
+    {
+     "claim": "Mother Sophie feared she could not care for the sisters on the voyage.",
+     "anchor": "my mother was afraid she wouldn't be—be able to take care of them",
+     "sid": "S183"
+    },
+    {
+     "claim": "Reunion was planned for when the eldest sister turned seven.",
+     "anchor": "Yeah, just till one was seven years old",
+     "sid": "S185"
+    },
+    {
+     "claim": "The Lower East Side address was 141 Essex Street, across from the bakery.",
+     "anchor": "We lived—141 Essex Street",
+     "sid": "S412"
+    },
+    {
+     "claim": "The family lived in a four-story walkup tenement.",
+     "anchor": "It's a four—four-story—",
+     "sid": "S415"
+    },
+    {
+     "claim": "Fourteen-year-old brothers were among those directed to leave school for the bakery.",
+     "anchor": "My brothers were fourteen years old",
+     "sid": "S442"
+    }
+   ]
+  }
+ ],
+ "brief": "Minnie Rodwin's 1997 oral history is short (27 minutes) and warm, but memory at ninety is patchy: she cannot recall Ellis Island, the bakery's formal name, or whether the Polish sisters ever rejoined the family. Father Morris's conscription-driven departure anchors the narrative. The material rewards cluster around baking — mother's trade, carried from Warsaw through London to 141 Essex Street and on to Rockaway Beach — and around the kin network that gathered weekly at the bakery. The Lower East Side tenement is described only in address and walkup height. Look for material addressing the reunion with the sisters, Ellis Island processing, or the bakery's economic survival.",
+ "people": [
+  {
+   "name": "Minnie Rodwin",
+   "aliases": [
+    "Mary Floun"
+   ],
+   "role": "participant"
+  },
+  {
+   "name": "Janet Levine",
+   "aliases": [],
+   "role": "interviewer"
+  }
+ ]
+}

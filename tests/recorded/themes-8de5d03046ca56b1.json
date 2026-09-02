@@ -1,0 +1,48 @@
+{
+ "themes": [
+  {
+   "id": "t0066187b81",
+   "name": "Livelihoods after arrival",
+   "gist": "The paid and unpaid work immigrants performed once in the new country, from mines and packing plants to domestic labor and pre-arranged farm work.",
+   "code_names": [
+    "Coal mining as migrant livelihood",
+    "Depression-era work scarcity",
+    "Domestic labor as only work after arrival",
+    "Long-tenure packing house employment",
+    "Men migrating ahead to work",
+    "Family trade carried forward to new country"
+   ]
+  },
+  {
+   "id": "t2766457640",
+   "name": "Regional networks as settlement aid",
+   "gist": "How immigrants from the same village or home region clustered in American towns and relied on one another to adjust.",
+   "code_names": [
+    "Chain settlement by home region"
+   ]
+  },
+  {
+   "id": "tb2402c0b3d",
+   "name": "Costs and conditions of departure",
+   "gist": "The bureaucratic hurdles, fare manipulations, home-currency economies, and pressures such as conscription that shaped how and why immigrants left.",
+   "code_names": [
+    "Barter and farm surplus as economy",
+    "Bureaucratic cost of departure",
+    "Class fare downgraded on passage",
+    "Conscription avoidance as emigration motive"
+   ]
+  },
+  {
+   "id": "t76bfbf57e5",
+   "name": "The toll of migration and labor",
+   "gist": "The wear on bodies, housing, and families that the journey, the work it required, and the separations it imposed inflicted on immigrants.",
+   "code_names": [
+    "Health costs of physical labor",
+    "Loss of possessions in transit",
+    "Tenement living conditions on arrival",
+    "Children kept from school to work in family business",
+    "Children left behind during staged migration"
+   ]
+  }
+ ]
+}

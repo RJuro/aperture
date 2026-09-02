@@ -1,0 +1,57 @@
+{
+ "summary": "The two interviews give contrasting portraits of how a living was made after arrival, and what it cost. Both begin with bureaucratic and economic conditions of departure: Mary Grande's account centers on a mother navigating multiple courts and offices, a fare downgrade, and clothes stolen in a Trieste holding space [mo399f49c956, mo00d7e05731, mofdda1edaa0, mo968899529a]; the Minnie Rodwin material follows a father recalled to the army, tickets purchased, and steerage passage at the bottom of the ship [mo7807b26f25, mo287f7078f6, mo3b643f48d1]. Livelihoods diverge sharply: decades of mine and smelter work, Depression-era alternating weeks, and nearly thirty years of packing-house piecework in the first account [mo55708f9b51, mo534b4b8fd3, mod0a2c906c4, mo2c3769e819, moa61019c788]; a Polish-Jewish bakery on Essex Street, kept for fifteen years, with children topping macaroons and brothers pulled from school in the second [mo76d6abaae2, mo5d43ee239f, mo40dcf633cd, mo85c5a35bc1, moaf5a3cf3f4]. Regional networks operate differently too: clustering with co-villagers in Utah mining towns and Denver versus kin scattered across New York with weekly bakery gatherings as anchor [mo27071377f1, mofe959b91e8, modd8470037c, mo561ec80cbd, moe62261b148]. The toll shows a father's mine-broken body, Mary Grande's repeated surgeries, and a daughter's medical exit from the smokehouse, alongside two sisters left in Poland and a four-story walkup [mo44f59417fb, moec459eb43d, mobb81224b14, moda5093ea04, mo31be8477cd, moaf2475854f]. Thin areas: financial texture beyond intermittent work; bakery economics; reunion outcomes.",
+ "theme_gists": [
+  {
+   "theme_id": "tb2402c0b3d",
+   "gist": "Both accounts show departure shaped by layered costs: bureaucratic gauntlets, fare downgrades, stolen possessions, and army recall, with steerage or downgraded accommodations as the physical baseline [mo399f49c956, mo00d7e05731, mofdda1edaa0, mo968899529a, mo7807b26f25, mo287f7078f6, mo3b643f48d1].",
+   "moment_ids": [
+    "mo399f49c956",
+    "mo00d7e05731",
+    "mofdda1edaa0",
+    "mo968899529a",
+    "mo7807b26f25",
+    "mo287f7078f6",
+    "mo3b643f48d1"
+   ]
+  },
+  {
+   "theme_id": "t0066187b81",
+   "gist": "Livelihoods split between mine, smelter, and packing-house work marked by Depression precarity and three decades of meat cutting, and a bakery carried by the wife for fifteen years before relocation [mo55708f9b51, mo534b4b8fd3, mo2c3769e819, moa61019c788, mofa2d09a819, mo76d6abaae2, mo5d43ee239f, mo40dcf633cd].",
+   "moment_ids": [
+    "mo55708f9b51",
+    "mo534b4b8fd3",
+    "mo2c3769e819",
+    "moa61019c788",
+    "mofa2d09a819",
+    "mo76d6abaae2",
+    "mo5d43ee239f",
+    "mo40dcf633cd"
+   ]
+  },
+  {
+   "theme_id": "t2766457640",
+   "gist": "One account shows co-villagers clustering in mining towns, with the same regional pool feeding marriage; the other shows kin scattered across boroughs and weekly bakery gatherings as the anchor [mo27071377f1, mofe959b91e8, modd8470037c, mo0746e6fc32, mo561ec80cbd, moe62261b148, mo36a29ff38c].",
+   "moment_ids": [
+    "mo27071377f1",
+    "mofe959b91e8",
+    "modd8470037c",
+    "mo0746e6fc32",
+    "mo561ec80cbd",
+    "moe62261b148",
+    "mo36a29ff38c"
+   ]
+  },
+  {
+   "theme_id": "t76bfbf57e5",
+   "gist": "The toll shows a father's mine-broken body and a daughter medically retired from the smokehouse in one account, alongside two sisters left in Poland and a four-story walkup in the other [mo44f59417fb, moec459eb43d, mobb81224b14, moda5093ea04, mo31be8477cd, moaf2475854f].",
+   "moment_ids": [
+    "mo44f59417fb",
+    "moec459eb43d",
+    "mobb81224b14",
+    "moda5093ea04",
+    "mo31be8477cd",
+    "moaf2475854f"
+   ]
+  }
+ ]
+}
