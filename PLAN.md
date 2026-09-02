@@ -26,10 +26,11 @@ Not in v1: audio (Voxtral), a designed UI, htmx, multi-user, the simulation harn
 | L1 | **frame** — kind, display, speakers, segments, title, orientation | FRAME | material |
 | L2 | codes — name, definition, the sentence ids they apply to | READ | material |
 | L3 | themes — name, gist, the codes they gather | THEMES | project |
-| L4 | material synthesis — summary + threads (moments: claim + quote + sid) | DOC | material |
-| L5 | project synthesis — summary + theme gists, citing moments | PROJECT | project |
+| L4 | material synthesis — one line per theme (moments: claim + quote + sid), then a summary over the lines | THREAD ×n, DOC | material |
+| L4½ | theme account — what one theme amounts to across the corpus, citing moments | ACCOUNT ×themes | project |
+| L5 | project synthesis — summary over the accounts and material summaries, citing moments | PROJECT | project |
 
-**Up** (material arrives): ingest → FRAME → READ → THEMES → DOC → PROJECT, one background job,
+**Up** (material arrives): ingest → FRAME → ANGLES → READ → THEMES → THREAD per theme → DOC → ACCOUNT per theme → PROJECT, one background job,
 one line a person can read (*"Working out how this is laid out"*, *"Reading Grande"*, *"Finding
 themes"*, *"Writing what stands out in Grande"*, *"Updating the project summary"*).
 
@@ -59,10 +60,12 @@ compiled prompt for the fixture, so a change to what the model sees is a visible
 | Prompt | Sees | Returns (JSON) | Python validates |
 |---|---|---|---|
 | **FRAME** | the first ~6000 and last ~1500 characters of the raw text; the mechanical speaker scan's result (labels and how often each recurs, or *none found*); the researcher's hint if this is a re-frame | `kind` · `display` · `title` ≤10 words · `speakers: [{label, name, role}]` · `segments: [{anchor, label}]` ≤12 · `orientation` ≤150 words | `kind` ∈ {interview, focus_group, fieldnotes, document, open_text, other}; `display` ∈ {turns, segments, plain}; **every speaker `label` must occur ≥2 times at a line start in the raw text**, unverified ones dropped; if none survive, `display` falls back to plain; every segment `anchor` bound by `anchor.bind`, unbound dropped |
-| READ | the brief; the focus verbatim; the live codebook; **the frame** (kind, speakers and roles, segment labels); the material as ids + text, laid out per `display` | `codes: [{code: <existing name> \| {name, definition}, sids}]` | sids exist here; ≤ 40 codes, ≤ 12 new; names unique |
-| THEMES | live themes; the codebook with per-material hit counts; the focus; theme feedback verbatim | `themes: [{id \| new, name, gist, code_names, merge_into?}]` | codes exist; ≤ 12 live themes; merges recorded as `merged_into`, never deleted |
-| DOC | the brief; the focus; the frame; **the orientation** (FRAME's summary of what this material is); the material laid out; its codes and hits; live themes; feedback on this material verbatim, dated, by target | `summary` ≤180 words · `threads: [{theme_id, moments: [{claim ≤30 words, anchor ≤12 words, sid}]}]` · `brief` ≤120 words · `people: [{name, aliases, role}]` | **every anchor bound**: unfound → moment dropped, wrong sid → repaired; 2–8 moments per thread else the thread is dropped and noted; moments ordered by position |
-| PROJECT | the focus; every material's kind, summary and threads (claims, anchors, moment ids); live themes; project feedback verbatim | `summary` ≤250 words citing moment ids · `theme_gists: [{theme_id, gist ≤40 words, moment_ids}]` | cited moment ids exist and are live; **no new quotes at this level** — a project claim rests on moments |
+| ANGLES | the frame; the orientation; **the open questions** from earlier material; a larger slice of the text than FRAME. **Never the focus** — angles are the counter-focus, an independent source of where to look | `field` · `subareas` · `angles: [{name, why, questions}]` | 5–8 angles, 2–4 questions each; stored as prose a researcher reads; fed to READ under *an angle decides where to look, never what is found* |
+| READ | the focus verbatim; the live codebook; **the frame**; **the angles** (places to look, never things to find); the material as ids + text, laid out per `display` | `codes: [{code: <existing name> \| {name, definition}, sids}]` | sids exist here; ≤ 60 codes; new codes ≤ one per dozen passages, 15–50; names unique. **No brief.** |
+| THEMES | **the material just read, with its codes marked by passage**; live themes; the codebook with spread as *counts* (never material names); the focus; theme feedback verbatim | `themes: [{id \| new, name, gist, code_names, merge_into?}]` | codes exist; ≤ 12 live; merges before creates so a full set can turn over; **a gist defines — true if fifty more materials arrived — never locates or compares**; every rewrite kept in `theme_history` |
+| THREAD | one theme's definition and its codes marked here; the focus; the frame; open comments on this line verbatim; the material laid out | `moments: [{claim ≤30 words, anchor ≤12 words, sid}]` | **every anchor bound**: unfound → dropped, wrong sid → repaired; 4–14 moments else the line is set aside *and the set-aside is kept on the run*; ordered by position |
+| DOC | the orientation; the frame; the focus; **the lines just written** (claims + quotes); open comments verbatim; the material | `summary` ≤320 words · `questions` ≤120 words · `people` | summary introduces the lines by name; **`questions` are questions the material raised and did not answer — never findings**; read by ANGLES only |
+| PROJECT | the focus; **each theme's account** and definition; each material's kind and summary; project feedback verbatim | `summary` ≤400 words citing moment ids | cited ids exist and are live; **no new quotes and no gist rewriting** — a gist defines, an account concludes, the summary is written over the accounts |
 | CHECK | the question verbatim; the uncited passages in scope, chunked | `found: [{anchor, sid}]` | anchors bound; the verdict is Python's: bound quotes → *found*, none → *not found in N passages*; the model's opinion can only lower confidence |
 
 **The orientation is written once and re-synthesized, never replaced.** FRAME writes *what this
@@ -71,11 +74,7 @@ sees it and writes *what the reading found*. Both are kept (`summary.stage` = `o
 `reading`); the page shows the reading one when it exists, the orientation before that; the export
 shows both, which is how a researcher sees what the analysis added to a plain description.
 
-**Self-prompting is exactly one slot: the brief.** DOC rewrites it after each material (*what this
-corpus is like; what to look for next*); READ and DOC read it. Round 2 tested five mechanisms; the
-self-written brief was the only one that cleared the noise band. Researcher feedback enters prompts
-as **quoted text assembled by Python**, never paraphrased by a model — the export shows the
-researcher exactly the block the model saw.
+**Self-prompting is exactly one slot, and it carries questions.** DOC writes the questions this material raised and did not answer; ANGLES reads them for the next piece; nothing else does. Round 2 found the self-written brief was the one mechanism that cleared the noise band — and the hand review of compiled prompts found the same brief, fed to READ and DOC as *what this corpus is like*, had become a finding carried forward as an instruction. Law 5 (§3) is the rule that keeps it a question.
 
 **Mechanical first, model second.** FRAME never parses. Python's speaker scan runs first and its
 result goes *into* the prompt; the model's job is to name and role what the scan found, and to
