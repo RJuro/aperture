@@ -117,3 +117,27 @@ def test_an_unknown_project_or_material_is_not_found(client, analysed):
     assert client.get("/p/nope").status_code == 404
     assert client.get(f"/p/{analysed['pid']}/m/nope").status_code == 404
     assert client.get("/p/nope/export.md").status_code == 404
+
+
+def test_a_project_claim_links_to_the_material_it_rests_on(conn, analysed, client):
+    """PROJECT cites moment ids; the page turns each into a link into the material, and the prose
+    around it is still model prose, never the app's own voice."""
+    import re as _re
+    from app import context
+    mo = store.moments(conn, analysed["grande"])[0]
+    store.save_summary(conn, "project", analysed["pid"], "reading",
+                       f"Work and the crossing are one story ({mo['id']}), told twice.")
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert f'?thread={mo["theme_id"]}#{mo["sid"]}' in html
+    assert f'/m/{analysed["grande"]}' in html
+    assert f'>[{mo["sid"]}]<' in html
+    from tests.test_p5_pages import strip_material
+    said = strip_material(html).lower()
+    for word in context._BANNED:
+        assert not _re.search(rf"\b{_re.escape(word)}s?\b", said), word
+    assert "told twice" not in said, "model prose must not survive the strip as app voice"
+
+
+def test_a_material_is_only_reachable_under_its_own_project(conn, analysed, client):
+    other = store.create_project(conn, "Elsewhere")
+    assert client.get(f"/p/{other}/m/{analysed['grande']}").status_code == 404

@@ -69,7 +69,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "frame":   ("Working out how this is laid out",   _frame),
     "read":    ("Reading {name}",                     _read),
     "themes":  ("Finding themes",                     _themes),
-    "doc":     ("Writing {name}'s threads",           _doc),
+    "doc":     ("Writing what stands out in {name}", _doc),
     "project": ("Updating the project summary",       _project),
     "check":   ("Checking that against the material", _check),
 }
@@ -89,7 +89,8 @@ def line(conn: sqlite3.Connection, run: dict) -> str:
         theme = conn.execute("SELECT name FROM theme WHERE id=?",
                              (run["theme_id"],)).fetchone()
         if theme:
-            return f"Writing {_name(conn, mid)}'s thread on {theme['name']}"
+            return (f"Writing what stands out in {_name(conn, mid)} "
+                    f"on {theme['name']}")
     return STEPS[kind][0].format(name=_name(conn, mid))
 
 

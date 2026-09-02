@@ -87,3 +87,24 @@ def test_only_a_layout_complaint_re_frames_and_it_touches_nothing_else(conn, sta
 
 def test_setting_a_focus_runs_nothing_and_shapes_what_comes_next(conn, state):
     assert _plan(conn, state["pid"], "focus", state["pid"]) == []
+
+
+def test_every_progress_line_is_in_the_researchers_words(conn, state):
+    """A running line is shown on the page verbatim, so it obeys the same vocabulary rule as any
+    other app-authored sentence. These lines were written before the rule and two of them broke
+    it — which is why they are checked here rather than trusted."""
+    import re
+
+    from app import context, jobs
+
+    tid = list(state["themes"].values())[0]
+    lines = []
+    for kind in ("frame", "read", "themes", "doc", "project", "check"):
+        line, _ = jobs.STEPS[kind]
+        lines.append(jobs.line_for(conn, kind, state["grande"], None)
+                     if hasattr(jobs, "line_for") else line)
+    lines.append(str(jobs.STEPS["doc"][0]))
+    for line in lines:
+        for word in context._BANNED:
+            assert not re.search(rf"\b{re.escape(word)}s?\b", str(line), re.I), \
+                f"{word!r} in a progress line: {line!r}"

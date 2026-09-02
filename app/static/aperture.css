@@ -74,3 +74,4 @@ button { cursor: pointer }
 details { margin: .6rem 0; font-size: .88rem }
 summary { cursor: pointer; color: var(--dim) }
 @media (max-width: 60rem) { .cols { flex-direction: column } .text { max-height: none } }
+.cite { font-family: ui-monospace, Menlo, monospace; font-size: .8em; text-decoration: none }

@@ -42,9 +42,9 @@ def test_every_run_row_carries_a_sentence_a_researcher_can_read(conn, project, g
     for kind, line in zip(["frame", "read", "themes", "doc", "project"], lines):
         assert line and line != kind, "the stage name is for the code, not for the person"
         assert " " in line and line[0].isupper()
-    assert lines[1] == "Reading DP-40 Grande" and lines[3] == "Writing DP-40 Grande's threads"
+    assert lines[1] == "Reading DP-40 Grande" and lines[3] == "Writing what stands out in DP-40 Grande"
     assert lines == ["Working out how this is laid out", "Reading DP-40 Grande", "Finding themes",
-                     "Writing DP-40 Grande's threads", "Updating the project summary"]
+                     "Writing what stands out in DP-40 Grande", "Updating the project summary"]
 
 
 def test_a_thread_scoped_rerun_says_which_thread_it_is_rewriting(conn, project, grande, analysed,
@@ -53,7 +53,7 @@ def test_a_thread_scoped_rerun_says_which_thread_it_is_rewriting(conn, project, 
     tid = analysed["themes"]["Work and trade"]
     jobs.run_now(conn, project, [{"kind": "doc", "material_id": analysed["grande"],
                                   "theme_id": tid}])
-    assert store.runs(conn, project)[-1]["line"] == "Writing Grande, M.'s thread on Work and trade"
+    assert store.runs(conn, project)[-1]["line"] == "Writing what stands out in Grande, M. on Work and trade"
 
 
 def test_the_line_uses_the_title_the_frame_gave_it_once_there_is_one(conn, project, grande,

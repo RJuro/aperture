@@ -31,7 +31,7 @@ Not in v1: audio (Voxtral), a designed UI, htmx, multi-user, the simulation harn
 
 **Up** (material arrives): ingest → FRAME → READ → THEMES → DOC → PROJECT, one background job,
 one line a person can read (*"Working out how this is laid out"*, *"Reading Grande"*, *"Finding
-themes"*, *"Writing Grande's threads"*, *"Updating the project summary"*).
+themes"*, *"Writing what stands out in Grande"*, *"Updating the project summary"*).
 
 **Down** (feedback): a rerun re-makes one layer and treats the layer below as input it may amend
 but never rebuild. READ never reruns on feedback; material is read once. FRAME is about the

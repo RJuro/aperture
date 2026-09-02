@@ -95,9 +95,10 @@ def test_the_app_does_not_speak_our_vocabulary(client, analysed):
 def test_an_idle_page_carries_no_poller_and_a_running_one_does(client, conn, analysed):
     url = f"/p/{analysed['pid']}"
     assert "http-equiv" not in client.get(url).text
-    store.start_run(conn, analysed["pid"], "doc", analysed["grande"], "Writing Grande's threads")
+    store.start_run(conn, analysed["pid"], "doc", analysed["grande"],
+                    "Writing what stands out in Grande")
     html = client.get(url).text
-    assert "http-equiv" in html and "Writing Grande's threads" in html
+    assert "http-equiv" in html and "Writing what stands out in Grande" in html
 
 
 def test_the_export_prints_the_whole_record(client, conn, analysed):

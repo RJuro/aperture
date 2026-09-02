@@ -14,6 +14,7 @@ precisely for us and would be jargon on the page. Variables, keys and comments m
 from __future__ import annotations
 
 import json
+import re
 
 from markupsafe import Markup
 
@@ -33,7 +34,7 @@ _BANNED = [
 # Context keys whose strings this app wrote, as opposed to the researcher's, the material's or the
 # model's. Only these are ours to police. `line` is deliberately absent: a run's progress line is
 # written by jobs.py and shown verbatim, the same as any other text we did not author.
-APP_AUTHORED = ("app_name", "derivation", "kind", "state", "stage", "verdict")
+APP_AUTHORED = ("app_name", "derivation", "kind", "state", "stage", "verdict", "line")
 
 PARA = 5        # sentences per block when the material has no structure to group by
 
@@ -53,6 +54,34 @@ def _esc(s) -> str:
 
 def txt(s) -> Markup:
     return Markup(_esc(s))
+
+
+# A project claim rests on moments, not on new quotes, so PROJECT cites moment ids in its prose.
+_CITE = re.compile(r"\bmo[0-9a-f]{6,}\b")
+
+
+def cite(text: str, index: dict, pid: str) -> Markup:
+    """Model prose with each moment id it cites turned into a link into the material it rests on.
+
+    Every run of prose is wrapped separately, because model prose is not the app speaking and must
+    never be read as if it were.
+    """
+    out, at = [], 0
+    for m in _CITE.finditer(text or ""):
+        t = index.get(m.group(0))
+        if t is None:
+            continue
+        out.append(f'<span class="summary">{_esc(text[at:m.start()])}</span>')
+        out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
+                   f'?thread={t["theme_id"]}#{t["sid"]}">[{t["sid"]}]</a>')
+        at = m.end()
+    out.append(f'<span class="summary">{_esc(text[at:])}</span>')
+    return Markup("".join(out))
+
+
+def _cite_index(conn, pid: str) -> dict:
+    return {m["id"]: dict(m) for mat in store.materials(conn, pid)
+            for m in store.moments(conn, mat["id"])}
 
 
 # ---- the material, with this theme's quotes marked ----------------------------------------------
@@ -206,15 +235,17 @@ def project_page(conn, pid: str) -> dict:
                           for m in mats]
         themes.append(row)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
+    summary = _row(store.get_summary(conn, "project", pid))
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
-            "summary": _row(store.get_summary(conn, "project", pid)),
+            "summary": summary,
+            "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
             "checks": _checks(conn, pid)}
 
 
 def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict:
     p, m = store.project(conn, pid), store.material(conn, mid)
-    if p is None or m is None:
+    if p is None or m is None or m["project_id"] != pid:
         return {}
     mat = dict(m)
     cards = []
@@ -230,9 +261,11 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     quotes: dict[str, list[str]] = {}
     for x in (selected["moments"] if selected else []):
         quotes.setdefault(x["sid"], []).append(x["anchor"])
+    summary = _row(store.get_summary(conn, "material", mid))
     return {**_shell(conn, pid), "project": dict(p), "material": mat, "cards": cards,
             "selected": selected, "derivation": derivation(conn, mid),
-            "summary": _row(store.get_summary(conn, "material", mid)),
+            "summary": summary,
+            "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "people": [dict(x) for x in store.people(conn, mid)],
             "speakers": [dict(x) for x in store.speakers(conn, mid)],
             "blocks": blocks(conn, mid, mat.get("display") or "plain", quotes),
