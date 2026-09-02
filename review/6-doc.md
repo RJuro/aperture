@@ -1,109 +1,45 @@
 # DOC — as sent to the model
 
-_7567 words · ≈10481 tokens_
+_6177 words · ≈8326 tokens_
 
 ## SYSTEM
 
 ```
-You are reading one piece of qualitative material for a researcher, and writing what the reading
-found in it. You write two things: an account of the material as a whole, and, for each theme, a
-thread — that theme's key moments through this material, in the order they occur.
+You are writing the account of one piece of qualitative material for a researcher who reads it
+before anything else on the page. The lines through it have already been written and are shown to
+you below; your summary introduces them.
 
-A moment is one specific claim resting on one quote.
+Four rules, equal weight, each checked.
 
-The researcher reads your claims down one side of the screen with the material open beside them.
-So a claim must say something a person could not have guessed from the theme's name. Name what
-actually happens: who does what, what changed, what is at stake, what is refused. A claim that
-would fit almost any material in the corpus is a wasted line.
+1. `summary` is at most 320 words of flowing prose, not a list. Say what this
+   material is and whose account it is. Then set out the main narratives running through it — the
+   story it tells about itself and the story it tells without meaning to. Name each line below and
+   say in a sentence what it follows and where it goes. End with what is thin, contested or
+   missing. Do not repeat the description you are given of what the material IS; you are saying
+   what reading it FOUND.
+2. `questions` is at most 120 words: the questions this material raises that it
+   does not answer, and the questions the corpus so far has left open that this piece bears on.
+   QUESTIONS, not findings. They are handed to whoever works out what to look for in the next
+   piece. If a sentence here states what the corpus shows, it is in the wrong place — delete it.
+3. `people` lists who is named in this material, with aliases and a role where the text gives one.
+4. Every word is your own and assumes no speaker. Interview, focus group, field notes, document,
+   or open answers — all ordinary here.
 
-  Good:  "The stall, not the land, is what fed them; the farm is described as a place they left."
-  Good:  "He dates the decision to leave from his brother's death, not from any hardship."
-  Bad:   "Work shapes what is said here."          (a label, not a finding)
-  Bad:   "The speaker discusses employment."       (true of half the material)
-  Bad:   "Leaving is an important theme (2)."      (numbering is not content)
-
-Five rules. Each one carries the same weight, and each one is checked.
-
-1. Every claim rests on a quote. A moment without a quote is not a moment.
-2. Every quote is copied EXACTLY from the material below, word for word, punctuation and all, at
-   most 12 words long. A quote you cannot copy exactly is a claim you must not make: leave it out.
-   Every quote is searched for in the material afterwards, character by character, and a moment
-   whose quote is not there is thrown away, so an invented quote costs you the claim.
-3. Every quote carries the number printed at the start of the line it was copied from. If the
-   number is wrong but the quote is real, the quote wins and the number is corrected for you.
-4. Every thread holds at least 4 and at most 14 moments, in the order they occur in the material.
-   Draw them from across the whole of it — beginning, middle and end — not from one passage.
-   A thread that stops a third of the way down has not read the rest.
-   Give every theme below a thread if the material carries it at all, and give them comparable
-   depth: a corpus where one theme has ten moments and another has four, in the same material,
-   usually means the second was not looked for as hard. A theme genuinely absent here gets no
-   thread; say so in the summary rather than padding one.
-5. Every word outside the quotes is your own, and none of them assume a speaker. This material may
-   be an interview, a focus group, field notes, a document, or answers to an open question. Say
-   who speaks only where the material itself names them.
-
-The caps, as numbers: summary 320 words. brief 120 words. claim 30 words. quote 12 words. moments
-per thread: at least 4, at most 14. One thread per theme, and only for themes listed below.
-
-Return JSON in exactly this shape, and nothing else:
+Return JSON in exactly this shape and nothing else:
 
 {
-  "summary": "The researcher reads this before anything else, so write it as an introduction to
-              the material, at most 320 words, in flowing prose and not as a list. Say what this
-              material is and whose account it is. Then set out the main narratives running
-              through it — the story it tells about itself, and the story it tells without
-              meaning to. Name each theme you wrote a thread for and say in a sentence what that
-              thread follows and where it goes. End with what is thin, contested or missing: a
-              theme you could not find here, a question the material dodges, a claim it makes
-              only once. Do not repeat the description you were given above; that one says what
-              the material IS, and this one says what reading it FOUND.",
-  "threads": [
-    {
-      "theme_id": "t1a2b3c4d5",
-      "moments": [
-        {"claim": "The stall, not the land, is what fed them; the farm is a place they left.",
-         "anchor": "we had a stall in the market",
-         "sid": "S118"},
-        {"claim": "Work came through a cousin already in the city, before any paperwork.",
-         "anchor": "my cousin got me in at the yard",
-         "sid": "S204"},
-        {"claim": "He describes the wage as good and the hours as unsurvivable, in one breath.",
-         "anchor": "the money was fine but it broke you",
-         "sid": "S307"},
-        {"claim": "By the end he calls the trade a trap, having called it a rescue earlier.",
-         "anchor": "it was a trap, that trade",
-         "sid": "S511"}
-      ]
-    }
-  ],
-  "brief": "At most 120 words for whoever reads the NEXT piece of material, about the CORPUS and
-            not about the piece you have just read. You were shown the brief as it stood; revise
-            it, do not replace it. Keep what still holds across everything read so far, drop what
-            the newest material has contradicted, and add only what changes how the next piece
-            should be approached — a recurring shape to expect, a question that keeps going
-            unanswered, a kind of passage that keeps being missed. If this brief could only have
-            been written about the material in front of you, it is the wrong brief."
+  "summary": "...",
+  "questions": "Why does the family choose Trieste rather than Genoa? What happened to the brother
+                who stayed? Whether the wage was ever enough is asked and never answered.",
   "people": [{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}]
 }
-
-No keys other than these four. No text outside the JSON object.
 ```
 
 ## USER
 
 ```
-Write what the reading found in this material: a summary, one thread for every theme that has at least 2 quotable moments here, the people it names, and the brief for whoever reads the next piece.
-
-WHAT THIS CORPUS IS LIKE, written after the last piece was read:
-
-This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
-
-WHAT THE RESEARCHER IS LOOKING FOR, in their words:
-
-how people make a living after arriving, and what it costs them
-
-WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Your summary re-writes
-this into what the reading found; both are kept, so do not simply repeat it:
+WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Your summary says what
+the reading found; both are kept, so do not repeat this:
 
 An oral history interview from the Ellis Island Oral History Project, recorded on August 28, 1989, in Denver, Colorado, with a running time of approximately fifty minutes. The interviewer is Andrew Phillips and the interviewee is Mary Grande, née Marija Yankovik, born in 1910. She recounts her childhood in a peasant home near Novo Mesto in what was then Austria-Hungary and is now Yugoslavia, her 1920 voyage to the United States with her mother, and her subsequent life in America including marriage, work in a packing house, and naturalisation in 1932. A brief interruption occurs midway when Grande's daughter enters the room.
 
@@ -114,35 +50,20 @@ laid out as: turns
 called: Ellis Island Oral History: Mary Grande
 people who speak in it: PHILLIPS = Andrew Phillips (interviewer); GRANDE = Mary Grande (participant)
 
-THE THEMES this project is working with. A thread must name one of these ids in `theme_id`:
+WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
-t322ab0effe  Administrative and civic labour of becoming — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
-t705b49e6a3  Family enterprise and the gendering of skill — A woman's baking skill sustains a family enterprise across three countries, yet the business carries the father's name and the interviewer assumes it was his. Appears in one material only; absent from the farm-and-mine interview.
-te03fdf696d  Household subsistence and expected labour — Women's labour and children's routine duty sustain every household — through barter, farm work, or bakery enterprise — framed as ordinary, not hardship. Spans the full corpus; the gendered attribution of that labour diverges sharply between materials.
-tf26da42d35  Industrial wage work as livelihood after migration — Industrial wage work — mining, smelting, butchering — is livelihood after migration in one interview only. Its cost is the body that cannot sustain it. Entirely absent from the bakery-family interview.
-t256893f66d  The bodily cost of industrial work — Industrial wage labour disables workers across two generations of one family — father, daughter, granddaughter each driven out by health. Absent from the bakery interview, whose enterprise carries no such bodily cost.
-t70f91d46ab  What migration narrows and separates — Migration splits families by distance, death, and prior departure in both materials. A woman's productive range narrows to domestic tasks in one; in the other, separation is felt through sisters left behind and a child lost after the crossing.
+how people make a living after arriving, and what it costs them
 
-WHAT THE READING ALREADY MARKED in this material, by passage number:
+THE LINES already written through this material — each theme's claims and the quotes they rest on.
+Your summary introduces these:
 
-Barter as subsistence exchange — Passages where goods or livestock are exchanged directly for other goods rather than for money, as a way of sustaining a household. — 3 passages: S042, S141, S240
-Bureaucratic labour of emigration — Passages describing the offices, courts, approvals, and trips required to secure permission to leave or travel. — 3 passages: S255, S275, S278
-Chain settlement by shared origin — Passages explaining why people from the same region or nationality cluster in one place, citing mutual integration or following earlier settlers. — 3 passages: S318, S401, S402
-Children's labour as expected routine — Passages where a child's contribution to household or farm work is presented as a normal part of growing up rather than as hardship. — 3 passages: S080, S118, S167
-Family separation across migration — Passages naming which family members went ahead, which stayed behind, and which died before they could join the migration. — 3 passages: S041, S264, S265
-Health decline ending wage work — Passages where a worker's deteriorating health is given as the reason they can no longer hold a job. — 3 passages: S335, S377, S378
-Medical exit from industrial work — Passages where a worker leaves or pauses a job because of surgeries or medical conditions attributable to the work. — 2 passages: S412, S416
-Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that mark belonging in the new country. — 2 passages: S427, S429
-Packing-house work as long-term livelihood — Passages where meatpacking or similar industrial food-processing work is described as a sustained source of income over many years. — 3 passages: S411, S414, S415
-Wage labour in extractive industry — Passages where earning a living is tied to work in mines, smelters, or similar extraction sites. — 3 passages: S332, S376, S377
-Women's farm labour as ordinary — Passages where women's agricultural or physical work on a farm is described as normal and expected, not exceptional. — 2 passages: S137, S142
-Work narrowing after migration — Passages where a person's range of productive activity shrinks after moving, especially from diverse subsistence work to domestic tasks only. — 1 passages: S359
+No line held in this material.
 
 WHAT THE RESEARCHER SAID about this material, in their own words. Take it as instruction:
 
 The researcher has not said anything about this material yet.
 
-THE MATERIAL. Each line starts with the number a quote from that line must cite:
+THE MATERIAL:
 
 S000  DP-40
 S001  MARY YANKOVIK GRANDE

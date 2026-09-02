@@ -1,69 +1,77 @@
-# THEMES — as sent to the model
+# THREAD — as sent to the model
 
-_7299 words · ≈10082 tokens_
+_6170 words · ≈8287 tokens_
 
 ## SYSTEM
 
 ```
-You are grouping a researcher's codes into themes across a whole project.
+You are following ONE theme through ONE piece of qualitative material and writing its line: the
+key moments where this theme is present, in the order they occur, each a specific claim resting on
+a quote copied exactly from the text.
 
-Every rule below carries the same weight. Follow all of them on every theme you return.
+The researcher reads your claims down one side of the screen with the material open beside them.
+A claim must say something a person could not have guessed from the theme's name: who does what,
+what changed, what is at stake, what is refused.
 
+  Good:  "The stall, not the land, is what fed them; the farm is described as a place they left."
+  Bad:   "Work shapes what is said here."          (a label, not a finding)
+  Bad:   "The speaker discusses employment."       (true of half the material)
 
-A gist DEFINES a theme: what belongs to it and what would count as an instance, in words that
-would still be true if fifty more materials arrived tomorrow. A gist never states what was
-found, never compares materials, never says where the theme is present or absent. Those are
-conclusions, and conclusions are written elsewhere, later, over the evidence. A gist that could
-only have been written about the materials in front of you is a finding in the wrong slot.
+Five rules. Each carries the same weight, and each is checked.
 
-1. Return one JSON object and nothing else, shaped exactly like the example at the end of this message.
-2. Return the whole theme set, not only what changed: every theme that should be live afterwards appears in your answer, keeping its `id` when it already has one and carrying `"new": true` instead when it does not.
-3. Gather codes by name: `code_names` holds names copied exactly from the codebook below, and a name that is not in that codebook is ignored.
-4. Keep at most 12 themes live. Fewer, well-populated themes beat many thin ones.
-5. Give every theme a gist of one sentence saying what the theme claims about the material, not what its codes are called.
-6. Fold a theme into another by giving it `"merge_into": "<the id it becomes part of>"` — never by leaving it out of your answer. A theme that is dropped silently strands everything already written under it.
-7. Build a theme on codes that recur across more than one material where the codes allow it; say so in the gist when a theme belongs to a single material only.
-8. Keep each theme at one level of abstraction — a pattern the codes share, not a summary of one passage and not a restatement of a single code's name.
-9. Leave a code out rather than force it: a code that fits nowhere stays ungathered, and that is a finding.
-10. Change a live theme's name or gist only when the codes give you a reason to; a researcher who has read a theme should still recognise it.
+1. Every claim rests on a quote. A moment without a quote is not a moment.
+2. Every quote is copied EXACTLY from the material below, word for word, at most 12 words. A quote
+   you cannot copy exactly is a claim you must not make. Every quote is searched for afterwards and
+   a moment whose quote is not there is thrown away.
+3. Every quote carries the id printed at the start of its line. If the id is wrong but the quote is
+   real, the quote wins and the id is corrected for you.
+4. Between 4 and 14 moments, drawn from across the whole material —
+   beginning, middle and end. If this theme is genuinely present fewer than 4 times
+   here, return fewer and the line will be set aside with that reason; never pad.
+5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
+   focus group, field notes, a document, or answers to an open question.
 
-Return exactly this shape:
+Return JSON in exactly this shape and nothing else:
 
-{"themes": [
-  {"id": "t9f2c1", "name": "Work and staying",
-   "gist": "Earning is described less as a livelihood than as the condition of remaining.",
-   "code_names": ["Work as what makes staying possible", "Sending money home"]},
-  {"new": true, "name": "Being read as a stranger",
-   "gist": "Encounters where the speaker is placed as an outsider before anything is said.",
-   "code_names": ["Being asked where you are from"]},
-  {"id": "t44ab0", "name": "Labour", "gist": "Overlaps with work and staying.",
-   "code_names": [], "merge_into": "t9f2c1"}
-]}
+{
+  "moments": [
+    {"claim": "The stall, not the land, is what fed them; the farm is a place they left.",
+     "anchor": "we had a stall in the market",
+     "sid": "S118"}
+  ]
+}
 ```
 
 ## USER
 
 ```
-THE MATERIAL JUST READ, with the codes marked in it. Revise the themes with this text in front
-of you; a theme is a pattern in what people said, not a grouping of labels.
+THE THEME you are following. Its definition says what belongs to it; you decide where, in THIS
+material, it is present:
 
-## Ellis Island Oral History: Mary Grande (interview)
+t322ab0effe  Administrative and civic labour of becoming — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
 
-CODES MARKED IN THIS MATERIAL, by passage:
-- Barter as subsistence exchange: S042, S141, S240
+WHERE THE READING ALREADY MARKED this theme's codes in this material, by passage id:
+
 - Bureaucratic labour of emigration: S255, S275, S278
-- Chain settlement by shared origin: S318, S401, S402
-- Children's labour as expected routine: S080, S118, S167
-- Family separation across migration: S041, S264, S265
-- Health decline ending wage work: S335, S377, S378
-- Medical exit from industrial work: S412, S416
 - Naturalisation as civic belonging: S427, S429
-- Packing-house work as long-term livelihood: S411, S414, S415
-- Wage labour in extractive industry: S332, S376, S377
-- Women's farm labour as ordinary: S137, S142
-- Work narrowing after migration: S359
 
-THE MATERIAL:
+WHAT THE RESEARCHER IS LOOKING FOR, in their words:
+
+how people make a living after arriving, and what it costs them
+
+HOW THIS MATERIAL IS LAID OUT:
+
+kind: interview
+laid out as: turns
+called: Ellis Island Oral History: Mary Grande
+people who speak in it: PHILLIPS = Andrew Phillips (interviewer); GRANDE = Mary Grande (participant)
+
+WHAT THE RESEARCHER SAID about this line, in their own words. Take it as instruction:
+
+The researcher has not said anything about this material yet.
+
+THE MATERIAL. Each line starts with the id a quote from that line must cite:
+
 S000  DP-40
 S001  MARY YANKOVIK GRANDE
 S002  BIRTH DATE:  1910
@@ -649,68 +657,4 @@ S430  This is my country.
 
 S431  PHILLIPS:	Okay.
 S432  That finishes Interview Number 414 [DP-40] with 		Mary Grande,  It's five after one.
-
-THE THEMES THAT ARE LIVE NOW
-
-- id t322ab0effe · "Administrative and civic labour of becoming" — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
-  gathers: Bureaucratic labour of emigration, Naturalisation as civic belonging
-- id t705b49e6a3 · "Family enterprise and the gendering of skill" — A woman's baking skill sustains a family enterprise across three countries, yet the business carries the father's name and the interviewer assumes it was his. Appears in one material only; absent from the farm-and-mine interview.
-  gathers: Bakery work as marital connection, Father's trade displaced by family enterprise, Gendered naming of family business, Mother's craft as portable capital
-- id te03fdf696d · "Household subsistence and expected labour" — Women's labour and children's routine duty sustain every household — through barter, farm work, or bakery enterprise — framed as ordinary, not hardship. Spans the full corpus; the gendered attribution of that labour diverges sharply between materials.
-  gathers: Barter as subsistence exchange, Children's labour as expected routine, Women's farm labour as ordinary
-- id tf26da42d35 · "Industrial wage work as livelihood after migration" — Industrial wage work — mining, smelting, butchering — is livelihood after migration in one interview only. Its cost is the body that cannot sustain it. Entirely absent from the bakery-family interview.
-  gathers: Packing-house work as long-term livelihood, Wage labour in extractive industry
-- id t256893f66d · "The bodily cost of industrial work" — Industrial wage labour disables workers across two generations of one family — father, daughter, granddaughter each driven out by health. Absent from the bakery interview, whose enterprise carries no such bodily cost.
-  gathers: Health decline ending wage work, Medical exit from industrial work
-- id t70f91d46ab · "What migration narrows and separates" — Migration splits families by distance, death, and prior departure in both materials. A woman's productive range narrows to domestic tasks in one; in the other, separation is felt through sisters left behind and a child lost after the crossing.
-  gathers: Family separation across migration, Work narrowing after migration
-
-THE CODEBOOK, AND WHERE EACH CODE WAS FOUND
-
-- Bakery work as marital connection — Passages where a marriage or partnership arises through shared occupation in the same trade or industry.
-  found in: Minnie Rodwin oral history interview 3
-- Barter as subsistence exchange — Passages where goods or livestock are exchanged directly for other goods rather than for money, as a way of sustaining a household.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Bureaucratic labour of emigration — Passages describing the offices, courts, approvals, and trips required to secure permission to leave or travel.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Chain settlement by shared origin — Passages explaining why people from the same region or nationality cluster in one place, citing mutual integration or following earlier settlers.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 2
-- Children's labour as expected routine — Passages where a child's contribution to household or farm work is presented as a normal part of growing up rather than as hardship.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 3
-- Conscription as migration push — Passages where a military call-up or draft obligation is cited as the reason a family or individual decides to leave a country.
-  found in: Minnie Rodwin oral history interview 3
-- Family separation across migration — Passages naming which family members went ahead, which stayed behind, and which died before they could join the migration.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 3
-- Father's trade displaced by family enterprise — Passages where a man's original occupation is set aside so he can work in a family business built on someone else's skill.
-  found in: Minnie Rodwin oral history interview 3
-- Gendered naming of family business — Passages where a business is named after or credited to one gender though the operative skill belongs to the other.
-  found in: Minnie Rodwin oral history interview 3
-- Health decline ending wage work — Passages where a worker's deteriorating health is given as the reason they can no longer hold a job.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Medical exit from industrial work — Passages where a worker leaves or pauses a job because of surgeries or medical conditions attributable to the work.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Mother's craft as portable capital — Passages where a woman's skill or trade, learned in one country, becomes the household's livelihood in each subsequent country of settlement.
-  found in: Minnie Rodwin oral history interview 3
-- Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that mark belonging in the new country.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Packing-house work as long-term livelihood — Passages where meatpacking or similar industrial food-processing work is described as a sustained source of income over many years.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Refusal of performance earnings as labour boundary — Passages where a family member refuses to let children accept money for informal performances, marking a boundary around what counts as acceptable work.
-  found in: Minnie Rodwin oral history interview 3
-- Wage labour in extractive industry — Passages where earning a living is tied to work in mines, smelters, or similar extraction sites.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Women's farm labour as ordinary — Passages where women's agricultural or physical work on a farm is described as normal and expected, not exceptional.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Work narrowing after migration — Passages where a person's range of productive activity shrinks after moving, especially from diverse subsistence work to domestic tasks only.
-  found in: Ellis Island Oral History: Mary Grande 1
-
-WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
-
-"""
-how people make a living after arriving, and what it costs them
-"""
-
-WHAT THE RESEARCHER SAID ABOUT THE THEMES, IN THEIR OWN WORDS
-
-The researcher has said nothing about the themes.
 ```

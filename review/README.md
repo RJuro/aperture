@@ -1,51 +1,26 @@
-# The prompts, compiled on real data — and what reading them shows
+# The prompts, compiled on real data — after the fifth law
 
-Files `1-frame.md` … `8-check.md` are the exact system and user messages sent to the model for
-the Grande interview, with every slot filled from the live database. Read them in order; that is
-the order they run.
+Files `1-frame.md` … `9-check.md` are the exact system and user messages the redesigned engine
+sends, slot-filled from the live database, in run order. `5-thread` is new: one theme's line
+through one material is now its own call, and `6-doc` is the summary written afterwards over
+those lines.
 
-## What I see now that I did not see before
+## What the review found, and what was done
 
-**1. Conclusions flow backwards into instructions, at three points.**
+| Finding | Done |
+|---|---|
+| The brief carried findings into READ, DOC and ACCOUNT as "what this corpus is like" | Removed from all three. DOC now writes *questions the material raised and did not answer*; only the ideation step reads them |
+| Theme gists were 40-word findings about two interviews, handed to DOC as definitions | THEMES' gist rule is definitional — true if fifty more materials arrived, never a comparison or a location. PROJECT no longer rewrites gists |
+| Angles were shaped by the focus, READ by the angles | Angles no longer see the focus. They are the counter-focus: where to look, from the material alone |
+| THEMES saw code labels only, never the material | THEMES sees the material it has just been handed with its codes marked by passage |
+| DOC wrote six lines + summary + brief + people in one answer | One call per line (`thread.md`); the summary (`doc.md`) is written over lines that exist |
+| PROJECT read every claim in every material, ignoring the accounts | PROJECT reads the accounts and material summaries, cites the claims they rest on |
+| Twelve new codes per material, whatever its length | One new code per dozen passages, fifteen to fifty |
+| Themes rewritten in place, no history | `theme_history` keeps every prior name, gist and code set |
 
-- *The brief* (read.md, "WHAT THIS CORPUS IS LIKE SO FAR") was meant to say what to look for. It
-  says what the corpus *shows*: "Two interviews show a shared pattern… Watch for enterprises
-  where the woman's skill is credited to the man… (confirmed twice)". READ is then told the
-  conclusion and codes toward it. The one self-prompting slot has become a finding carried
-  forward as an instruction.
-- *The theme gists* (doc.md, "THE THEMES this project is working with") are 40-word findings
-  about two specific interviews — "Appears in one material only; absent from the farm-and-mine
-  interview". DOC receives the conclusion as the theme's definition before it reads the material,
-  and then finds it. The gist should define a theme; it is reporting a result.
-- *The angles* are shaped by the focus, and READ is shaped by the angles. Focus → angles → codes →
-  themes → everything. Meant to open the aperture; may be narrowing it toward the focus.
+## The law, as written into PLAN.md §3
 
-**2. THEMES is blind.** It sees code names, one-line definitions and hit counts (4-themes.md) —
-never a word of the material. The predecessor project learned exactly this: a blind theorist
-produces over-stuffed, over-generalised themes, and the fix was to show it the transcript. I
-rebuilt the blind version. The gists prove it: they make cross-interview comparative claims from
-labels alone.
-
-**3. The base of the pyramid is too narrow.** READ is capped at 12 new codes per material. A
-433-passage interview yields 11–12 codes; two interviews yield 18; THEMES splits 18 codes into 6
-themes — three codes each. Every theme rests on two or three codes. "Undercoding" is not a prompt
-tone problem; the cap causes it structurally.
-
-**4. DOC is one call asked for everything.** Six threads of 4–14 claims each, plus a 320-word
-summary, plus the brief, plus people (5-doc.md). Thin lines are the predictable result of asking
-one call for six lines. The per-theme path exists (`only_theme`) and is not the default.
-
-**5. PROJECT does not read the accounts.** `synth.project` still reads every claim in every
-material (`store.thread` in a loop). The theme-account layer is written and shown on a page, but
-the layer above it does not consume it — so the scaling fix it was built for is not actually
-wired.
-
-**6. THEMES runs on every upload and rewrites gists in place.** Each upload rewrites every
-theme's gist from labels (bug 2) with knowledge of the new material, and earlier materials' lines
-sit under a theme whose stated meaning has changed. Theme history is not kept.
-
-## What is sound
-
-FRAME (1) and CHECK (8): mechanical first, the model names what Python found, every claim
-verified against the text. ACCOUNT (6) is bounded and cites only claims that exist. The anchor
-law in DOC — quote checked, pointer repaired, claim dropped — held on every run.
+A prompt template is universal. A slot may hold only the material, validated structure, or the
+researcher's verbatim words — never prose the system wrote about the corpus. The one
+self-prompting slot carries questions, not findings. Conclusions flow up; only questions flow
+forward. A gist defines; an account concludes.

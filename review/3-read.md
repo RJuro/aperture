@@ -1,6 +1,6 @@
 # READ — as sent to the model
 
-_7583 words · ≈10587 tokens_
+_7470 words · ≈10391 tokens_
 
 ## SYSTEM
 
@@ -12,7 +12,7 @@ Every rule below carries the same weight. Follow all of them on every code you m
 1. Return one JSON object and nothing else, shaped exactly like the example at the end of this message.
 2. Cite sentence ids: each code carries `sids`, the ids of the sentences it applies to, and every id you cite is one printed in the material below. Never invent an id, never guess at a range.
 3. Reuse before you invent: if a code already in the codebook covers a passage, cite it by its exact name as a plain string and make no second code for the same idea.
-4. Return at most 40 codes in total, and at most 12 of them new.
+4. Return at most 60 codes in total, and at most 36 of them new.
 5. Give every new code a one-sentence definition saying what would count as another instance of it, in material you have not seen.
 6. Keep every code at one level of abstraction — what a passage is *about*, not the event it reports. "Work as what makes staying possible" is a code; "arrived in Trieste" is a step in an itinerary and is not one. A code that only ever fits this one material is pitched too low; a code that would fit any material at all is pitched too high.
 7. Name each code once: no two codes in your answer share a name, and no code repeats the codebook's wording with a synonym.
@@ -34,10 +34,6 @@ Return exactly this shape — `code` is a plain string when the codebook already
 ## USER
 
 ```
-WHAT THIS CORPUS IS LIKE SO FAR
-
-This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
-
 WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
 
 """

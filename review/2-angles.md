@@ -1,6 +1,6 @@
 # ANGLES — as sent to the model
 
-_5597 words · ≈7774 tokens_
+_5605 words · ≈7789 tokens_
 
 ## SYSTEM
 
@@ -98,13 +98,10 @@ HOW IT WAS DESCRIBED WHEN IT ARRIVED
 
 An oral history interview from the Ellis Island Oral History Project, recorded on August 28, 1989, in Denver, Colorado, with a running time of approximately fifty minutes. The interviewer is Andrew Phillips and the interviewee is Mary Grande, née Marija Yankovik, born in 1910. She recounts her childhood in a peasant home near Novo Mesto in what was then Austria-Hungary and is now Yugoslavia, her 1920 voyage to the United States with her mother, and her subsequent life in America including marriage, work in a packing house, and naturalisation in 1932. A brief interruption occurs midway when Grande's daughter enters the room.
 
-WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
+QUESTIONS THE CORPUS HAS RAISED SO FAR AND NOT ANSWERED
 
-"""
-how people make a living after arriving, and what it costs them
-"""
-
-WHAT THIS CORPUS IS LIKE SO FAR
+These come from earlier material. They are questions, not findings: use them to widen what
+you ask of this piece, and never to decide in advance what it contains.
 
 This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
 

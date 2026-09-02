@@ -1,6 +1,6 @@
 # ACCOUNT — as sent to the model
 
-_1292 words · ≈1950 tokens_
+_1174 words · ≈1745 tokens_
 
 ## SYSTEM
 
@@ -84,10 +84,6 @@ It runs through 2 of the 2 materials in this project, 10 claims in all.
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
 how people make a living after arriving, and what it costs them
-
-WHAT THIS CORPUS IS LIKE, written after the last piece was read:
-
-This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
 
 WHAT THE READING FOUND UNDER THIS THEME, material by material. The id in brackets before each
 claim is the id you cite:
