@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="material">{{ (material.title or material.name) | txt }}</h1>
+<p class="meta">
+  {{ material.kind or 'material' }}
+  {% if people %}·
+    {% for p in people %}<span class="material">{{ p.name | txt }}</span>{% if p.role %} <span class="dim">({{ p.role }})</span>{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+  {% endif %}
+  · {{ derivation }}
+</p>
+<details class="reframe">
+  <summary>Laid out wrong?</summary>
+  <form method="post" action="/p/{{ project.id }}/m/{{ material.id }}/reframe" class="row">
+    <label>Say how it should be read <input name="hint" size="40"></label>
+    <button>Look again</button>
+  </form>
+</details>
+
+{% if summary %}
+<h2>{% if summary.stage == 'reading' %}What the reading found{% else %}What this is{% endif %}</h2>
+<p class="summary">{{ summary.text | txt }}</p>
+<form method="post" action="/p/{{ project.id }}/react" class="row">
+  <input type="hidden" name="material_id" value="{{ material.id }}">
+  <button name="kind" value="agree">Agree</button>
+  <button name="kind" value="doubt">Doubt</button>
+  <input name="text" size="30" placeholder="or say what you think">
+  <button name="kind" value="note">Note</button>
+</form>
+{% endif %}
+
+<h2>What stands out</h2>
+{% if cards %}
+<nav class="stack">
+{% for c in cards %}
+  <a class="gist card{% if selected and c.id == selected.id %} on{% endif %}"
+     href="/p/{{ project.id }}/m/{{ material.id }}?thread={{ c.id }}">{{ c.name | txt }}
+     · {{ c.moments | length }} claims · {{ c.gist | txt }}</a>
+{% endfor %}
+</nav>
+{% else %}
+<p class="dim">Nothing read here yet.</p>
+{% endif %}
+
+{% if selected %}
+<div class="cols">
+  <section class="side">
+    <ol class="claims">
+    {% for x in selected.moments %}
+      <li>
+        <p class="claim">{{ x.claim | txt }}</p>
+        <blockquote class="quote"><a href="#{{ x.sid }}">{{ x.anchor | txt }}</a></blockquote>
+        {% for f in x.reactions %}
+        <p class="dim small">{{ f.kind }}{% if f.text %} <q>{{ f.text | txt }}</q>{% endif %}</p>
+        {% endfor %}
+        <form method="post" action="/p/{{ project.id }}/react" class="row">
+          <input type="hidden" name="claim_id" value="{{ x.id }}">
+          <button name="kind" value="agree">Agree</button>
+          <button name="kind" value="doubt">Doubt</button>
+        </form>
+      </li>
+    {% endfor %}
+    </ol>
+  </section>
+  <section class="side text">
+  {% for b in blocks %}
+    {% if b.label %}<h3 class="material">{{ b.label | txt }}</h3>{% endif %}
+    <pre class="material">{% if b.n %}<b>{{ b.n }}</b> {% endif %}{{ b.html }}</pre>
+  {% endfor %}
+  </section>
+</div>
+
+<form method="post" action="/p/{{ project.id }}/react" class="row">
+  <input type="hidden" name="theme_id" value="{{ selected.id }}">
+  <input type="hidden" name="material_id" value="{{ material.id }}">
+  <button name="kind" value="agree">Agree</button>
+  <button name="kind" value="doubt">Doubt</button>
+  <input name="text" size="30" placeholder="or say what you think">
+  <button name="kind" value="note">Note</button>
+</form>
+<form method="post" action="/p/{{ project.id }}/check" class="row">
+  <input type="hidden" name="material_id" value="{{ material.id }}">
+  <label>Check this against the material <input name="question" size="34"></label>
+  <button>Check</button>
+</form>
+{% if checks %}
+<ul class="dim small">
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}</li>{% endfor %}
+</ul>
+{% endif %}
+<details>
+  <summary>Based on {{ selected.codes | length }} codes</summary>
+  <ul class="small">
+  {% for c in selected.codes %}
+    <li><b class="gist">{{ c.name | txt }}</b> <span class="gist">{{ c.definition | txt }}</span></li>
+  {% else %}
+    <li class="dim">None recorded.</li>
+  {% endfor %}
+  </ul>
+</details>
+{% endif %}
+{% endblock %}

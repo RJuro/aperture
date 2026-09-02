@@ -122,7 +122,9 @@ def test_a_check_searches_only_what_no_moment_rests_on(ready, conn, model, quote
     assert out["searched_n"] == uncited
     assert out["verdict"] == "not found"
     cited = store.cited_sids(conn, ready["mid"])
-    assert not any(sid in model.shown() for sid in cited), "a check must not re-read cited passages"
+    shown_to_check = model.shown("check")
+    assert not any(sid in shown_to_check for sid in cited), "a check re-read a cited passage"
+    assert "S0" in model.shown("doc"), "synthesis must print sentence ids — it has to cite them"
 
 
 def test_the_verdict_is_pythons_and_the_model_cannot_talk_its_way_to_found(ready, conn, model):
@@ -142,3 +144,24 @@ def test_a_found_check_carries_the_quote_that_makes_it_true(ready, conn, model, 
     assert out["verdict"] == "found"
     assert out["anchors"] and out["anchors"][0]["sid"] == sid
     assert store.checks(conn, ready["pid"])[-1]["verdict"] == "found"
+
+
+def test_a_sharpened_gist_reaches_the_theme_without_emptying_it(ready, conn, model, quote):
+    """The project synthesis sharpens gists but knows nothing about which codes belong where, so
+    it must not write through the theme writer that also rewrites a theme's codes."""
+    from app import db
+    cid = db.new_id("c")
+    conn.execute("INSERT INTO code (id, project_id, name) VALUES (?,?,'Work')",
+                 (cid, ready["pid"]))
+    store.save_theme(conn, ready["pid"], tid=ready["tid"], name="Work", gist="a living",
+                     code_ids=[cid])
+    model.queue({"summary": "s", "threads": [_moments(quote, ready["mid"], ready["tid"])],
+                 "brief": "b", "people": []})
+    synth.doc(conn, ready["mid"])
+    model.queue({"summary": "s", "theme_gists": [{"theme_id": ready["tid"],
+                                                  "gist": "how a living is made",
+                                                  "moment_ids": []}]})
+    synth.project(conn, ready["pid"])
+    row = conn.execute("SELECT * FROM theme WHERE id=?", (ready["tid"],)).fetchone()
+    assert row["gist"] == "how a living is made"
+    assert [c["id"] for c in store.theme_codes(conn, ready["tid"])] == [cid]

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+{% if runs %}<meta http-equiv="refresh" content="5">{% endif %}
+<title>{{ app_name }}</title>
+<link rel="stylesheet" href="/static/aperture.css">
+<body>
+<header class="top">
+  <a href="/">{{ app_name }}</a>
+  {% if project %}
+  · <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
+  · <a href="/p/{{ project.id }}/export.md">Reading record</a>
+  {% endif %}
+</header>
+{% if runs %}
+<p class="run">{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+{% endif %}
+<main>
+{% block main %}{% endblock %}
+</main>
+</body>
+</html>

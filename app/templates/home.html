@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>{{ app_name }}</h1>
+<p class="dim">A reading companion for qualitative material.</p>
+<ul class="mats">
+{% for p in projects %}
+  <li><a href="/p/{{ p.id }}">{{ p.name | txt }}</a> <span class="dim">{{ p.created_at }}</span></li>
+{% else %}
+  <li class="dim">Nothing here yet.</li>
+{% endfor %}
+</ul>
+<form method="post" action="/p/new">
+  <label>Name <input name="name" required></label>
+  <label>What are you looking for? <input name="focus" size="40"></label>
+  <button>Start a project</button>
+</form>
+{% endblock %}

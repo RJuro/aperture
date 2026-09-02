@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>{{ project.name | txt }}</h1>
+
+{% if summary %}
+<h2>What the reading found</h2>
+<p class="summary">{{ summary.text | txt }}</p>
+{% endif %}
+{% if project.brief %}<p class="dim">Brief: <span class="summary">{{ project.brief | txt }}</span></p>{% endif %}
+
+<form method="post" action="/p/{{ project.id }}/react" class="row">
+  <button name="kind" value="agree">Agree</button>
+  <button name="kind" value="doubt">Doubt</button>
+  <input name="text" size="30" placeholder="or say what you think">
+  <button name="kind" value="note">Note</button>
+</form>
+<form method="post" action="/p/{{ project.id }}/check" class="row">
+  <label>Check this against the material <input name="question" size="34"></label>
+  <button>Check</button>
+</form>
+{% if checks %}
+<ul class="dim small">
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<h2>Focus</h2>
+{% if project.focus %}<p><q>{{ project.focus | txt }}</q></p>{% else %}<p class="dim">Not set.</p>{% endif %}
+{% if focus_history %}
+<ul class="dim small">
+{% for f in focus_history %}<li><q>{{ f.text | txt }}</q> <span>{{ f.created_at }}</span></li>{% endfor %}
+</ul>
+{% endif %}
+<form method="post" action="/p/{{ project.id }}/focus" class="row">
+  <label>What are you looking for? <input name="focus" size="40"></label>
+  <button>Set focus</button>
+</form>
+
+<h2>Themes</h2>
+{% if themes %}
+<table class="themes">
+  <tr><th></th>{% for m in materials %}<th class="material">{{ (m.title or m.name) | txt }}</th>{% endfor %}</tr>
+{% for t in themes %}
+  <tr>
+    <th class="gist">{{ t.name | txt }}<br><span>{{ t.gist | txt }}</span></th>
+    {% for col in t.columns %}
+    <td>
+      <ul class="claims">
+      {% for x in col.moments %}
+        <li><a class="claim" href="/p/{{ project.id }}/m/{{ col.material.id }}?thread={{ t.id }}#{{ x.sid }}">{{ x.claim | txt }}</a></li>
+      {% endfor %}
+      </ul>
+    </td>
+    {% endfor %}
+  </tr>
+{% endfor %}
+</table>
+{% else %}
+<p class="dim">Nothing yet.</p>
+{% endif %}
+
+<h2>Materials</h2>
+<ul class="mats">
+{% for m in materials %}
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ (m.title or m.name) | txt }}</a>
+      <span class="dim">{{ m.kind }} · {{ m.state }} · {{ m.derivation }}</span></li>
+{% else %}
+  <li class="dim">Nothing added yet.</li>
+{% endfor %}
+</ul>
+<form method="post" action="/p/{{ project.id }}/material">
+  <label>Name <input name="name" required></label>
+  <label>Text <textarea name="text" rows="6" required></textarea></label>
+  <button>Add material</button>
+</form>
+{% endblock %}

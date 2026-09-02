@@ -183,6 +183,26 @@ def save_theme(conn: sqlite3.Connection, pid: str, *, tid: str | None, name: str
     return tid
 
 
+def set_theme_gist(conn: sqlite3.Connection, tid: str, gist: str) -> None:
+    """A theme's gist, alone. `save_theme` rewrites a theme's codes as well, so the project
+    synthesis — which sharpens gists but knows nothing about which codes belong where — must not
+    use it. Writing a gist through `save_theme` would silently empty the theme."""
+    conn.execute("UPDATE theme SET gist=? WHERE id=?", (gist, tid))
+    conn.commit()
+
+
+def set_brief(conn: sqlite3.Connection, pid: str, brief: str) -> None:
+    """The one slot the model writes for itself: what this corpus is like and what to look for
+    next. Read back by the next reading and the next synthesis, and by nothing else."""
+    conn.execute("UPDATE project SET brief=? WHERE id=?", (brief, pid))
+    conn.commit()
+
+
+def set_focus(conn: sqlite3.Connection, pid: str, focus: str) -> None:
+    conn.execute("UPDATE project SET focus=? WHERE id=?", (focus, pid))
+    conn.commit()
+
+
 def merge_theme(conn: sqlite3.Connection, tid: str, into: str) -> None:
     """Merged, never deleted: a moment that cited the old theme still resolves."""
     conn.execute("UPDATE theme SET status='merged', merged_into=? WHERE id=?", (into, tid))
