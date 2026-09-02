@@ -347,9 +347,21 @@ def add_feedback(conn: sqlite3.Connection, pid: str, target_kind: str, target_id
     return fid
 
 
-def feedback_for(conn: sqlite3.Connection, target_kind: str, target_id: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT * FROM feedback WHERE target_kind=? AND target_id=? "
-                        "ORDER BY created_at", (target_kind, target_id)).fetchall()
+def feedback_for(conn: sqlite3.Connection, target_kind: str, target_id: str,
+                 open_only: bool = False) -> list[sqlite3.Row]:
+    """With `open_only`, just the comments no run has yet honoured. A comment is an instruction
+    for the next rewrite of its block; once that rewrite has happened it is history, not a
+    standing order — fed in forever, a note from six months ago would still steer every rerun."""
+    sql = "SELECT * FROM feedback WHERE target_kind=? AND target_id=?"
+    if open_only:
+        sql += " AND consumed_by_run IS NULL"
+    return conn.execute(sql + " ORDER BY created_at", (target_kind, target_id)).fetchall()
+
+
+def consume_feedback(conn: sqlite3.Connection, fid: str, run_id: str) -> None:
+    conn.execute("UPDATE feedback SET consumed_by_run=? WHERE id=? AND consumed_by_run IS NULL",
+                 (run_id, fid))
+    conn.commit()
 
 
 def project_feedback(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:

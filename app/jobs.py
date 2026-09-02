@@ -151,6 +151,8 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict]) -> list[st
         store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
                          tokens_out=llm.usage.get("tokens_out", 0),
                          notes=[str(n) for n in (notes or [])])
+        if not error and run.get("feedback_id"):
+            store.consume_feedback(conn, run["feedback_id"], rid)
         if error:
             break
     for mid in dict.fromkeys(touched):                  # in order, without repeats

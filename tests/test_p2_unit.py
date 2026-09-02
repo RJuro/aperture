@@ -119,3 +119,18 @@ def test_the_codebook_shows_which_materials_a_code_spans(conn, project, grande, 
     themes.run(conn, project)
     shown = model.shown()
     assert "Grande" in shown and "Rodwin" in shown
+
+
+def test_a_full_theme_set_can_turn_over(conn, project, model):
+    """At the cap, 'merge A into B and add C' used to drop C because the cap was checked before
+    A had gone. The set could only shrink, and 'split this theme' did nothing, silently."""
+    from app.engine import themes
+    ids = [store.save_theme(conn, project, tid=None, name=f"T{i}", gist="g", code_ids=[])
+           for i in range(themes.MAX_THEMES)]
+    model.queue({"themes": [{"id": ids[0], "name": "T0", "gist": "g", "code_names": [],
+                             "merge_into": ids[1]},
+                            {"new": True, "name": "Brand new", "gist": "g", "code_names": []}]})
+    themes.run(conn, project)
+    live = {t["name"] for t in store.live_themes(conn, project)}
+    assert "Brand new" in live and "T0" not in live
+    assert len(live) == themes.MAX_THEMES

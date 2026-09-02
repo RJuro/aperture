@@ -94,12 +94,25 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
     live = {r["id"] for r in store.live_themes(conn, pid)}
     payload = [t for t in (out.get("themes") or []) if isinstance(t, dict)]
 
+    # Merges first. With the set at its cap, 'merge A into B and add C' used to drop C —
+    # the cap was checked before A had gone — so a full theme set could only ever shrink,
+    # and a researcher's 'split this' did nothing, silently.
+    merged: list[str] = []
+    for t in [t for t in payload if t.get("merge_into")]:
+        tid, into = t.get("id"), t.get("merge_into")
+        if tid in live and into in live and tid != into:
+            store.merge_theme(conn, tid, into)     # marked merged, its moments follow the target
+            live.discard(tid)
+            merged.append(tid)
+
     saved: list[str] = []
     for t in [t for t in payload if not t.get("merge_into")]:
         name = str(t.get("name") or "").strip()
         if not name:
             continue
         tid = t.get("id")
+        if tid in merged:
+            continue                       # merged away this pass; not re-created
         if t.get("new") or tid not in live:
             tid = None
         if tid is None and len(live) >= MAX_THEMES:
@@ -112,14 +125,5 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
                                          if n in by_name])
         live.add(tid)
         saved.append(tid)
-
-    merged: list[str] = []
-    for t in [t for t in payload if t.get("merge_into")]:
-        tid, into = t.get("id"), t.get("merge_into")
-        if tid in live and into in live and tid != into:
-            store.merge_theme(conn, tid, into)     # marked merged, its moments follow the target
-            live.discard(tid)
-            saved[:] = [s for s in saved if s != tid]
-            merged.append(tid)
 
     return {"themes": saved, "merged": merged}

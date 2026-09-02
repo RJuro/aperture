@@ -153,3 +153,27 @@ def test_a_check_asked_anywhere_is_a_check(conn, analysed):
                              "Does anyone mention money?")
     plan = rerun.plan(conn, fid)
     assert [p["kind"] for p in plan] == ["check"] and plan[0]["material_id"] is None
+
+
+def test_a_comment_is_consumed_by_the_run_that_honours_it(conn, analysed, monkeypatch):
+    """Fed in forever, a note from six months ago would still steer every rerun. A clean run
+    consumes the comment that planned it; a failed one leaves it open to be tried again."""
+    from app.engine import synth
+    pid, mid = analysed["pid"], analysed["grande"]
+    _stub(monkeypatch)
+    fid = store.add_feedback(conn, pid, "material_summary", mid, "note", "the crossing is underplayed")
+    assert "the crossing is underplayed" in synth.feedback_block(conn, pid, mid, None)
+    jobs.run_now(conn, pid, rerun.plan(conn, fid))
+    row = conn.execute("SELECT consumed_by_run FROM feedback WHERE id=?", (fid,)).fetchone()
+    assert row[0] is not None
+    assert "the crossing is underplayed" not in synth.feedback_block(conn, pid, mid, None)
+    assert store.feedback_for(conn, "material_summary", mid), "still in the record for the export"
+
+
+def test_a_failed_run_leaves_its_comment_open(conn, analysed, monkeypatch):
+    def boom(conn, pid, run):
+        raise RuntimeError("no")
+    _stub(monkeypatch, doc=boom)
+    fid = store.add_feedback(conn, analysed["pid"], "material_summary", analysed["grande"], "note", "x")
+    jobs.run_now(conn, analysed["pid"], rerun.plan(conn, fid))
+    assert conn.execute("SELECT consumed_by_run FROM feedback WHERE id=?", (fid,)).fetchone()[0] is None

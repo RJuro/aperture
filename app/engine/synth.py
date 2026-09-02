@@ -139,6 +139,8 @@ def feedback_block(conn, pid: str, mid: str, only_theme: str | None = None) -> s
     about. Python assembles it; no model ever paraphrases a researcher (PLAN.md §2)."""
     out = []
     for f in store.project_feedback(conn, pid):
+        if f["consumed_by_run"]:
+            continue                    # honoured by an earlier rewrite; history, not an order
         about = _about(conn, f, mid, only_theme)
         if about is None:
             continue
