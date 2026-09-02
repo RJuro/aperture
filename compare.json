@@ -4,382 +4,67 @@
    "frame": {
     "s": 10,
     "in": 3440,
-    "out": 1797,
+    "out": 642,
     "error": null
    },
    "angles": {
-    "s": 84,
-    "in": 7741,
-    "out": 5394,
+    "s": 33,
+    "in": 7737,
+    "out": 4182,
     "error": null
    },
    "read": {
-    "s": 53,
-    "in": 10893,
-    "out": 8630,
+    "s": 78,
+    "in": 10769,
+    "out": 17522,
     "error": null
    },
    "themes": {
-    "s": 26,
-    "in": 1261,
-    "out": 4298,
+    "s": 14,
+    "in": 1208,
+    "out": 2348,
     "error": null
    },
    "doc": {
-    "s": 337,
-    "in": 10777,
-    "out": 42683,
+    "s": 159,
+    "in": 10646,
+    "out": 36702,
     "error": null
    }
   },
-  "pid": "p3be5499abc",
-  "mid": "m54d450b5f9",
+  "pid": "p99e1351a1e",
+  "mid": "m56cd0faa72",
   "model": "MiniMax-M3",
   "provider": "minimax",
   "codes": {
-   "new": 11,
+   "new": 10,
    "reused": 0,
-   "hits": 28,
-   "dropped_sids": []
-  },
-  "anchors": {
-   "bound": 36,
-   "rebound": 1,
-   "unfound": 1
-  },
-  "dropped": [
-   "a moment was dropped: its quote is not in this material — \"I finally got a job in a packing house\""
-  ],
-  "themes": [
-   {
-    "name": "Costs carried by the household",
-    "gist": "Arrival and settlement imposed costs — luggage lost in transit, dependence on kin to shape the route, and school fees paid during years of reduced income. (Found in Mary Grande, Ellis Island Oral History 3 only.)"
-   },
-   {
-    "name": "Language as a gate to institutions",
-    "gist": "Not speaking English limited dealings with offices and schools, though some schoolwork could be done without the spoken word. (Found in Mary Grande, Ellis Island Oral History 3 only.)"
-   },
-   {
-    "name": "Subsistence before the wage",
-    "gist": "In the source village, getting by ran through animals, produce, and barter rather than a paycheck, set against what arrival would later require. (Found in Mary Grande, Ellis Island Oral History 3 only.)"
-   },
-   {
-    "name": "The shape of paid work",
-    "gist": "After arrival, earning took the form of extractive labor underground, multi-decade industrial tenure, and irregular Depression-era wage work."
-   },
-   {
-    "name": "When the body ends paid work",
-    "gist": "Declining health, illness, or medical events are described as the named reason physical labor stops or earnings are interrupted."
-   }
-  ],
-  "frame": {
-   "kind": "interview",
-   "title": "Mary Grande, Ellis Island Oral History",
-   "display": "turns",
-   "speakers": [
-    [
-     "PHILLIPS",
-     "Andrew Phillips",
-     "interviewer"
-    ],
-    [
-     "GRANDE",
-     "Mary Grande",
-     "participant"
-    ]
-   ]
-  },
-  "orientation": "An oral history interview from the Ellis Island Oral History Project, recorded on August 28, 1989, in Denver, Colorado, with a running time of fifty minutes. The interviewer is Andrew Phillips and the interviewee is Mary Yankovik Grande, born in 1910, who immigrated from Yugoslavia to the United States in 1920 at the age of ten. The transcript opens with biographical detail and home life in Yugoslavia, moves through the ship voyage via Trieste and London, and continues with settlement in Denver, marriage, work in a packing house, and U.S. citizenship granted in 1932. The transcript was originally prepared by Nancy Vega in 1989 and reconceived by Chick Lemonick in February 1996; it was not reviewed by the interviewee.",
-  "angles": "Where this material sits: Migrant work, household economies and settlement.\n\nAreas inside that: Migrant labour and occupational change; Household income and expenditure; Health, care and working life; Kin networks and ethnic settlement; Place, mobility and language.\n\nWays into this material — places to look, not things already found:\n\nTasks, wages and job conditions\n    The transcript gives concrete farm and packing-house tasks, mentions every-other-week work, and uses the phrase making a livelihood, but supplies few wage figures or named employers.\n    - Which jobs receive detailed accounts of tasks, hours, and working conditions?\n    - How are wages or other forms of pay described, and where are they absent?\n    - Which employers or hiring circumstances are named, and which remain unidentified?\n\nHousehold costs beside earning\n    Her husband's limited earnings are placed beside parochial-school fees, laundry, cooking, packing-house work, travel, and periods at home after surgery.\n    - Which household expenses are tied directly to particular jobs or periods of work?\n    - How are school costs, food, housing, travel, and medical costs described?\n    - Who is associated with paying each cost, and who is not?\n    - Which everyday expenses remain outside the account?\n\nHealth and the working life\n    The account places the father's health decline beside the smelter and mine, several surgeries beside the packing house, and Mitzi's smokehouse work beside having to leave medically.\n    - When is health described before, during, or after periods of employment?\n    - What forms of medical leave, job loss, or occupational change are described?\n    - How are health limits explained, and who explains them?\n    - What income or household effects are connected to those limits?\n\nGendered work and household dependence\n    Her mother raises and barters cattle before doing housework and laundry in Denver, while Mary Grande's farm, domestic, and packing-house work is narrated alongside her husband's and daughters' activities.\n    - Which farm, domestic, industrial, and caring tasks are associated with particular people?\n    - Where is Mary Grande's work placed alongside her mother's, husband's, or daughters' work?\n    - How are paid and unpaid tasks described in relation to gender?\n    - Which household dependencies become visible through these work accounts?\n\nKin and work networks\n    The material mentions a man known to her mother buying clothes in London, relatives in Aspen and near Greeley, a husband from the same area, and a daughter joining the packing house.\n    - What forms of help, information, housing, or work are associated with relatives and acquaintances?\n    - How do these relationships operate before and after migration?\n    - Which kin ties cross the farm, smelter, mine, and packing-house settings?\n    - Where is assistance described directly, and where only through its result?\n\nWorkplaces, mobility and access\n    The route includes a family farm, Trieste, London, Sunnyside, Greeley, Aspen, and Denver, with work settings moving across a smelter, a mine, and a packing house.\n    - How are transport and distance described when work changes location?\n    - Which moves coincide with a new job, health event, marriage, or family change?\n    - How does access to family, housing, or local knowledge differ by place?\n    - Which workplaces or routes remain unnamed or only vaguely recalled?\n\nLanguage and occupational access\n    German is described as necessary to get along in the old village, while the arrival account includes being unable to speak English and succeeding in arithmetic that did not require speech.\n    - Where does language enter accounts of work, school, trade, or travel?\n    - How are Slovanian, German, Italian, and English used in different settings?\n    - Which tasks depend on speaking, reading, or understanding another language?\n    - Where is communication difficulty itself described as a cost or constraint?\n\nWork across the life course\n    Childhood farm chores at age ten are followed by schooling, marriage in 1927, nearly thirty years at a packing house, and periods at home following surgery.\n    - At what ages or family stages are farm chores, schooling, marriage, and paid work described?\n    - Which childhood tasks resemble or differ from the later packing-house work?\n    - How are long service, surgeries, and motherhood placed within the employment account?\n    - What ideas of training, advancement, or retirement are stated or left unstated?",
-  "summary": "This is an oral history interview recorded with Mary Yankovik Grande in Denver in August 1989, when she was seventy-nine, looking back on her 1920 arrival at age ten from a peasant household in what was then Austria-Hungary (now Slovenia). From a child's vantage, she traces the slow transition from a subsistence household — her mother raising cattle, slaughtering pigs, bartering with neighbours — to a wage economy organised around coal mines, smelters, packing houses and Depression-era irregular work. Five threads follow that arc: the costs carried by the household (luggage stolen at Trieste, parochial school fees during the Depression, kin who shaped where the family paused along the road from Utah to Colorado); language as a gate to institutions (German as the door to old-country offices, written arithmetic as the route into American schoolrooms, English picked up because there was no German community to speak it with); the subsistence economy before the wage (pigs winter-slaughtered and cured, milk and eggs sold, barter across the river for clothing); the shape of paid work (the father's underground mining in Utah, his earlier Aspen stint, the husband's every-other-week Depression wage, her own three decades cutting meat for sausage scraps); and the body's withdrawal from paid work (a doctor ending the father's earning life, surgeries interrupting hers, her daughter medically retiring from the smokehouse). Thin or absent: the husband has no quoted voice of his own; the Depression is named as 'kind of rough' without prices or rations; the half-brother who stayed on the farm and the politics of post-1918 Yugoslavia are touched but not developed; and the cost of forgetting German — what it foreclosed — is named but left unexplored.",
-  "threads": [
-   {
-    "theme": "Costs carried by the household",
-    "claims": [
-     {
-      "claim": "The theft in Trieste happened before the ship sailed, leaving the pair without changes of clothes for the voyage.",
-      "anchor": "part of our clothes was stolen in Trieste",
-      "sid": "S035"
-     },
-     {
-      "claim": "The luggage vanished from a storage room where the mother had been told to leave it.",
-      "anchor": "they had my mother put the suitcases in the storage",
-      "sid": "S242"
-     },
-     {
-      "claim": "Many other travellers lost suitcases the same way, framing the loss as common rather than personal misfortune.",
-      "anchor": "Not only hers, a lot of others too",
-      "sid": "S243"
-     },
-     {
-      "claim": "The final leg of the transatlantic journey was a twenty-eight-mile bus ride from Price to Sunnyside.",
-      "anchor": "we had to take the bus twenty-eight miles to Sunnyside",
-      "sid": "S326"
-     },
-     {
-      "claim": "The first American home was a company-rented four-room double shared with another family of the same background.",
-      "anchor": "my dad rented a company four room house",
-      "sid": "S338"
-     },
-     {
-      "claim": "A maternal sister living on dry land near Greeley shaped where the family paused on the way to Denver.",
-      "anchor": "my mother's sister lived up on northeast of Greeley",
-      "sid": "S375"
-     },
-     {
-      "claim": "An uncle in Aspen dictated a month-long stop on the road from Utah.",
-      "anchor": "I had an uncle, my mother's brother, there",
-      "sid": "S391"
-     },
-     {
-      "claim": "Marriage stayed inside the same region: the husband came from the same area in the old country.",
-      "anchor": "He was from the same area as I was",
-      "sid": "S395"
-     },
-     {
-      "claim": "Parochial schooling was the route chosen for the daughters during Depression wage work.",
-      "anchor": "we sent them to parochial school",
-      "sid": "S408"
-     },
-     {
-      "claim": "The school fees came directly out of the household's reduced income.",
-      "anchor": "And naturally we had to pay",
-      "sid": "S409"
-     },
-     {
-      "claim": "Out-of-pocket fees are set against the later public provision of schooling.",
-      "anchor": "It wasn't like now that somebody else pays",
-      "sid": "S410"
-     }
-    ]
-   },
-   {
-    "theme": "Language as a gate to institutions",
-    "claims": [
-     {
-      "claim": "In the old country, German was effectively the price of getting anything done at an office.",
-      "anchor": "you almost had to learn how to speak German",
-      "sid": "S213"
-     },
-     {
-      "claim": "The German learned at village school had no community in Utah to keep it alive.",
-      "anchor": "I just kind of forgot it",
-      "sid": "S294"
-     },
-     {
-      "claim": "Neighbour children speaking broken Slovanian were the bridge into American social life.",
-      "anchor": "the kids could talk broken Slovanian, so we kind of got started",
-      "sid": "S339"
-     },
-     {
-      "claim": "Arithmetic offered a way to participate in school without needing spoken English.",
-      "anchor": "as far as figures you didn't have to talk",
-      "sid": "S342"
-     },
-     {
-      "claim": "Written work, not speech, carried the schoolchild through the first grades.",
-      "anchor": "You could just write, and it was good",
-      "sid": "S343"
-     },
-     {
-      "claim": "Quick English uptake is paired with an initial silence in the classroom.",
-      "anchor": "I couldn't speak, but I started learning very fast",
-      "sid": "S368"
-     }
-    ]
-   },
-   {
-    "theme": "Subsistence before the wage",
-    "claims": [
-     {
-      "claim": "Cattle were barter stock in the household economy, not sale stock.",
-      "anchor": "she raised some cattle and bartered with them",
-      "sid": "S042"
-     },
-     {
-      "claim": "The pig sty sat across the kitchen door, putting slaughter within the child's daily range.",
-      "anchor": "the pig sty was just across from the kitchen door",
-      "sid": "S064"
-     },
-     {
-      "claim": "Pigs were winter-slaughtered and the meat was cured for summer eating.",
-      "anchor": "They used to slaughter them in winter and save some meat",
-      "sid": "S074"
-     },
-     {
-      "claim": "Eggs, chickens, pigs, milk and cheese supplied the household without buying beef.",
-      "anchor": "we chickens, so there was chicken meat and eggs",
-      "sid": "S097"
-     },
-     {
-      "claim": "The mother's contribution to the household was selling milk, eggs and other products.",
-      "anchor": "my mother used to kind of sell milk and eggs",
-      "sid": "S141"
-     },
-     {
-      "claim": "Selling produce off the farm was kept limited because the farm itself was the year's livelihood.",
-      "anchor": "Not too much off the farm because that was our livelihood",
-      "sid": "S142"
-     },
-     {
-      "claim": "Seed for the following year had to be held back from sale or consumption.",
-      "anchor": "you had to keep some for the seeds for next year",
-      "sid": "S143"
-     },
-     {
-      "claim": "When the mother went to barter cattle she sometimes left the child overnight with neighbours.",
-      "anchor": "she bartered with the cattle, and sometimes I'd stay with the neighbors",
-      "sid": "S170"
-     },
-     {
-      "claim": "Trade with townspeople across the river for clothing was strictly barter, not cash.",
-      "anchor": "It would be a bartering",
-      "sid": "S240"
-     }
-    ]
-   },
-   {
-    "theme": "The shape of paid work",
-    "claims": [
-     {
-      "claim": "The father had been earning in the United States for nine years before the family followed.",
-      "anchor": "my father was here in the States since 1911",
-      "sid": "S041"
-     },
-     {
-      "claim": "The father's American work was underground, in coal mines around Utah.",
-      "anchor": "he was working in coal mines",
-      "sid": "S332"
-     },
-     {
-      "claim": "Before Utah, the father had also worked part-time in Aspen, Colorado.",
-      "anchor": "He worked part-time years before that in Aspen, Colorado",
-      "sid": "S334"
-     },
-     {
-      "claim": "In Denver, the smelter was the job the father could still manage after the mines.",
-      "anchor": "he got a job finally over at the smelter",
-      "sid": "S376"
-     },
-     {
-      "claim": "The husband's Depression-era earnings were so small they are described simply as 'not making much.'",
-      "anchor": "My husband wasn't making much",
-      "sid": "S407"
-     },
-     {
-      "claim": "The daily work was cutting pork and beef into scraps for sausage.",
-      "anchor": "Cutting up meat, pork and beef",
-      "sid": "S414"
-     }
-    ]
-   },
-   {
-    "theme": "When the body ends paid work",
-    "claims": [
-     {
-      "claim": "The father's failing health, not any layoff, ended the Utah years and rerouted the family to Colorado.",
-      "anchor": "his health went bad, and so we came to Colorado",
-      "sid": "S335"
-     },
-     {
-      "claim": "The smelter job lasted only a short while because the father's body could not sustain it.",
-      "anchor": "he worked there for a while, but couldn't work too long",
-      "sid": "S376"
-     },
-     {
-      "claim": "A doctor's verdict, not the father's own choice, ended his earning life.",
-      "anchor": "Finally the doctor said he couldn't work no more",
-      "sid": "S378"
-     },
-     {
-      "claim": "Surgical recoveries interrupted her packing-house years without ending them.",
-      "anchor": "I had to have different surgeries and I'd be home",
-      "sid": "S412"
-     },
-     {
-      "claim": "Her daughter left the smokehouse on medical grounds, not on retirement.",
-      "anchor": "she worked there until she had to give up medically",
-      "sid": "S416"
-     }
-    ]
-   }
-  ],
-  "totals": {
-   "s": 510,
-   "in": 34112,
-   "out": 62802
-  }
- },
- "GLM": {
-  "steps": {
-   "frame": {
-    "s": 2,
-    "in": 3309,
-    "out": 241,
-    "error": null
-   },
-   "angles": {
-    "s": 7,
-    "in": 7627,
-    "out": 973,
-    "error": null
-   },
-   "read": {
-    "s": 11,
-    "in": 11102,
-    "out": 715,
-    "error": null
-   },
-   "themes": {
-    "s": 2,
-    "in": 1130,
-    "out": 399,
-    "error": null
-   },
-   "doc": {
-    "s": 16,
-    "in": 11052,
-    "out": 2073,
-    "error": null
-   }
-  },
-  "pid": "p38ab1bd74a",
-  "mid": "m23db496d98",
-  "model": "glm-5-2",
-  "provider": "mistral",
-  "codes": {
-   "new": 12,
-   "reused": 0,
-   "hits": 34,
+   "hits": 31,
    "dropped_sids": []
   },
   "anchors": {
    "bound": 22,
-   "rebound": 1,
+   "rebound": 0,
    "unfound": 0
   },
   "dropped": [],
   "themes": [
    {
-    "name": "Gendered labour regimes before and after migration",
-    "gist": "Women's productive work shifts from heavy farm labour to domestic service after migration, while their informal commerce and subsistence contributions persist as ordinary, expected parts of household life."
+    "name": "Clustering by region of origin",
+    "gist": "Arrivals from the same European region settle together in the same American places, anchoring post-arrival life in shared origin (interview 4 only)."
    },
    {
-    "name": "Making a living across generations",
-    "gist": "Household survival across the family cycle depends on combining children's expected contributions, parents' industrial and farm labour, and new wage-earning strategies during economic crisis."
+    "name": "Making a living through continuity",
+    "gist": "Livelihood is built less through wages or mobility than through long-held workplaces, generations of women in the same trade, and farm-based exchange."
    },
    {
-    "name": "Migration's bureaucratic and material costs",
-    "gist": "Relocation requires navigating offices and approvals, replacing stolen belongings, and relying on regional networks of earlier settlers—all described as labour that must be expended before earning begins."
-   },
-   {
-    "name": "Subsistence and surplus in farm households",
-    "gist": "Farm families distinguish what they need to survive from what can be sold or traded, a distinction that structures women's labour and informal commerce."
+    "name": "What migration and work extract in body and home",
+    "gist": "The cost of arriving and of staying at work is paid in paperwork, lost belongings, damaged bodies, and a homeland never returned to."
    }
   ],
   "frame": {
    "kind": "interview",
-   "title": "Ellis Island Oral History: Mary Grande",
+   "title": "Mary Grande oral history interview",
    "display": "turns",
    "speakers": [
     [
@@ -389,155 +74,409 @@
     ],
     [
      "GRANDE",
-     "Mary Grande",
+     "Mary Yankovik Grande",
      "participant"
     ]
    ]
   },
-  "orientation": "A recorded oral history interview from the Ellis Island Oral History Project, interview number 414, tape DP-40. Andrew Phillips interviews Mary Grande, born Marija Yankovik in 1910 in what was then Austria-Hungary, later Yugoslavia, about her childhood, 1920 immigration to the United States with her mother, and subsequent life in America. The interview was recorded on August 28, 1989, in Denver, Colorado, running approximately fifty minutes. The transcript includes a brief interruption when Grande's daughter arrives partway through.",
-  "angles": "Where this material sits: Oral history of twentieth-century immigration and labour.\n\nAreas inside that: Women's paid and unpaid labour; Chain migration and settlement; Household economies under economic crisis; Immigrant women in meatpacking; Cross-generational economic transmission.\n\nWays into this material — places to look, not things already found:\n\nWomen's work moving from farm to factory\n    The mother's farm labour is described in detail, then the transition to housework and laundry in America, and Grande's own thirty-year packing-house career appears only near the end.\n    - Which kinds of work are named for women in each place, and which drop away?\n    - Where is women's work spoken of as a choice versus a necessity?\n    - How is the move from farm to wage labour narrated alongside the mother's adjustment?\n\nThe father's labour and its disappearance\n    The father is present from 1911, works in mining and smelting, but his health declines and the doctor says he can work no more, shifting economic burden onto others.\n    - What work is attributed to the father across the different locations?\n    - How is his declining health connected to specific kinds of labour?\n    - What happens to the household economy when he can no longer work?\n\nDepression-era household strategies\n    Grande names the Depression, her husband working every other week, parochial school costs, and her own eventual packing-house job as responses to that pressure.\n    - Which expenses are named and how are they prioritised against income?\n    - What sequence of decisions does Grande describe for getting through the Depression?\n    - Where does the Depression sit in the narrative relative to migration and marriage?\n\nBarter, cash, and the boundaries of livelihood\n    The mother barters cattle, eggs and milk for clothing in the village; food is kept for survival and seeds, and surplus is distinguished from what sustains the household through the year.\n    - Where is barter distinguished from sale, and what determines which is used?\n    - What goods cross between barter and cash economies?\n    - How is surplus defined against the household's own needs?\n\nChildren's labour inside the household economy\n    Grande caught blood at slaughter, helped chop wood, stayed with neighbours when her mother travelled to barter, and walked a mile to school — all described as normal.\n    - Which tasks are assigned to the child, and which does she describe as her own choice?\n    - How is children's labour spoken of alongside school attendance?\n    - Where does the child's labour substitute for absent adult labour?\n\nChain migration and ethnic settlement around work\n    The father comes first in 1911, sends tickets; relatives live in Sunnyside, Aspen, and Denver; Grande says people from the same area settle together and integrate.\n    - How are work opportunities and kin networks described as overlapping?\n    - What role do already-settled relatives play in finding housing or work?\n    - Where does the settlement narrative connect to specific industries or places?\n\nCosts embedded in the journey itself\n    Clothes are stolen in Trieste, someone buys replacements in London, the passport links mother and child, and the mother spends weeks going to courts and offices for approvals.\n    - What expenses and losses are named as part of travelling, apart from the ticket?\n    - How is bureaucratic effort described as a cost of migration?\n    - What does the stolen-clothing episode reveal about what was carried and why?\n\nInterruption and the second generation's labour\n    The daughter arrives mid-interview and is identified as having worked in the packing house with Grande until giving up medically, placing a second generation inside the same labour.\n    - How does the daughter's arrival change what is said about work?\n    - Where is the daughter's labour described as continuous with or different from the mother's?\n    - What does the daughter's medical exit from work signal about that labour?",
-  "summary": "This is a recorded oral history interview from the Ellis Island Oral History Project, conducted in Denver in 1989. Andrew Phillips interviews Mary Grande, born Marija Yankovik in 1910 in Austria-Hungary, about her childhood on a peasant farm, her 1920 migration to join her father in Utah, and her subsequent life in Colorado. The interview follows a roughly chronological arc: pre-war farm life, wartime displacement, the bureaucratic and material costs of departure, the journey, and decades of making a living in mining and meatpacking towns. A central narrative is the labour that migration demands and redistributes. Before departure, Grande's mother navigates courts and offices while her husband, already in America since 1911, earns and sends tickets. After arrival, her mother's heavy farm labour is replaced by housework, and Grande herself eventually spends thirty years in a packing house to sustain the household during the Depression. An unspoken narrative runs beneath the spoken one: women's productive work is treated as ordinary at every stage — but its content shifts dramatically, from butchering pigs and bartering cattle to washing laundry and cutting meat on an industrial line. The researcher's four themes each find footing here. The thread on gendered labour follows Grande's mother from bartering cattle in Yugoslavia to housework in Utah, while Grande's own childhood farm chores anticipate her adult wage work. The thread on making a living across generations traces how children's expected contributions, a father's declining mine and smelter labour, and a daughter's Depression-era packing-house wages layer together. The thread on migration's costs follows the offices, the stolen clothes, and the regional settlement in Utah and Colorado. The thread on subsistence and surplus follows the careful distinction between what the household keeps for seed and survival and what the mother sells or trades. What is thin: chain migration is noted but never explained — why so many from one region settled in mining Utah is asserted, not traced. What …",
+  "orientation": "A fifty-minute oral history interview recorded on August 28, 1989, in Denver, Colorado, as part of the Ellis Island Oral History Project (Interview 414, DP-40). Andrew Phillips interviews Mary Yankovik Grande, born 1910, who emigrated from what is now Slovenia (then Austria-Hungary) with her mother in August 1920 at age ten. The transcript was originally prepared by Nancy Vega in 1989 and reconceived by Chick Lemonick in February 1996, and was not reviewed. The conversation covers her peasant childhood home, family farm work, the transatlantic voyage via Trieste, arrival and early life in the United States, marriage, citizenship in 1932, and her long career in a packing house.",
+  "angles": "Where this material sits: History of twentieth-century European peasant migration and labor.\n\nAreas inside that: Women's work across rural and industrial settings; Settlement geography in the American West; Family economies, barter, and remittance; Bureaucracy, paperwork, and emigration; Bodily cost of work and of war.\n\nWays into this material — places to look, not things already found:\n\nFrom barter to a pay packet\n    The mother barters milk, eggs, and chickens for clothing and food; Mary is paid at the packing house; the daughter is paid in the smokehouse. The transcript records a shift in how a living is reckoned.\n    - Where in the transcript is bartering named, and where does it stop being named?\n    - What is said about the first pay packet, and what is left unsaid?\n    - Which transactions are given a price and which are not?\n\nThe body's account of working life\n    The father is told he cannot work any more, the daughter gives up the smokehouse medically, Mary lists surgeries between working years, and a niece loses hearing to cannon noise. Bodily limits surface around every workplace named.\n    - Where in the transcript does a body stop working, and what language carries that?\n    - Which jobs are described in terms of what they do to the worker?\n    - What is said about the surgery years, and what is passed over?\n\nThirty years, every other week\n    Mary names \"close to thirty years\" at the packing house and her husband \"worked every other week\" during the Depression; working time is measured in stretches rather than wages.\n    - How is the length of a working life measured in this transcript?\n    - Where does time interrupt work, and where does work interrupt time?\n    - What does \"close to thirty years\" let pass without being named?\n\nMother's work, daughter's work\n    The mother runs the farm, barters cattle, and sells dairy alone in Slovenia; Mary enters the packing house; her daughter Mitzi follows her in, then moves to the smokehouse. Women's labor forms a chain across two countries.\n    - Which kinds of work done by women are described in detail, and which only summarised?\n    - Where in the transcript does work pass from one woman to the next?\n    - What is said about pay, and what about the rest of the day?\n\nWhere Slovenians settled and why\n    Sunnyside, Greeley, Denver, and Aspen are named, and the speaker says \"it's a settlement\" when asked why people from her area cluster together. Place and livelihood are tied.\n    - Which places are named in connection to work, and which to family?\n    - What is said about why people stayed near each other?\n    - How does the route from Sunnyside to Denver run through particular jobs?\n\nCourts, offices, and the price of leaving\n    The mother must go to \"different courts and different offices,\" the oldest brother is taken by army service, and the brother meant to travel dies before they can leave. Leaving the farm itself has a procedural cost.\n    - What institutions are named, and what is said about what they required?\n    - Where does a brother disappear from the migration story?\n    - What is said about the passport and what it allowed the mother to do?\n\nLosses carried across the journey\n    Clothing is stolen in Trieste, a brother is killed before he can travel, the mother never returns, and a niece is left deaf by cannon noise. Costs that are not money recur through the transcript.\n    - Which absences are spoken of, and which are passed over in silence?\n    - What is said about the moment of theft in Trieste, and what is not?\n    - Where does the material name a cost that cannot be repaid?",
+  "summary": "What this interview foregrounds, beyond its biographical outline, is a working life built through three channels. Mary Yankovik Grande, born 1910 in what was then Austria-Hungary (now Slovenia), recounts emigrating at ten with her mother in August 1920 to join her father, who had worked in American coal mines since 1911; she and her family then made a long American working life in Utah coal country and, eventually, in a Denver packing house.\n\nThe first narrative is continuity of livelihood: her mother raised cattle and bartered milk and eggs on the Slovenian farm, and Grande herself worked nearly thirty years cutting meat at a single packing house, where her daughter also worked before being forced out on medical grounds. The second is regional clustering: arrivals from the same Slovenian region converged on the same American places — Sunnyside, Utah, then Denver — and Grande, asked why, answers with the single word \"settlement.\" The third is the bodily and homely cost: clothes stolen in Trieste, a brother killed in a wagon accident while reporting for army duty, a niece deafened by cannon fire on the home farm, a father medically retired from the mines, a mother who never returned home, and Grande herself repeatedly home for surgeries during her decades at the plant.\n\nWhat is thin or absent: the mother and father go unnamed as individuals; wages are never discussed; and the years between her 1927 marriage and the Depression pass in a single sentence.",
   "threads": [
    {
-    "theme": "Gendered labour regimes before and after migration",
+    "theme": "Clustering by region of origin",
     "claims": [
      {
-      "claim": "Grande's mother raised and bartered cattle herself while her husband was already in America, not working alongside him.",
-      "anchor": "she raised some cattle and bartered with them",
-      "sid": "S042"
+      "claim": "From Chicago onward, the Denver-bound passengers were the same people from the same region.",
+      "anchor": "from more or less the same area as we were",
+      "sid": "S318"
      },
      {
-      "claim": "The mother cut, sawed, and chopped firewood alone; Grande says she tried to help but was not much good.",
-      "anchor": "she would cut it up herself, saw and chop",
-      "sid": "S118"
+      "claim": "Fellow-travellers from the same region converged on one Utah town, not just one city.",
+      "anchor": "we all went to the same town in Utah",
+      "sid": "S325"
      },
      {
-      "claim": "Women doing heavy farm work and managing everything alone is called normal, not exceptional, for the community.",
-      "anchor": "Most all the women did similar work",
-      "sid": "S137"
+      "claim": "Even in Utah her family was housed alongside other Slovenian-origin strangers, not native-born Americans.",
+      "anchor": "the other family was similar in nationality as we were",
+      "sid": "S338"
      },
      {
-      "claim": "After migration, the mother's productive farm labour is replaced entirely by housework, laundry, and cooking.",
-      "anchor": "All we could do was housework and laundry",
-      "sid": "S359"
+      "claim": "The husband she married was also from the same region; matching origin closed the distance.",
+      "anchor": "He was from the same area as I was",
+      "sid": "S395"
      },
      {
-      "claim": "Grande's own shift from childhood farm chores to industrial wage labour goes unmarked: she moves from catching pig blood to cutting pork and beef in a packing house for thirty …",
-      "anchor": "Cutting up meat, pork and beef",
-      "sid": "S414"
-     }
-    ]
-   },
-   {
-    "theme": "Making a living across generations",
-    "claims": [
-     {
-      "claim": "Grande caught pig blood for sausage as a child — work she disliked but understood as her assigned job.",
-      "anchor": "that was part of my job",
-      "sid": "S081"
+      "claim": "She names what pulls the cluster together with a single word, then hedges its meaning.",
+      "anchor": "Well, it's a settlement",
+      "sid": "S401"
      },
      {
-      "claim": "Children were not driven to school by wagon because there was too much other farm work to be done.",
-      "anchor": "too much other work to be done",
-      "sid": "S167"
-     },
-     {
-      "claim": "The father's mine and smelter work ended as his health failed, forcing the family's relocation from Utah to Colorado.",
-      "anchor": "his health went bad, and so we came",
-      "sid": "S335"
-     },
-     {
-      "claim": "He tried outside work and the smelter, then the mine again, until a doctor said he could not work anymore.",
-      "anchor": "the doctor said he couldn't work no more",
-      "sid": "S378"
-     },
-     {
-      "claim": "During the Depression the husband worked only every other week while the children's parochial school still charged tuition.",
-      "anchor": "Worked every other week and the girls",
-      "sid": "S408"
-     },
-     {
-      "claim": "Grande took a packing-house job and worked there nearly thirty years, a wage-earning strategy prompted by reduced household income.",
-      "anchor": "I worked close to thirty years",
-      "sid": "S411"
-     },
-     {
-      "claim": "Her daughter later entered the same packing house and worked in the smokehouse until medical reasons forced her out.",
-      "anchor": "she worked there until she had to give up",
-      "sid": "S416"
-     }
-    ]
-   },
-   {
-    "theme": "Migration's bureaucratic and material costs",
-    "claims": [
-     {
-      "claim": "A man who spoke English and had returned from America bought replacement clothes in London so they had something to wear.",
-      "anchor": "he bought some clothes so we had",
-      "sid": "S038"
-     },
-     {
-      "claim": "The father had gone to America alone years earlier to earn a livelihood, intending to return, but never did.",
-      "anchor": "came to the States to make a livelihood",
-      "sid": "S138"
-     },
-     {
-      "claim": "Clothes were stolen while the mother's suitcases were held in storage in Trieste, a loss requiring replacement before the journey continued.",
-      "anchor": "they had my mother put the suitcases",
-      "sid": "S242"
-     },
-     {
-      "claim": "The father sent tickets, and the mother had to visit different places to get the travel approved.",
-      "anchor": "she had to go to different places",
-      "sid": "S255"
-     },
-     {
-      "claim": "The mother navigated courts, offices, and higher-ups' approvals as required labour before earning could begin.",
-      "anchor": "different courts and different offices",
-      "sid": "S275"
-     },
-     {
-      "claim": "In the final month before departure she was constantly travelling to different places for approvals.",
-      "anchor": "always coming or going to different",
-      "sid": "S278"
-     },
-     {
-      "claim": "After arrival, people from the same home region settled together in Utah, so newcomers could integrate with familiar neighbours.",
+      "claim": "Integration, for her, means clustering inward, not scattering outward.",
       "anchor": "they just like to integrate together",
       "sid": "S402"
      }
     ]
    },
    {
-    "theme": "Subsistence and surplus in farm households",
+    "theme": "Making a living through continuity",
     "claims": [
      {
-      "claim": "The mother sold milk, eggs, and other products, but kept most of the farm's output because it was the household's year-round livelihood.",
+      "claim": "The mother's livelihood before America was cattle raised for trade, never for wages.",
+      "anchor": "she raised some cattle and bartered with them",
+      "sid": "S042"
+     },
+     {
+      "claim": "When barter alone could not cover the year, milk and eggs filled the gap.",
+      "anchor": "my mother used to kind of sell milk and eggs",
+      "sid": "S141"
+     },
+     {
+      "claim": "The farm itself, not any crop or wage, is named as the year's living.",
       "anchor": "that was our livelihood throughout the year",
       "sid": "S142"
      },
      {
-      "claim": "Seed had to be reserved from the harvest for the next year's planting, a subsistence constraint on what could be traded.",
-      "anchor": "keep some for the seeds for next year",
-      "sid": "S143"
-     },
-     {
-      "claim": "The mother bartered cattle for other necessities, sometimes walking to distant places and leaving the child with neighbours overnight.",
-      "anchor": "she bartered with the cattle",
-      "sid": "S170"
-     },
-     {
-      "claim": "City residents had clothing but lacked food, so country families traded eggs, chicken, and milk for clothes in a barter arrangement.",
-      "anchor": "they would share clothing because",
+      "claim": "During wartime shortages, the barter economy meant clothing moved out and food moved in.",
+      "anchor": "they would share clothing because they had plenty of clothes",
       "sid": "S236"
+     },
+     {
+      "claim": "After years of scraping through the Depression, she settled into a single packing-house job that lasted nearly thirty years.",
+      "anchor": "I worked close to thirty years in it",
+      "sid": "S411"
+     },
+     {
+      "claim": "The work inside the house was cutting meat into sausage scraps; she names it bluntly.",
+      "anchor": "Cutting up meat, pork and beef",
+      "sid": "S414"
+     },
+     {
+      "claim": "Her daughter followed her into the same plant, then moved to the smokehouse within it.",
+      "anchor": "she came into the packing house and she worked with me",
+      "sid": "S416"
+     }
+    ]
+   },
+   {
+    "theme": "What migration and work extract in body and home",
+    "claims": [
+     {
+      "claim": "The first cost was paid in Trieste, before the ship: clothes stolen from their luggage.",
+      "anchor": "part of our clothes was stolen in Trieste",
+      "sid": "S035"
+     },
+     {
+      "claim": "Three days' wait was enough for the suitcases to vanish from depot storage.",
+      "anchor": "when she went to get them they were gone",
+      "sid": "S242"
+     },
+     {
+      "claim": "She does not know whether her brother fell or jumped from the wagon; only that he died.",
+      "anchor": "he fell or jumped or whatever, and he got killed",
+      "sid": "S265"
+     },
+     {
+      "claim": "Leaving required her mother to clear multiple courts and offices before any ticket was honored.",
+      "anchor": "she had to go through quite a bit of different courts",
+      "sid": "S275"
+     },
+     {
+      "claim": "The mother always hoped to return and never did; the wish outlived the war that blocked it.",
+      "anchor": "She always hoped to go back, but she never did",
+      "sid": "S361"
+     },
+     {
+      "claim": "The war reached her brother's farm in the body of his daughter, who lost hearing.",
+      "anchor": "one of his daughters got deaf and dumb",
+      "sid": "S365"
+     },
+     {
+      "claim": "Her father's working life was not ended by a strike or a wage, but by a doctor's order.",
+      "anchor": "the doctor said he couldn't work no more",
+      "sid": "S378"
+     },
+     {
+      "claim": "Her own thirty years in the packing house were broken open repeatedly by surgeries.",
+      "anchor": "I had to have different surgeries and I'd be home",
+      "sid": "S412"
+     },
+     {
+      "claim": "The daughter was pulled out of the plant by her own body, the way Mary's surgeries kept pulling her home.",
+      "anchor": "she had to give up medically on account of it",
+      "sid": "S416"
      }
     ]
    }
   ],
   "totals": {
-   "s": 38,
-   "in": 34220,
-   "out": 4401
+   "s": 294,
+   "in": 33800,
+   "out": 61396
+  }
+ },
+ "GLM": {
+  "steps": {
+   "frame": {
+    "s": 2,
+    "in": 3315,
+    "out": 250,
+    "error": null
+   },
+   "angles": {
+    "s": 9,
+    "in": 7632,
+    "out": 1423,
+    "error": null
+   },
+   "read": {
+    "s": 9,
+    "in": 11116,
+    "out": 1540,
+    "error": null
+   },
+   "themes": {
+    "s": 15,
+    "in": 1203,
+    "out": 850,
+    "error": null
+   },
+   "doc": {
+    "s": 37,
+    "in": 11134,
+    "out": 9167,
+    "error": null
+   }
+  },
+  "pid": "p19076886a4",
+  "mid": "m69e0431111",
+  "model": "glm-5-2",
+  "provider": "mistral",
+  "codes": {
+   "new": 12,
+   "reused": 0,
+   "hits": 30,
+   "dropped_sids": []
+  },
+  "anchors": {
+   "bound": 28,
+   "rebound": 0,
+   "unfound": 0
+  },
+  "dropped": [],
+  "themes": [
+   {
+    "name": "Employer-provided housing and ethnic clustering",
+    "gist": "Upon arrival, housing supplied by the employer places same-nationality families together, making settlement a condition of work and this material is from Mary Grande's Ellis Island Oral History only."
+   },
+   {
+    "name": "Farm obligation anchoring family members",
+    "gist": "Land and its associated duties keep some siblings from emigrating, whether through childhood farm tasks, military or farm obligations, or inheritance of the property that remains behind."
+   },
+   {
+    "name": "Migration as a staged family economy",
+    "gist": "A father's departure to earn abroad initiates a chain in which wages, tickets, and papers are sent back so the rest of the household can follow, at the cost of separation that spans years and war."
+   },
+   {
+    "name": "Self-provisioning and barter as livelihood",
+    "gist": "Households meet needs without cash by raising and curing their own livestock and by exchanging goods directly, with wartime scarcity intensifying barter between countryside and city."
+   },
+   {
+    "name": "Women's labor as the hidden cost of male absence",
+    "gist": "When the male earner leaves, women sustain the household through farm work and strenuous physical labor that is treated as ordinary rather than remarkable, and this material is from Mary Grande's Ellis Island Oral History only."
+   }
+  ],
+  "frame": {
+   "kind": "interview",
+   "title": "Mary Grande, Ellis Island Oral History, DP-40",
+   "display": "turns",
+   "speakers": [
+    [
+     "PHILLIPS",
+     "Andrew Phillips",
+     "interviewer"
+    ],
+    [
+     "GRANDE",
+     "Mary Grande",
+     "participant"
+    ]
+   ]
+  },
+  "orientation": "A recorded oral history interview conducted on August 28, 1989, in Denver, Colorado, as part of the Ellis Island Oral History Project. The interviewer, Andrew Phillips, speaks with Mary Grande, born in 1910, about her childhood in Yugoslavia and her immigration to the United States in 1920. The conversation covers her rural upbringing, the voyage to America, settling in the United States, family life, and work in a packing house. The transcript includes a brief interruption by Grande's daughter, Mitzi Stackhouse.",
+  "angles": "Where this material sits: Oral history of early twentieth-century immigration and labor.\n\nAreas inside that: Subsistence to wage labor transitions; Women's household and paid work; Chain migration and ethnic settlement; Health and work capacity; Family separation across borders.\n\nWays into this material — places to look, not things already found:\n\nFrom subsistence farming to wage work\n    The material moves from bartering cattle and eggs, curing meat, and chopping wood into smelter work, mining, and packing house labor, with the shift never narrated as a single decision.\n    - Where does the material mark the end of self-provisioning and the start of earning wages?\n    - Which survival skills from the farm are named again in the wage-work context, and which disappear?\n    - How is the loss of the farm and its animals spoken of alongside finding jobs?\n\nWomen's labor before and after migration\n    Grande's mother farmed, bartered, chopped wood, and did laundry; Grande cut meat in a packing house for thirty years, and her daughter joined her there. Women's work appears in every period named.\n    - Where does the material distinguish women's work from men's work, and where does it blur that line?\n    - How is the mother's farm labor compared to her later housework in the US?\n    - What does the material say about the daughter entering the same packing house as Grande?\n\nHealth as a cost of making a living\n    Grande's father's health ended his smelter and mine work; Grande's surgeries interrupted packing house work; her daughter gave up medically. Declining health appears each time work is discussed.\n    - Where does the material connect a specific job to a specific health consequence?\n    - What happens to household income when someone can no longer work?\n    - How is the decision to stop working attributed—to the worker, the doctor, or the family?\n\nFamily separation as economic arrangement\n    The father left in 1911 to earn in the States while the mother ran the farm; tickets and papers came later; one brother stayed for the army and inherited the property; separation spanned years and a war.\n    - Where does the material treat separation as planned and where as forced by circumstance?\n    - What is said about the property left behind and who received it?\n    - How are remittances or tickets from the father described in relation to the household economy?\n\nChain migration and ethnic settlement\n    Grande names an uncle in Aspen, a husband from the same area, and a Slovenian settlement around Denver, with the explanation that newcomers integrate where their people already are.\n    - Where does the material connect finding housing or work to already-settled relatives?\n    - How is the choice of Denver or Sunnyside attributed—to work, to kin, or to both?\n    - What role does shared language or origin play in the settlement described?\n\nChildhood work and adult work continuity\n    Grande caught blood from slaughtered pigs and helped on the farm as a child; as an adult she cut pork and beef for sausage in a packing house. Meat work bookends the material across two countries.\n    - Where does the material describe learning a skill as a child that reappears in paid work later?\n    - How is the child's reluctance or obligation framed beside the adult's acceptance of the same kind of labor?\n    - What does the material say about who taught these skills and who assigned them?\n\nBarter and cash across regimes\n    The village ran on bartering cattle, eggs, and clothing; wartime deepened barter between country and city; in the US everything shifts to wages. The material names this transition without pausing on it.\n    - Where does barter appear as a normal practice and where as a wartime necessity?\n    - How is the move to cash wages spoken of—as relief, loss, or neither?\n    - What survives of the barter mindset in the US settlement years described?",
+  "summary": "This is a recorded oral history interview from August 28, 1989, part of the Ellis Island Oral History Project. Andrew Phillips interviews Mary Grande (born Marija Yankovik in 1910) about her childhood in a peasant farming household in what was then Austria-Hungary and became Yugoslavia, her mother's solo management of the farm during her father's long absence in America, the family's emigration in 1920 when Grande was ten, and their settlement first in Utah coal-mining country and later in Colorado. The interview's strongest narrative is about the mother: left behind with a farm and children when the father went to the States in 1911, she ran the livestock, bartered for goods, chopped wood, and walked everywhere — all described as normal. A second narrative follows the staged family migration: father leaves to earn, war cuts off contact and support for years, then tickets and papers arrive nearly a decade later. A third traces how farm obligation and army service anchored two brothers in Yugoslavia while only Grande and her mother emigrated; one brother was released from the army not to emigrate but to take over the farm, and the property was eventually transferred to him. A fourth thread follows self-provisioning and barter — slaughtering pigs, curing meat, trading cattle — as the household's economic backbone, intensifying during wartime when rural food was swapped for urban clothing. A fifth thread follows employer-provided housing and ethnic clustering: the company house in Utah placed them beside a same-nationality family, and Denver's settlement pattern is explained as group integration. What is thin: Grande's thirty-year packing-house career — the researcher's central interest in making a living after arriving — receives only a few lines at the interview's end. The cost of that work is barely touched. The father's experience in America before 1920 is almost absent. The mother's feelings about emigration are guessed at by Grande, not stated by the mother herself.",
+  "threads": [
+   {
+    "theme": "Employer-provided housing and ethnic clustering",
+    "claims": [
+     {
+      "claim": "The company house Grande's father rented was a double shared with a family of the same nationality.",
+      "anchor": "my dad rented a company four room house",
+      "sid": "S338"
+     },
+     {
+      "claim": "The neighboring children spoke broken Slovenian, which let Grande begin picking up English word by word.",
+      "anchor": "the kids could talk broken Slovanian",
+      "sid": "S339"
+     },
+     {
+      "claim": "Grande names the Denver clustering pattern plainly: a settlement, where the same group draws more of its own.",
+      "anchor": "it's a settlement.",
+      "sid": "S401"
+     },
+     {
+      "claim": "The motive for ethnic clustering is stated as simple preference — they want to integrate among themselves.",
+      "anchor": "they just like to integrate together",
+      "sid": "S402"
+     }
+    ]
+   },
+   {
+    "theme": "Farm obligation anchoring family members",
+    "claims": [
+     {
+      "claim": "As a child, Grande was assigned to catch blood at pig slaughter, a duty she disliked but could not refuse.",
+      "anchor": "I had to catch the blood",
+      "sid": "S080"
+     },
+     {
+      "claim": "She held the pan herself while the hired man killed the pig; the blood became sausage the same day.",
+      "anchor": "I had to hold the pan there and catch the blood",
+      "sid": "S084"
+     },
+     {
+      "claim": "Her oldest brother was blocked from emigrating by a three-year army obligation that kept him in Yugoslavia.",
+      "anchor": "my oldest brother, he had to go in the army",
+      "sid": "S261"
+     },
+     {
+      "claim": "The second brother was released from the army early not to emigrate but to take over the farm.",
+      "anchor": "So then this one got to come from the army earlier",
+      "sid": "S266"
+     },
+     {
+      "claim": "The farm property was eventually transferred to the brother who stayed, confirming the land anchored him permanently.",
+      "anchor": "She gave the property over to him.",
+      "sid": "S363"
+     }
+    ]
+   },
+   {
+    "theme": "Migration as a staged family economy",
+    "claims": [
+     {
+      "claim": "The father departed for the States in 1911, leaving the household behind for nine years before they followed.",
+      "anchor": "my father was here in the States since 1911",
+      "sid": "S041"
+     },
+     {
+      "claim": "Men commonly went to America to earn and planned to return, though many never did come back.",
+      "anchor": "came to the States to make a livelihood",
+      "sid": "S138"
+     },
+     {
+      "claim": "During the war, even fathers already abroad could not send help or maintain contact back and forth.",
+      "anchor": "But during the wartime they couldn't help back and forth",
+      "sid": "S140"
+     },
+     {
+      "claim": "After the war, the father's letters about coming to America excited Grande, though she doubts her mother shared the feeling.",
+      "anchor": "when my dad started writing about coming to the States",
+      "sid": "S173"
+     },
+     {
+      "claim": "The father sent tickets from America; the mother then had to secure approvals from various offices and courts.",
+      "anchor": "he sent us the tickets",
+      "sid": "S254"
+     },
+     {
+      "claim": "The mother traveled to different places to get the papers approved, a process that filled the final month before departure.",
+      "anchor": "she had to go to different places to get it approved",
+      "sid": "S255"
+     }
+    ]
+   },
+   {
+    "theme": "Self-provisioning and barter as livelihood",
+    "claims": [
+     {
+      "claim": "The mother raised cattle and bartered with them, making exchange — not sale — part of her farming livelihood.",
+      "anchor": "she raised some cattle and bartered with them",
+      "sid": "S042"
+     },
+     {
+      "claim": "Pigs were slaughtered in winter and the meat saved and cured for summer, stretching one slaughter across seasons.",
+      "anchor": "They used to slaughter them in winter and save some meat",
+      "sid": "S074"
+     },
+     {
+      "claim": "Curing required only salt, water, rocks, and smoke — no shops, no cash, entirely household production.",
+      "anchor": "salt and water and pack it, put some rocks on it",
+      "sid": "S078"
+     },
+     {
+      "claim": "Leftover meat became smoked sausage, kept for special occasions or to feed hired help on the farm.",
+      "anchor": "they'd make smoked sausage and they'd smoke them",
+      "sid": "S087"
+     },
+     {
+      "claim": "The mother bartered cattle at different places, sometimes leaving the child overnight with neighbors to make the trip.",
+      "anchor": "she bartered with the cattle",
+      "sid": "S170"
+     },
+     {
+      "claim": "City people across the river had no food, while country households had more — the asymmetry drove exchange.",
+      "anchor": "they didn't have food, and we had more food",
+      "sid": "S235"
+     },
+     {
+      "claim": "Urban families traded clothing for rural food: they had plenty of clothes but could not get food.",
+      "anchor": "they would share clothing because they had plenty of clothes",
+      "sid": "S236"
+     },
+     {
+      "claim": "When asked whether money changed hands, Grande says no: it was bartering, pure goods for goods.",
+      "anchor": "It would be a bartering.",
+      "sid": "S240"
+     }
+    ]
+   },
+   {
+    "theme": "Women's labor as the hidden cost of male absence",
+    "claims": [
+     {
+      "claim": "The mother cut, sawed, and chopped all the firewood herself, with no help until Grande was older.",
+      "anchor": "But she would cut it up herself, saw and chop it",
+      "sid": "S118"
+     },
+     {
+      "claim": "Asked whether such strenuous labor by a woman was unusual, Grande answers twice: normal, normal.",
+      "anchor": "Normal, normal.",
+      "sid": "S136"
+     },
+     {
+      "claim": "Most women whose husbands had gone to America did similar farm work and took care of everything alone.",
+      "anchor": "Most all the women did similar work",
+      "sid": "S137"
+     },
+     {
+      "claim": "The mother sold milk and eggs to provide, carefully keeping enough for seed and the household's yearly livelihood.",
+      "anchor": "my mother used to kind of sell milk and eggs",
+      "sid": "S141"
+     },
+     {
+      "claim": "Every bartering trip was made on foot — no transportation at all — and all of that walking was hers.",
+      "anchor": "all that she done, all of that walking",
+      "sid": "S171"
+     }
+    ]
+   }
+  ],
+  "totals": {
+   "s": 72,
+   "in": 34400,
+   "out": 13230
   }
  }
 }
