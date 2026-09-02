@@ -108,17 +108,16 @@ def test_a_merge_into_a_theme_that_is_not_live_is_refused(conn, project, model):
     assert conn.execute("SELECT status FROM theme WHERE id=?", (a,)).fetchone()[0] == "live"
 
 
-def test_the_codebook_shows_how_widely_a_code_spans_but_never_where(conn, project, grande, rodwin,
-                                                                     model):
-    """Counts, not names. Handed material titles beside each code, the theme step wrote them back
-    into gists as 'absent from the bakery interview' — a conclusion in a definition's slot."""
+def test_the_codebook_shown_to_themes_says_nothing_about_where(conn, project, grande, rodwin,
+                                                               model):
+    """Shown titles, the theme step wrote 'absent from the bakery interview'; shown counts, it
+    wrote 'found in one of two materials'. Whatever spread it sees, it echoes into the gist. So
+    it sees names and definitions and nothing else — a fact never shown cannot leak."""
     from app.engine import themes
-    store.save_codes(conn, project, grande, [{"name": "Work", "definition": "d", "sids": ["S050", "S060"]}])
-    store.save_codes(conn, project, rodwin, [{"name": "Work", "definition": "d", "sids": ["S070"]}])
+    store.save_codes(conn, project, grande, [{"name": "Work", "definition": "making a living", "sids": ["S050", "S060"]}])
+    store.save_codes(conn, project, rodwin, [{"name": "Work", "definition": "making a living", "sids": ["S070"]}])
     block = themes._codebook_block(conn, project)
-    assert "marked in 2 of 2 materials, 3 passages" in block
-    for m in store.materials(conn, project):
-        assert (m["title"] or m["name"]) not in block
+    assert block == "- Work — making a living"
 
 
 def test_a_full_theme_set_can_turn_over(conn, project, model):
@@ -134,16 +133,3 @@ def test_a_full_theme_set_can_turn_over(conn, project, model):
     live = {t["name"] for t in store.live_themes(conn, project)}
     assert "Brand new" in live and "T0" not in live
     assert len(live) == themes.MAX_THEMES
-
-
-def test_the_codebook_shown_to_themes_carries_counts_not_material_names(conn, analysed):
-    """Handed material titles, the theme step wrote them straight back into gists — 'absent from
-    the bakery interview' — a conclusion in the slot meant for a definition. Counts are
-    structure; a title is an invitation."""
-    from app.engine import themes
-    pid = analysed["pid"]
-    store.save_codes(conn, pid, analysed["grande"], [{"name": "Crossing", "definition": "d", "sids": ["S050"]}])
-    block = themes._codebook_block(conn, pid)
-    for m in store.materials(conn, pid):
-        assert (m["title"] or m["name"]) not in block
-    assert "marked in 1 of 2 materials, 1 passages" in block

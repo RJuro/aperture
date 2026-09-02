@@ -35,26 +35,19 @@ def _themes_block(conn: sqlite3.Connection, rows: list[sqlite3.Row]) -> str:
 
 
 def _codebook_block(conn: sqlite3.Connection, pid: str) -> str:
+    """Names and definitions. Nothing about where a code was found or how often.
+
+    Three prompt rules in a row failed to keep location out of the gists. Shown material titles,
+    the model wrote "absent from the bakery interview"; shown counts instead, it wrote "found in
+    one of two materials". Whatever spread it is given, it echoes. So it is given none: grouping
+    codes into themes is a judgement about meaning, and where a theme reaches is the account's
+    conclusion, written later over the evidence. Remove the information and there is nothing to
+    echo — a rule the model must obey is weaker than a fact it never sees.
+    """
     codes = store.codebook(conn, pid)
     if not codes:
         return "The codebook is empty; nothing has been read yet."
-    # Spread as counts, never as names. Handed material titles, the model wrote them straight
-    # back into gists — "absent from the bakery interview" — which is a conclusion in the slot
-    # meant for a definition. "marked in 2 of 3 materials, 7 passages" is structure; a title is
-    # an invitation. (It is also what keeps this block flat at fifty materials.)
-    n_mats = len(store.materials(conn, pid))
-    counts: dict[str, dict[str, int]] = {}
-    for m in store.materials(conn, pid):
-        for h in store.hits(conn, m["id"]):
-            counts.setdefault(h["id"], {})
-            counts[h["id"]][m["id"]] = counts[h["id"]].get(m["id"], 0) + 1
-    out = []
-    for c in codes:
-        where = counts.get(c["id"]) or {}
-        spread = (f"marked in {len(where)} of {n_mats} materials, {sum(where.values())} passages"
-                  if where else "no passages yet")
-        out.append(f"- {c['name']} — {c['definition'] or 'no definition recorded'}\n  {spread}")
-    return "\n".join(out)
+    return "\n".join(f"- {c['name']} — {c['definition'] or 'no definition recorded'}" for c in codes)
 
 
 def _material_block(conn: sqlite3.Connection, mid: str | None) -> str:
