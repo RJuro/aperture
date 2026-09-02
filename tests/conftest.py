@@ -23,6 +23,10 @@ def _isolated(monkeypatch, tmp_path):
     monkeypatch.delenv("APERTURE_PIN", raising=False)
     monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
     monkeypatch.setenv("MINIMAX_API_KEY", "test-key-not-used")
+    # A developer's .env is loaded at import; the suite must not read it, or a local model
+    # override silently changes what the tests are asserting about.
+    for leak in ("APERTURE_MODEL", "APERTURE_BASE_URL", "APERTURE_RECORD", "APERTURE_REPLAY"):
+        monkeypatch.delenv(leak, raising=False)
 
 
 @pytest.fixture

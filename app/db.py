@@ -92,6 +92,27 @@ CREATE INDEX IF NOT EXISTS ix_run_project ON run(project_id, started);
 """
 
 
+def load_env() -> None:
+    """Read a gitignored `.env` beside the repo root into the environment, without a dependency.
+
+    A real environment variable always wins: production sets them in Coolify and must not be
+    overridden by a file that happened to ship. Called once at import, so any entry point — the
+    server, a script, a test — sees the same configuration.
+    """
+    path = Path(__file__).resolve().parent.parent / ".env"
+    if not path.is_file():
+        return
+    for raw in path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env()
+
+
 def data_dir() -> Path:
     d = Path(os.environ.get("APERTURE_DATA_DIR") or Path(__file__).resolve().parent.parent / "data")
     d.mkdir(parents=True, exist_ok=True)
