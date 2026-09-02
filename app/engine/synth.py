@@ -35,9 +35,19 @@ _CITE = re.compile(r"\s*\[([^\[\]]+)\]")
 
 def words(text, cap: int) -> str:
     """A cap the prompt also states as a number. Both, always: a cap only in the prompt is a
-    request, and a cap only in Python is a surprise."""
+    request, and a cap only in Python is a surprise.
+
+    Over-long text is cut back to the last sentence that fits, not to the last word. Cutting mid
+    sentence produced summaries ending "What is thin: ... What …" — a paragraph the researcher
+    reads first, ending in the middle of the clause that was about to say what was missing.
+    """
     t = str(text or "").strip()
-    return t if len(t.split()) <= cap else " ".join(t.split()[:cap]) + " …"
+    if len(t.split()) <= cap:
+        return t
+    kept = " ".join(t.split()[:cap])
+    end = max(kept.rfind(". "), kept.rfind("! "), kept.rfind("? "))
+    # Only fall back to a hard cut if trimming to a sentence would throw away most of the text.
+    return kept[:end + 1] if end > len(kept) * 0.6 else kept + " …"
 
 
 def sid_num(sid) -> str:

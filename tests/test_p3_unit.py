@@ -119,3 +119,20 @@ def test_long_material_is_chunked_and_nothing_is_lost():
     got = check.chunks(passages, budget=1000)
     assert len(got) == 10
     assert [p for c in got for p in c] == passages
+
+
+def test_an_over_long_text_is_cut_back_to_a_whole_sentence():
+    """The summary is the first thing a researcher reads. Cutting it at the word cap ended one
+    real run with "What is thin: ... What …" — mid-clause, in the sentence about to say what the
+    reading had missed."""
+    text = ("One sentence here. Two sentences here. Three sentences here. "
+            "And a fourth that runs past the cap and should not survive half-said.")
+    out = synth.words(text, 14)
+    assert out.endswith(".")
+    assert "…" not in out
+    assert out == "One sentence here. Two sentences here. Three sentences here."
+
+
+def test_a_text_with_no_sentence_break_still_gets_cut_rather_than_kept_whole():
+    out = synth.words("word " * 50, 10)
+    assert out.endswith("…") and len(out.split()) == 11
