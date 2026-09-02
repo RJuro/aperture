@@ -75,7 +75,7 @@ def cite(text: str, index: dict, pid: str) -> Markup:
                 continue
             out.append(f'<span class="summary">{_esc(part[at:m.start()])}</span>')
             out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
-                       f'?thread={t["theme_id"]}#{t["sid"]}">{t["sid"]}</a>')
+                       f'?theme={t["theme_id"]}#{t["sid"]}">{t["sid"]}</a>')
             at = m.end()
         out.append(f'<span class="summary">{_esc(part[at:])}</span>')
         return "".join(out)
@@ -244,12 +244,22 @@ def project_page(conn, pid: str) -> dict:
     for m in mats:
         m["derivation"] = derivation(conn, m["id"])
         m["out_of_date"] = m["id"] in stale
+    # One query for the whole grid rather than themes x materials calls to `thread`: at twelve
+    # themes and fifty materials that loop was six hundred queries to render a table of counts.
+    counts: dict[tuple[str, str], int] = {}
+    for r in conn.execute(
+            "SELECT theme_id, material_id, COUNT(*) AS n FROM moment "
+            "WHERE status='live' GROUP BY theme_id, material_id"):
+        counts[(r["theme_id"], r["material_id"])] = r["n"]
     themes = []
     for t in store.live_themes(conn, pid):
         row = dict(t)
-        row["columns"] = [{"material": m,
-                           "moments": [dict(x) for x in store.thread(conn, m["id"], t["id"])]}
+        row["columns"] = [{"material_id": m["id"], "material": m,
+                           "moments": [None] * counts.get((t["id"], m["id"]), 0)}
                           for m in mats]
+        carried = sum(1 for c in row["columns"] if c["moments"])
+        row["derivation"] = (f'{carried} of {len(mats)} materials · '
+                             f'{sum(len(c["moments"]) for c in row["columns"])} claims')
         themes.append(row)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     summary = _row(store.get_summary(conn, "project", pid))
@@ -287,6 +297,38 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
             "speakers": [dict(x) for x in store.speakers(conn, mid)],
             "blocks": blocks(conn, mid, mat.get("display") or "plain", quotes),
             "checks": _checks(conn, pid, mid)}
+
+
+def theme_page(conn, pid: str, tid: str) -> dict:
+    """One theme across the whole corpus — the level the analysis is actually written up at.
+
+    Before this page a theme was a name, forty words, and a row of table cells: at fifty
+    materials it would have carried four hundred claims and still forty words. The account is the
+    prose; the coverage line is the derivation; and the materials WITHOUT the theme are named,
+    because at corpus level absence is as much a finding as presence and nothing else shows it.
+    """
+    from .engine import account
+
+    p = store.project(conn, pid)
+    t = conn.execute("SELECT * FROM theme WHERE id=? AND project_id=?", (tid, pid)).fetchone()
+    if p is None or t is None:
+        return {}
+    cover = account.coverage(conn, pid, tid)
+    carrying, absent = [], []
+    for m in cover["per_material"]:
+        row = dict(m)
+        if m["claims"]:
+            row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], tid)]
+            carrying.append(row)
+        else:
+            absent.append(row)
+    summary = _row(store.get_summary(conn, "theme", tid))
+    return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
+            "coverage": cover, "carrying": carrying, "absent": absent, "summary": summary,
+            "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
+            "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
+                           f' · {cover["claims"]} claims'),
+            "codes": [dict(c) for c in store.theme_codes(conn, tid)]}
 
 
 def export(conn, pid: str) -> dict:

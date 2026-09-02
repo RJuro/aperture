@@ -128,7 +128,7 @@ def test_a_project_claim_links_to_the_material_it_rests_on(conn, analysed, clien
     store.save_summary(conn, "project", analysed["pid"], "reading",
                        f"Work and the crossing are one story ({mo['id']}), told twice.")
     html = client.get(f"/p/{analysed['pid']}").text
-    assert f'?thread={mo["theme_id"]}#{mo["sid"]}' in html
+    assert f'?theme={mo["theme_id"]}#{mo["sid"]}' in html
     assert f'/m/{analysed["grande"]}' in html
     # The link is the bare id: the model writes its own brackets around a run of
     # citations, and adding another pair inside them rendered [[S255], [S275]].

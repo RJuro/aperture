@@ -83,3 +83,10 @@ summary { cursor: pointer; color: var(--dim) }
 .provisional { max-width: 34rem; color: var(--dim); font-size: .85rem; margin: 0 0 .4em; }
 
 .row.inline { display: inline-flex; gap: .4rem; align-items: baseline; margin-left: .3rem }
+
+/* The grid must never scroll the page sideways: it is one element that can overflow, so it
+   carries its own scroller. Beyond a handful of materials the counts link out to the theme. */
+.scroller { overflow-x: auto; max-width: 100% }
+.themes td { text-align: center; font-variant-numeric: tabular-nums }
+.carries { margin: 0 0 1.6rem }
+.carries h3 { margin: 0 0 .4rem; font-size: 1rem }

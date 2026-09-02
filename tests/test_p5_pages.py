@@ -41,7 +41,7 @@ def strip_material(html: str) -> str:
 def test_every_live_moment_reaches_its_material_page_claim_and_quote(client, conn, analysed):
     for mid in (analysed["grande"], analysed["rodwin"]):
         for tid in analysed["themes"].values():
-            html = client.get(f"/p/{analysed['pid']}/m/{mid}?thread={tid}").text
+            html = client.get(f"/p/{analysed['pid']}/m/{mid}?theme={tid}").text
             for m in store.thread(conn, mid, tid):
                 assert m["claim"] in html, f"claim missing: {m['claim']}"
                 assert m["anchor"] in html, f"quote missing: {m['anchor']}"
@@ -49,7 +49,7 @@ def test_every_live_moment_reaches_its_material_page_claim_and_quote(client, con
 
 def test_every_quote_is_marked_inside_the_material_at_its_own_sentence(client, conn, analysed):
     tid = list(analysed["themes"].values())[0]
-    html = client.get(f"/p/{analysed['pid']}/m/{analysed['grande']}?thread={tid}").text
+    html = client.get(f"/p/{analysed['pid']}/m/{analysed['grande']}?theme={tid}").text
     marks = re.findall(r"<mark[^>]*>(.*?)</mark>", html, re.S)
     for m in store.thread(conn, analysed["grande"], tid):
         assert any(m["anchor"] in x for x in marks), f"not highlighted: {m['anchor']}"
@@ -75,13 +75,43 @@ def test_the_reading_summary_wins_and_the_orientation_shows_before_it_exists(cli
 
 
 def test_the_project_page_is_themes_by_material(client, conn, analysed):
+    """The grid carries counts that link, not every claim inline. At twelve themes and fifty
+    materials the old table was 4,800 claim links and scrolled the whole page sideways; a count
+    is legible, and the claims live on the theme's page and the material's."""
     html = client.get(f"/p/{analysed['pid']}").text
     for name, tid in analysed["themes"].items():
         assert name in html
+        assert f"/t/{tid}" in html, "a theme's name must open the theme"
         for mid in (analysed["grande"], analysed["rodwin"]):
-            first = store.thread(conn, mid, tid)[0]
-            assert first["claim"] in html
-            assert f"/m/{mid}" in html and f"thread={tid}" in html
+            n = len(store.thread(conn, mid, tid))
+            assert f'?theme={tid}">{n}</a>' in html
+    assert f"of {len(store.materials(conn, analysed['pid']))} materials" in html
+
+
+def test_a_theme_has_a_page_of_its_own(client, conn, analysed):
+    """The level a thematic analysis is written up at. Before it, a theme was a name, a gist and
+    a row of cells — at fifty materials, four hundred claims and forty words about them."""
+    pid = analysed["pid"]
+    tid = list(analysed["themes"].values())[0]
+    html = client.get(f"/p/{pid}/t/{tid}").text
+    for mid in (analysed["grande"], analysed["rodwin"]):
+        for m in store.thread(conn, mid, tid):
+            assert m["claim"] in html and m["anchor"] in html
+    assert "of 2 materials" in html
+
+
+def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, conn, analysed):
+    """Absence at corpus level is a finding. An empty cell in a grid says nothing; a named
+    material under "where it does not" says the reading looked and claimed nothing."""
+    pid = analysed["pid"]
+    tid = list(analysed["themes"].values())[0]
+    conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
+                 (analysed["rodwin"], tid))
+    conn.commit()
+    html = client.get(f"/p/{pid}/t/{tid}").text
+    assert "Where it does not" in html
+    row = store.material(conn, analysed["rodwin"])
+    assert (row["title"] or row["name"]) in html
 
 
 def test_the_app_does_not_speak_our_vocabulary(client, analysed):

@@ -55,6 +55,11 @@ def project(pid: str) -> str:
     return _render("project.html", context.project_page(connection(), pid))
 
 
+@router.get("/p/{pid}/t/{tid}", response_class=HTMLResponse)
+def theme(pid: str, tid: str) -> str:
+    return _render("theme.html", context.theme_page(connection(), pid, tid))
+
+
 @router.get("/p/{pid}/export.md")
 def export(pid: str) -> Response:
     body = _render("export.md", context.export(connection(), pid))
@@ -62,5 +67,5 @@ def export(pid: str) -> Response:
 
 
 @router.get("/p/{pid}/m/{mid}", response_class=HTMLResponse)
-def material(pid: str, mid: str, thread: str | None = None) -> str:
-    return _render("material.html", context.material_page(connection(), pid, mid, thread))
+def material(pid: str, mid: str, theme: str | None = None) -> str:
+    return _render("material.html", context.material_page(connection(), pid, mid, theme))

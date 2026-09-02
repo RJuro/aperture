@@ -31,7 +31,7 @@ of the material, written from its shape.</p>{% endif %}
 <nav class="stack">
 {% for c in cards %}
   <a class="gist card{% if selected and c.id == selected.id %} on{% endif %}"
-     href="/p/{{ project.id }}/m/{{ material.id }}?thread={{ c.id }}">{{ c.name | txt }}
+     href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }}
      · {{ c.moments | length }} claims · {{ c.gist | txt }}</a>
 {% endfor %}
 </nav>

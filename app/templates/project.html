@@ -38,23 +38,21 @@
 
 <h2>Themes</h2>
 {% if themes %}
+<div class="scroller">
 <table class="themes">
   <tr><th></th>{% for m in materials %}<th class="material">{{ (m.title or m.name) | txt }}</th>{% endfor %}</tr>
 {% for t in themes %}
   <tr>
-    <th class="gist">{{ t.name | txt }}<br><span>{{ t.gist | txt }}</span></th>
-    {% for col in t.columns %}
-    <td>
-      <ul class="claims">
-      {% for x in col.moments %}
-        <li><a class="claim" href="/p/{{ project.id }}/m/{{ col.material.id }}?thread={{ t.id }}#{{ x.sid }}">{{ x.claim | txt }}</a></li>
-      {% endfor %}
-      </ul>
-    </td>
-    {% endfor %}
+    <th class="gist"><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a>
+        <br><span>{{ t.gist | txt }}</span>
+        <br><span class="dim">{{ t.derivation }}</span></th>
+  {% for col in t.columns %}
+    <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim">—</span>{% endif %}</td>
+  {% endfor %}
   </tr>
 {% endfor %}
 </table>
+</div>
 {% else %}
 <p class="dim">Nothing yet.</p>
 {% endif %}
