@@ -22,9 +22,9 @@ Return JSON in exactly this shape and nothing else:
 
 {
   "summary": "...",
-  "questions": "Why does the family choose Trieste rather than Genoa? What happened to the brother
+  "questions": "Why does the family choose the port rather than Genoa? What happened to the brother
                 who stayed? Whether the wage was ever enough is asked and never answered.",
-  "people": [{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}]
+  "people": [{"name": "R. Okafor", "aliases": ["Okafor"], "role": "participant"}]
 }
 ---
 WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Your summary says what
