@@ -24,3 +24,16 @@ A prompt template is universal. A slot may hold only the material, validated str
 researcher's verbatim words — never prose the system wrote about the corpus. The one
 self-prompting slot carries questions, not findings. Conclusions flow up; only questions flow
 forward. A gist defines; an account concludes.
+
+## Postscript: the gist that would not stop concluding
+
+The definitional rule alone did not hold. Shown material titles, THEMES wrote *"absent from the
+bakery interview"*; shown counts instead, it wrote *"found in one of two materials"*. Three rules
+at the top of the prompt did not stop it — and one rule lower down, inherited from the first draft,
+actually instructed it. The fix that held was not a fourth rule: THEMES is now shown names and
+definitions only, nothing about where or how often. Re-run at two materials, 0 of 9 gists located
+themselves.
+
+The lesson generalises and is worth more than the fix: **when a slot keeps leaking a conclusion,
+remove the information rather than add a rule.** A fact the model never sees cannot leak; a rule
+it must obey can.
