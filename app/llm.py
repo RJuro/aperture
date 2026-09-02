@@ -27,9 +27,13 @@ from pathlib import Path
 
 import httpx
 
+# base url · key variable · default model · default reasoning effort
+# M3 reasons by default and takes no effort parameter. GLM on Mistral reasons only when asked:
+# left alone it answered a full interview in 4.4k output tokens against M3's 62.8k and found
+# a third fewer claims, so "off" is not a neutral default here — it is a thinner reading.
 PROVIDERS = {
-    "minimax": ("https://api.minimaxi.com/v1", "MINIMAX_API_KEY", "MiniMax-M3"),
-    "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY", "glm-5-2"),
+    "minimax": ("https://api.minimaxi.com/v1", "MINIMAX_API_KEY", "MiniMax-M3", ""),
+    "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY", "glm-5-2", "high"),
 }
 DEFAULT_PROVIDER = "minimax"
 IDLE_TIMEOUT = 180.0
@@ -56,8 +60,16 @@ def model() -> str:
     return os.environ.get("APERTURE_MODEL") or PROVIDERS[provider()][2]
 
 
+def reasoning() -> str:
+    """How hard the model should think, where the provider takes an instruction. `off` sends
+    nothing; a provider whose default is already to reason is left alone."""
+    v = os.environ.get("APERTURE_REASONING")
+    v = PROVIDERS[provider()][3] if v is None else v.strip().lower()
+    return "" if v in ("", "off", "none", "default") else v
+
+
 def _endpoint() -> tuple[str, str]:
-    base_default, key_env, _ = PROVIDERS[provider()]
+    base_default, key_env, _, _ = PROVIDERS[provider()]
     base = os.environ.get("APERTURE_BASE_URL") or base_default
     key = os.environ.get(key_env, "").strip()
     if not key:
@@ -68,6 +80,22 @@ def _endpoint() -> tuple[str, str]:
 def _key(label: str, system: str, user: str) -> str:
     h = hashlib.sha256(f"{label}\x00{system}\x00{user}".encode()).hexdigest()[:16]
     return f"{label or 'call'}-{h}"
+
+
+def _content(delta) -> str:
+    """The answer out of one streamed delta, whatever shape the provider sends it in.
+
+    A model that reasons may return content as a list of typed blocks rather than a string —
+    a `thinking` block and a `text` block. Only the text is the answer; the reasoning is
+    discarded here exactly as `<think>...</think>` is discarded below. Joining the blocks
+    blindly would splice the model's private deliberation into the JSON it is trying to emit.
+    """
+    if isinstance(delta, str):
+        return delta
+    if isinstance(delta, list):
+        return "".join(b.get("text") or "" for b in delta
+                       if isinstance(b, dict) and b.get("type") in (None, "text"))
+    return ""
 
 
 def parse(raw: str) -> dict:
@@ -96,6 +124,8 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
     body = {"model": model(), "stream": True, "stream_options": {"include_usage": True},
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}]}
+    if effort := reasoning():
+        body["reasoning_effort"] = effort
     chunks: list[str] = []
     with httpx.Client(timeout=httpx.Timeout(30.0, read=timeout or IDLE_TIMEOUT)) as client:
         with client.stream("POST", f"{base}/chat/completions",
@@ -113,7 +143,7 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
                 except json.JSONDecodeError:
                     continue
                 for choice in ev.get("choices") or []:
-                    chunks.append((choice.get("delta") or {}).get("content") or "")
+                    chunks.append(_content((choice.get("delta") or {}).get("content")))
                 if u := ev.get("usage"):
                     usage["tokens_in"] += u.get("prompt_tokens", 0) or 0
                     usage["tokens_out"] += u.get("completion_tokens", 0) or 0

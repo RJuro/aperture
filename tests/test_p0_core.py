@@ -131,3 +131,28 @@ def test_a_real_environment_variable_beats_the_env_file(tmp_path, monkeypatch):
 def test_a_missing_env_file_is_not_an_error(tmp_path):
     import app as pkg
     pkg.load_env(tmp_path / "nothing-here")
+
+
+def test_a_reasoning_models_thinking_never_reaches_the_json():
+    """A model that reasons returns content as typed blocks — a `thinking` block and a `text`
+    block. Only the text is the answer. Joining them blindly splices the model's private
+    deliberation into the JSON it is trying to emit, and the parse fails or, worse, doesn't."""
+    blocks = [{"type": "thinking", "thinking": "Let me consider {\"codes\": [\"wrong\"]} first."},
+              {"type": "text", "text": '{"codes": ['},
+              {"type": "text", "text": '"right"]}'}]
+    assert llm._content(blocks) == '{"codes": ["right"]}'
+    assert llm._content("plain string") == "plain string"
+    assert llm._content(None) == ""
+
+
+def test_reasoning_effort_is_per_provider_and_can_be_turned_off(monkeypatch):
+    monkeypatch.delenv("APERTURE_REASONING", raising=False)
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    assert llm.reasoning() == "high", "GLM reasons only when asked; off is a thinner reading"
+    monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
+    assert llm.reasoning() == "", "M3 reasons by default and takes no instruction"
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    monkeypatch.setenv("APERTURE_REASONING", "off")
+    assert llm.reasoning() == ""
+    monkeypatch.setenv("APERTURE_REASONING", "low")
+    assert llm.reasoning() == "low"
