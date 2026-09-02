@@ -1,0 +1,89 @@
+{
+ "codes": [
+  {
+   "code": "Men migrating ahead to work",
+   "sids": [
+    "S256",
+    "S261",
+    "S280"
+   ]
+  },
+  {
+   "code": "Chain settlement by home region",
+   "sids": [
+    "S257",
+    "S355",
+    "S356",
+    "S546",
+    "S553"
+   ]
+  },
+  {
+   "code": {
+    "name": "Family trade carried forward to new country",
+    "definition": "Passages where an occupational skill or business owned in the home country is reproduced by the same household in the destination, often with the same family members continuing the work."
+   },
+   "sids": [
+    "S265",
+    "S397",
+    "S403",
+    "S409",
+    "S484",
+    "S486",
+    "S513",
+    "S517"
+   ]
+  },
+  {
+   "code": {
+    "name": "Tenement living conditions on arrival",
+    "definition": "Passages describing the physical housing — walkups, shared bathrooms, coin-operated meters — that immigrants move into after arriving in American cities."
+   },
+   "sids": [
+    "S411",
+    "S414",
+    "S417",
+    "S419",
+    "S426",
+    "S431"
+   ]
+  },
+  {
+   "code": {
+    "name": "Children kept from school to work in family business",
+    "definition": "Passages where immigrant children are pulled out of school or never enrolled so they can contribute labor to a household enterprise."
+   },
+   "sids": [
+    "S441",
+    "S446",
+    "S447",
+    "S484",
+    "S486"
+   ]
+  },
+  {
+   "code": {
+    "name": "Conscription avoidance as emigration motive",
+    "definition": "Passages where a male family member leaves the home country to avoid being called into military service."
+   },
+   "sids": [
+    "S238",
+    "S252",
+    "S256",
+    "S273"
+   ]
+  },
+  {
+   "code": {
+    "name": "Children left behind during staged migration",
+    "definition": "Passages where family members, particularly children, are left in the home country during migration because the household cannot afford to bring them, with the expectation of later reunion."
+   },
+   "sids": [
+    "S166",
+    "S181",
+    "S183",
+    "S185"
+   ]
+  }
+ ]
+}

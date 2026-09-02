@@ -113,3 +113,21 @@ def test_researcher_words_containing_braces_do_not_read_as_slots(tmp_path, monke
     system, user = llm.prompt("t", focus="watch for {{material}} please", material="the text")
     assert system == "Sys watch for {{material}} please"
     assert user == "User the text"
+
+
+def test_a_real_environment_variable_beats_the_env_file(tmp_path, monkeypatch):
+    """Production sets its configuration in Coolify. A .env that shipped in the image must never
+    override it, or a deploy silently talks to the wrong endpoint with the wrong key."""
+    import app as pkg
+    f = tmp_path / ".env"
+    f.write_text("APERTURE_PROVIDER=mistral\nAPERTURE_MODEL=from-the-file\n")
+    monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
+    monkeypatch.delenv("APERTURE_MODEL", raising=False)
+    pkg.load_env(f)
+    assert llm.provider() == "minimax"          # the environment wins
+    assert llm.model() == "from-the-file"       # the file fills what the environment left unset
+
+
+def test_a_missing_env_file_is_not_an_error(tmp_path):
+    import app as pkg
+    pkg.load_env(tmp_path / "nothing-here")
