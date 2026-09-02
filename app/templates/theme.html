@@ -38,14 +38,23 @@ say something about this theme below.</p>
 
 {% if absent %}
 <h2>Where it does not</h2>
-<p class="dim">Absence at this level is a finding, not a gap in the table — these were read and
-nothing was claimed under this theme.</p>
+<p class="dim">No claim in these rests on this theme. That is a finding rather than a gap in a
+table — but check what the reading set aside below before treating it as silence: a line too
+thin to keep is dropped whole, and a dropped line and an empty one look the same here.</p>
 <ul class="mats">
 {% for m in absent %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ (m.title or m.name) | txt }}</a>
       <span class="dim">{{ m.kind }}</span></li>
 {% endfor %}
 </ul>
+{% endif %}
+
+{% if set_aside %}
+<details class="aside"><summary>What the readings set aside ({{ set_aside | length }})</summary>
+<ul class="mats">
+{% for n in set_aside %}<li class="dim">{{ n | txt }}</li>{% endfor %}
+</ul>
+</details>
 {% endif %}
 
 {% if codes %}

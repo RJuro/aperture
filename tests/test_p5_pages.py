@@ -176,3 +176,24 @@ def test_a_failed_run_does_not_make_everything_look_out_of_date(conn, analysed):
     bad = store.start_run(conn, pid, "themes", None, "x")
     store.finish_run(conn, bad, error="the model fell over")
     assert store.out_of_date(conn, pid) == []
+
+
+def test_what_a_reading_set_aside_is_shown_and_not_swallowed(client, conn, analysed):
+    """A line too thin to keep is dropped whole. It was computed, reported, and thrown away by
+    the runner — so an empty cell read as 'nothing here' when it meant 'three claims found and
+    discarded'. The theme page says so where it names absences."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    rid = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, rid, notes=['the line for "Work and trade" was dropped: 3 claims left'])
+    assert 'the line for "Work and trade" was dropped: 3 claims left' in store.set_aside(conn, pid)
+
+    html = client.get(f"/p/{pid}/m/{mid}").text
+    assert "set aside" in html and "was dropped: 3 claims left" in html
+
+    tid = list(analysed["themes"].values())[0]
+    conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
+                 (analysed["rodwin"], tid))
+    conn.commit()
+    theme = client.get(f"/p/{pid}/t/{tid}").text
+    assert "Where it does not" in theme
+    assert "set aside" in theme, "an absence must not be asserted without the drops beside it"

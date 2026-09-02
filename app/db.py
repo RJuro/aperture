@@ -14,7 +14,7 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS project (
@@ -111,6 +111,11 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
 
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    # Columns added after v1. CREATE TABLE IF NOT EXISTS leaves an existing table alone, so a
+    # database made before a column existed needs it added explicitly.
+    have = {r[1] for r in conn.execute("PRAGMA table_info(run)")}
+    if "notes" not in have:
+        conn.execute("ALTER TABLE run ADD COLUMN notes TEXT DEFAULT ''")
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
 

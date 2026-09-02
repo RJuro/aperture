@@ -35,7 +35,7 @@ def _text(conn: sqlite3.Connection, run: dict) -> str:
 
 def _frame(conn, pid, run):
     from .engine import frame
-    frame.run(conn, run["material_id"], hint=_text(conn, run))
+    return (frame.run(conn, run["material_id"], hint=_text(conn, run)) or {}).get("dropped")
 
 
 def _angles(conn, pid, run):
@@ -55,7 +55,8 @@ def _themes(conn, pid, run):
 
 def _doc(conn, pid, run):
     from .engine import synth
-    synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"))
+    out = synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"))
+    return (out or {}).get("dropped")
 
 
 def _accounts(conn, pid, run):
@@ -73,7 +74,7 @@ def _account(conn, pid, run):
 
 def _project(conn, pid, run):
     from .engine import synth
-    synth.project(conn, pid)
+    return (synth.project(conn, pid) or {}).get("dropped")
 
 
 def _check(conn, pid, run):
@@ -140,14 +141,15 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict]) -> list[st
         # counter. One chain at a time is the whole of this instrument; give the run its own
         # counter if chains ever overlap.
         llm.usage.update(tokens_in=0, tokens_out=0)
-        error = None
+        error, notes = None, None
         try:
-            STEPS[kind][1](conn, pid, run)
+            notes = STEPS[kind][1](conn, pid, run)
         except Exception as e:                          # the chain stops; the process does not
             error = f"{type(e).__name__}: {e}"
             failed = mid
         store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
-                         tokens_out=llm.usage.get("tokens_out", 0))
+                         tokens_out=llm.usage.get("tokens_out", 0),
+                         notes=[str(n) for n in (notes or [])])
         if error:
             break
     for mid in dict.fromkeys(touched):                  # in order, without repeats

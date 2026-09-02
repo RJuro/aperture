@@ -372,10 +372,32 @@ def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, li
 
 
 def finish_run(conn: sqlite3.Connection, rid: str, *, error: str | None = None,
-               tokens_in: int = 0, tokens_out: int = 0) -> None:
-    conn.execute("UPDATE run SET finished=?, error=?, tokens_in=?, tokens_out=? WHERE id=?",
-                 (now(), error, tokens_in, tokens_out, rid))
+               tokens_in: int = 0, tokens_out: int = 0, notes: list[str] | None = None) -> None:
+    """`notes` is what the step set aside — a claim whose quote was not in the material, a line
+    too thin to keep. It was computed and thrown away, which is how a reading loses material
+    without anyone noticing; an empty cell then reads as 'nothing here' when it means 'three
+    claims found and discarded'."""
+    conn.execute("UPDATE run SET finished=?, error=?, tokens_in=?, tokens_out=?, notes=? "
+                 "WHERE id=?",
+                 (now(), error, tokens_in, tokens_out,
+                  json.dumps(notes or [], ensure_ascii=False), rid))
     conn.commit()
+
+
+def set_aside(conn: sqlite3.Connection, pid: str, mid: str | None = None) -> list[str]:
+    """Everything the readings set aside, newest first, for the material or the whole project."""
+    sql = "SELECT notes FROM run WHERE project_id=? AND notes NOT IN ('', '[]')"
+    args: list = [pid]
+    if mid:
+        sql += " AND material_id=?"
+        args.append(mid)
+    out: list[str] = []
+    for r in conn.execute(sql + " ORDER BY rowid DESC", args):
+        try:
+            out += json.loads(r["notes"])
+        except ValueError:
+            continue
+    return out
 
 
 def active_runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:

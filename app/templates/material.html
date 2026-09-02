@@ -73,6 +73,14 @@ of the material, written from its shape.</p>{% endif %}
   <label>Check this against the material <input name="question" size="34"></label>
   <button>Check</button>
 </form>
+{% if set_aside %}
+<details class="aside"><summary>What the reading set aside ({{ set_aside | length }})</summary>
+<ul class="mats">
+{% for n in set_aside %}<li class="dim">{{ n | txt }}</li>{% endfor %}
+</ul>
+</details>
+{% endif %}
+
 {% if checks %}
 <ul class="dim small">
 {% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}

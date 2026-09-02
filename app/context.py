@@ -296,6 +296,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
             "people": [dict(x) for x in store.people(conn, mid)],
             "speakers": [dict(x) for x in store.speakers(conn, mid)],
             "blocks": blocks(conn, mid, mat.get("display") or "plain", quotes),
+            "set_aside": store.set_aside(conn, pid, mid),
             "checks": _checks(conn, pid, mid)}
 
 
@@ -328,7 +329,8 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
                            f' · {cover["claims"]} claims'),
-            "codes": [dict(c) for c in store.theme_codes(conn, tid)]}
+            "codes": [dict(c) for c in store.theme_codes(conn, tid)],
+            "set_aside": store.set_aside(conn, pid)}
 
 
 def export(conn, pid: str) -> dict:
