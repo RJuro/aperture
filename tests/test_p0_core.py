@@ -100,3 +100,16 @@ def test_a_prompt_slot_the_code_forgets_is_an_error(tmp_path, monkeypatch):
     with pytest.raises(llm.LLMError, match="no slot"):
         llm.prompt("t", a="x", b="y", c="z")
     assert llm.prompt("t", a="x", b="y") == ("System x", "User y")
+
+
+def test_researcher_words_containing_braces_do_not_read_as_slots(tmp_path, monkeypatch):
+    """The researcher's own words go into prompts verbatim, by law. A focus or a piece of
+    feedback that happens to contain {{something}} must survive intact — not raise, and not be
+    filled from a neighbouring slot."""
+    d = tmp_path / "prompts"
+    d.mkdir()
+    (d / "t.md").write_text("Sys {{focus}}\n---\nUser {{material}}")
+    monkeypatch.setattr(llm, "__file__", str(tmp_path / "llm.py"))
+    system, user = llm.prompt("t", focus="watch for {{material}} please", material="the text")
+    assert system == "Sys watch for {{material}} please"
+    assert user == "User the text"

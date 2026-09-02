@@ -6,7 +6,6 @@ actions). Both are attached here so that neither imports the other.
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -28,12 +27,6 @@ def health() -> dict:
 _STATIC = Path(__file__).parent / "static"
 if _STATIC.is_dir():
     app.mount("/static", StaticFiles(directory=_STATIC), name="static")
-
-
-def data_dir() -> Path:
-    d = Path(os.environ.get("APERTURE_DATA_DIR", Path(__file__).parent.parent / "data"))
-    d.mkdir(parents=True, exist_ok=True)
-    return d
 
 
 # Routers are attached last so a partially built app still serves /health.

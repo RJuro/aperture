@@ -108,7 +108,11 @@ def save_frame(conn: sqlite3.Connection, mid: str, *, kind: str, display: str, t
 
 
 def speakers(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT * FROM speaker WHERE material_id=?", (mid,)).fetchall()
+    # Ordered so a compiled prompt is byte-reproducible: interviewer first, then by label.
+    return conn.execute(
+        "SELECT * FROM speaker WHERE material_id=? "
+        "ORDER BY CASE role WHEN 'interviewer' THEN 0 WHEN 'participant' THEN 1 ELSE 2 END, label",
+        (mid,)).fetchall()
 
 
 def segments(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
@@ -144,9 +148,9 @@ def save_codes(conn: sqlite3.Connection, pid: str, mid: str, codes: list[dict],
                 conn.execute("UPDATE code SET definition=? WHERE id=? AND definition=''",
                              (c["definition"], cid))
         for sid in c.get("sids") or []:
-            conn.execute("INSERT OR IGNORE INTO code_hit (code_id, material_id, sid) "
-                         "VALUES (?,?,?)", (cid, mid, sid))
-            hits += 1
+            cur = conn.execute("INSERT OR IGNORE INTO code_hit (code_id, material_id, sid) "
+                               "VALUES (?,?,?)", (cid, mid, sid))
+            hits += cur.rowcount        # rows written, not sids offered — a repeat is not a hit
     conn.commit()
     return {"new": new, "reused": reused, "hits": hits}
 

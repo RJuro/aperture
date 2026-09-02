@@ -138,11 +138,19 @@ def prompt(name: str, **slots: str) -> tuple[str, str]:
     head, _, body = text.partition("\n---\n")
     if not body:
         raise LLMError(f"{path} has no '---' line separating system from user message")
-    for slot, value in slots.items():
-        token = "{{%s}}" % slot
-        if token not in text:
-            raise LLMError(f"{path} has no slot {token}")
-        head, body = head.replace(token, str(value)), body.replace(token, str(value))
-    if left := re.findall(r"\{\{(\w+)\}\}", head + body):
-        raise LLMError(f"{path}: unfilled slots {sorted(set(left))}")
-    return head.strip(), body.strip()
+
+    # Validate against the TEMPLATE, before anything is substituted, and then substitute in a
+    # single pass that never rescans what it just wrote. Both matter: the researcher's own words
+    # go into these prompts verbatim by law, and a focus or a piece of feedback that happens to
+    # contain {{...}} must not read as a slot — it would have killed the run, or worse, filled
+    # itself from a neighbouring slot.
+    wanted = set(re.findall(r"\{\{(\w+)\}\}", text))
+    if extra := sorted(set(slots) - wanted):
+        raise LLMError(f"{path} has no slot(s) {extra}")
+    if missing := sorted(wanted - set(slots)):
+        raise LLMError(f"{path}: unfilled slots {missing}")
+
+    def fill(s: str) -> str:
+        return re.sub(r"\{\{(\w+)\}\}", lambda m: str(slots[m.group(1)]), s)
+
+    return fill(head).strip(), fill(body).strip()
