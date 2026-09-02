@@ -69,18 +69,24 @@ def add_material(pid: str, name: str = Form(...), text: str = Form(...)):
 
 
 @router.post("/p/{pid}/react")
-def react(request: Request, pid: str, kind: str = Form(...), text: str = Form(""),
+def react(request: Request, pid: str, text: str = Form(""), kind: str = Form("note"),
           claim_id: str = Form(""), theme_id: str = Form(""), material_id: str = Form("")):
-    """Agree, doubt, or say something, about a claim, a line, a summary, or the whole project.
+    """One free-text comment on one block of the account.
 
-    Doubt on a claim does not rewrite it — it goes and looks. That is the round-2 finding: a
-    researcher reading through a machine is more reliable when they assent than when they object,
-    so an objection is routed to the material rather than to the memo.
+    There used to be Agree and Doubt buttons on every single claim. They were the wrong
+    affordance twice over. A claim is the one thing that needs no affordance — its quote is
+    sitting in the material beside it, so verifying it is a glance, not a click. And what
+    actually wants correcting is a level up: how the reading synthesised, not whether one
+    sentence is true. So the buttons are gone and each block takes a sentence instead, which
+    goes to the model verbatim when that block is written again.
+
+    An empty comment does nothing. Nothing here is a stance to be tallied.
     """
     conn = connection()
+    if not text.strip():
+        return _back(request, f"/p/{pid}")
     target_kind, target_id = _target(claim_id, theme_id, material_id, pid)
-    fid = store.add_feedback(conn, pid, target_kind, target_id,
-                             kind if kind in ("agree", "doubt", "note") else "note", text.strip())
+    fid = store.add_feedback(conn, pid, target_kind, target_id, "note", text.strip())
     _go(conn, pid, fid)
     return _back(request, f"/p/{pid}")
 

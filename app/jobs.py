@@ -38,6 +38,11 @@ def _frame(conn, pid, run):
     frame.run(conn, run["material_id"], hint=_text(conn, run))
 
 
+def _angles(conn, pid, run):
+    from .engine import angles
+    angles.run(conn, run["material_id"])
+
+
 def _read(conn, pid, run):
     from .engine import read
     read.run(conn, run["material_id"])
@@ -51,6 +56,19 @@ def _themes(conn, pid, run):
 def _doc(conn, pid, run):
     from .engine import synth
     synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"))
+
+
+def _accounts(conn, pid, run):
+    """Every live theme's account, expanded when this step runs rather than when it was planned —
+    the theme set is only known after THEMES has been over the new material."""
+    from .engine import account
+    for t in store.live_themes(conn, pid):
+        account.run(conn, pid, t["id"], run_id=run.get("run_id"))
+
+
+def _account(conn, pid, run):
+    from .engine import account
+    account.run(conn, pid, run["theme_id"], run_id=run.get("run_id"))
 
 
 def _project(conn, pid, run):
@@ -67,9 +85,12 @@ def _check(conn, pid, run):
 #                 line a person can read              what it calls
 STEPS: dict[str, tuple[str, Callable]] = {
     "frame":   ("Working out how this is laid out",   _frame),
+    "angles":  ("Working out what to look for in {name}", _angles),
     "read":    ("Reading {name}",                     _read),
     "themes":  ("Finding themes",                     _themes),
     "doc":     ("Writing what stands out in {name}", _doc),
+    "account":  ("Writing where a theme runs across everything", _account),
+    "accounts": ("Writing where each theme runs across everything", _accounts),
     "project": ("Updating the project summary",       _project),
     "check":   ("Checking that against the material", _check),
 }
@@ -180,8 +201,12 @@ def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str
     """
     return start(conn_factory, pid, [
         {"kind": "frame", "material_id": mid},
+        {"kind": "angles", "material_id": mid},
         {"kind": "read", "material_id": mid},
         {"kind": "themes"},
         {"kind": "doc", "material_id": mid},
+        # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
+        # the live theme set at this moment is the old one.
+        {"kind": "accounts"},
         {"kind": "project"},
     ])

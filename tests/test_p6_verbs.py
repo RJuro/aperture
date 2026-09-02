@@ -61,12 +61,30 @@ def test_adding_material_cuts_sentences_before_the_reading_starts(app, project, 
     assert kinds(app.planned) == [["chain"]]
 
 
-def test_doubt_on_a_claim_goes_and_looks_instead_of_rewriting(app, analysed, conn):
-    app.post(f"/p/{analysed['pid']}/react",
-             data={"kind": "doubt", "claim_id": analysed["moment"], "text": "I don't buy it"})
-    assert kinds(app.planned) == [["check"]]
-    fb = store.project_feedback(conn, analysed["pid"])[-1]
-    assert (fb["target_kind"], fb["kind"], fb["text"]) == ("moment", "doubt", "I don't buy it")
+def test_a_comment_is_a_comment_and_an_empty_one_does_nothing(app, analysed, conn):
+    """There are no stances left to tally. A block takes a sentence, and the sentence goes to the
+    model verbatim when that block is written again."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    before = len(store.project_feedback(conn, pid))
+    app.post(f"/p/{pid}/react", data={"material_id": mid, "text": "   "})
+    assert app.planned == [] and len(store.project_feedback(conn, pid)) == before
+
+    app.post(f"/p/{pid}/react", data={"material_id": mid, "text": "the crossing is underplayed"})
+    fb = store.project_feedback(conn, pid)[-1]
+    assert (fb["target_kind"], fb["kind"], fb["text"]) == ("material_summary", "note",
+                                                           "the crossing is underplayed")
+    assert kinds(app.planned) == [["doc"]]
+
+
+def test_no_page_offers_a_control_on_a_single_claim(app, analysed):
+    """A claim needs no affordance: its quote sits in the material beside it, so verifying it is
+    a glance, not a click. What wants correcting is a level up — how the reading synthesised.
+    There used to be two buttons on every one of sixty-four claims."""
+    pid = analysed["pid"]
+    for url in (f"/p/{pid}", f"/p/{pid}/m/{analysed['grande']}"):
+        html = app.get(url).text
+        assert 'name="claim_id"' not in html
+        assert 'value="agree"' not in html and 'value="doubt"' not in html
 
 
 def test_agreement_records_and_runs_nothing(app, analysed, conn):
@@ -92,13 +110,12 @@ def test_the_form_fields_say_which_target_without_naming_it(app, analysed, conn)
         assert store.project_feedback(conn, pid)[-1]["target_kind"] == expect
 
 
-def test_feedback_on_the_project_summary_re_synthesises_everything_and_never_re_reads(app,
-                                                                                     analysed):
+def test_a_comment_on_the_corpus_never_re_reads_a_material(app, analysed):
     app.post(f"/p/{analysed['pid']}/react",
-             data={"kind": "note", "text": "the crossing is the whole story"})
+             data={"text": "the crossing is the whole story"})
     chain = kinds(app.planned)[0]
-    assert chain.count("doc") == 2 and chain[-1] == "project"
-    assert "read" not in chain and "frame" not in chain
+    assert chain.count("account") == 2 and chain[-1] == "project"
+    assert "doc" not in chain and "read" not in chain and "frame" not in chain
 
 
 def test_a_check_asks_the_material_and_a_blank_one_asks_nothing(app, analysed, conn):

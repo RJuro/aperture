@@ -25,7 +25,7 @@ def _stub(monkeypatch, **by_kind):
 def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, grande, monkeypatch):
     ran = _stub(monkeypatch)
     assert jobs.wait(jobs.ingest_chain(project, grande, conn_factory=db.connect), 10)
-    assert ran == ["frame", "read", "themes", "doc", "project"]
+    assert ran == ["frame", "angles", "read", "themes", "doc", "accounts", "project"]
     assert [r["kind"] for r in store.runs(conn, project)] == ran
     assert all(r["finished"] and r["error"] is None for r in store.runs(conn, project))
 
@@ -33,18 +33,17 @@ def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, gr
 def test_every_run_row_carries_a_sentence_a_researcher_can_read(conn, project, grande, monkeypatch):
     """The old engine's progress chip said `read` and nothing said what was being read."""
     _stub(monkeypatch)
-    jobs.run_now(conn, project, [{"kind": "frame", "material_id": grande},
-                                 {"kind": "read", "material_id": grande},
-                                 {"kind": "themes"},
-                                 {"kind": "doc", "material_id": grande},
-                                 {"kind": "project"}])
+    steps = ["frame", "angles", "read", "themes", "doc", "accounts", "project"]
+    jobs.run_now(conn, project, [{"kind": k, "material_id": grande if k in
+                                  ("frame", "angles", "read", "doc") else None} for k in steps])
     lines = [r["line"] for r in store.runs(conn, project)]
-    for kind, line in zip(["frame", "read", "themes", "doc", "project"], lines):
+    assert len(lines) == len(steps)
+    for kind, line in zip(steps, lines):
         assert line and line != kind, "the stage name is for the code, not for the person"
         assert " " in line and line[0].isupper()
-    assert lines[1] == "Reading DP-40 Grande" and lines[3] == "Writing what stands out in DP-40 Grande"
-    assert lines == ["Working out how this is laid out", "Reading DP-40 Grande", "Finding themes",
-                     "Writing what stands out in DP-40 Grande", "Updating the project summary"]
+    assert lines[steps.index("read")] == "Reading DP-40 Grande"
+    assert lines[steps.index("doc")] == "Writing what stands out in DP-40 Grande"
+    assert "look for" in lines[steps.index("angles")]
 
 
 def test_a_thread_scoped_rerun_says_which_thread_it_is_rewriting(conn, project, grande, analysed,

@@ -52,19 +52,23 @@ def test_feedback_on_a_materials_summary_re_synthesises_that_material_whole(conn
     assert plan[0]["material_id"] == state["grande"] and not plan[0].get("theme_id")
 
 
-def test_feedback_on_a_theme_regroups_then_re_synthesises_where_that_theme_appears(conn, state):
+def test_a_comment_on_a_theme_is_answered_at_the_theme(conn, state):
+    """It used to regroup the whole codebook and re-read every material carrying the theme —
+    answering a comment about one theme with work on all of them. One account now."""
     tid = list(state["themes"].values())[0]
     plan = _plan(conn, state["pid"], "theme", tid)
-    assert kinds(plan)[0] == "themes"
-    docs = [p for p in plan if p["kind"] == "doc"]
-    assert {p["material_id"] for p in docs} == {state["grande"], state["rodwin"]}
+    assert kinds(plan) == ["account"]
+    assert plan[0]["theme_id"] == tid
 
 
-def test_feedback_on_the_project_summary_runs_every_material_then_the_project(conn, state):
+def test_a_comment_on_the_corpus_is_answered_at_the_corpus(conn, state):
+    """This planned one synthesis per material, which a scaling review measured on fifty
+    materials at about seventeen hours. The theme account exists so a corpus-level correction is
+    answered at corpus level: one short run per theme, then the summary over them."""
     plan = _plan(conn, state["pid"], "project_summary", state["pid"])
     assert kinds(plan)[-1] == "project"
-    assert {p["material_id"] for p in plan if p["kind"] == "doc"} == {state["grande"],
-                                                                     state["rodwin"]}
+    assert "doc" not in kinds(plan), "a comment on the corpus must not re-read every material"
+    assert {p["theme_id"] for p in plan if p["kind"] == "account"} == set(state["themes"].values())
 
 
 def test_no_feedback_anywhere_ever_re_reads_or_re_frames(conn, state):

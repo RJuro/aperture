@@ -7,11 +7,9 @@
 {% endif %}
 {% if project.brief %}<p class="dim">Brief: <span class="summary">{{ project.brief | txt }}</span></p>{% endif %}
 
-<form method="post" action="/p/{{ project.id }}/react" class="row">
-  <button name="kind" value="agree">Agree</button>
-  <button name="kind" value="doubt">Doubt</button>
-  <input name="text" size="30" placeholder="or say what you think">
-  <button name="kind" value="note">Note</button>
+<form method="post" action="/p/{{ project.id }}/react" class="say">
+  <textarea name="text" rows="2" placeholder="Say what this misses across the corpus — the account will be written again with your words in front of it."></textarea>
+  <button>Send</button>
 </form>
 <form method="post" action="/p/{{ project.id }}/check" class="row">
   <label>Check this against the material <input name="question" size="34"></label>

@@ -60,10 +60,25 @@ def _themes_then_docs(conn, fb) -> list[dict]:
         _run("doc", mid, None, fb["id"]) for mid in _materials_with_theme(conn, fb["target_id"])]
 
 
-def _docs_then_project(conn, fb) -> list[dict]:
-    """Every material carries the feedback as a directive, then the project summary is rewritten
-    over what came back. Never codes' original hits, never READ, never FRAME."""
-    return [_run("doc", m["id"], None, fb["id"]) for m in store.materials(conn, fb["project_id"])
+def _account(conn, fb) -> list[dict]:
+    """One theme, rewritten across the corpus. Regrouping the whole codebook and re-reading every
+    material that carries the theme — which is what this used to plan — answers a comment about
+    one theme with work on all of them."""
+    return [_run("account", None, fb["target_id"], fb["id"])]
+
+
+def _accounts_then_project(conn, fb) -> list[dict]:
+    """A comment on the corpus rewrites each theme's account, then the corpus summary over them.
+
+    It deliberately does NOT re-read every material. That is what it used to do, and a scaling
+    review measured the cost on a fifty-material corpus: one comment planned fifty syntheses,
+    about seventeen hours and seven and a half million output tokens. The theme account exists
+    precisely so that a corpus-level correction can be answered at corpus level — twelve short
+    runs instead of fifty long ones. A comment that genuinely needs one material re-read belongs
+    on that material, where it is one run.
+    """
+    themes = store.live_themes(conn, fb["project_id"])
+    return [_run("account", None, t["id"], fb["id"]) for t in themes
             ] + [_run("project", feedback_id=fb["id"])]
 
 
@@ -85,8 +100,8 @@ TABLE = [
     ("project_summary",  "agree",    _nothing),
     ("thread",           "*",        _doc_thread),       # DOC, that material, that theme
     ("material_summary", "*",        _doc_material),     # DOC, that material whole
-    ("theme",            "*",        _themes_then_docs), # THEMES, then DOC where it appears
-    ("project_summary",  "*",        _docs_then_project),# DOC everywhere, then PROJECT
+    ("theme",            "*",        _account),          # that theme's account, rewritten
+    ("project_summary",  "*",        _accounts_then_project),
     ("focus",            "*",        _nothing),          # shapes the next READ and every later DOC
     ("frame",            "*",        _frame),            # the only row that re-frames
 ]

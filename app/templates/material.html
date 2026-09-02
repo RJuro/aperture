@@ -20,12 +20,10 @@
 {% if summary.stage != 'reading' %}<p class="provisional">Not read yet — this is a description
 of the material, written from its shape.</p>{% endif %}
 <div class="summary">{{ summary_html }}</div>
-<form method="post" action="/p/{{ project.id }}/react" class="row">
+<form method="post" action="/p/{{ project.id }}/react" class="say">
   <input type="hidden" name="material_id" value="{{ material.id }}">
-  <button name="kind" value="agree">Agree</button>
-  <button name="kind" value="doubt">Doubt</button>
-  <input name="text" size="30" placeholder="or say what you think">
-  <button name="kind" value="note">Note</button>
+  <textarea name="text" rows="2" placeholder="Say what this account gets wrong, or what it is missing — it will be written again with your words in front of it."></textarea>
+  <button>Send</button>
 </form>
 {% endif %}
 
@@ -52,11 +50,6 @@ of the material, written from its shape.</p>{% endif %}
         {% for f in x.reactions %}
         <p class="dim small">{{ f.kind }}{% if f.text %} <q>{{ f.text | txt }}</q>{% endif %}</p>
         {% endfor %}
-        <form method="post" action="/p/{{ project.id }}/react" class="row">
-          <input type="hidden" name="claim_id" value="{{ x.id }}">
-          <button name="kind" value="agree">Agree</button>
-          <button name="kind" value="doubt">Doubt</button>
-        </form>
       </li>
     {% endfor %}
     </ol>
@@ -69,13 +62,11 @@ of the material, written from its shape.</p>{% endif %}
   </section>
 </div>
 
-<form method="post" action="/p/{{ project.id }}/react" class="row">
+<form method="post" action="/p/{{ project.id }}/react" class="say">
   <input type="hidden" name="theme_id" value="{{ selected.id }}">
   <input type="hidden" name="material_id" value="{{ material.id }}">
-  <button name="kind" value="agree">Agree</button>
-  <button name="kind" value="doubt">Doubt</button>
-  <input name="text" size="30" placeholder="or say what you think">
-  <button name="kind" value="note">Note</button>
+  <textarea name="text" rows="2" placeholder="Say what this line misses or over-reads — it will be followed again through this material with your words in front of it."></textarea>
+  <button>Send</button>
 </form>
 <form method="post" action="/p/{{ project.id }}/check" class="row">
   <input type="hidden" name="material_id" value="{{ material.id }}">
