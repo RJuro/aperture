@@ -54,11 +54,34 @@ def _codebook_block(conn: sqlite3.Connection, pid: str) -> str:
     return "\n".join(out)
 
 
-def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "") -> dict:
-    """Group the codebook into themes. Returns {themes: [tid], merged: [tid]}."""
+def _material_block(conn: sqlite3.Connection, mid: str | None) -> str:
+    """The material just read, with its codes marked by passage — so the theme set is revised by
+    someone who has the text in front of them.
+
+    A blind theorist, shown only code labels, over-generalises and writes findings into gists;
+    the predecessor project learned that and fixed it the same way. At fifty materials the set is
+    still revised one material at a time, which keeps this bounded."""
+    if not mid:
+        return "No material accompanies this pass; revise the themes from the codebook alone."
+    from . import synth
+    m = store.material(conn, mid)
+    hits: dict[str, list[str]] = {}
+    for h in store.hits(conn, mid):
+        hits.setdefault(h["name"], []).append(h["sid"])
+    marked = "\n".join(f"- {name}: {', '.join(sids)}" for name, sids in sorted(hits.items()))
+    return (f"## {m['title'] or m['name']} ({m['kind'] or 'kind not worked out'})\n\n"
+            f"CODES MARKED IN THIS MATERIAL, by passage:\n{marked or '- none'}\n\n"
+            f"THE MATERIAL:\n{synth.layout(conn, mid)}")
+
+
+def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
+        material_id: str | None = None, run_id: str | None = None) -> dict:
+    """Revise the theme set in the light of one newly read material. Returns
+    {themes: [tid], merged: [tid]}."""
     proj = store.project(conn, pid)
     system, user = llm.prompt(
         "themes",
+        material=_material_block(conn, material_id),
         themes=_themes_block(conn, store.live_themes(conn, pid)),
         codebook=_codebook_block(conn, pid),
         focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
@@ -82,7 +105,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "") -> dict:
         if tid is None and len(live) >= MAX_THEMES:
             continue
         names = t.get("code_names") or []
-        tid = store.save_theme(conn, pid, tid=tid, name=name,
+        tid = store.save_theme(conn, pid, tid=tid, name=name, run_id=run_id,
                                gist=str(t.get("gist") or "").strip(),
                                code_ids=[by_name[n] for n in
                                          ([names] if isinstance(names, str) else names)

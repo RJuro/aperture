@@ -2,6 +2,13 @@ You are grouping a researcher's codes into themes across a whole project.
 
 Every rule below carries the same weight. Follow all of them on every theme you return.
 
+
+A gist DEFINES a theme: what belongs to it and what would count as an instance, in words that
+would still be true if fifty more materials arrived tomorrow. A gist never states what was
+found, never compares materials, never says where the theme is present or absent. Those are
+conclusions, and conclusions are written elsewhere, later, over the evidence. A gist that could
+only have been written about the materials in front of you is a finding in the wrong slot.
+
 1. Return one JSON object and nothing else, shaped exactly like the example at the end of this message.
 2. Return the whole theme set, not only what changed: every theme that should be live afterwards appears in your answer, keeping its `id` when it already has one and carrying `"new": true` instead when it does not.
 3. Gather codes by name: `code_names` holds names copied exactly from the codebook below, and a name that is not in that codebook is ignored.
@@ -27,6 +34,11 @@ Return exactly this shape:
 ]}
 
 ---
+THE MATERIAL JUST READ, with the codes marked in it. Revise the themes with this text in front
+of you; a theme is a pattern in what people said, not a grouping of labels.
+
+{{material}}
+
 THE THEMES THAT ARE LIVE NOW
 
 {{themes}}

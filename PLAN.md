@@ -94,6 +94,17 @@ the text before it is used. Same law as anchors, applied to structure.
 4. **Derivation.** Every number on a page is printed as its derivation over rows the page links to:
    *"cites 87 of 302 passages"*, *"4 of 5 moments agreed"*. No counter is stored; all are views.
 
+5. **Slot.** *(the discipline, stated separately because breaking it produced six bugs at once)*
+   A prompt template is universal: the same file for every corpus, every material, every project.
+   What varies is what fills its slots, and a slot may hold only three kinds of thing — **the
+   material itself**, **validated structure** (codes with their sentence ids, themes with their
+   code lists, claims with their quotes), or **the researcher's own words verbatim**. It may never
+   hold prose the system wrote about the corpus. The single exception is the one self-prompting
+   slot, and that slot carries *questions the corpus has raised and not answered* — never what
+   it found. Conclusions flow up the layers; only questions flow forward into the next reading.
+   A gist *defines* a theme; an account *concludes* about it; the two are different objects and
+   the first is never allowed to become the second.
+
 ## 4. Nouns, verbs, pages
 
 - **Nouns:** material · moment (claim + quote, highlighted in place) · thread (one theme's moments

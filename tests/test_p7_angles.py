@@ -156,7 +156,8 @@ def test_the_frame_and_the_description_reach_the_prompt(conn, project, grande, m
     assert "interview" in shown.lower()
     assert "M. Grande" in shown and "Phillips" in shown
     assert "A 1978 oral history about leaving Italy for work." in shown
-    assert "how work and papers hold each other up" in shown, "the focus goes in verbatim"
+    assert "how work and papers hold each other up" not in shown, \
+        "angles never see the focus: they are the counter-focus, an independent source of where to look"
     assert "Two interviews so far" in shown
     assert "Work and trade" in shown
 
@@ -243,8 +244,8 @@ def test_read_md_compiles_with_its_new_slot_and_states_the_rule():
 def test_angles_md_compiles_with_exactly_the_slots_the_engine_fills(conn, grande, model):
     text = (PROMPTS / "angles.md").read_text()
     slots = sorted(set(re.findall(r"\{\{(\w+)\}\}", text)))
-    assert slots == ["brief", "focus", "frame", "material", "max_angles", "max_questions",
-                     "orientation", "themes"]
+    assert slots == ["frame", "material", "max_angles", "max_questions", "orientation",
+                     "questions", "themes"]
     _framed(conn, grande)
     model.queue(_answer())
     angles.run(conn, grande)          # llm.prompt raises on a slot that drifted either way

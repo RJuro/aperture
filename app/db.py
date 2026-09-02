@@ -14,7 +14,7 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS project (
@@ -50,6 +50,10 @@ CREATE TABLE IF NOT EXISTS code_hit (
 CREATE TABLE IF NOT EXISTS theme (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '',
     status TEXT NOT NULL DEFAULT 'live', merged_into TEXT);
+
+CREATE TABLE IF NOT EXISTS theme_history (
+    theme_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '', codes TEXT DEFAULT '',
+    run_id TEXT, at TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS theme_code (
     theme_id TEXT NOT NULL, code_id TEXT NOT NULL, PRIMARY KEY (theme_id, code_id));

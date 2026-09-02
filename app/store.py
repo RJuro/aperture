@@ -172,9 +172,19 @@ def live_themes(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 
 
 def save_theme(conn: sqlite3.Connection, pid: str, *, tid: str | None, name: str, gist: str,
-               code_ids: list[str]) -> str:
+               code_ids: list[str], run_id: str | None = None) -> str:
     tid = tid or db.new_id("t")
-    if conn.execute("SELECT 1 FROM theme WHERE id=?", (tid,)).fetchone():
+    prior = conn.execute("SELECT * FROM theme WHERE id=?", (tid,)).fetchone()
+    if prior:
+        # Themes are rewritten in place — the id must stay stable because every claim cites it —
+        # so the past is kept beside it. In reflexive analysis the evolution of a theme IS the
+        # analysis; a researcher who cannot show what a theme used to be called cannot cite it.
+        if (prior["name"], prior["gist"]) != (name, gist):
+            old_codes = ",".join(sorted(r["code_id"] for r in conn.execute(
+                "SELECT code_id FROM theme_code WHERE theme_id=?", (tid,))))
+            conn.execute("INSERT INTO theme_history (theme_id, name, gist, codes, run_id, at) "
+                         "VALUES (?,?,?,?,?,?)", (tid, prior["name"], prior["gist"], old_codes,
+                                                  run_id, now()))
         conn.execute("UPDATE theme SET name=?, gist=? WHERE id=?", (name, gist, tid))
     else:
         conn.execute("INSERT INTO theme (id, project_id, name, gist) VALUES (?,?,?,?)",
@@ -204,6 +214,11 @@ def set_brief(conn: sqlite3.Connection, pid: str, brief: str) -> None:
 def set_focus(conn: sqlite3.Connection, pid: str, focus: str) -> None:
     conn.execute("UPDATE project SET focus=? WHERE id=?", (focus, pid))
     conn.commit()
+
+
+def theme_history(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM theme_history WHERE theme_id=? ORDER BY rowid",
+                        (tid,)).fetchall()
 
 
 def merge_theme(conn: sqlite3.Connection, tid: str, into: str) -> None:

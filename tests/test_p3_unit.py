@@ -28,11 +28,18 @@ def ready(conn, project, grande):
 
 
 def _thread(quote, mid, tid, n=None, at=40):
+    """One thread call's answer. `tid` is kept for the caller's bookkeeping; the answer itself
+    carries only moments, because a thread call is about exactly one theme."""
     n = synth.MIN_MOMENTS + 1 if n is None else n
-    return {"theme_id": tid,
-            "moments": [{"claim": f"claim {i}",
+    return {"moments": [{"claim": f"claim {i}",
                          "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
                          "sid": synth.sid_num(quote(mid, at=at + i * 9)[0])} for i in range(n)]}
+
+
+def _full_doc(model, conn, pid, by_tid, summary="s", questions="q"):
+    for t in store.live_themes(conn, pid):
+        model.queue(by_tid.get(t["id"], {"moments": []}))
+    model.queue({"summary": summary, "questions": questions, "people": []})
 
 
 def test_a_citation_reads_back_from_the_number_the_material_was_printed_under(conn, ready):
@@ -52,31 +59,27 @@ def test_the_layout_prints_every_passage_under_its_own_number(conn, ready):
 
 
 def test_a_thread_is_capped(ready, conn, model, quote):
-    model.queue({"summary": "s", "threads": [_thread(quote, ready["mid"], ready["a"], synth.MAX_MOMENTS + 4)],
-                 "brief": "b", "people": []})
+    _full_doc(model, conn, ready["pid"],
+              {ready["a"]: _thread(quote, ready["mid"], ready["a"], synth.MAX_MOMENTS + 4)})
     synth.doc(conn, ready["mid"])
     assert len(store.thread(conn, ready["mid"], ready["a"])) == synth.MAX_MOMENTS
 
 
 def test_one_theme_rerun_touches_that_thread_and_nothing_else(ready, conn, model, quote):
-    model.queue({"summary": "the whole reading", "brief": "the first brief", "people": [],
-                 "threads": [_thread(quote, ready["mid"], ready["a"]),
-                             _thread(quote, ready["mid"], ready["b"], at=90)]})
+    _full_doc(model, conn, ready["pid"], {ready["a"]: _thread(quote, ready["mid"], ready["a"]),
+                                          ready["b"]: _thread(quote, ready["mid"], ready["b"], at=90)},
+              summary="the whole reading", questions="the first questions")
     synth.doc(conn, ready["mid"])
     before = [m["claim"] for m in store.thread(conn, ready["mid"], ready["b"])]
 
-    model.queue({"summary": "SHOULD NOT BE SAVED", "brief": "SHOULD NOT BE SAVED", "people": [],
-                 "threads": [{"theme_id": ready["a"],
-                              "moments": _thread(quote, ready["mid"], ready["a"], synth.MIN_MOMENTS,
-                                                 at=150)["moments"]},
-                             _thread(quote, ready["mid"], ready["b"], at=200)]})
+    model.queue(_thread(quote, ready["mid"], ready["a"], synth.MIN_MOMENTS, at=150))
     synth.doc(conn, ready["mid"], only_theme=ready["a"])
 
     assert len(store.thread(conn, ready["mid"], ready["a"])) == synth.MIN_MOMENTS
     assert [m["claim"] for m in store.thread(conn, ready["mid"], ready["b"])] == before
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] \
         == "the whole reading"
-    assert store.project(conn, ready["pid"])["brief"] == "the first brief"
+    assert store.project(conn, ready["pid"])["brief"] == "the first questions"
 
 
 def test_feedback_on_another_thread_stays_out_of_a_one_theme_rerun(ready, conn, model, quote):
@@ -84,8 +87,7 @@ def test_feedback_on_another_thread_stays_out_of_a_one_theme_rerun(ready, conn, 
                        "Work is really about the stall.")
     store.add_feedback(conn, ready["pid"], "thread", f'{ready["mid"]}:{ready["b"]}', "note",
                        "Leaving is a different story.")
-    model.queue({"summary": "s", "brief": "b", "people": [],
-                 "threads": [_thread(quote, ready["mid"], ready["a"])]})
+    model.queue(_thread(quote, ready["mid"], ready["a"]))
     synth.doc(conn, ready["mid"], only_theme=ready["a"])
     shown = model.shown()
     assert "Work is really about the stall." in shown
@@ -94,12 +96,10 @@ def test_feedback_on_another_thread_stays_out_of_a_one_theme_rerun(ready, conn, 
 
 def test_a_bracket_keeps_the_moment_ids_that_exist_and_loses_the_ones_that_do_not(ready, conn,
                                                                                  model, quote):
-    model.queue({"summary": "s", "threads": [_thread(quote, ready["mid"], ready["a"])],
-                 "brief": "b", "people": []})
+    _full_doc(model, conn, ready["pid"], {ready["a"]: _thread(quote, ready["mid"], ready["a"])})
     synth.doc(conn, ready["mid"])
     live = [m["id"] for m in store.moments(conn, ready["mid"])]
-    model.queue({"summary": f"Both at once [{live[0]}, mo-ghost] and alone [mo-ghost].",
-                 "theme_gists": []})
+    model.queue({"summary": f"Both at once [{live[0]}, mo-ghost] and alone [mo-ghost]."})
     out = synth.project(conn, ready["pid"])
     assert out["summary"] == f"Both at once [{live[0]}] and alone."
     assert out["dropped"]

@@ -150,7 +150,6 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         "account",
         theme=f'"{theme["name"]}" — {theme["gist"] or "no gist yet"}\n{reach}',
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
-        brief=(proj["brief"] if proj else "") or "Nothing yet — little has been read.",
         materials=materials,
         absent="\n".join(f'{m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}'
                          for m in absent)

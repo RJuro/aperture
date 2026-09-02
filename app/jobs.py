@@ -50,7 +50,8 @@ def _read(conn, pid, run):
 
 def _themes(conn, pid, run):
     from .engine import themes
-    themes.run(conn, pid, feedback=_text(conn, run))
+    themes.run(conn, pid, feedback=_text(conn, run), material_id=run.get("material_id"),
+               run_id=run.get("run_id"))
 
 
 def _doc(conn, pid, run):
@@ -205,7 +206,7 @@ def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str
         {"kind": "frame", "material_id": mid},
         {"kind": "angles", "material_id": mid},
         {"kind": "read", "material_id": mid},
-        {"kind": "themes"},
+        {"kind": "themes", "material_id": mid},
         {"kind": "doc", "material_id": mid},
         # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
         # the live theme set at this moment is the old one.

@@ -84,13 +84,12 @@ HOW IT WAS DESCRIBED WHEN IT ARRIVED
 
 {{orientation}}
 
-WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
+QUESTIONS THE CORPUS HAS RAISED SO FAR AND NOT ANSWERED
 
-{{focus}}
+These come from earlier material. They are questions, not findings: use them to widen what
+you ask of this piece, and never to decide in advance what it contains.
 
-WHAT THIS CORPUS IS LIKE SO FAR
-
-{{brief}}
+{{questions}}
 
 WHAT THIS PROJECT HAS GROUPED SO FAR — an angle that cuts across these is welcome, and so is one
 that goes nowhere near them

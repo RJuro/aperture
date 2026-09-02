@@ -8,6 +8,7 @@ from __future__ import annotations
 import pytest
 
 from app import store
+from app.engine import read
 
 read = pytest.importorskip("app.engine.read")
 themes = pytest.importorskip("app.engine.themes")
@@ -22,13 +23,14 @@ def _framed(conn, mid, display="turns"):
 
 # ---- READ --------------------------------------------------------------------------------------
 
-def test_at_most_twelve_new_codes_survive_one_call(conn, project, grande, model):
+def test_new_codes_are_capped_in_proportion_to_the_material(conn, project, grande, model):
     _framed(conn, grande)
     model.queue({"codes": [{"code": {"name": f"C{i}", "definition": "d"}, "sids": ["S050"]}
                            for i in range(60)]})
     out = read.run(conn, grande)
-    assert out["new"] == read.MAX_NEW
-    assert len(store.codebook(conn, project)) == read.MAX_NEW
+    cap = read.new_cap(len(store.sentences(conn, grande)))   # scales with the material
+    assert out["new"] == cap
+    assert len(store.codebook(conn, project)) == cap
 
 
 def test_a_repeated_name_becomes_one_code_and_keeps_both_sets_of_sids(conn, project, grande,

@@ -24,9 +24,6 @@ Return exactly this shape — `code` is a plain string when the codebook already
 ]}
 
 ---
-WHAT THIS CORPUS IS LIKE SO FAR
-
-{{brief}}
 
 WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
 

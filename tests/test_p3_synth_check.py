@@ -1,7 +1,10 @@
-"""P3 — synthesis and checking. `app/engine/synth.py`, `app/engine/check.py`, three prompts.
+"""P3 — synthesis and checking. `app/engine/synth.py`, `app/engine/check.py`, and the prompts
+`thread.md`, `doc.md`, `project.md`, `check.md`.
 
     synth.doc(conn, mid, *, only_theme=None) -> {"summary","threads","anchors","dropped"}
-    synth.project(conn, pid) -> {"summary","theme_gists","dropped"}
+        one `thread` call per live theme (in live_themes order), then one `doc` call for the
+        summary — unless only_theme, which is one `thread` call and nothing else
+    synth.project(conn, pid) -> {"summary","dropped"}   one `project` call, reads the accounts
     check.run(conn, pid, scope, ref_id, question) -> {"check_id","verdict","anchors","searched_n"}
 
 This is where the anchor law lives at runtime, so most of these tests are that law.
@@ -26,17 +29,24 @@ def ready(conn, project, grande, quote):
     return {"pid": project, "mid": grande, "tid": tid}
 
 
-def _moments(quote, mid, tid, n=5, at=40):
-    ms = [{"claim": f"claim {i}", "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
-           "sid": quote(mid, at=at + i * 9)[0]} for i in range(n)]
-    return {"theme_id": tid, "moments": ms}
+def _moments(quote, mid, n=5, at=40):
+    return [{"claim": f"claim {i}", "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
+             "sid": quote(mid, at=at + i * 9)[0]} for i in range(n)]
+
+
+def queue_doc(model, conn, pid, moments_by_theme, summary="what the reading found",
+              questions="what remains open?", people=None):
+    """The answers a full DOC needs, in the order it asks: one thread per live theme, then the
+    summary. A test that forgets the order gets 'unexpected model call', which is the point."""
+    for t in store.live_themes(conn, pid):
+        model.queue({"moments": moments_by_theme.get(t["id"], [])})
+    model.queue({"summary": summary, "questions": questions, "people": people or []})
 
 
 def test_a_quote_that_is_not_in_the_material_drops_its_moment(ready, conn, model, quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 5)
-    t["moments"].append({"claim": "invented", "anchor": "a phrase that is simply not present",
-                         "sid": "S050"})
-    model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
+    ms = _moments(quote, ready["mid"], 5) + [
+        {"claim": "invented", "anchor": "a phrase that is simply not present", "sid": "S050"}]
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: ms})
     out = synth.doc(conn, ready["mid"])
     claims = [m["claim"] for m in store.thread(conn, ready["mid"], ready["tid"])]
     assert "invented" not in claims and len(claims) == 5
@@ -46,75 +56,119 @@ def test_a_quote_that_is_not_in_the_material_drops_its_moment(ready, conn, model
 def test_a_real_quote_with_the_wrong_id_is_repaired_not_dropped(ready, conn, model, quote):
     """The quote is authoritative, the citation is not. A mis-cited true claim looked false to
     two readers in round 2 — this is the fix, and it must not silently become a drop."""
-    t = _moments(quote, ready["mid"], ready["tid"], 5)
-    right_sid = t["moments"][0]["sid"]
-    t["moments"][0]["sid"] = "S002"
-    model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
+    ms = _moments(quote, ready["mid"], 5)
+    right_sid = ms[0]["sid"]
+    ms[0]["sid"] = "S002"
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: ms})
     out = synth.doc(conn, ready["mid"])
     assert out["anchors"]["rebound"] == 1
     assert right_sid in {m["sid"] for m in store.thread(conn, ready["mid"], ready["tid"])}
 
 
-def test_a_thread_too_thin_to_be_a_thread_is_dropped_and_said_so(ready, conn, model, quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 3)   # below the floor
-    model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
+def test_a_line_too_thin_to_keep_is_set_aside_and_said_so(ready, conn, model, quote):
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"], 3)})
     out = synth.doc(conn, ready["mid"])
     assert store.thread(conn, ready["mid"], ready["tid"]) == []
-    assert out["dropped"], "a dropped thread must be reported, not swallowed"
+    assert any("set aside" in d for d in out["dropped"]), "a dropped line must be reported"
 
 
 def test_moments_are_stored_in_material_order_whatever_order_the_model_gave(ready, conn, model,
                                                                            quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 5)
-    t["moments"].reverse()
-    model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
+    ms = _moments(quote, ready["mid"], 5)
+    ms.reverse()
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: ms})
     synth.doc(conn, ready["mid"])
     pos = store.sid_position(conn, ready["mid"])
     got = [pos[m["sid"]] for m in store.thread(conn, ready["mid"], ready["tid"])]
     assert got == sorted(got)
 
 
+def test_each_line_is_its_own_call_and_the_summary_comes_after_the_lines(ready, conn, project,
+                                                                           model, quote):
+    """One call for six lines plus a summary is how lines come out thin — the model rations its
+    attention. Each line gets a call; the summary is written over lines that exist."""
+    t2 = store.save_theme(conn, project, tid=None, name="Leaving", gist="the crossing",
+                          code_ids=[])
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"], 5),
+                                          t2: _moments(quote, ready["mid"], 4, at=120)})
+    synth.doc(conn, ready["mid"])
+    labels = [c["label"] for c in model.calls]
+    assert labels == ["thread", "thread", "doc"]
+    shown_to_summary = model.calls[-1]["user"]
+    assert "claim 0" in shown_to_summary, "the summary must see the lines it introduces"
+
+
 def test_the_orientation_and_the_feedback_are_both_shown_verbatim(ready, conn, model, quote):
     store.add_feedback(conn, ready["pid"], "material_summary", ready["mid"], "note",
                        "He never says why they chose Trieste.")
-    model.queue({"summary": "s", "threads": [_moments(quote, ready["mid"], ready["tid"])],
-                 "brief": "b", "people": []})
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
     synth.doc(conn, ready["mid"])
-    shown = model.shown()
+    shown = model.shown("doc")
     assert "A 1978 oral history." in shown
     assert "He never says why they chose Trieste." in shown
 
 
-def test_the_reading_summary_and_the_brief_are_both_written(ready, conn, model, quote):
-    model.queue({"summary": "what the reading found", "threads": [
-        _moments(quote, ready["mid"], ready["tid"])], "brief": "next time, watch for work",
-        "people": [{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}]})
+def test_no_prose_the_system_wrote_about_the_corpus_reaches_a_line_or_a_summary(ready, conn,
+                                                                                 model, quote):
+    """Law 5. The brief used to reach READ and DOC as 'what this corpus is like' and became a
+    finding carried forward as an instruction. It reaches nothing here now."""
+    store.set_brief(conn, ready["pid"], "THE CORPUS SHOWS women's labour is treated as ordinary")
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    assert "THE CORPUS SHOWS" not in model.shown()
+
+
+def test_the_summary_the_questions_and_the_people_are_written(ready, conn, model, quote):
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])},
+              summary="what the reading found", questions="why Trieste? what became of the brother?",
+              people=[{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}])
     synth.doc(conn, ready["mid"])
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] \
         == "what the reading found"
     assert store.get_summary(conn, "material", ready["mid"], "orientation") is not None
-    assert store.project(conn, ready["pid"])["brief"] == "next time, watch for work"
+    assert store.project(conn, ready["pid"])["brief"] == "why Trieste? what became of the brother?"
     assert [p["name"] for p in store.people(conn, ready["mid"])] == ["M. Grande"]
 
 
-def test_the_project_level_may_not_introduce_a_quote_of_its_own(ready, conn, model, quote):
-    model.queue({"summary": "s", "threads": [_moments(quote, ready["mid"], ready["tid"])],
-                 "brief": "b", "people": []})
+def test_a_one_line_rerun_makes_one_call_and_leaves_the_summary_alone(ready, conn, model, quote):
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])},
+              summary="the whole reading", questions="q1")
     synth.doc(conn, ready["mid"])
+    model.queue({"moments": _moments(quote, ready["mid"], 5, at=150)})
+    out = synth.doc(conn, ready["mid"], only_theme=ready["tid"])
+    assert [c["label"] for c in model.calls][-1:] == ["thread"]
+    assert len(out["threads"]) == 1
+    assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] == "the whole reading"
+    assert store.project(conn, ready["pid"])["brief"] == "q1"
+
+
+def test_the_project_level_reads_the_accounts_and_may_not_introduce_a_quote(ready, conn, model,
+                                                                             quote):
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    store.save_summary(conn, "theme", ready["tid"], "reading", "ACCOUNT TEXT about work")
     live = [m["id"] for m in store.moments(conn, ready["mid"])]
-    model.queue({"summary": f"Work runs through it [{live[0]}] and beyond [mo-does-not-exist].",
-                 "theme_gists": [{"theme_id": ready["tid"], "gist": "a living",
-                                  "moment_ids": live[:1] + ["mo-nope"]}]})
+    model.queue({"summary": f"Work runs through it [{live[0]}] and beyond [mo-does-not-exist]."})
     out = synth.project(conn, ready["pid"])
+    assert "ACCOUNT TEXT about work" in model.shown("project"), "project reads the accounts"
+    assert "claim 0" not in model.shown("project"), "…and not every claim in every material"
     text = store.get_summary(conn, "project", ready["pid"])["text"]
-    assert live[0] in text
-    assert "mo-does-not-exist" not in text and "mo-nope" not in str(out.get("theme_gists"))
+    assert live[0] in text and "mo-does-not-exist" not in text
     assert out["dropped"]
 
 
+def test_the_project_level_leaves_a_themes_definition_alone(ready, conn, model, quote):
+    """Law 5: a gist defines, an account concludes. The project step used to sharpen gists into
+    findings about the materials in front of it; now it writes only its own summary."""
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    model.queue({"summary": "s", "theme_gists": [{"theme_id": ready["tid"], "gist": "SHOULD NOT LAND"}]})
+    synth.project(conn, ready["pid"])
+    assert conn.execute("SELECT gist FROM theme WHERE id=?", (ready["tid"],)).fetchone()[0] == "a living"
+
+
 def test_a_check_searches_only_what_no_moment_rests_on(ready, conn, model, quote):
-    model.queue({"summary": "s", "threads": [_moments(quote, ready["mid"], ready["tid"])],
-                 "brief": "b", "people": []})
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
     synth.doc(conn, ready["mid"])
     uncited = len(store.uncited(conn, ready["mid"]))
     model.queue({"found": []})
@@ -124,12 +178,10 @@ def test_a_check_searches_only_what_no_moment_rests_on(ready, conn, model, quote
     cited = store.cited_sids(conn, ready["mid"])
     shown_to_check = model.shown("check")
     assert not any(sid in shown_to_check for sid in cited), "a check re-read a cited passage"
-    assert "S0" in model.shown("doc"), "synthesis must print sentence ids — it has to cite them"
+    assert "S0" in model.shown("thread"), "a line must be shown sentence ids — it has to cite them"
 
 
 def test_the_verdict_is_pythons_and_the_model_cannot_talk_its_way_to_found(ready, conn, model):
-    """Round 1's worst defect was a confident negative claim from a model that never looked. The
-    inverse guard: a model that claims support without producing a findable quote is not believed."""
     model.queue({"found": [{"anchor": "a phrase that is simply not present", "sid": "S050"}],
                  "supported": True})
     out = check.run(conn, ready["pid"], "material", ready["mid"], "Is religion mentioned?")
@@ -144,24 +196,3 @@ def test_a_found_check_carries_the_quote_that_makes_it_true(ready, conn, model, 
     assert out["verdict"] == "found"
     assert out["anchors"] and out["anchors"][0]["sid"] == sid
     assert store.checks(conn, ready["pid"])[-1]["verdict"] == "found"
-
-
-def test_a_sharpened_gist_reaches_the_theme_without_emptying_it(ready, conn, model, quote):
-    """The project synthesis sharpens gists but knows nothing about which codes belong where, so
-    it must not write through the theme writer that also rewrites a theme's codes."""
-    from app import db
-    cid = db.new_id("c")
-    conn.execute("INSERT INTO code (id, project_id, name) VALUES (?,?,'Work')",
-                 (cid, ready["pid"]))
-    store.save_theme(conn, ready["pid"], tid=ready["tid"], name="Work", gist="a living",
-                     code_ids=[cid])
-    model.queue({"summary": "s", "threads": [_moments(quote, ready["mid"], ready["tid"])],
-                 "brief": "b", "people": []})
-    synth.doc(conn, ready["mid"])
-    model.queue({"summary": "s", "theme_gists": [{"theme_id": ready["tid"],
-                                                  "gist": "how a living is made",
-                                                  "moment_ids": []}]})
-    synth.project(conn, ready["pid"])
-    row = conn.execute("SELECT * FROM theme WHERE id=?", (ready["tid"],)).fetchone()
-    assert row["gist"] == "how a living is made"
-    assert [c["id"] for c in store.theme_codes(conn, ready["tid"])] == [cid]

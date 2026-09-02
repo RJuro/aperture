@@ -16,8 +16,16 @@ import sqlite3
 
 from .. import llm, store
 
-MAX_CODES = 40      # codes accepted from one call
-MAX_NEW = 12        # of those, how many may be names the codebook has never seen
+MAX_CODES = 60      # codes accepted from one call
+MAX_NEW = 12        # floor; the real cap scales with the material — see new_cap()
+
+
+def new_cap(n_passages: int) -> int:
+    """How many new codes one material may found. Twelve was a fixed ceiling and it made the
+    whole pyramid narrow at the base: a 433-passage interview yielded eleven codes, two
+    interviews eighteen, six themes of three codes each. Roughly one new code per dozen
+    passages, never fewer than fifteen, never more than fifty."""
+    return max(15, min(50, n_passages // 12))
 
 
 def _verbatim(text: str, empty: str) -> str:
@@ -120,15 +128,13 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
 
     system, user = llm.prompt(
         "read",
-        brief=(proj["brief"] or "").strip()
-              or "Nothing has been written about this corpus yet; this is an early reading.",
         focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
                                        "Read this material on its own terms."),
         codebook=_codebook_block(store.codebook(conn, pid)),
         frame=_frame_block(m, store.speakers(conn, mid), segments),
         material=_material_block(m, rows, segments),
         angles=_angles_block(conn, mid),
-        max_codes=MAX_CODES, max_new=MAX_NEW)
+        max_codes=MAX_CODES, max_new=new_cap(len(rows)))
     out = llm.chat_json(system, user, label="read")
 
     valid = {r["sid"] for r in rows}
@@ -147,7 +153,7 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
             kept[c["name"]]["sids"] += [s for s in sids if s not in kept[c["name"]]["sids"]]
             continue
         is_new = c["name"] not in known
-        if (is_new and n_new >= MAX_NEW) or len(kept) >= MAX_CODES:
+        if (is_new and n_new >= new_cap(len(rows))) or len(kept) >= MAX_CODES:
             continue
         n_new += is_new
         c["sids"] = sids

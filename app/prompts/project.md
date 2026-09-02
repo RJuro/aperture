@@ -31,24 +31,19 @@ Return JSON in exactly this shape, and nothing else:
               Reach for the material's own names when a pattern needs one. Every statement carries
               moment ids in brackets like this [mo1a2b3c4d5] as its evidence, drawn from more than
               one material wherever the pattern spans them. No quotes of your own: at this level
-              your claims rest on claims below.",
-  "theme_gists": [
-    {"theme_id": "t1a2b3c4d5",
-     "gist": "At most 40 words saying what this theme amounts to across the corpus — including how
-              much of it the theme actually reaches.",
-     "moment_ids": ["mo1a2b3c4d5", "mo6e7f8g9h0"]}
-  ]
+              your claims rest on claims below."
 }
 
-No keys other than these two. No text outside the JSON object.
+No key other than `summary`. No text outside the JSON object.
 ---
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
 {{focus}}
 
-THE THEMES this project is working with. A gist must name one of these ids in `theme_id`:
+WHAT EACH THEME AMOUNTS TO ACROSS THE CORPUS — the accounts written over the claims, each
+with the claim ids it rests on. Your summary is written over these; cite the same ids.
 
-{{themes}}
+{{accounts}}
 
 WHAT THE RESEARCHER SAID about the project, in their own words. Take it as instruction:
 

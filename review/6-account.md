@@ -1,3 +1,10 @@
+# ACCOUNT — as sent to the model
+
+_1292 words · ≈1950 tokens_
+
+## SYSTEM
+
+```
 You are writing what one theme amounts to across a whole project of qualitative material, for the
 researcher who is reading it. You see every claim the reading has already made under this theme,
 in every material that carries it, each claim already resting on a quote that was checked word for
@@ -64,20 +71,42 @@ Worked, on a theme called "Work and trade" in a corpus of nine materials:
 }
 
 No keys other than these two. No text outside the JSON object.
----
+```
+
+## USER
+
+```
 THE THEME you are writing about, as it stands now:
 
-{{theme}}
+"Administrative and civic labour of becoming" — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
+It runs through 2 of the 2 materials in this project, 10 claims in all.
 
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
-{{focus}}
+how people make a living after arriving, and what it costs them
+
+WHAT THIS CORPUS IS LIKE, written after the last piece was read:
+
+This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
 
 WHAT THE READING FOUND UNDER THIS THEME, material by material. The id in brackets before each
 claim is the id you cite:
 
-{{materials}}
+## Ellis Island Oral History: Mary Grande — interview — 6 claims
+[mo8548819c2e] The father sent tickets, but the mother still had to secure approvals from multiple offices before they could leave. — quoted: "she had to go to different places to get it approved"
+[mo88c12565f4] As a minor, Mary was folded into her mother's passport, skipping the bureaucratic labour her mother bore alone. — quoted: "I didn't have to go anywhere because I was a minor"
+[mofb907f7b91] Emigration required trips through courts and offices, with approvals from higher-ups overseeing travel. — quoted: "she had to go through quite a bit of different courts"
+[mo3c47d806b0] In the final month before departure, the mother was constantly travelling to bureaucratic appointments. — quoted: "she was always coming or going to different places"
+[mod5993e0c16] Citizenship arrived twelve years after migration, framed as a joint act with her husband. — quoted: "my husband and I became American citizens in 1932"
+[mo007a3003db] The interview closes with a declaration that ties belonging to the new country, not the old. — quoted: "This is my country."
+
+## Minnie Rodwin oral history interview — interview — 4 claims
+[mo228dc3a5e1] Rodwin gives Christmas morning as her actual birth date, not the registered one. — quoted: "December—December 25th."
+[mo2434164aeb] The official registered date is six weeks later than the actual birth. — quoted: "your official birth date is February 9th, 1907"
+[mof9fa185df5] The father secures tickets and goes ahead to the United States alone. — quoted: "So my father got tickets, went to the United States."
+[mo2941456e12] She has no memory of Ellis Island processing at all. — quoted: "No"
 
 WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all:
 
-{{absent}}
+None. Every material in this project carries this theme somewhere.
+```

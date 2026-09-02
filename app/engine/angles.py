@@ -166,9 +166,7 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
         frame=_frame_block(m, store.speakers(conn, mid)),
         orientation=((described["text"] if described else "") or "").strip()
                     or "Nothing has been written about this material yet.",
-        focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
-                                       "Take this material on its own terms."),
-        brief=(proj["brief"] or "").strip()
+        questions=(proj["brief"] or "").strip()
               or "Nothing has been written about this corpus yet; this is an early piece.",
         themes=_themes_block(store.live_themes(conn, pid)),
         material=ingest.head_and_tail(m["text"], HEAD, TAIL),

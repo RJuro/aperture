@@ -166,147 +166,168 @@ def _about(conn, f, mid: str, only_theme: str | None) -> str | None:
 
 # ---- DOC ----------------------------------------------------------------------------------
 
-def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = None) -> dict:
-    """Write this material's reading summary and its threads.
+def _theme_codes_block(conn, mid: str, tid: str) -> str:
+    hits: dict[str, list[str]] = {}
+    for h in store.hits(conn, mid):
+        hits.setdefault(h["name"], []).append(h["sid"])
+    names = {c["name"] for c in store.theme_codes(conn, tid, mid)}
+    lines = [f"- {n}: {', '.join(hits[n])}" for n in sorted(names) if n in hits]
+    return "\n".join(lines) or "None of this theme's codes were marked here. Follow the definition."
 
-    `only_theme` restricts the rerun to one theme — a researcher reacted to one thread, so one
-    thread is re-made and the summary, the brief and the people are left exactly as they are.
+
+def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
+    """One theme's line through one material — one call, full attention.
+
+    It used to be one call for every theme at once, plus the summary, plus the brief, plus the
+    people. Six lines of four to fourteen claims each from a single answer is how lines come out
+    thin: the model is rationing its attention across them. Now each line is its own call and the
+    summary is written afterwards, over lines that exist.
+    """
+    row = store.material(conn, mid)
+    pid = row["project_id"]
+    proj = store.project(conn, pid)
+    theme = conn.execute("SELECT * FROM theme WHERE id=?", (tid,)).fetchone()
+    sents = store.sentences(conn, mid)
+    nums = numbers(sents)
+
+    system, user = llm.prompt(
+        "thread",
+        theme=f'{theme["id"]}  {theme["name"]} — {theme["gist"]}',
+        codes=_theme_codes_block(conn, mid, tid),
+        focus=proj["focus"] or "Nothing in particular. Follow the theme on its own terms.",
+        frame=frame_block(conn, mid),
+        feedback=feedback_block(conn, pid, mid, tid),
+        material=layout(conn, mid),
+        min_moments=MIN_MOMENTS, max_moments=MAX_MOMENTS,
+    )
+    data = llm.chat_json(system, user, label="thread")
+
+    stats, dropped, kept = anchor.new_stats(), [], []
+    # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw away
+    # untested moments and could then leave the line under the floor.
+    for m in data.get("moments") or []:
+        if not isinstance(m, dict):
+            continue
+        claim = words(m.get("claim"), CLAIM_WORDS)
+        quote = str(m.get("anchor") or "").strip()
+        bound = anchor.apply(m, [cited(m.get("sid"), nums)], sents, stats)   # the anchor law
+        if not claim:
+            dropped.append(f'a moment with no claim was dropped (quote: "{quote[:60]}")')
+            continue
+        if bound is None:
+            dropped.append(f'a moment was dropped: its quote is not in this material — "{quote[:60]}"'
+                           if quote else "a moment was dropped: it carried no quote")
+            continue
+        quote, sids = bound
+        kept.append({"claim": claim, "anchor": quote, "sid": sids[0]})
+    if len(kept) > MAX_MOMENTS:
+        dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
+        kept = kept[:MAX_MOMENTS]
+    if stats["over_cap"]:
+        dropped.append(f"{stats['over_cap']} quote(s) ran past the 12-word cap and were kept")
+    if len(kept) < MIN_MOMENTS:
+        dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'
+                       f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
+                       f"{MIN_MOMENTS} needed")
+        return [], dropped, stats
+    store.save_moments(conn, mid, tid, kept, run_id)     # ordered by position in the material
+    return kept, dropped, stats
+
+
+def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = None) -> dict:
+    """Write this material's lines, then its summary over them.
+
+    `only_theme` re-makes one line and leaves the summary, the questions and the people exactly as
+    they are. Otherwise every live theme gets its own call, and the summary call sees the lines
+    that actually exist rather than being asked to write them and introduce them in one breath.
     """
     row = store.material(conn, mid)
     if row is None:
         raise ValueError(f"no material {mid!r}")
     pid = row["project_id"]
     proj = store.project(conn, pid)
-    sents = store.sentences(conn, mid)
-    nums = numbers(sents)
     live = {t["id"]: t for t in store.live_themes(conn, pid)}
-    orientation = store.get_summary(conn, "material", mid, "orientation")
+    totals = anchor.new_stats()
 
-    if only_theme and only_theme not in live:
-        # THEMES can merge a theme away between the reaction and this rerun. Nothing to rewrite,
-        # and no call to make: say so rather than quietly re-reading the whole material.
-        return {"summary": "", "threads": [], "anchors": dict.fromkeys(
-            ("bound", "rebound", "unfound"), 0),
-            "dropped": [f"theme {only_theme} is no longer live — its thread was not rewritten"]}
+    def tally(st):
+        for k in totals:
+            totals[k] += st.get(k, 0)
 
     if only_theme:
-        task = (f'Rewrite ONE thread: the theme {only_theme} ("{live[only_theme]["name"]}"). '
-                f"Return that one thread in `threads`, and nothing else in it. Return `summary`, "
-                f"`brief` and `people` as empty — they are not being rewritten this time.")
-        shown = [live[only_theme]]
-    else:
-        task = ("Write what the reading found in this material: a summary, one thread for every "
-                "theme that has at least 2 quotable moments here, the people it names, and the "
-                "brief for whoever reads the next piece.")
-        shown = list(live.values())
+        if only_theme not in live:
+            return {"summary": "", "threads": [], "anchors": dict.fromkeys(("bound", "rebound", "unfound"), 0),
+                    "dropped": [f"theme {only_theme} is no longer live — its line was not rewritten"]}
+        kept, dropped, st = _thread(conn, mid, only_theme, run_id=run_id)
+        tally(st)
+        stored = store.get_summary(conn, "material", mid, "reading")
+        return {"summary": stored["text"] if stored else "",
+                "threads": [{"theme_id": only_theme, "moments": kept}] if kept else [],
+                "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
+    threads, dropped = [], []
+    for tid in live:
+        kept, d, st = _thread(conn, mid, tid, run_id=run_id)
+        tally(st)
+        dropped += d
+        if kept:
+            threads.append({"theme_id": tid, "moments": kept})
+
+    shown = []
+    for t in threads:
+        shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(
+            f'- {m["claim"]} — "{m["anchor"]}" [{m["sid"]}]' for m in t["moments"]))
+    orientation = store.get_summary(conn, "material", mid, "orientation")
     system, user = llm.prompt(
         "doc",
-        task=task,
-        brief=proj["brief"] or "Nothing yet — this is the first piece read.",
-        focus=proj["focus"] or "Nothing in particular. Read it on its own terms.",
-        frame=frame_block(conn, mid),
         orientation=orientation["text"] if orientation else "Not written.",
-        themes=themes_block(shown),
-        codes=codes_block(conn, mid),
-        feedback=feedback_block(conn, pid, mid, only_theme),
+        frame=frame_block(conn, mid),
+        focus=proj["focus"] or "Nothing in particular. Read it on its own terms.",
+        threads="\n\n".join(shown) or "No line held in this material.",
+        feedback=feedback_block(conn, pid, mid, None),
         material=layout(conn, mid),
+        summary_words=SUMMARY_WORDS, question_words=BRIEF_WORDS,
     )
     data = llm.chat_json(system, user, label="doc")
 
-    stats, dropped, threads = anchor.new_stats(), [], []
-    for t in data.get("threads") or []:
-        if not isinstance(t, dict):
-            continue
-        tid = str(t.get("theme_id") or "").strip()
-        if tid not in live:
-            dropped.append(f"a thread named a theme that is not live ({tid or 'no id'}) — dropped")
-            continue
-        if only_theme and tid != only_theme:
-            continue
-        kept = []
-        # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw
-        # away untested moments and could then leave the line under the floor — a thread dropped
-        # for thinness that was never actually thin.
-        for m in (t.get("moments") or []):
-            if not isinstance(m, dict):
-                continue
-            claim = words(m.get("claim"), CLAIM_WORDS)
-            quote = str(m.get("anchor") or "").strip()
-            # The anchor law. The citation is a hint; the quote is the evidence.
-            bound = anchor.apply(m, [cited(m.get("sid"), nums)], sents, stats)
-            if not claim:
-                dropped.append(f'a moment with no claim was dropped (quote: "{quote[:60]}")')
-                continue
-            if bound is None:
-                dropped.append(f'a moment was dropped: its quote is not in this material — '
-                               f'"{quote[:60]}"' if quote
-                               else "a moment was dropped: it carried no quote")
-                continue
-            quote, sids = bound
-            kept.append({"claim": claim, "anchor": quote, "sid": sids[0]})
-        if len(kept) > MAX_MOMENTS:
-            dropped.append(f'the line for "{live[tid]["name"]}" kept the first '
-                           f'{MAX_MOMENTS} of {len(kept)} claims')
-            kept = kept[:MAX_MOMENTS]
-        if len(kept) < MIN_MOMENTS:
-            dropped.append(f'the thread for "{live[tid]["name"]}" was dropped: {len(kept)} moment'
-                           f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
-                           f"{MIN_MOMENTS} needed")
-            continue
-        # save_moments orders by position in the material — the reader walks the material, not
-        # the model's ranking — so these go through in the order they came.
-        store.save_moments(conn, mid, tid, kept, run_id)
-        threads.append({"theme_id": tid, "moments": kept})
-
-    if stats["over_cap"]:
-        dropped.append(f"{stats['over_cap']} quote(s) ran past the 12-word cap and were kept — "
-                       "over-long is a prompt problem, not a grounding one")
-
-    summary = words(data.get("summary"), SUMMARY_WORDS)
-    if only_theme is not None:
-        # One thread was reacted to, so one thread is re-made. The summary, the brief and the
-        # people are not this rerun's to touch (PLAN.md §1).
-        stored = store.get_summary(conn, "material", mid, "reading")
-        summary = stored["text"] if stored else ""
-    else:
-        if summary:
-            store.save_summary(conn, "material", mid, "reading", summary, run_id)
-        # The one self-prompting slot in the system: DOC writes the brief, READ and DOC read it.
-        if brief := words(data.get("brief"), BRIEF_WORDS):
-            store.set_brief(conn, pid, brief)
-        # Only when the model actually answered: an omitted field must not wipe what is stored.
-        if "people" in data:
-            store.save_people(conn, mid, [p for p in (data.get("people") or [])
-                                          if isinstance(p, dict) and p.get("name")])
-
+    if summary := words(data.get("summary"), SUMMARY_WORDS):
+        store.save_summary(conn, "material", mid, "reading", summary, run_id)
+    # The one self-prompting slot: QUESTIONS the corpus has left open, read only by the ideation
+    # step for the next material. Never findings — conclusions flow up, only questions forward.
+    if questions := words(data.get("questions"), BRIEF_WORDS):
+        store.set_brief(conn, pid, questions)
+    if "people" in data:
+        store.save_people(conn, mid, [p for p in (data.get("people") or [])
+                                      if isinstance(p, dict) and p.get("name")])
     return {"summary": summary, "threads": threads, "dropped": dropped,
-            "anchors": {k: stats[k] for k in ("bound", "rebound", "unfound")}}
+            "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
 
 # ---- PROJECT ------------------------------------------------------------------------------
 
 def project(conn, pid: str, *, run_id: str | None = None) -> dict:
-    """The project summary. No new quotes at this level: a project claim rests on moments, cited
-    by moment id in brackets, and a citation to a moment that is not live is stripped and said so.
+    """The corpus summary, written over the theme accounts and the material summaries.
+
+    It used to read every claim in every material — 210k tokens at fifty materials. It now reads
+    what the layer below it concluded, which is what the account layer exists for. No new quotes
+    at this level: a claim rests on claims below, cited by id, and a citation to a claim that is
+    not live is stripped and said so.
     """
     proj = store.project(conn, pid)
     live_themes = {t["id"]: t for t in store.live_themes(conn, pid)}
-    live_moments: dict[str, object] = {}
-    blocks = []
+    live_moments = {r["id"]: r for r in conn.execute(
+        "SELECT m.* FROM moment m JOIN material x ON x.id=m.material_id "
+        "WHERE x.project_id=? AND m.status='live'", (pid,))}
+
+    accounts = []
+    for tid, t in live_themes.items():
+        acc = store.get_summary(conn, "theme", tid)
+        accounts.append(f'## {t["name"]} ({tid})\ndefinition: {t["gist"]}\n'
+                        f'{acc["text"] if acc else "no account written yet"}')
+    mats = []
     for m in store.materials(conn, pid):
         summary = store.get_summary(conn, "material", m["id"])
-        lines = [f'## {m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}',
-                 f'what the reading found: {summary["text"] if summary else "not written yet"}']
-        for tid, t in live_themes.items():
-            rows = store.thread(conn, m["id"], tid)
-            if not rows:
-                continue
-            lines.append(f'thread — {t["name"]} ({tid}):')
-            for mo in rows:
-                live_moments[mo["id"]] = mo
-                lines.append(f'  [{mo["id"]}] {mo["claim"]} — quoted: "{mo["anchor"]}"')
-        blocks.append("\n".join(lines))
+        mats.append(f'## {m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}\n'
+                    f'{summary["text"] if summary else "not read yet"}')
 
     fb = [f'{(f["created_at"] or "")[:10]} — {f["kind"]}\n"{f["text"]}"'
           for f in store.project_feedback(conn, pid)
@@ -315,40 +336,17 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     system, user = llm.prompt(
         "project",
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
-        themes=themes_block(list(live_themes.values())),
+        accounts="\n\n".join(accounts) or "No theme has an account yet.",
+        materials="\n\n".join(mats) or "No material has been read yet.",
         feedback="\n\n".join(fb) or "The researcher has not said anything about the project yet.",
-        materials="\n\n".join(blocks) or "No material has been read yet.",
     )
     data = llm.chat_json(system, user, label="project")
 
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
-    dropped = [f"the summary cited {len(dangling)} moment(s) that do not exist or are no longer "
-               f"live — {', '.join(sorted(set(dangling)))} — and those citations were removed"] \
-        if dangling else []
-
-    gists = []
-    for g in data.get("theme_gists") or []:
-        if not isinstance(g, dict):
-            continue
-        tid = str(g.get("theme_id") or "").strip()
-        if tid not in live_themes:
-            dropped.append(f"a gist named a theme that is not live ({tid or 'no id'}) — dropped")
-            continue
-        ids = [str(i) for i in (g.get("moment_ids") or [])]
-        keep, gone = [i for i in ids if i in live_moments], [i for i in ids if i not in
-                                                             live_moments]
-        if gone:
-            dropped.append(f'the gist for "{live_themes[tid]["name"]}" cited {len(gone)} moment(s)'
-                           f" that do not exist — {', '.join(sorted(set(gone)))} — dropped")
-        gist = words(g.get("gist"), GIST_WORDS)
-        if gist:
-            # Written through the gist-only writer: `save_theme` also rewrites a theme's codes,
-            # and the project synthesis does not know which codes belong where.
-            store.set_theme_gist(conn, tid, gist)
-        gists.append({"theme_id": tid, "gist": gist, "moment_ids": keep})
-
+    dropped = [f"the summary cited {len(dangling)} claim(s) that do not exist or are no longer live "
+               f"— {', '.join(sorted(set(dangling)))} — and those citations were removed"] if dangling else []
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
-    return {"summary": summary, "theme_gists": gists, "dropped": dropped}
+    return {"summary": summary, "dropped": dropped}
 
 
 def _strip_dangling(text: str, live: dict) -> tuple[str, list[str]]:
