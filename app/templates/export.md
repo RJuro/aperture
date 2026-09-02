@@ -2,7 +2,6 @@
 
 {{ project.created_at }}
 {% if summary %}
-## What the reading found
 
 {{ summary.text }}
 {% endif -%}
@@ -34,13 +33,12 @@ People: {% for p in m.people %}{{ p.name }}{% if p.aliases %} ({{ p.aliases }}){
 Speaking: {% for s in m.speakers %}{{ s.label }}{% if s.name %} = {{ s.name }}{% endif %}{% if s.role %} ({{ s.role }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}
 {% endif -%}
 {% if m.orientation %}
-### What this is
+### Before reading
 
 {{ m.orientation.text }}
 {% endif -%}
 {% if m.reading %}
-### What the reading found
-
+#
 {{ m.reading.text }}
 {% endif -%}
 {% for th in m.threads %}

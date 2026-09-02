@@ -75,3 +75,9 @@ details { margin: .6rem 0; font-size: .88rem }
 summary { cursor: pointer; color: var(--dim) }
 @media (max-width: 60rem) { .cols { flex-direction: column } .text { max-height: none } }
 .cite { font-family: ui-monospace, Menlo, monospace; font-size: .8em; text-decoration: none }
+
+/* The summary is the first thing read and carries no heading, so it does the work of one:
+   set slightly larger than the claims beside it, and held to a readable measure. */
+.summary { max-width: 34rem; font-size: 1.02rem; line-height: 1.65; }
+.summary p { margin: 0 0 .8em; }
+.provisional { max-width: 34rem; color: var(--dim); font-size: .85rem; margin: 0 0 .4em; }

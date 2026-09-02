@@ -17,8 +17,9 @@
 </details>
 
 {% if summary %}
-<h2>{% if summary.stage == 'reading' %}What the reading found{% else %}What this is{% endif %}</h2>
-<p>{{ summary_html }}</p>
+{% if summary.stage != 'reading' %}<p class="provisional">Not read yet — this is a description
+of the material, written from its shape.</p>{% endif %}
+<div class="summary">{{ summary_html }}</div>
 <form method="post" action="/p/{{ project.id }}/react" class="row">
   <input type="hidden" name="material_id" value="{{ material.id }}">
   <button name="kind" value="agree">Agree</button>
@@ -28,7 +29,6 @@
 </form>
 {% endif %}
 
-<h2>What stands out</h2>
 {% if cards %}
 <nav class="stack">
 {% for c in cards %}

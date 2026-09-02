@@ -9,7 +9,7 @@ and the suite stayed green, so there are no key lists here: if a column exists, 
 **Our vocabulary stays in the code.** `_BANNED` is the design language — it names things
 precisely for us and would be jargon on the page. Variables, keys and comments may say *moment*,
 *thread*, *frame*; the rendered page says *material*, *what this is*, *what the reading found*,
-*What stands out*, *Check this against the material*, *Reading record*.
+*Check this against the material*, *Reading record*.
 """
 from __future__ import annotations
 

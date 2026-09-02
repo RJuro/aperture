@@ -26,27 +26,27 @@ def ready(conn, project, grande, quote):
     return {"pid": project, "mid": grande, "tid": tid}
 
 
-def _moments(quote, mid, tid, n=3, at=40):
+def _moments(quote, mid, tid, n=5, at=40):
     ms = [{"claim": f"claim {i}", "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
            "sid": quote(mid, at=at + i * 9)[0]} for i in range(n)]
     return {"theme_id": tid, "moments": ms}
 
 
 def test_a_quote_that_is_not_in_the_material_drops_its_moment(ready, conn, model, quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 3)
+    t = _moments(quote, ready["mid"], ready["tid"], 5)
     t["moments"].append({"claim": "invented", "anchor": "a phrase that is simply not present",
                          "sid": "S050"})
     model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
     out = synth.doc(conn, ready["mid"])
     claims = [m["claim"] for m in store.thread(conn, ready["mid"], ready["tid"])]
-    assert "invented" not in claims and len(claims) == 3
+    assert "invented" not in claims and len(claims) == 5
     assert out["anchors"]["unfound"] == 1
 
 
 def test_a_real_quote_with_the_wrong_id_is_repaired_not_dropped(ready, conn, model, quote):
     """The quote is authoritative, the citation is not. A mis-cited true claim looked false to
     two readers in round 2 — this is the fix, and it must not silently become a drop."""
-    t = _moments(quote, ready["mid"], ready["tid"], 3)
+    t = _moments(quote, ready["mid"], ready["tid"], 5)
     right_sid = t["moments"][0]["sid"]
     t["moments"][0]["sid"] = "S002"
     model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
@@ -56,7 +56,7 @@ def test_a_real_quote_with_the_wrong_id_is_repaired_not_dropped(ready, conn, mod
 
 
 def test_a_thread_too_thin_to_be_a_thread_is_dropped_and_said_so(ready, conn, model, quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 1)
+    t = _moments(quote, ready["mid"], ready["tid"], 3)   # below the floor
     model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
     out = synth.doc(conn, ready["mid"])
     assert store.thread(conn, ready["mid"], ready["tid"]) == []
@@ -65,7 +65,7 @@ def test_a_thread_too_thin_to_be_a_thread_is_dropped_and_said_so(ready, conn, mo
 
 def test_moments_are_stored_in_material_order_whatever_order_the_model_gave(ready, conn, model,
                                                                            quote):
-    t = _moments(quote, ready["mid"], ready["tid"], 3)
+    t = _moments(quote, ready["mid"], ready["tid"], 5)
     t["moments"].reverse()
     model.queue({"summary": "s", "threads": [t], "brief": "b", "people": []})
     synth.doc(conn, ready["mid"])

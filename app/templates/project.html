@@ -3,7 +3,6 @@
 <h1>{{ project.name | txt }}</h1>
 
 {% if summary %}
-<h2>What the reading found</h2>
 <p>{{ summary_html }}</p>
 {% endif %}
 {% if project.brief %}<p class="dim">Brief: <span class="summary">{{ project.brief | txt }}</span></p>{% endif %}

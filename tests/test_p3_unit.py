@@ -27,7 +27,8 @@ def ready(conn, project, grande):
                                   code_ids=[])}
 
 
-def _thread(quote, mid, tid, n=3, at=40):
+def _thread(quote, mid, tid, n=None, at=40):
+    n = synth.MIN_MOMENTS + 1 if n is None else n
     return {"theme_id": tid,
             "moments": [{"claim": f"claim {i}",
                          "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
@@ -50,11 +51,11 @@ def test_the_layout_prints_every_passage_under_its_own_number(conn, ready):
         assert f"{synth.sid_num(sid)}  {text}" in laid
 
 
-def test_a_thread_is_capped_at_eight_moments(ready, conn, model, quote):
-    model.queue({"summary": "s", "threads": [_thread(quote, ready["mid"], ready["a"], 12)],
+def test_a_thread_is_capped(ready, conn, model, quote):
+    model.queue({"summary": "s", "threads": [_thread(quote, ready["mid"], ready["a"], synth.MAX_MOMENTS + 4)],
                  "brief": "b", "people": []})
     synth.doc(conn, ready["mid"])
-    assert len(store.thread(conn, ready["mid"], ready["a"])) == 8
+    assert len(store.thread(conn, ready["mid"], ready["a"])) == synth.MAX_MOMENTS
 
 
 def test_one_theme_rerun_touches_that_thread_and_nothing_else(ready, conn, model, quote):
@@ -66,12 +67,12 @@ def test_one_theme_rerun_touches_that_thread_and_nothing_else(ready, conn, model
 
     model.queue({"summary": "SHOULD NOT BE SAVED", "brief": "SHOULD NOT BE SAVED", "people": [],
                  "threads": [{"theme_id": ready["a"],
-                              "moments": _thread(quote, ready["mid"], ready["a"], 2,
+                              "moments": _thread(quote, ready["mid"], ready["a"], synth.MIN_MOMENTS,
                                                  at=150)["moments"]},
                              _thread(quote, ready["mid"], ready["b"], at=200)]})
     synth.doc(conn, ready["mid"], only_theme=ready["a"])
 
-    assert len(store.thread(conn, ready["mid"], ready["a"])) == 2
+    assert len(store.thread(conn, ready["mid"], ready["a"])) == synth.MIN_MOMENTS
     assert [m["claim"] for m in store.thread(conn, ready["mid"], ready["b"])] == before
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] \
         == "the whole reading"
