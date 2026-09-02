@@ -1,6 +1,6 @@
 # ANGLES — as sent to the model
 
-_5605 words · ≈7789 tokens_
+_5644 words_
 
 ## SYSTEM
 
@@ -96,24 +96,27 @@ Who speaks in it:
 
 HOW IT WAS DESCRIBED WHEN IT ARRIVED
 
-An oral history interview from the Ellis Island Oral History Project, recorded on August 28, 1989, in Denver, Colorado, with a running time of approximately fifty minutes. The interviewer is Andrew Phillips and the interviewee is Mary Grande, née Marija Yankovik, born in 1910. She recounts her childhood in a peasant home near Novo Mesto in what was then Austria-Hungary and is now Yugoslavia, her 1920 voyage to the United States with her mother, and her subsequent life in America including marriage, work in a packing house, and naturalisation in 1932. A brief interruption occurs midway when Grande's daughter enters the room.
+A recorded oral history interview conducted on August 28, 1989, in Denver, Colorado, as part of the Ellis Island Oral History Project. The interviewer, Andrew Phillips, speaks with Mary Grande about her childhood in Yugoslavia, her emigration to the United States in 1920 at age ten, and her subsequent life and work in America. The transcript includes archival header metadata and a brief interruption by Grande's daughter. Running time is approximately fifty minutes.
 
 QUESTIONS THE CORPUS HAS RAISED SO FAR AND NOT ANSWERED
 
 These come from earlier material. They are questions, not findings: use them to widen what
 you ask of this piece, and never to decide in advance what it contains.
 
-This corpus centres on oral histories of migration to the United States from the Ellis Island project. Two interviews show a shared pattern: subsistence or family-enterprise economies described as ordinary rather than hard, and women's portable skills sustaining households across countries. The first interview's industrial-wage-labour pattern is not universal — the second family runs bakeries, not factories. Watch for enterprises where the woman's skill is credited to the man, and for children's labour framed as routine duty rather than hardship (confirmed twice). Chain settlement by relatives persists. The emotional cost of migration remains refused: both interviewees answer with 'nice.' Bureaucratic labour appears but is dimly remembered.
+Did the bakery on Essex Street actually support nine children, or were there other income sources the account does not mention? What happened to the two sisters left in Poland — did they ever rejoin the family, and what did their absence cost the household emotionally and economically? Why did the school officials suggest keeping children home rather than enrolling them — was it policy, charity, or indifference? How typical was the shipboard Jewish section, and who organized it? Whether the father's conscription threat was Russian or Polish remains unresolved — what difference does that ambiguity make for understanding the family's nationality?
 
 WHAT THIS PROJECT HAS GROUPED SO FAR — an angle that cuts across these is welcome, and so is one
 that goes nowhere near them
 
-- Administrative and civic labour of becoming — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
-- Family enterprise and the gendering of skill — A woman's baking skill sustains a family enterprise across three countries, yet the business carries the father's name and the interviewer assumes it was his. Appears in one material only; absent from the farm-and-mine interview.
-- Household subsistence and expected labour — Women's labour and children's routine duty sustain every household — through barter, farm work, or bakery enterprise — framed as ordinary, not hardship. Spans the full corpus; the gendered attribution of that labour diverges sharply between materials.
-- Industrial wage work as livelihood after migration — Industrial wage work — mining, smelting, butchering — is livelihood after migration in one interview only. Its cost is the body that cannot sustain it. Entirely absent from the bakery-family interview.
-- The bodily cost of industrial work — Industrial wage labour disables workers across two generations of one family — father, daughter, granddaughter each driven out by health. Absent from the bakery interview, whose enterprise carries no such bodily cost.
-- What migration narrows and separates — Migration splits families by distance, death, and prior departure in both materials. A woman's productive range narrows to domestic tasks in one; in the other, separation is felt through sisters left behind and a child lost after the crossing.
+- Belonging, identity, and return — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
+- Family chain migration — Fathers emigrate first, earn, and pull families after them through tickets and letters. Both materials share this structure; they differ in the trade that funded it and whether it cost the migrant's health.
+- Family enterprise as portable livelihood — A mother's baking skill is re-established as a bakery across London, the Lower East Side, and Rockaway Beach, organizing residence, children's labor, and kinship. Found in one of two materials.
+- Forces and constraints shaping departure — Household conflict and conscription drive departure; children are left behind and a spouse's prior flight conditions the other's. Found in one of two materials.
+- Language and schooling across borders — Schooling across borders is shaped by age at arrival, pre-migration education, and language barriers; present in both materials, dividing older migrants turned toward labor from younger ones placed by peer group.
+- Material conditions of relocation and settling — Possessions lost or diminished in transit, housing tied to employer or cramped tenement, and education costs falling on households — the material price of settling, traced across both oral histories.
+- Rural subsistence and barter economies — Subsistence farming, barter, and full household labor define rural livelihood; found in one of two materials, absent from Minnie Rodwin, pointing to divergent migration backgrounds.
+- Transit conditions and practices — Transit is shaped by ethnic segregation, personal networks securing kosher food, and parental authority over children's shipboard earnings; found in one of two materials, silent in the other.
+- Wage labour and its physical costs — Wage labour after migration costs the body — through mining, packing, or bakery delivery — whether sold to employers or organised within a family business; breakdown, downturn, and relocation shape how long each lasts.
 
 THE MATERIAL — the opening and the closing of the raw text, exactly as it is stored
 

@@ -1,6 +1,6 @@
 # THREAD — as sent to the model
 
-_6170 words · ≈8287 tokens_
+_6186 words_
 
 ## SYSTEM
 
@@ -48,12 +48,14 @@ Return JSON in exactly this shape and nothing else:
 THE THEME you are following. Its definition says what belongs to it; you decide where, in THIS
 material, it is present:
 
-t322ab0effe  Administrative and civic labour of becoming — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
+t27e6355e83  Belonging, identity, and return — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
 
 WHERE THE READING ALREADY MARKED this theme's codes in this material, by passage id:
 
-- Bureaucratic labour of emigration: S255, S275, S278
-- Naturalisation as civic belonging: S427, S429
+- Generational contrast in homeland attachment: S361, S381, S382
+- Nationality shifting under one's birthplace: S227, S228
+- Naturalisation as civic belonging: S427, S428, S429
+- Return visits confirming belonging in receiving country: S429, S430
 
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 

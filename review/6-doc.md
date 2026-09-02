@@ -1,6 +1,6 @@
 # DOC — as sent to the model
 
-_6177 words · ≈8326 tokens_
+_6152 words_
 
 ## SYSTEM
 
@@ -29,9 +29,9 @@ Return JSON in exactly this shape and nothing else:
 
 {
   "summary": "...",
-  "questions": "Why does the family choose Trieste rather than Genoa? What happened to the brother
+  "questions": "Why does the family leave from one port and not the nearer one? What happened to the brother
                 who stayed? Whether the wage was ever enough is asked and never answered.",
-  "people": [{"name": "M. Grande", "aliases": ["Grande"], "role": "participant"}]
+  "people": [{"name": "R. Okafor", "aliases": ["Okafor"], "role": "participant"}]
 }
 ```
 
@@ -41,7 +41,7 @@ Return JSON in exactly this shape and nothing else:
 WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Your summary says what
 the reading found; both are kept, so do not repeat this:
 
-An oral history interview from the Ellis Island Oral History Project, recorded on August 28, 1989, in Denver, Colorado, with a running time of approximately fifty minutes. The interviewer is Andrew Phillips and the interviewee is Mary Grande, née Marija Yankovik, born in 1910. She recounts her childhood in a peasant home near Novo Mesto in what was then Austria-Hungary and is now Yugoslavia, her 1920 voyage to the United States with her mother, and her subsequent life in America including marriage, work in a packing house, and naturalisation in 1932. A brief interruption occurs midway when Grande's daughter enters the room.
+A recorded oral history interview conducted on August 28, 1989, in Denver, Colorado, as part of the Ellis Island Oral History Project. The interviewer, Andrew Phillips, speaks with Mary Grande about her childhood in Yugoslavia, her emigration to the United States in 1920 at age ten, and her subsequent life and work in America. The transcript includes archival header metadata and a brief interruption by Grande's daughter. Running time is approximately fifty minutes.
 
 HOW THIS MATERIAL IS LAID OUT:
 

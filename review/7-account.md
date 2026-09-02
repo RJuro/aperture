@@ -1,6 +1,6 @@
 # ACCOUNT — as sent to the model
 
-_1174 words · ≈1745 tokens_
+_1409 words_
 
 ## SYSTEM
 
@@ -78,8 +78,8 @@ No keys other than these two. No text outside the JSON object.
 ```
 THE THEME you are writing about, as it stands now:
 
-"Administrative and civic labour of becoming" — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
-It runs through 2 of the 2 materials in this project, 10 claims in all.
+"Belonging, identity, and return" — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
+It runs through 2 of the 2 materials in this project, 15 claims in all.
 
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
@@ -88,19 +88,24 @@ how people make a living after arriving, and what it costs them
 WHAT THE READING FOUND UNDER THIS THEME, material by material. The id in brackets before each
 claim is the id you cite:
 
-## Ellis Island Oral History: Mary Grande — interview — 6 claims
-[mo8548819c2e] The father sent tickets, but the mother still had to secure approvals from multiple offices before they could leave. — quoted: "she had to go to different places to get it approved"
-[mo88c12565f4] As a minor, Mary was folded into her mother's passport, skipping the bureaucratic labour her mother bore alone. — quoted: "I didn't have to go anywhere because I was a minor"
-[mofb907f7b91] Emigration required trips through courts and offices, with approvals from higher-ups overseeing travel. — quoted: "she had to go through quite a bit of different courts"
-[mo3c47d806b0] In the final month before departure, the mother was constantly travelling to bureaucratic appointments. — quoted: "she was always coming or going to different places"
-[mod5993e0c16] Citizenship arrived twelve years after migration, framed as a joint act with her husband. — quoted: "my husband and I became American citizens in 1932"
-[mo007a3003db] The interview closes with a declaration that ties belonging to the new country, not the old. — quoted: "This is my country."
+## Ellis Island Oral History: Mary Grande — interview — 7 claims
+[mo06a53d0093] Her birthplace changed nationality under her: she was born in one empire and emigrated from its successor state. — quoted: "I was born in Austria/Hungary and came here from Yugoslavia"
+[mocbf21151cc] The mother's attachment to the homeland never wavered, but fear of another war kept her from returning. — quoted: "She always hoped to go back, but she never did"
+[mo05c958c5c6] A generational split in homeland attachment is stated plainly: the mother missed it, the daughter did not. — quoted: "My mother missed it a lot. But, uh, I'm sorry to say, I"
+[moa843c6d7e9] Return trips to the birthplace were repeated three times, by car and by plane, without weakening the pull of the receiving country. — quoted: "him and I went back there three times, one by car"
+[mo60f375d432] Naturalisation in 1932 was expressed as a civic commitment: voting in every election thereafter. — quoted: "my husband and I became American citizens in 1932"
+[mo101f251f5d] Each return visit to Europe confirmed rather than unsettled her belonging in America. — quoted: "every time I go back to Europe I'm happy to come back"
+[mo7aa0189e1a] Belonging is declared in the strongest possible terms, closing the interview with an explicit claim of national identity. — quoted: "This is my country."
 
-## Minnie Rodwin oral history interview — interview — 4 claims
-[mo228dc3a5e1] Rodwin gives Christmas morning as her actual birth date, not the registered one. — quoted: "December—December 25th."
-[mo2434164aeb] The official registered date is six weeks later than the actual birth. — quoted: "your official birth date is February 9th, 1907"
-[mof9fa185df5] The father secures tickets and goes ahead to the United States alone. — quoted: "So my father got tickets, went to the United States."
-[mo2941456e12] She has no memory of Ellis Island processing at all. — quoted: "No"
+## Minnie Rodwin oral history interview — interview — 8 claims
+[mo3e3cd79917] The interview opens with a renaming: the speaker introduces herself by a name she no longer uses, marking migration as an act of identity replacement. — quoted: "I—at that time I was Mary."
+[mo37b360d6ad] Two birth dates are treated as already known — one lived, one registered — as though doubleness is a normal feature of this immigrant identity. — quoted: "You—you have two, right?"
+[mo6237bb11ff] The official record places her birth six weeks after the real event; the state's version of her identity is December 25th, but the papers say February 9th. — quoted: "your official birth date is February 9th, 1907"
+[mobf81720373] Two older sisters were left behind in Poland, because belonging to the new country required the mother to abandon part of her family. — quoted: "we had two sisters in Poland we left there"
+[mod068617ca9] The family's nationality is uncertain not through choice but because the borders of their homeland kept shifting beneath them. — quoted: "Because those borders changed a lot."
+[modd4d187c2e] After moving to America the family kept the English word for father, preserving a piece of London identity that set them apart from other immigrants. — quoted: "We called him Daddy because in London it was Daddy."
+[moe3df260ea1] School officials told the mother to keep her children home to help in the bakery, so making a living cost the children their education. — quoted: "Let them stay home and help you."
+[moc0a53cfa9e] Asked whether the Lower East Side shaped who she became, she answers not with place but with family cohesion — belonging is to people, not to a neighborhood. — quoted: "Well, we were al—we were always together."
 
 WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all:
 

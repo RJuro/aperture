@@ -1,6 +1,6 @@
 # READ — as sent to the model
 
-_7470 words · ≈10391 tokens_
+_8249 words_
 
 ## SYSTEM
 
@@ -14,7 +14,7 @@ Every rule below carries the same weight. Follow all of them on every code you m
 3. Reuse before you invent: if a code already in the codebook covers a passage, cite it by its exact name as a plain string and make no second code for the same idea.
 4. Return at most 60 codes in total, and at most 36 of them new.
 5. Give every new code a one-sentence definition saying what would count as another instance of it, in material you have not seen.
-6. Keep every code at one level of abstraction — what a passage is *about*, not the event it reports. "Work as what makes staying possible" is a code; "arrived in Trieste" is a step in an itinerary and is not one. A code that only ever fits this one material is pitched too low; a code that would fit any material at all is pitched too high.
+6. Keep every code at one level of abstraction — what a passage is *about*, not the event it reports. "Work as what makes staying possible" is a code; "arrived in the port" is a step in an itinerary and is not one. A code that only ever fits this one material is pitched too low; a code that would fit any material at all is pitched too high.
 7. Name each code once: no two codes in your answer share a name, and no code repeats the codebook's wording with a synonym.
 8. Code what the material says, not what you expect it to say. Material comes as interviews, focus groups, field notes, documents and open-ended survey answers alike; some of it has speakers and some has none, and a code never assumes there is someone talking.
 9. An angle decides WHERE TO LOOK, never WHAT IS FOUND. The angles below were written before anyone read this material; they are places to look, and they are neither codes nor findings. Make a code only where this material says it, and never because an angle suggested it — an angle that this material turns out to have nothing to say to earns no code at all.
@@ -42,24 +42,51 @@ how people make a living after arriving, and what it costs them
 
 THE CODEBOOK AS IT STANDS — reuse these names exactly, as plain strings
 
-- Bakery work as marital connection — Passages where a marriage or partnership arises through shared occupation in the same trade or industry.
-- Barter as subsistence exchange — Passages where goods or livestock are exchanged directly for other goods rather than for money, as a way of sustaining a household.
-- Bureaucratic labour of emigration — Passages describing the offices, courts, approvals, and trips required to secure permission to leave or travel.
-- Chain settlement by shared origin — Passages explaining why people from the same region or nationality cluster in one place, citing mutual integration or following earlier settlers.
-- Children's labour as expected routine — Passages where a child's contribution to household or farm work is presented as a normal part of growing up rather than as hardship.
-- Conscription as migration push — Passages where a military call-up or draft obligation is cited as the reason a family or individual decides to leave a country.
-- Family separation across migration — Passages naming which family members went ahead, which stayed behind, and which died before they could join the migration.
-- Father's trade displaced by family enterprise — Passages where a man's original occupation is set aside so he can work in a family business built on someone else's skill.
-- Gendered naming of family business — Passages where a business is named after or credited to one gender though the operative skill belongs to the other.
-- Health decline ending wage work — Passages where a worker's deteriorating health is given as the reason they can no longer hold a job.
-- Medical exit from industrial work — Passages where a worker leaves or pauses a job because of surgeries or medical conditions attributable to the work.
-- Mother's craft as portable capital — Passages where a woman's skill or trade, learned in one country, becomes the household's livelihood in each subsequent country of settlement.
-- Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that mark belonging in the new country.
-- Packing-house work as long-term livelihood — Passages where meatpacking or similar industrial food-processing work is described as a sustained source of income over many years.
-- Refusal of performance earnings as labour boundary — Passages where a family member refuses to let children accept money for informal performances, marking a boundary around what counts as acceptable work.
-- Wage labour in extractive industry — Passages where earning a living is tied to work in mines, smelters, or similar extraction sites.
-- Women's farm labour as ordinary — Passages where women's agricultural or physical work on a farm is described as normal and expected, not exceptional.
-- Work narrowing after migration — Passages where a person's range of productive activity shrinks after moving, especially from diverse subsistence work to domestic tasks only.
+- Absent parent's letters and tickets as migration mechanism — Passages where emigration is set in motion by correspondence and documents sent from an absent parent rather than by a joint family decision.
+- Age-based school placement despite language barrier — Passages where an immigrant child is placed in a grade matching their age rather than their language proficiency, with practical subjects easing the transition.
+- Birth name superseded by everyday name — Passages where a person's given name at birth is replaced by a different name used in daily life.
+- Child participation in farm slaughter — Passages where children are described as having assigned roles in killing and processing animals for food on a farm.
+- Children left behind with grandparent due to care concerns — Passages where children are left with a grandparent because a parent fears inability to care for them during migration.
+- Children's unpaid labor in family enterprise — Passages where children describe helping parents with tasks in a family business without receiving wages.
+- Clothing as portable wealth lost in transit — Passages where migrants' accumulated clothing, intended as a resource for the new life, is stolen or lost during the journey.
+- Company housing tied to employment — Passages where a worker's residence is provided by the employer and is contingent on the job.
+- Conscription recall as emigration trigger — Passages where a military recall notice is described as what causes a family to emigrate rather than comply.
+- Depression-era underemployment straining household — Passages where intermittent or reduced work during the Depression is described as creating financial pressure on a family.
+- Dual birth date as official versus lived identity — Passages where a person's registered birth date differs from their actual birth date.
+- Early school start abroad as pre-migration education — Passages where a child's schooling began at an unusually young age in the country of origin, giving them prior education before migration.
+- Family business as weekly relative gathering point — Passages where relatives regularly gather at a family business on a particular day of the week.
+- Family business re-established at each migration stop — Passages where a household livelihood is restarted in the same trade at successive migration locations.
+- Family business relocation driving residential move — Passages where a family's move to a new area is described as tied to relocating their business there.
+- Farm-to-housework transition for immigrant women — Passages where a woman's shift from agricultural labour abroad to domestic work after migration is described as a change in the kind of work she does.
+- Generational contrast in homeland attachment — Passages where a parent's longing for the homeland is explicitly contrasted with a child's indifference or attachment to the new country.
+- Horse-drawn delivery as business transport — Passages where a family business delivers its goods by horse and wagon.
+- Icebox as marker of relative household comfort — Passages where a household appliance is noted as something that distinguished a household from neighbors who lacked it.
+- Jewish section on ship as ordinary travel arrangement — Passages where a designated Jewish section on a transport vessel is mentioned as an unremarkable feature of the journey.
+- Kosher food sent by acquaintance during transit — Passages where a crew member who knows the family personally sends kosher food to them during a voyage.
+- Livestock bartering as rural livelihood — Passages where trading animals or animal products is described as a way of sustaining a rural household.
+- Living above or adjacent to family business — Passages where a family's residence is described as being in the same building or across the street from their business.
+- Marriage through shared trade workplace — Passages where a spouse is met through working in the same trade or business.
+- Mining work and health decline — Passages where mine or smelter work is described as causing physical deterioration that eventually ends the worker's ability to labour.
+- Mother as bakery skill source across borders — Passages where a woman's trade skill is described as the foundation of a family business re-established in each new location.
+- Mother-in-law conflict as migration cause — Passages where harassment by a husband's mother is described as what drives a woman to leave for another country.
+- Nationality shifting under one's birthplace — Passages where a person's country of birth is described as having changed its political identity, so that emigration occurs from a different country than the one they were born in.
+- Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that establish belonging in the receiving country.
+- Obligated refugee housing during wartime — Passages where households are required by authority to share their homes with displaced people during conflict.
+- Official language versus home language — Passages where a colonial or state-imposed language is distinguished from the everyday language spoken at home.
+- Packing house as decades-long livelihood — Passages where industrial food processing is described as long-term wage employment that sustains a household over many years.
+- Parent refusing children's earned money in transit — Passages where a parent forbids children from collecting money thrown to them for performing during a journey.
+- Prior emigration of parent as precondition for family relocation — Passages where a family member's earlier migration and earnings abroad are described as what later enables the rest of the family to follow.
+- Regional chain migration settlement — Passages where the clustering of people from the same home region in one destination is explained as a pattern of mutual integration.
+- Relative as intermediary stop in migration route — Passages where a family member living at an intermediate location serves as a temporary waypoint in the migration journey.
+- Return visits confirming belonging in receiving country — Passages where trips back to the homeland are described as reinforcing the migrant's sense that the receiving country is now home.
+- School fees as immigrant household cost — Passages where paying for children's schooling is described as a financial burden the household must bear from its own earnings.
+- School releasing children for family business labor — Passages where school authorities advise keeping children home to help with a family enterprise.
+- Spouse's presence as condition for migration willingness — Passages where a wife's willingness to migrate is described as contingent on her husband having gone first.
+- Spouse's trade skill converting partner's occupation — Passages where one spouse's existing trade skill causes the other spouse to shift into that occupation.
+- Tenement hall bathrooms and coin-fed gas meters — Passages where shared bathrooms in hallways and coin-operated utility meters are described as features of tenement housing.
+- Wartime food-for-clothing barter — Passages where rural people trade food to urban people in exchange for clothing during wartime scarcity.
+- Women's farm labour as unremarkable — Passages where a woman's heavy physical farm work is described as normal or typical rather than exceptional.
+- Work interruptions from medical surgery — Passages where physical conditions requiring surgery interrupt a worker's ability to maintain continuous employment.
 
 WHAT THIS MATERIAL IS
 
@@ -74,53 +101,59 @@ WHERE IT COULD BE WORTH LOOKING — written before this material was read, so tr
 as a place to look and none of it as something found. Code what the material says here; leave an
 angle uncoded when this material has nothing to say to it.
 
-Where this material sits: Immigrant labour and livelihood in early twentieth-century America.
+Where this material sits: Oral history of early twentieth-century European immigration.
 
-Areas inside that: Women's wage and subsistence work; Chain migration and settlement; Health and bodily cost of labour; Household separation across migration; Naturalisation and civic belonging; Barter and cash economies in transition.
+Areas inside that: Transnational family separation; Women's rural labour; Childhood migration memory; Wartime civilian exchange; Chain migration and settlement; Naturalisation and belonging.
 
 Ways into this material — places to look, not things already found:
 
-From barter to wage labour
-    The material moves from the mother bartering cattle and eggs to the father at the smelter and mine to Mary's thirty years in a packing house, placing two economic worlds side by side.
-    - Where does the material mark the shift from barter to wages, and what is said to change?
-    - Which survival skills from the farm are said to transfer, and which are left behind?
-    - What is said about money that was not said about barter?
+The absent father and family reassembly
+    The father left in 1911, the mother farmed alone for nearly a decade, and emigration is narrated through letters and tickets he sent rather than through a family decision made together.
+    - How is the father's absence explained versus described?
+    - What does the material say about who decided the family would reunite?
+    - Where does the father's presence or absence shape the telling of events?
 
-Women's work and what counts as labour
-    The mother farms, chops wood, and barters, then after migration does only housework and laundry; Mary later works a killing floor for three decades, yet the framing of each differs.
-    - Where is the mother's farm work named as work, and where does it disappear into household routine?
-    - How is the packing-house work described compared to farm labour?
-    - Where does the material distinguish men's earning from women's?
+Women's farm labour as unremarkable
+    The mother chopped wood, bartered cattle, raised children, and managed the farm alone, and Grande calls this normal, saying most women did similar work.
+    - Where does Grande frame women's labour as ordinary, and where does the interviewer single it out?
+    - What kinds of women's work are described in detail versus passed over?
+    - How does the mother's US shift from farm labour to housework get characterized?
 
-Health as the cost of earning
-    The father's health declines and he cannot keep working; Mary has surgeries that pull her out of the packing house; the daughter leaves the smokehouse on medical grounds.
-    - Where does the material connect a specific job to a specific bodily consequence?
-    - What is said to happen when a wage earner can no longer work?
-    - Where is health spoken of as something work takes rather than something work supports?
+The child's selective memory of leaving
+    Grande says she was anxious to meet her father and did not think about missing friends, and later says she did not miss home while her mother did.
+    - What does the child remember vividly versus what she says she did not think about?
+    - Where does age ten function as an explanation for what is recalled or not?
+    - How does the account of departure compare with the account of arrival?
 
-Family separation as migration's price
-    The father left in 1911, the mother ran the farm alone for nine years, a brother was killed before he could emigrate, and the mother never returned, all recounted without explicit grief.
-    - Where does the material name who was left behind and who went ahead?
-    - What is said about loss, and where is it passed over quickly?
-    - How does the mother's wish to return sit beside the fact that she never did?
+Language and imperial belonging
+    Grande names Slovenian as her language, German as the required official language, and notes she was born in Austria/Hungary but left from Yugoslavia, marking a shift in political identity she witnessed as a child.
+    - Where does language appear as a practical matter versus a political one?
+    - How does the renaming of the home country enter the narrative?
+    - What does the material say about language after arrival in the United States?
 
-Chain settlement and clustering
-    Grande explains the concentration of people from her region around Denver by saying a group settles and others follow to integrate together, offered as a plain fact.
-    - Where does the material name specific places people from the same origin gathered?
-    - What reasons are given for clustering, and what is left unsaid?
-    - How does kinship relate to settlement in the account?
+Wartime rural-urban barter
+    Grande describes city people across the river trading clothing for food from country people during the war, a barter system distinct from the mother's cattle bartering.
+    - How is the wartime barter system distinguished from ordinary trade?
+    - What goods move in which direction, and who is said to need what?
+    - Where does wartime scarcity enter other parts of the account?
 
-Children's labour and its normalcy
-    Grande caught blood at pig slaughter, helped on the farm, and walked a mile to school, all described as normal parts of a child's life rather than as hardship.
-    - Where is a child's work described as expected rather than exceptional?
-    - Where does the material distinguish between children's chores and children's play?
-    - How is the child's contribution to the household economy valued or not?
+Generational difference in longing for homeland
+    Grande says her mother missed the homeland a lot and hoped to return but never did, while Grande herself says she did not miss it, and returns to Europe but is always happy to come back to the US.
+    - Where are the mother's and daughter's attachments to the homeland contrasted?
+    - What reasons does the material give for the mother never returning?
+    - How are return visits to Europe described in relation to belonging in America?
 
-Bureaucratic labour of departure
-    The mother spent her last month before emigration going to different courts, offices, and higher-ups for approvals, a process Grande witnessed but did not fully know.
-    - Where does the material specify which offices and approvals were required?
-    - What is said about who bore the burden of paperwork?
-    - Where does the material suggest the process was harder for some than for others?
+Chain migration and regional settlement
+    Grande explains the concentration of people from her area around Denver as a settlement pattern where newcomers integrate with those already there, and her uncle in Aspen forms part of the route to Denver.
+    - What connections between relatives and settlement locations does the material trace?
+    - How is the cluster of people from the same region explained?
+    - Where do intermediary stops appear in the migration path?
+
+Work trajectory from farm to packing house
+    Grande details farm food production as a child and later describes thirty years cutting pork and beef in a packing house, a labour arc the material presents without commentary on the continuity.
+    - How does the description of farm butchery compare with the description of factory meat-cutting?
+    - Where does work appear as survival versus as identity?
+    - What does the material say about the transition between kinds of work?
 
 THE MATERIAL — each line is one sentence id and its text; cite only these ids
 

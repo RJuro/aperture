@@ -1,6 +1,6 @@
 # FRAME — as sent to the model
 
-_2105 words · ≈3044 tokens_
+_2105 words_
 
 ## SYSTEM
 

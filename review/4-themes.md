@@ -1,6 +1,6 @@
 # THEMES — as sent to the model
 
-_7299 words · ≈10082 tokens_
+_8629 words_
 
 ## SYSTEM
 
@@ -20,9 +20,9 @@ only have been written about the materials in front of you is a finding in the w
 2. Return the whole theme set, not only what changed: every theme that should be live afterwards appears in your answer, keeping its `id` when it already has one and carrying `"new": true` instead when it does not.
 3. Gather codes by name: `code_names` holds names copied exactly from the codebook below, and a name that is not in that codebook is ignored.
 4. Keep at most 12 themes live. Fewer, well-populated themes beat many thin ones.
-5. Give every theme a gist of one sentence saying what the theme claims about the material, not what its codes are called.
+5. Give every theme a gist of one sentence DEFINING it: what belongs to this theme and what would count as an instance. Not what its codes are called, and not what was found — a definition, so that a stranger could sort a new passage into it or out of it.
 6. Fold a theme into another by giving it `"merge_into": "<the id it becomes part of>"` — never by leaving it out of your answer. A theme that is dropped silently strands everything already written under it.
-7. Build a theme on codes that recur across more than one material where the codes allow it; say so in the gist when a theme belongs to a single material only.
+7. Build a theme on codes that recur across more than one material where the codes allow it. How many materials a theme currently reaches is not the gist's business and must not appear in it — that is a fact the accounts state later, over the evidence.
 8. Keep each theme at one level of abstraction — a pattern the codes share, not a summary of one passage and not a restatement of a single code's name.
 9. Leave a code out rather than force it: a code that fits nowhere stays ungathered, and that is a finding.
 10. Change a live theme's name or gist only when the codes give you a reason to; a researcher who has read a theme should still recognise it.
@@ -50,18 +50,29 @@ of you; a theme is a pattern in what people said, not a grouping of labels.
 ## Ellis Island Oral History: Mary Grande (interview)
 
 CODES MARKED IN THIS MATERIAL, by passage:
-- Barter as subsistence exchange: S042, S141, S240
-- Bureaucratic labour of emigration: S255, S275, S278
-- Chain settlement by shared origin: S318, S401, S402
-- Children's labour as expected routine: S080, S118, S167
-- Family separation across migration: S041, S264, S265
-- Health decline ending wage work: S335, S377, S378
-- Medical exit from industrial work: S412, S416
-- Naturalisation as civic belonging: S427, S429
-- Packing-house work as long-term livelihood: S411, S414, S415
-- Wage labour in extractive industry: S332, S376, S377
-- Women's farm labour as ordinary: S137, S142
-- Work narrowing after migration: S359
+- Absent parent's letters and tickets as migration mechanism: S254, S255
+- Age-based school placement despite language barrier: S341, S342, S343
+- Child participation in farm slaughter: S080, S084, S088
+- Clothing as portable wealth lost in transit: S241, S242, S243
+- Company housing tied to employment: S338
+- Depression-era underemployment straining household: S406, S407, S408
+- Farm-to-housework transition for immigrant women: S359, S360
+- Generational contrast in homeland attachment: S361, S381, S382
+- Livestock bartering as rural livelihood: S042, S170, S171
+- Mining work and health decline: S334, S377, S378
+- Nationality shifting under one's birthplace: S227, S228
+- Naturalisation as civic belonging: S427, S428, S429
+- Obligated refugee housing during wartime: S177, S178, S181
+- Official language versus home language: S210, S213
+- Packing house as decades-long livelihood: S411, S414, S415
+- Prior emigration of parent as precondition for family relocation: S041, S254
+- Regional chain migration settlement: S318, S401, S402
+- Relative as intermediary stop in migration route: S391, S392
+- Return visits confirming belonging in receiving country: S429, S430
+- School fees as immigrant household cost: S409, S410
+- Wartime food-for-clothing barter: S235, S236, S240
+- Women's farm labour as unremarkable: S136, S137
+- Work interruptions from medical surgery: S412
 
 THE MATERIAL:
 S000  DP-40
@@ -652,57 +663,117 @@ S432  That finishes Interview Number 414 [DP-40] with 		Mary Grande,  It's five 
 
 THE THEMES THAT ARE LIVE NOW
 
-- id t322ab0effe · "Administrative and civic labour of becoming" — Administrative labour of emigration is remembered where a mother bore it — repeated trips to courts and offices — and absent where a child was too young to notice.
-  gathers: Bureaucratic labour of emigration, Naturalisation as civic belonging
-- id t705b49e6a3 · "Family enterprise and the gendering of skill" — A woman's baking skill sustains a family enterprise across three countries, yet the business carries the father's name and the interviewer assumes it was his. Appears in one material only; absent from the farm-and-mine interview.
-  gathers: Bakery work as marital connection, Father's trade displaced by family enterprise, Gendered naming of family business, Mother's craft as portable capital
-- id te03fdf696d · "Household subsistence and expected labour" — Women's labour and children's routine duty sustain every household — through barter, farm work, or bakery enterprise — framed as ordinary, not hardship. Spans the full corpus; the gendered attribution of that labour diverges sharply between materials.
-  gathers: Barter as subsistence exchange, Children's labour as expected routine, Women's farm labour as ordinary
-- id tf26da42d35 · "Industrial wage work as livelihood after migration" — Industrial wage work — mining, smelting, butchering — is livelihood after migration in one interview only. Its cost is the body that cannot sustain it. Entirely absent from the bakery-family interview.
-  gathers: Packing-house work as long-term livelihood, Wage labour in extractive industry
-- id t256893f66d · "The bodily cost of industrial work" — Industrial wage labour disables workers across two generations of one family — father, daughter, granddaughter each driven out by health. Absent from the bakery interview, whose enterprise carries no such bodily cost.
-  gathers: Health decline ending wage work, Medical exit from industrial work
-- id t70f91d46ab · "What migration narrows and separates" — Migration splits families by distance, death, and prior departure in both materials. A woman's productive range narrows to domestic tasks in one; in the other, separation is felt through sisters left behind and a child lost after the crossing.
-  gathers: Family separation across migration, Work narrowing after migration
+- id t27e6355e83 · "Belonging, identity, and return" — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
+  gathers: Birth name superseded by everyday name, Dual birth date as official versus lived identity, Generational contrast in homeland attachment, Nationality shifting under one's birthplace, Naturalisation as civic belonging, Return visits confirming belonging in receiving country
+- id t830ae2ac7b · "Family chain migration" — Fathers emigrate first, earn, and pull families after them through tickets and letters. Both materials share this structure; they differ in the trade that funded it and whether it cost the migrant's health.
+  gathers: Absent parent's letters and tickets as migration mechanism, Prior emigration of parent as precondition for family relocation, Regional chain migration settlement, Relative as intermediary stop in migration route
+- id t637dd9f8cb · "Family enterprise as portable livelihood" — A mother's baking skill is re-established as a bakery across London, the Lower East Side, and Rockaway Beach, organizing residence, children's labor, and kinship. Found in one of two materials.
+  gathers: Children's unpaid labor in family enterprise, Family business as weekly relative gathering point, Family business re-established at each migration stop, Family business relocation driving residential move, Horse-drawn delivery as business transport, Living above or adjacent to family business, Marriage through shared trade workplace, Mother as bakery skill source across borders, School releasing children for family business labor, Spouse's trade skill converting partner's occupation
+- id td15ccc4c5a · "Forces and constraints shaping departure" — Household conflict and conscription drive departure; children are left behind and a spouse's prior flight conditions the other's. Found in one of two materials.
+  gathers: Children left behind with grandparent due to care concerns, Conscription recall as emigration trigger, Mother-in-law conflict as migration cause, Spouse's presence as condition for migration willingness
+- id t92a3e13a7c · "Language and schooling across borders" — Schooling across borders is shaped by age at arrival, pre-migration education, and language barriers; present in both materials, dividing older migrants turned toward labor from younger ones placed by peer group.
+  gathers: Age-based school placement despite language barrier, Early school start abroad as pre-migration education, Official language versus home language
+- id tbb7a7a3822 · "Material conditions of relocation and settling" — Possessions lost or diminished in transit, housing tied to employer or cramped tenement, and education costs falling on households — the material price of settling, traced across both oral histories.
+  gathers: Clothing as portable wealth lost in transit, Company housing tied to employment, Icebox as marker of relative household comfort, School fees as immigrant household cost, Tenement hall bathrooms and coin-fed gas meters
+- id t8c05417a17 · "Rural subsistence and barter economies" — Subsistence farming, barter, and full household labor define rural livelihood; found in one of two materials, absent from Minnie Rodwin, pointing to divergent migration backgrounds.
+  gathers: Child participation in farm slaughter, Livestock bartering as rural livelihood, Wartime food-for-clothing barter, Women's farm labour as unremarkable
+- id tfe650cc175 · "Transit conditions and practices" — Transit is shaped by ethnic segregation, personal networks securing kosher food, and parental authority over children's shipboard earnings; found in one of two materials, silent in the other.
+  gathers: Jewish section on ship as ordinary travel arrangement, Kosher food sent by acquaintance during transit, Parent refusing children's earned money in transit
+- id t8f12f3c428 · "Wage labour and its physical costs" — Wage labour after migration costs the body — through mining, packing, or bakery delivery — whether sold to employers or organised within a family business; breakdown, downturn, and relocation shape how long each lasts.
+  gathers: Depression-era underemployment straining household, Farm-to-housework transition for immigrant women, Mining work and health decline, Packing house as decades-long livelihood, Work interruptions from medical surgery
 
 THE CODEBOOK, AND WHERE EACH CODE WAS FOUND
 
-- Bakery work as marital connection — Passages where a marriage or partnership arises through shared occupation in the same trade or industry.
-  found in: Minnie Rodwin oral history interview 3
-- Barter as subsistence exchange — Passages where goods or livestock are exchanged directly for other goods rather than for money, as a way of sustaining a household.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Bureaucratic labour of emigration — Passages describing the offices, courts, approvals, and trips required to secure permission to leave or travel.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Chain settlement by shared origin — Passages explaining why people from the same region or nationality cluster in one place, citing mutual integration or following earlier settlers.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 2
-- Children's labour as expected routine — Passages where a child's contribution to household or farm work is presented as a normal part of growing up rather than as hardship.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 3
-- Conscription as migration push — Passages where a military call-up or draft obligation is cited as the reason a family or individual decides to leave a country.
-  found in: Minnie Rodwin oral history interview 3
-- Family separation across migration — Passages naming which family members went ahead, which stayed behind, and which died before they could join the migration.
-  found in: Ellis Island Oral History: Mary Grande 3; Minnie Rodwin oral history interview 3
-- Father's trade displaced by family enterprise — Passages where a man's original occupation is set aside so he can work in a family business built on someone else's skill.
-  found in: Minnie Rodwin oral history interview 3
-- Gendered naming of family business — Passages where a business is named after or credited to one gender though the operative skill belongs to the other.
-  found in: Minnie Rodwin oral history interview 3
-- Health decline ending wage work — Passages where a worker's deteriorating health is given as the reason they can no longer hold a job.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Medical exit from industrial work — Passages where a worker leaves or pauses a job because of surgeries or medical conditions attributable to the work.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Mother's craft as portable capital — Passages where a woman's skill or trade, learned in one country, becomes the household's livelihood in each subsequent country of settlement.
-  found in: Minnie Rodwin oral history interview 3
-- Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that mark belonging in the new country.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Packing-house work as long-term livelihood — Passages where meatpacking or similar industrial food-processing work is described as a sustained source of income over many years.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Refusal of performance earnings as labour boundary — Passages where a family member refuses to let children accept money for informal performances, marking a boundary around what counts as acceptable work.
-  found in: Minnie Rodwin oral history interview 3
-- Wage labour in extractive industry — Passages where earning a living is tied to work in mines, smelters, or similar extraction sites.
-  found in: Ellis Island Oral History: Mary Grande 3
-- Women's farm labour as ordinary — Passages where women's agricultural or physical work on a farm is described as normal and expected, not exceptional.
-  found in: Ellis Island Oral History: Mary Grande 2
-- Work narrowing after migration — Passages where a person's range of productive activity shrinks after moving, especially from diverse subsistence work to domestic tasks only.
-  found in: Ellis Island Oral History: Mary Grande 1
+- Absent parent's letters and tickets as migration mechanism — Passages where emigration is set in motion by correspondence and documents sent from an absent parent rather than by a joint family decision.
+  marked in 2 of 2 materials, 4 passages
+- Age-based school placement despite language barrier — Passages where an immigrant child is placed in a grade matching their age rather than their language proficiency, with practical subjects easing the transition.
+  marked in 1 of 2 materials, 3 passages
+- Birth name superseded by everyday name — Passages where a person's given name at birth is replaced by a different name used in daily life.
+  marked in 1 of 2 materials, 3 passages
+- Child participation in farm slaughter — Passages where children are described as having assigned roles in killing and processing animals for food on a farm.
+  marked in 1 of 2 materials, 3 passages
+- Children left behind with grandparent due to care concerns — Passages where children are left with a grandparent because a parent fears inability to care for them during migration.
+  marked in 1 of 2 materials, 3 passages
+- Children's unpaid labor in family enterprise — Passages where children describe helping parents with tasks in a family business without receiving wages.
+  marked in 1 of 2 materials, 3 passages
+- Clothing as portable wealth lost in transit — Passages where migrants' accumulated clothing, intended as a resource for the new life, is stolen or lost during the journey.
+  marked in 1 of 2 materials, 3 passages
+- Company housing tied to employment — Passages where a worker's residence is provided by the employer and is contingent on the job.
+  marked in 1 of 2 materials, 1 passages
+- Conscription recall as emigration trigger — Passages where a military recall notice is described as what causes a family to emigrate rather than comply.
+  marked in 1 of 2 materials, 3 passages
+- Depression-era underemployment straining household — Passages where intermittent or reduced work during the Depression is described as creating financial pressure on a family.
+  marked in 1 of 2 materials, 3 passages
+- Dual birth date as official versus lived identity — Passages where a person's registered birth date differs from their actual birth date.
+  marked in 1 of 2 materials, 3 passages
+- Early school start abroad as pre-migration education — Passages where a child's schooling began at an unusually young age in the country of origin, giving them prior education before migration.
+  marked in 1 of 2 materials, 3 passages
+- Family business as weekly relative gathering point — Passages where relatives regularly gather at a family business on a particular day of the week.
+  marked in 1 of 2 materials, 2 passages
+- Family business re-established at each migration stop — Passages where a household livelihood is restarted in the same trade at successive migration locations.
+  marked in 1 of 2 materials, 3 passages
+- Family business relocation driving residential move — Passages where a family's move to a new area is described as tied to relocating their business there.
+  marked in 1 of 2 materials, 3 passages
+- Farm-to-housework transition for immigrant women — Passages where a woman's shift from agricultural labour abroad to domestic work after migration is described as a change in the kind of work she does.
+  marked in 1 of 2 materials, 2 passages
+- Generational contrast in homeland attachment — Passages where a parent's longing for the homeland is explicitly contrasted with a child's indifference or attachment to the new country.
+  marked in 1 of 2 materials, 3 passages
+- Horse-drawn delivery as business transport — Passages where a family business delivers its goods by horse and wagon.
+  marked in 1 of 2 materials, 2 passages
+- Icebox as marker of relative household comfort — Passages where a household appliance is noted as something that distinguished a household from neighbors who lacked it.
+  marked in 1 of 2 materials, 4 passages
+- Jewish section on ship as ordinary travel arrangement — Passages where a designated Jewish section on a transport vessel is mentioned as an unremarkable feature of the journey.
+  marked in 1 of 2 materials, 2 passages
+- Kosher food sent by acquaintance during transit — Passages where a crew member who knows the family personally sends kosher food to them during a voyage.
+  marked in 1 of 2 materials, 2 passages
+- Livestock bartering as rural livelihood — Passages where trading animals or animal products is described as a way of sustaining a rural household.
+  marked in 1 of 2 materials, 3 passages
+- Living above or adjacent to family business — Passages where a family's residence is described as being in the same building or across the street from their business.
+  marked in 1 of 2 materials, 2 passages
+- Marriage through shared trade workplace — Passages where a spouse is met through working in the same trade or business.
+  marked in 1 of 2 materials, 4 passages
+- Mining work and health decline — Passages where mine or smelter work is described as causing physical deterioration that eventually ends the worker's ability to labour.
+  marked in 1 of 2 materials, 3 passages
+- Mother as bakery skill source across borders — Passages where a woman's trade skill is described as the foundation of a family business re-established in each new location.
+  marked in 1 of 2 materials, 4 passages
+- Mother-in-law conflict as migration cause — Passages where harassment by a husband's mother is described as what drives a woman to leave for another country.
+  marked in 1 of 2 materials, 4 passages
+- Nationality shifting under one's birthplace — Passages where a person's country of birth is described as having changed its political identity, so that emigration occurs from a different country than the one they were born in.
+  marked in 2 of 2 materials, 4 passages
+- Naturalisation as civic belonging — Passages where acquiring citizenship and voting are described as acts that establish belonging in the receiving country.
+  marked in 1 of 2 materials, 3 passages
+- Obligated refugee housing during wartime — Passages where households are required by authority to share their homes with displaced people during conflict.
+  marked in 1 of 2 materials, 3 passages
+- Official language versus home language — Passages where a colonial or state-imposed language is distinguished from the everyday language spoken at home.
+  marked in 1 of 2 materials, 2 passages
+- Packing house as decades-long livelihood — Passages where industrial food processing is described as long-term wage employment that sustains a household over many years.
+  marked in 1 of 2 materials, 3 passages
+- Parent refusing children's earned money in transit — Passages where a parent forbids children from collecting money thrown to them for performing during a journey.
+  marked in 1 of 2 materials, 3 passages
+- Prior emigration of parent as precondition for family relocation — Passages where a family member's earlier migration and earnings abroad are described as what later enables the rest of the family to follow.
+  marked in 2 of 2 materials, 5 passages
+- Regional chain migration settlement — Passages where the clustering of people from the same home region in one destination is explained as a pattern of mutual integration.
+  marked in 1 of 2 materials, 3 passages
+- Relative as intermediary stop in migration route — Passages where a family member living at an intermediate location serves as a temporary waypoint in the migration journey.
+  marked in 1 of 2 materials, 2 passages
+- Return visits confirming belonging in receiving country — Passages where trips back to the homeland are described as reinforcing the migrant's sense that the receiving country is now home.
+  marked in 1 of 2 materials, 2 passages
+- School fees as immigrant household cost — Passages where paying for children's schooling is described as a financial burden the household must bear from its own earnings.
+  marked in 1 of 2 materials, 2 passages
+- School releasing children for family business labor — Passages where school authorities advise keeping children home to help with a family enterprise.
+  marked in 1 of 2 materials, 2 passages
+- Spouse's presence as condition for migration willingness — Passages where a wife's willingness to migrate is described as contingent on her husband having gone first.
+  marked in 1 of 2 materials, 1 passages
+- Spouse's trade skill converting partner's occupation — Passages where one spouse's existing trade skill causes the other spouse to shift into that occupation.
+  marked in 1 of 2 materials, 4 passages
+- Tenement hall bathrooms and coin-fed gas meters — Passages where shared bathrooms in hallways and coin-operated utility meters are described as features of tenement housing.
+  marked in 1 of 2 materials, 4 passages
+- Wartime food-for-clothing barter — Passages where rural people trade food to urban people in exchange for clothing during wartime scarcity.
+  marked in 1 of 2 materials, 3 passages
+- Women's farm labour as unremarkable — Passages where a woman's heavy physical farm work is described as normal or typical rather than exceptional.
+  marked in 1 of 2 materials, 2 passages
+- Work interruptions from medical surgery — Passages where physical conditions requiring surgery interrupt a worker's ability to maintain continuous employment.
+  marked in 1 of 2 materials, 1 passages
 
 WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
 

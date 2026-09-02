@@ -1,6 +1,6 @@
 # CHECK — as sent to the model
 
-_5490 words · ≈7347 tokens_
+_5043 words_
 
 ## SYSTEM
 
@@ -106,7 +106,6 @@ S048  PHILLIPS:	So the cattle were actually, they were part of the 		house.
 S049  The barn was part of the house.
 S050  GRANDE:	Yes.
 S051  PHILLIPS:	Explain that to us, what was that like.
-S052  GRANDE:	Well, it was all one building and there were, later on they made that as all one room, but at that time we had a half a room was like for the barn, for the cows, or when my brother had horses it was there.
 S053  And then there was a manure pile just to the side of it.
 S054  And the majority of people had it similar like that.
 S055  PHILLIPS:	Why were the houses and the barns constructed together 		like that?
@@ -141,7 +140,6 @@ S084  GRANDE:	Well, when my mother got the fellow to kill the pig, well, I had t
 S085  Of course, they worked with it to make it good, and then they made the blood sausage and usually they fried the liver right away, good and fresh.
 S086  That was really good.
 S087  Then later, out of the other leftover pieces of regular meat they'd make smoked sausage and they'd smoke them and have them for during the summer.
-S088  They had for special occasions, or when they had hired help.
 S089  They had different pieces for different times.
 S090  PHILLIPS:	So you got a lot of different, uh, meats.
 S091  You got your money's worth out of those little pigs across the way from the kitchen.
@@ -171,6 +169,7 @@ S114  And the forest wasn't far from the house, so we used to get the wood there
 S115  And, of course, she had quite a bit hauled in the fall, so we would have wood.
 S116  PHILLIPS:	You say hauled in the fall, she got the wood during the 		fall?
 S117  GRANDE:	Yeah, so we'd have it all winter long.
+S118  But she would cut it up herself, saw and chop it and, of course, later on when I was bigger I tried to help, which I wasn't much good.
 S119  But I helped on the farm what little I could, and I had a mile or better to go to school.
 S120  PHILLIPS:	Before you tell us about going to school, can you tell 		me what your life was like for your mother.
 S121  She was, just one moment.
@@ -189,7 +188,6 @@ S133  And, uh, he came to the States, and there was another sister born after th
 S134  PHILLIPS:	Could you tell me, I mean, is sounds like your mother must have been a tremendously strong and hardy woman to look after a farm and bring up these children and chop the wood.
 S135  Was that normal?
 S136  GRANDE:	Normal, normal.
-S138  There was quite a few men that came to the States to make a livelihood and then probably come back, which a lot of them never did.
 S139  A lot of them took their family over here, but a lot of them, some did help.
 S140  But during the wartime they couldn't help back and forth at all.
 S141  So my mother used to kind of sell milk and eggs and whatever she could, products.
@@ -220,10 +218,8 @@ S166  That was normal.
 S167  Nobody had cars or anything, and they didn't take them with the wagon because there was too much other work to be done.
 S168  And then when my brother got older, he was quite a bit older than me, well, uh, he went and stayed with my aunt for a while on a different part of the area.
 S169  And so my mother and I were alone for quite a while.
-S170  And then she bartered with the cattle, and sometimes I'd stay with the neighbors overnight when she'd go and barter to different places.
 S171  And all that she done, all of that walking.
 S172  She didn't have no other transportation.
-S173  So then after the war, when my dad started writing about coming to the States, naturally we were all enthused about it.
 S174  I don't know if my mother was enthused or not, but I was.
 S175  PHILLIPS:	Tell me what it was like for you during the war.
 S176  Do you 		have any memories of that?
@@ -260,10 +256,8 @@ S206  GRANDE:	The Austrian people.
 S207  They were the higher-ups from the Austrian, not government, but they were well-to-do and all that.
 S208  But--
 S209  PHILLIPS:	What language did you speak?
-S210  GRANDE:	Actually Slovanian, and we had to take German.
 S211  PHILLIPS:	Not Hungarian.
 S212  GRANDE:	No, no.
-S213  German was our main language, like in office or 		different places, you almost had to learn how to speak German to get along with them.
 S214  PHILLIPS:	That was the official language.
 S215  GRANDE:	Right.
 S216  PHILLIPS:	So how many languages were spoken, then, in your 		village?
@@ -278,7 +272,6 @@ S224  GRANDE:	Part of Yugoslavia.
 S225  And the First World War started 		down in Sarajevo in what is now Yugoslavia.
 S226  It's down more or less in the Serbian section.
 S227  That's where Ferdinand got killed and World War One started.  and I kind of remember when they had the meetings around 1918 and '19, '20 and after all that, well, it became Yugoslavia.
-S228  So actually I was born in Austria/Hungary and came here from Yugoslavia.
 S229  PHILLIPS:	Do you remember what your older relatives, or your mother, or people who came to your house, were talking about during those times?
 S230  Were they afraid?
 S231  Were they excited?
@@ -286,12 +279,9 @@ S232  What was the atmosphere like?
 S233  GRANDE:	Well, during the war they were excited and all that but, 		uh, not too much, because you just had to go along.
 S234  There were restrictions on certain things you couldn't buy.
 S235  And, uh, the people that lived in the city, which was across the river from us, they didn't have food, and we had more food because we were out in the country.
-S236  So for any small amount of food, either eggs, or chicken, or no matter what, or milk, they would share clothing because they had plenty of clothes, but they had a hard time getting food.
 S237  PHILLIPS:	And so that was, did that become a barter system that 		you, part of the barter system you were describing before, or not?
 S238  Or did they pay money for the food?
 S239  GRANDE:	Oh, no.
-S241  I had, I usually had real nice clothes and, uh, when we were coming here to the States I'd have had beautiful clothes if it wouldn't be stolen in Italy while we were waiting for the ship.
-S242  We had to stay there three days and they had us, they had my mother put the suitcases in the storage, and when she went to get them they were gone.
 S243  Not only hers, a lot of others too.
 S244  PHILLIPS:	Meanwhile, back before that happened, how did the people 		cross that river?
 S245  Was there a boat, or a bridge, or--
@@ -303,14 +293,17 @@ S250  But at that time there was wagons.
 S251  PHILLIPS:	When was it that you first learned that you were going 		to travel to America?
 S252  GRANDE:	Oh, it was, oh, I guess about, not the very first part, 		but about towards the second part of 1920.
 S253  PHILLIPS:	And tell me how you learned about that?
-S254  GRANDE:	Well, my mother was telling me about the letters she got 		from my father, and then he sent us the tickets.
+S255  And she had to go to different places to get it approved and all that.
 S256  But, uh, not too many.
 S257  Like some of them had to go through more than she did.
+S258  And I didn't have to go anywhere because I was a minor.
 S259  So, but on the passport, uh, her and my pictures were together, so everything went, whatever she got, it was for me, too.
 S260  PHILLIPS:	And how about the other children?
 S261  GRANDE:	Well, my oldest brother, he had to go in the army.
 S262  See, 		they have to serve three years all the time.
 S263  But, uh, he had to go in.
+S264  And then the other one, they was going to bring him here.
+S265  And in the spring, when he was supposed to go kind of like to report for the army, he was on the wagon and he fell or jumped or whatever, and he got killed.
 S266  So then this one got to come from the army earlier to take over the farm.
 S267  PHILLIPS:	Because his brother had been killed.
 S268  GRANDE:	Yeah.
@@ -320,8 +313,10 @@ S271  He would have to come after it.
 S272  It was just my 		mother and I that came then.
 S273  PHILLIPS:	All right.
 S274  Now, tell me what you actually had to, to do 		to get your papers.
+S275  GRANDE:	Well, I wasn't with my mother too much, but she had to go through quite a bit of different courts and different offices and get approvals of, oh, different higher-ups that were in line with the travelling and all.
 S276  So she had to make quite a few different trips.
 S277  PHILLIPS:	Do you know how long it took her to get the approval?
+S278  GRANDE:	Oh, it was about, the last month before we left it seemed like she was always coming or going to different places.
 S279  PHILLIPS:	And meanwhile your father was in America?
 S280  GRANDE:	Yeah.
 S281  PHILLIPS:	So tell me about finally leaving.
@@ -336,7 +331,6 @@ S289  PHILLIPS:	And how had your school life been?
 S290  Had you enjoyed 		school back in--
 S291  GRANDE:	Well, I like school.
 S292  I had average grades.
-S293  I wouldn't say they were exceptional, but I had them average, and I had to take German for two years in third and fourth grade.
 S294  Of course, Later on when I came here there was no German people around, so I just kind of forgot it.
 S295  But, uh, it would be nice if I had remembered it.
 S296  PHILLIPS:	So how did you, you got to Trieste, think you described.
@@ -368,7 +362,6 @@ S321  And that's the first time I got to see bananas, on the train.
 S322  And, of course, there was a fellow that, he went over there to get his two children, and he didn't buy them very much.
 S323  Whatever, the rest of them, like my mother and this other lady bought, we shared with his kids.
 S324  They didn't like it very much, but what can you do.
-S325  So we all went, there was a lady with her two daughters, and this man with his two children, and my mother and me, we all went to the same town in Utah.
 S326  We got off in Price, and we, of course, that's where my dad met us, and then we had to take the bus twenty-eight miles to Sunnyside.
 S327  PHILLIPS:	Why was it that you decided to move up to, you were on 		your way to Denver, I take it?
 S328  GRANDE:	No, no.
@@ -378,11 +371,7 @@ S331  PHILLIPS:	Why had he chosen to live in Utah?
 S333  He worked in different mines in Utah, around.
 S336  PHILLIPS:	I see.
 S337  Can you tell me how you felt when you arrived in 		the United States and how eventually you must have started school, what was that like for you?
-S338  GRANDE:	Well, we lived, my dad rented a company four room house that was a double, and the other family was similar in nationality as we were.
-S339  And so, uh, the kids could talk broken Slovanian, so we kind of got started getting along, and I'd pick up words from them little by little.
 S340  And we came on a Thursday, and the following Monday I went to school.
-S341  And being that these were going to the same grades, so they put me in the fourth grade instead of the first.
-S342  And I struggle along pretty good because as far as figures you didn't have to talk.
 S343  You could just write, and it was good.
 S344  And, uh, so I was in a county contest the first and second year for arithmetic to where we went from Sunnyside to Price, we stayed overnight.
 S345  And it was good.
@@ -400,13 +389,12 @@ S356  She no longer had all of those animals to look after.
 S357  It must have been very different.
 S358  What did she do?
 S360  So she got adjusted pretty well.
-S361  She always hoped to go back, but she never did because they started talking about the war and she didn't want to be in another war over there, which they had it worse right in our area in the second one than they did in the first.
 S362  And my brother, half-brother, of course, he lived there until the '70s when he died.
+S363  She gave the property over to him.
 S364  And they had pretty rough deals there during the second war.
 S365  In fact, one of his daughters got deaf and dumb on account of the noise of the cannons that they were shooting on their farm.
 S366  We were right close to where they had the battles and everything, my brother was, so.
 S367  But, uh, I got pretty well with the kids in school.
-S368  Of course, I couldn't speak, but I started learning very fast the best way I could and I enjoyed the school.
 S369  PHILLIPS:	And where were you living at this point?
 S370  GRANDE:	In Sunnyside, Utah.
 S371  PHILLIPS:	When did you, well, before I ask you that question, uh, can you tell me a little bit about the Depression years for your family.
@@ -425,28 +413,23 @@ S387  PHILLIPS:	And, uh, you moved to Denver when, from Sunnyside?
 S388  GRANDE;	In 1926, in October.
 S389  We drove a Model T.
 S390  In fact, I drove it most of the way, and we stopped in Aspen.
-S391  I had an uncle, my mother's brother, there.
 S392  We stopped there for a month, and then we came on to Colorado.
 S393  And, uh, after a while we both got jobs, and it worked out.
 S394  And I met my husband on New Year's and married him in May.
 S395  He was from the same area as I was, and years later we went back there.
 S396  He liked the area where I was raised much better than where he was because it was close to the city.
-S397  And him and I went back there three times, one by car and twice with the plane.
 S398  And, of course, I've been there since a few times.
 S399  PHILLIPS:	Why was it that there were so many people from your, 		from that area that you came from in Europe, living in this area around Denver?
 S400  Do you know?
 S401  GRANDE:	Well, it's a settlement.
-S402  When a group gets settled and then somebody else tries to come in, and they just like to integrate together.
 S403  PHILLIPS:	Okay.
 S404  Is there anything else that you'd like to, think 		we might be interested to hear about?
 S405  GRANDE:	Well, I worked later on.
 S406  During the Depression it was kind of rough.
-S407  My husband wasn't making much.
-S408  Worked every other week and the girls were getting to the point, being in school, we sent them to parochial school.
-S409  And naturally we had to pay.
 S410  It wasn't like now that somebody else pays for them a lot.
 S411  And then, uh, U finally got a job in a packing house, which I worked close to thirty years in it.
 S413  PHILLIPS:	What kind of work, excuse me, what kind of work 		particularly were you doing?
+S414  GRANDE:	Cutting up meat, pork and beef.
 S415  Cut it for scraps for 		sausage and stuff.
 S417  PHILLIPS:	Let me explain for identification who she is.
 S418  GRANDE:	My daughter, Mitzi.
@@ -459,7 +442,6 @@ S424  She lives way up in Northglen.
 S425  PHILLIPS:	Okay.
 S426  Unless there's something else you think you'd 		like to us all.
 S428  Maybe not right, but we try our best.
-S429  And every time I go back to Europe I'm happy to come back.
 S431  PHILLIPS:	Okay.
 S432  That finishes Interview Number 414 [DP-40] with 		Mary Grande,  It's five after one.
 ```
