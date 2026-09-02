@@ -1,0 +1,237 @@
+{
+ "summary": "This is a 1989 oral history interview with Mary Yankovik Grande, born 1910 in what became Yugoslavia, conducted in Denver by Andrew Phillips. At about ten she traveled from Trieste with her mother to join her father in Utah mines; she later settled in Denver, married, and worked nearly thirty years in a packing house. The interview centers on childhood memory, bureaucratic departure costs, three decades of meat cutting, and her pride in American citizenship.\n\nFour narratives run through the account. The first, on costs and conditions of departure, traces the gauntlet her mother navigated: multiple offices, courts, and approvals, with the ten-year-old legally bundled onto her mother's passport, the father's first-class fare downgraded to second only after an American-experienced passenger intervened, and new clothes for America stolen in the three-day Trieste wait. The second, on livelihoods after arrival, follows the father's years in Utah coal mines and his health collapse in Colorado, the mother reduced to housework, Depression-era intermittent work for her husband, and her own three-decade career cutting pork and beef for sausage. The third, on regional networks as settlement aid, shows co-villagers traveling together, the same-nationality neighbor family helping her learn English, and her husband coming from the same home region; she herself names the logic: newcomers integrate with the existing group. The fourth, on the toll of labor and travel, follows stolen possessions in Trieste, a father whose health collapsed from mine work, her own repeated surgeries, and her daughter forced to give up the smokehouse on medical grounds.\n\nWhat is thin or missing: how the family fared financially in Colorado gets only intermittent-work mentions; pre-arrival home economy beyond barter receives little attention. The brother left in Yugoslavia and the half-brother's wartime hardship are noted only in passing.",
+ "threads": [
+  {
+   "theme_id": "tb2402c0b3d",
+   "moments": [
+    {
+     "claim": "New clothes bought for the American arrival were stolen during the three-day Trieste wait.",
+     "anchor": "beautiful clothes if it wouldn't be stolen in Italy",
+     "sid": "S241"
+    },
+    {
+     "claim": "Officials directed the suitcases into storage; when retrieved, they had disappeared.",
+     "anchor": "they had my mother put the suitcases in the storage",
+     "sid": "S242"
+    },
+    {
+     "claim": "Mother had to visit multiple authorities for emigration approvals before any departure.",
+     "anchor": "she had to go to different places to get it approved",
+     "sid": "S255"
+    },
+    {
+     "claim": "The ten-year-old's papers rode on her mother's passport, exempting her from the bureaucratic rounds.",
+     "anchor": "I didn't have to go anywhere because I was a minor",
+     "sid": "S258"
+    },
+    {
+     "claim": "Approvals required sign-offs from courts, offices, and various higher-ups in the travel chain.",
+     "anchor": "she had to go through quite a bit of different courts",
+     "sid": "S275"
+    },
+    {
+     "claim": "The final month before departure was an unbroken succession of trips between home and offices.",
+     "anchor": "she was always coming or going to different places",
+     "sid": "S278"
+    },
+    {
+     "claim": "While waiting to board in Trieste, the family slept in a barn-like holding space, not a hotel.",
+     "anchor": "we just had like a barn place",
+     "sid": "S298"
+    },
+    {
+     "claim": "The father paid first-class fare but the shipping line placed mother and daughter in the lowest deck.",
+     "anchor": "my dad paid for first class but they put us down",
+     "sid": "S301"
+    },
+    {
+     "claim": "After intervention by a returning American passenger, mother and daughter were moved to second class.",
+     "anchor": "We got up to second class",
+     "sid": "S307"
+    }
+   ]
+  },
+  {
+   "theme_id": "t0066187b81",
+   "moments": [
+    {
+     "claim": "Many men from her village came to America to make a livelihood intending to return; some never did.",
+     "anchor": "There was quite a few men that came to the States",
+     "sid": "S138"
+    },
+    {
+     "claim": "When the family arrived in 1920, the father had been working in Utah coal mines for years.",
+     "anchor": "he was working in coal mines",
+     "sid": "S332"
+    },
+    {
+     "claim": "Before Utah, the father had worked part-time around Aspen, Colorado.",
+     "anchor": "He worked part-time years before that in Aspen",
+     "sid": "S334"
+    },
+    {
+     "claim": "In America, the mother's productive farm role shrank to housework, laundry, cleaning, and cooking.",
+     "anchor": "All we could do was housework and laundry",
+     "sid": "S359"
+    },
+    {
+     "claim": "The harshest Depression hardship landed immediately after her 1927 marriage in Denver.",
+     "anchor": "Right after I got married, that's when we had the worst Depression",
+     "sid": "S374"
+    },
+    {
+     "claim": "After the move to Colorado, the father finally secured work at the local smelter.",
+     "anchor": "he got a job finally over at the smelter",
+     "sid": "S376"
+    },
+    {
+     "claim": "Her husband's Depression-era wages stayed low and barely covered the family's needs.",
+     "anchor": "My husband wasn't making much",
+     "sid": "S407"
+    },
+    {
+     "claim": "Her husband's Depression work alternated weeks on with weeks off entirely.",
+     "anchor": "Worked every other week",
+     "sid": "S408"
+    },
+    {
+     "claim": "She eventually got a Denver packing-house job and stayed close to thirty years.",
+     "anchor": "U finally got a job in a packing house",
+     "sid": "S411"
+    },
+    {
+     "claim": "Her packing-house work consisted of cutting up pork and beef by hand.",
+     "anchor": "Cutting up meat, pork and beef",
+     "sid": "S414"
+    },
+    {
+     "claim": "The trimmed pieces fed the sausage line; the job was repetitive piecework cutting.",
+     "anchor": "Cut it for scraps for sausage and stuff",
+     "sid": "S415"
+    }
+   ]
+  },
+  {
+   "theme_id": "t2766457640",
+   "moments": [
+    {
+     "claim": "Co-villagers from her home area traveled with the family toward Denver.",
+     "anchor": "more or less the same area as we were",
+     "sid": "S318"
+    },
+    {
+     "claim": "On the train, her mother and another co-villager shared food with a man's two children.",
+     "anchor": "we shared with his kids",
+     "sid": "S323"
+    },
+    {
+     "claim": "Five passengers from the home region boarded together and got off at the same Utah town.",
+     "anchor": "we all went to the same town in Utah",
+     "sid": "S325"
+    },
+    {
+     "claim": "In the company house, the next-door family was from the same nationality, easing the children's adjustment.",
+     "anchor": "the other family was similar in nationality as we were",
+     "sid": "S338"
+    },
+    {
+     "claim": "Neighboring children spoke broken Slovanian, giving her a foothold to learn English.",
+     "anchor": "the kids could talk broken Slovanian",
+     "sid": "S339"
+    },
+    {
+     "claim": "Her husband came from the same home region, drawn to the same Denver settlement.",
+     "anchor": "He was from the same area as I was",
+     "sid": "S395"
+    },
+    {
+     "claim": "She describes the regional clustering as settlement logic: newcomers integrate with the existing group.",
+     "anchor": "it's a settlement. When a group gets settled",
+     "sid": "S401"
+    }
+   ]
+  },
+  {
+   "theme_id": "t76bfbf57e5",
+   "moments": [
+    {
+     "claim": "Part of their clothes was stolen during the Trieste wait; an American bought replacements in London.",
+     "anchor": "But part of our clothes was stolen in Trieste",
+     "sid": "S035"
+    },
+    {
+     "claim": "The ship served fish and macaroni; she disliked the food but had to eat it.",
+     "anchor": "we had mostly fish and macaroni on the ship",
+     "sid": "S303"
+    },
+    {
+     "claim": "Even moved up to second class, travel conditions were nothing like modern ships.",
+     "anchor": "It was better, but nothing to brag about",
+     "sid": "S308"
+    },
+    {
+     "claim": "After six and a half years in Sunnyside, the father's health collapsed and they moved to Colorado.",
+     "anchor": "his health went bad",
+     "sid": "S335"
+    },
+    {
+     "claim": "In Colorado, the father's health declined steeply; he could barely manage outside work.",
+     "anchor": "his health was going down great",
+     "sid": "S375"
+    },
+    {
+     "claim": "Returning to the mine, the father could not sustain the work for long.",
+     "anchor": "he couldn't work too long there",
+     "sid": "S377"
+    },
+    {
+     "claim": "The doctor finally declared the father unfit for any further work.",
+     "anchor": "Finally the doctor said he couldn't work no more",
+     "sid": "S378"
+    },
+    {
+     "claim": "Decades of packing-house work required her to undergo repeated surgeries and time off.",
+     "anchor": "I had to have different surgeries",
+     "sid": "S412"
+    },
+    {
+     "claim": "Her daughter worked the smokehouse until forced to give up on medical grounds.",
+     "anchor": "she worked there until she had to give up medically",
+     "sid": "S416"
+    }
+   ]
+  }
+ ],
+ "brief": "A 1989 Denver oral history with Mary Yankovik Grande, a former packing-house worker born 1910 in what became Yugoslavia. She left in 1920 with her mother to join her father in Utah mines. The transcript is short (about fifty minutes), warm in tone, and centered on childhood memory, the bureaucratic and material costs of departure, three decades of meat cutting, and how regional networks clustered Yugoslavs in Denver. Look next for material that follows daughters' trajectories beyond the smokehouse, or compares packing-house work across immigrant groups.",
+ "people": [
+  {
+   "name": "Mary Yankovik Grande",
+   "aliases": [
+    "Marija Yankovik",
+    "M. Grande",
+    "Mrs. Grande"
+   ],
+   "role": "interviewee"
+  },
+  {
+   "name": "Andrew Phillips",
+   "aliases": [],
+   "role": "interviewer"
+  },
+  {
+   "name": "Mitzi Stackhouse",
+   "aliases": [],
+   "role": "interviewee's daughter"
+  },
+  {
+   "name": "Jenny Musk",
+   "aliases": [],
+   "role": "interviewee's daughter"
+  },
+  {
+   "name": "Clyde Stackhouse",
+   "aliases": [],
+   "role": "interviewee's son-in-law"
+  }
+ ]
+}

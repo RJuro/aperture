@@ -1,0 +1,47 @@
+{
+ "themes": [
+  {
+   "new": true,
+   "id": "tlivelihoods",
+   "name": "Livelihoods after arrival",
+   "gist": "The varied paid and unpaid work immigrants performed once in the new country, from mines and packing plants to domestic labor and pre-arranged farm work.",
+   "code_names": [
+    "Coal mining as migrant livelihood",
+    "Long-tenure packing house employment",
+    "Domestic labor as only work after arrival",
+    "Depression-era work scarcity",
+    "Men migrating ahead to work"
+   ]
+  },
+  {
+   "new": true,
+   "id": "ttoll",
+   "name": "The toll of labor and travel",
+   "gist": "How physical work in mines, factories, and smokehouses and the journey itself wore down migrants' bodies and stripped them of possessions.",
+   "code_names": [
+    "Health costs of physical labor",
+    "Loss of possessions in transit"
+   ]
+  },
+  {
+   "new": true,
+   "id": "tdeparture",
+   "name": "Costs and conditions of departure",
+   "gist": "The bureaucratic steps, fare manipulations, and home-currency economies that shaped the financial cost of leaving.",
+   "code_names": [
+    "Bureaucratic cost of departure",
+    "Class fare downgraded on passage",
+    "Barter and farm surplus as economy"
+   ]
+  },
+  {
+   "new": true,
+   "id": "tnetworks",
+   "name": "Regional networks as settlement aid",
+   "gist": "How immigrants from the same village or home region clustered in American towns and relied on one another to adjust.",
+   "code_names": [
+    "Chain settlement by home region"
+   ]
+  }
+ ]
+}

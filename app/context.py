@@ -66,17 +66,25 @@ def cite(text: str, index: dict, pid: str) -> Markup:
     Every run of prose is wrapped separately, because model prose is not the app speaking and must
     never be read as if it were.
     """
-    out, at = [], 0
-    for m in _CITE.finditer(text or ""):
-        t = index.get(m.group(0))
-        if t is None:
-            continue
-        out.append(f'<span class="summary">{_esc(text[at:m.start()])}</span>')
-        out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
-                   f'?thread={t["theme_id"]}#{t["sid"]}">[{t["sid"]}]</a>')
-        at = m.end()
-    out.append(f'<span class="summary">{_esc(text[at:])}</span>')
-    return Markup("".join(out))
+    def one(part: str) -> str:
+        """One paragraph: prose escaped, citations turned into links into the material."""
+        out, at = [], 0
+        for m in _CITE.finditer(part):
+            t = index.get(m.group(0))
+            if t is None:
+                continue
+            out.append(f'<span class="summary">{_esc(part[at:m.start()])}</span>')
+            out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
+                       f'?thread={t["theme_id"]}#{t["sid"]}">[{t["sid"]}]</a>')
+            at = m.end()
+        out.append(f'<span class="summary">{_esc(part[at:])}</span>')
+        return "".join(out)
+
+    # The summary is three hundred words of argument, and the model breaks it into paragraphs
+    # where the argument turns. Rendering it as one block throws that structure away and gives the
+    # researcher a wall to read; a blank line in, a paragraph out.
+    paras = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    return Markup("".join(f"<p>{one(p)}</p>" for p in paras) or "")
 
 
 def _cite_index(conn, pid: str) -> dict:

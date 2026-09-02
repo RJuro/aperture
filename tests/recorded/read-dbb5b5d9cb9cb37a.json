@@ -1,0 +1,126 @@
+{
+ "codes": [
+  {
+   "code": {
+    "name": "Coal mining as migrant livelihood",
+    "definition": "Passages where immigrants or their family members describe mine work as the way they earned a living after arrival."
+   },
+   "sids": [
+    "S332",
+    "S333",
+    "S377"
+   ]
+  },
+  {
+   "code": {
+    "name": "Health costs of physical labor",
+    "definition": "Passages describing how years of physical work — in mines, factories, or smokehouses — damaged workers' bodies and forced them to stop working."
+   },
+   "sids": [
+    "S377",
+    "S378",
+    "S412",
+    "S416"
+   ]
+  },
+  {
+   "code": {
+    "name": "Long-tenure packing house employment",
+    "definition": "Passages describing decades-long employment in a single industrial workplace such as a meatpacking plant."
+   },
+   "sids": [
+    "S411",
+    "S414",
+    "S415"
+   ]
+  },
+  {
+   "code": {
+    "name": "Barter and farm surplus as economy",
+    "definition": "Passages where households describe trading home-produced goods such as milk, eggs, cattle, or clothing for other necessities rather than using cash."
+   },
+   "sids": [
+    "S141",
+    "S142",
+    "S170",
+    "S240"
+   ]
+  },
+  {
+   "code": {
+    "name": "Men migrating ahead to work",
+    "definition": "Passages where husbands or fathers travel to a destination alone first to find work, with the family joining later."
+   },
+   "sids": [
+    "S041",
+    "S138",
+    "S173"
+   ]
+  },
+  {
+   "code": {
+    "name": "Loss of possessions in transit",
+    "definition": "Passages describing theft, loss, or damage of belongings during the journey between home country and destination."
+   },
+   "sids": [
+    "S035",
+    "S241",
+    "S242"
+   ]
+  },
+  {
+   "code": {
+    "name": "Depression-era work scarcity",
+    "definition": "Passages where workers describe intermittent employment, low wages, or hardship during the 1930s economic downturn."
+   },
+   "sids": [
+    "S374",
+    "S406",
+    "S407"
+   ]
+  },
+  {
+   "code": {
+    "name": "Bureaucratic cost of departure",
+    "definition": "Passages describing the many offices, approvals, or trips required to obtain permission to emigrate."
+   },
+   "sids": [
+    "S255",
+    "S275",
+    "S278"
+   ]
+  },
+  {
+   "code": {
+    "name": "Class fare downgraded on passage",
+    "definition": "Passages where paying for a higher travel class is disregarded and passengers are placed in a lower class aboard the ship."
+   },
+   "sids": [
+    "S301",
+    "S305",
+    "S307"
+   ]
+  },
+  {
+   "code": {
+    "name": "Chain settlement by home region",
+    "definition": "Passages describing how immigrants from the same village or region cluster in the same American towns and rely on one another for adjustment."
+   },
+   "sids": [
+    "S318",
+    "S338",
+    "S401"
+   ]
+  },
+  {
+   "code": {
+    "name": "Domestic labor as only work after arrival",
+    "definition": "Passages describing how, after migration, a woman's productive farm work in the home country is reduced to housework, laundry, and cooking in the new country."
+   },
+   "sids": [
+    "S359",
+    "S360"
+   ]
+  }
+ ]
+}
