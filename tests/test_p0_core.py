@@ -120,9 +120,9 @@ def test_a_real_environment_variable_beats_the_env_file(tmp_path, monkeypatch):
     override it, or a deploy silently talks to the wrong endpoint with the wrong key."""
     import app as pkg
     f = tmp_path / ".env"
-    f.write_text("APERTURE_PROVIDER=mistral\nAPERTURE_MODEL=from-the-file\n")
+    f.write_text("APERTURE_PROVIDER=mistral\nMINIMAX_MODEL=from-the-file\n")
     monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
-    monkeypatch.delenv("APERTURE_MODEL", raising=False)
+    monkeypatch.delenv("MINIMAX_MODEL", raising=False)
     pkg.load_env(f)
     assert llm.provider() == "minimax"          # the environment wins
     assert llm.model() == "from-the-file"       # the file fills what the environment left unset
@@ -156,3 +156,19 @@ def test_reasoning_effort_is_per_provider_and_can_be_turned_off(monkeypatch):
     assert llm.reasoning() == ""
     monkeypatch.setenv("APERTURE_REASONING", "low")
     assert llm.reasoning() == "low"
+
+
+def test_switching_provider_cannot_inherit_the_other_ones_endpoint(monkeypatch):
+    """A single global base-url override was a loaded gun: set it for one provider in .env,
+    switch provider, and the new provider's key is sent to the old provider's endpoint. It cost
+    a whole pipeline run — provider mistral, model MiniMax-M3, a 401 from minimaxi.com."""
+    monkeypatch.setenv("MINIMAX_BASE_URL", "https://minimax.example/v1")
+    monkeypatch.setenv("MINIMAX_MODEL", "pinned-to-minimax")
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    base, _ = llm._endpoint()
+    assert base == "https://api.mistral.ai/v1"
+    assert llm.model() == "glm-5-2"
+    monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
+    assert llm._endpoint()[0] == "https://minimax.example/v1"
+    assert llm.model() == "pinned-to-minimax"

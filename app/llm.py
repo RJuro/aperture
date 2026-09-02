@@ -57,7 +57,10 @@ def provider() -> str:
 
 
 def model() -> str:
-    return os.environ.get("APERTURE_MODEL") or PROVIDERS[provider()][2]
+    """This provider's model. Overrides are per provider — `MISTRAL_MODEL`, `MINIMAX_MODEL` —
+    so switching provider cannot inherit the other one's settings."""
+    p = provider()
+    return os.environ.get(f"{p.upper()}_MODEL") or PROVIDERS[p][2]
 
 
 def reasoning() -> str:
@@ -69,11 +72,15 @@ def reasoning() -> str:
 
 
 def _endpoint() -> tuple[str, str]:
-    base_default, key_env, _, _ = PROVIDERS[provider()]
-    base = os.environ.get("APERTURE_BASE_URL") or base_default
+    p = provider()
+    base_default, key_env, _, _ = PROVIDERS[p]
+    # Per provider, deliberately. A single global APERTURE_BASE_URL was a loaded gun: set it for
+    # one provider in .env, switch APERTURE_PROVIDER, and the new provider's key goes to the old
+    # provider's endpoint. That is a 401 if you are lucky and a silent mis-route if you are not.
+    base = os.environ.get(f"{p.upper()}_BASE_URL") or base_default
     key = os.environ.get(key_env, "").strip()
     if not key:
-        raise LLMError(f"set {key_env} for provider {provider()!r}")
+        raise LLMError(f"set {key_env} for provider {p!r}")
     return base.rstrip("/"), key
 
 
