@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
+<section class="admin">
 <h1>Accounts</h1>
 {% if problem %}<p class="dim">{{ problem }}</p>{% endif %}
 <ul class="mats">
@@ -7,10 +8,10 @@
   <li>{{ u.name | txt }}{% if u.is_admin %} <span class="dim">Administrator</span>{% endif %}</li>
 {% endfor %}
 </ul>
-<form method="post" action="/admin/users">
+<form method="post" action="/admin/users" class="form-stack">
   <label>Account name <input name="name" required></label>
   <label>Password <input name="password" type="password" required></label>
-  <button>Create account</button>
+  <button class="btn btn-primary">Create account</button>
 </form>
 <h2>Projects</h2>
 <ul class="mats">
@@ -21,4 +22,5 @@
   <li class="dim">Nothing here yet.</li>
 {% endfor %}
 </ul>
+</section>
 {% endblock %}

@@ -26,8 +26,10 @@ you send feedback below.</p>
   <ol class="claims">
   {% for x in m.moments %}
     <li>
+      <span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
       <p class="claim">{{ x.claim | txt }}</p>
-      <a class="cite" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}#{{ x.sid }}"><q class="quote">{{ x.anchor | txt }}</q></a>
+      <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
+      </div>
     </li>
   {% endfor %}
   </ol>

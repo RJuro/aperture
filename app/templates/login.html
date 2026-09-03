@@ -6,7 +6,7 @@
   <form method="post" action="/login">
     <label>Account name<input name="name" autofocus required autocomplete="username"></label>
     <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
-    <button>Sign in</button>
+    <button class="btn btn-primary">Sign in</button>
   </form>
   {% if problem %}<p class="problem">{{ problem }}</p>{% endif %}
   <p class="dim small">Accounts are made by an administrator. If you do not have one, ask whoever runs this instance.</p>

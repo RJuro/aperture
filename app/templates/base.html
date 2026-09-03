@@ -6,6 +6,7 @@
   {% if runs %}<meta http-equiv="refresh" content="5">{% endif %}
   <title>{% if material %}{{ material.display_title | txt }} · {% elif theme %}{{ theme.name | txt }} · {% elif project %}{{ project.name | txt }} · {% endif %}{{ app_name }}</title>
   <link rel="stylesheet" href="/static/aperture.css?v={{ css_v }}">
+  <link rel="icon" href="data:,">
 </head>
 <body>
 <header class="topnav">
