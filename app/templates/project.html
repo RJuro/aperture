@@ -18,12 +18,14 @@
       {% if interpretation and interpretation.text %}
       <p class="eyebrow">What this may mean, so far</p>
       <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}
-      {% elif runs %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
+      {% elif working %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
       {% else %}<p class="lead">Add material to begin a project-wide synthesis.</p>{% endif %}
       {% if summary or summary_state.error %}
+      {% set unread = summary_state.unread or 0 %}
       <p class="dim small">
       {%- if summary_state.error %}The last update did not finish: {{ summary_state.error | txt }}
       {%- elif summary_state.behind %}{{ summary_state.behind }} {{ 'material' | plural(summary_state.behind) }} {{ 'has' if summary_state.behind == 1 else 'have' }} been read since this was written{% if summary_state.working %} — being updated now{% endif %}.
+      {%- elif unread %}{{ unread }} {{ 'material' | plural(unread) }} {{ 'has' if unread == 1 else 'have' }} not been read yet{% if summary_state.working %} — being read now{% endif %}.
       {%- elif summary_state.working %}Being updated now.
       {%- else %}Written over all {{ materials | length }} {{ 'material' | plural(materials | length) }}.{% endif %}</p>
       {% if summary_state.error or (summary_state.behind and not summary_state.working) %}<form method="post" action="/p/{{ project.id }}/resynthesise">
@@ -87,10 +89,12 @@
     </div>
     <details class="row-menu"><summary aria-label="Options for {{ m.display_title | txt }}">•••</summary>
       <div class="menu-sheet"><a href="/p/{{ project.id }}/m/{{ m.id }}">Open material</a>
-        <form method="post" action="/p/{{ project.id }}/m/{{ m.id }}/remove">
-          <p>This removes the material from the reading and rebuilds the project summary.</p>
-          <button class="danger">Remove material</button>
-        </form>
+        <details><summary class="danger-text">Remove material</summary>
+          <form method="post" action="/p/{{ project.id }}/m/{{ m.id }}/remove">
+            <p>This removes the material from the reading and rebuilds the project summary. Nothing brings it back.</p>
+            <button class="danger">Remove material</button>
+          </form>
+        </details>
       </div>
     </details>
       {% if m.out_of_date %}
@@ -106,7 +110,7 @@
 {% endfor %}
 </ul>
 {% if problem %}<p class="problem">{{ problem | txt }}</p>{% endif %}
-<details class="add-drawer"{% if not materials %} open{% endif %}>
+<details class="add-drawer"{% if not materials or problem %} open{% endif %}>
   <summary><span><strong>Add material</strong><small>Upload files or paste source text. Analysis starts in the background.</small></span></summary>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
     <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"><small>.txt, .md, .docx, .pdf, or .csv · each file becomes one material</small></label>
@@ -131,7 +135,7 @@
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
       <h3>Check against all material</h3><p>Search uncited passages without changing the reading.</p>
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
-      <button class="btn btn-primary">Check all material</button>
+      <button class="btn btn-primary">Check all {{ materials | length }} {{ 'material' | plural(materials | length) }}</button>
     </form>
   </div>
   {% if checks %}<details class="quiet-details"><summary>Previous checks · {{ checks | length }}</summary><ul class="check-list">

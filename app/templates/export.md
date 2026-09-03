@@ -42,7 +42,7 @@
 {% endif %}
 #### Materials where this theme appears
 
-{% for m in t.carrying %}**{{ m.display_title }}** — {{ m.kind or "material" }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
+{% for m in t.carrying %}**{{ m.display_title }}** — {{ (m.kind or "material") | replace("_", " ") }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
 
 {% for x in m.moments %}{{ loop.index }}. {{ x.claim }}
    > {{ x.anchor }}  [{{ x.sid }}]
@@ -53,7 +53,7 @@
 {% if t.absent %}
 No claims in these materials support this theme:
 
-{% for m in t.absent %}- {{ m.display_title }} — {{ m.kind or "material" }}
+{% for m in t.absent %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
 {% endfor %}{% if t.set_aside %}
 Before reading that as absence, check what was excluded below — a set of claims too thin to keep
 is dropped whole and would look the same as absence here:
@@ -70,7 +70,7 @@ Every material contains claims for this theme.
 
 {% for m in materials %}### {{ m.display_title }}
 
-{{ m.kind or "material" }} · {{ m.state }} · {{ m.derivation }}
+{{ (m.kind or "material") | replace("_", " ") }} · {{ m.derivation }}
 {% if m.people %}
 People: {% for p in m.people %}{{ p.name }}{% if p.aliases %} ({{ p.aliases }}){% endif %}{% if p.role %} — {{ p.role }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}
 {% endif %}{% if m.speakers %}
@@ -94,9 +94,8 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {% if th.summary %}
 {{ th.summary.text }}
 {% endif %}
-{% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
-   > {{ x.anchor }}  [{{ x.sid }}]
-{% endfor %}
+Printed in full under [{{ th.theme.name }}](#{{ th.theme.name | lower | replace(' ', '-') }}) above.
+
 {% else %}No analysis yet.
 
 {% endfor %}{% else %}No materials yet.

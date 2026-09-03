@@ -128,6 +128,22 @@ def add_user(request: Request, name: str = Form(...), password: str = Form(...))
     return RedirectResponse("/admin", status_code=303)
 
 
+@router.post("/admin/password")
+def reset_password(request: Request, user_id: str = Form(...), password: str = Form(...)):
+    """A researcher who forgets their password is otherwise locked out for good: there is no
+    email and no reset, and the name is taken for ever."""
+    _admin(request)
+    store.set_password(connection(), user_id, password)
+    return RedirectResponse("/admin?problem=That+password+has+been+changed.", status_code=303)
+
+
+@router.post("/admin/owner")
+def set_owner(request: Request, project_id: str = Form(...), user_id: str = Form(...)):
+    _admin(request)
+    store.set_owner(connection(), project_id, user_id)
+    return RedirectResponse("/admin?problem=That+project+has+a+new+owner.", status_code=303)
+
+
 @router.get("/account", response_class=HTMLResponse)
 def account_page(request: Request, problem: str = "") -> str:
     user = getattr(request.state, "user", None)
@@ -150,4 +166,7 @@ def change_password(request: Request, current: str = Form(""), new: str = Form("
         return RedirectResponse("/account?problem=The+new+password+must+be+at+least+8+characters+and+typed+the+same+twice.",
                                 status_code=303)
     store.set_password(conn, user["id"], new)
-    return RedirectResponse("/?changed=1", status_code=303)
+    store.sign_out_others(conn, user["id"], keep=request.cookies.get(COOKIE, ""))
+    # The old redirect landed on the projects list with nothing said, which looked exactly like a
+    # failure. The account page already has a slot for a sentence.
+    return RedirectResponse("/account?problem=Your+password+has+been+changed.", status_code=303)

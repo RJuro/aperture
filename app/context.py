@@ -60,6 +60,27 @@ def txt(s) -> Markup:
 _CITE = re.compile(r"\bmo[0-9a-f]{6,}\b")
 
 
+def _live_cites(text: str, index: dict) -> str:
+    """Prose with every citation whose claim is no longer live taken out — brackets, separator
+    and all.
+
+    A rerun below the corpus level supersedes the moments the corpus summary cites, and nothing
+    re-runs the summary on that path, so its citations rot. The page was printing the raw ids as
+    if they were words and the record was leaving the brackets standing empty. A citation that
+    cannot be resolved is not a citation; it is nothing.
+    """
+    def group(m):
+        ids = _CITE.findall(m.group(0))
+        if not ids:                       # [sic], [laughs] — the model's other brackets stay
+            return m.group(0)
+        live = [i for i in ids if i in index]
+        head = m.group(0)[:m.group(0).index("[")]
+        return f'{head}[{", ".join(live)}]' if live else ""
+
+    text = re.sub(r"[ ]*\[[^\[\]]*\]", group, text or "")
+    return _CITE.sub(lambda m: m.group(0) if m.group(0) in index else "", text)
+
+
 def cite(text: str, index: dict, pid: str) -> Markup:
     """Model prose with each moment id it cites turned into a link into the material it rests on.
 
@@ -83,7 +104,7 @@ def cite(text: str, index: dict, pid: str) -> Markup:
     # The summary is three hundred words of argument, and the model breaks it into paragraphs
     # where the argument turns. Rendering it as one block throws that structure away and gives the
     # researcher a wall to read; a blank line in, a paragraph out.
-    paras = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    paras = [p.strip() for p in re.split(r"\n\s*\n", _live_cites(text, index)) if p.strip()]
     return Markup("".join(f"<p>{one(p)}</p>" for p in paras) or "")
 
 
@@ -104,27 +125,20 @@ def _merge(spans: list[tuple[int, int]]) -> list[list[int]]:
     return out
 
 
-def _mark(text: str, quotes: list[str]) -> str:
-    """`text` with each quote wrapped in `<mark>`, escaped before any markup is inserted.
+def _find(text: str, q: str) -> int:
+    # ponytail: exact, then same-length case-fold. A quote re-typed with different punctuation
+    # falls through to its whole sentence, which is the honest fallback.
+    i = text.find(q)
+    if i < 0 and len(text.casefold()) == len(text) and len(q.casefold()) == len(q):
+        i = text.casefold().find(q.casefold())
+    return i
 
-    A quote that cannot be located exactly marks its whole sentence: the reader must still see
-    that the reading rested here, and a lost mark is worse than a wide one.
-    """
-    spans = []
-    for q in quotes:
-        q = (q or "").strip()
-        if not q:
-            continue
-        i = text.find(q)
-        if i < 0 and len(text.casefold()) == len(text) and len(q.casefold()) == len(q):
-            # ponytail: exact, then same-length case-fold. A quote re-typed with different
-            # punctuation falls through to the whole sentence, which is the honest fallback.
-            i = text.casefold().find(q.casefold())
-        spans.append((0, len(text)) if i < 0 else (i, i + len(q)))
-    if not spans:
-        return _esc(text)
+
+def _mark(text: str, spans: list[list[int]]) -> str:
+    """`text` with each span wrapped in `<mark>`, escaped before any markup is inserted."""
+    clipped = [(max(s, 0), min(e, len(text))) for s, e in spans]
     out, at = [], 0
-    for s, e in _merge(spans):
+    for s, e in _merge([x for x in clipped if x[1] > x[0]]):
         s, e = max(s, at), max(e, at)
         out.append(_esc(text[at:s]))
         out.append(f"<mark>{_esc(text[s:e])}</mark>")
@@ -133,11 +147,37 @@ def _mark(text: str, quotes: list[str]) -> str:
     return "".join(out)
 
 
-def _sentence(row, quotes: list[str]) -> str:
-    # Whitespace is collapsed: transcripts carry tabs from their original typesetting, and a quote
-    # is validated against collapsed text, so the page must show collapsed text or the mark misses.
-    return (f'<span class="s" id="{row["sid"]}">'
-            f'{_mark(" ".join(row["text"].split()), quotes)}</span>')
+def _sentences(rows, quotes_by_sid: dict[str, list[str]]) -> str:
+    """One block's sentences, each in its own span so it stays a link target, with every quote
+    marked where it actually is.
+
+    A quote may run across up to three sentences (`anchor.SPAN`), and it is attached to the one it
+    starts in. Searching that one sentence for it found nothing and marked the whole of it
+    instead — speaker cue and all — while the rest of the quote went unmarked. So the search runs
+    over the block, and the mark is split at the boundary it crosses.
+
+    Whitespace is collapsed: transcripts carry tabs from their original typesetting, and a quote
+    is validated against collapsed text, so the page must show collapsed text or the mark misses.
+    """
+    texts = [" ".join(r["text"].split()) for r in rows]
+    starts, at = [], 0
+    for t in texts:
+        starts.append(at)
+        at += len(t) + 1                      # the single space the sentences are joined with
+    joined = " ".join(texts)
+    spans = []
+    for i, r in enumerate(rows):
+        for q in quotes_by_sid.get(r["sid"], []):
+            q = (q or "").strip()
+            if not q:
+                continue
+            j = _find(joined, q)
+            spans.append((j, j + len(q)) if j >= 0
+                         else (starts[i], starts[i] + len(texts[i])))
+    return " ".join(
+        f'<span class="s" id="{r["sid"]}">'
+        f'{_mark(texts[i], [[s - starts[i], e - starts[i]] for s, e in spans])}</span>'
+        for i, r in enumerate(rows))
 
 
 def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) -> list[dict]:
@@ -146,9 +186,7 @@ def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) ->
     rows = [dict(r) for r in store.sentence_rows(conn, mid)]
 
     def block(group, label="", n=None):
-        return {"label": label, "n": n,
-                "html": Markup(" ".join(_sentence(r, quotes_by_sid.get(r["sid"], []))
-                                        for r in group))}
+        return {"label": label, "n": n, "html": Markup(_sentences(group, quotes_by_sid))}
 
     out: list[dict] = []
     if display == "turns":
@@ -277,8 +315,13 @@ def data_persistent() -> bool:
 def _shell(conn, pid: str) -> dict:
     nav_materials = [{**dict(m), "display_title": _material_title(m)}
                      for m in store.materials(conn, pid)]
+    runs = [dict(r) for r in store.active_runs(conn, pid)]
+    # The banner used to read run rows alone, and a job that is queued has none yet — so a page
+    # whose work was waiting on another project's chain said nothing, offered no Stop and did not
+    # poll. The committed job row is what exists first; the run line is only the wording.
     return {"app_name": APP_NAME, "css_v": _css_version(), "data_persistent": data_persistent(),
-            "runs": [dict(r) for r in store.active_runs(conn, pid)],
+            "runs": runs,
+            "working": bool(runs) or store.summary_state(conn, pid)["working"],
             "nav_materials": nav_materials,
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
@@ -422,8 +465,7 @@ def _export_resolve_ids(text: str, index: dict) -> str:
     """Model prose cites claims by internal id. On a page those become links; in a document they
     would sit there as opaque tokens — the first review's complaint about the record. Each becomes
     the sentence id a reader can find in the same document."""
-    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]" if m.group(0) in index else "",
-                     text or "")
+    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", _live_cites(text, index))
 
 
 def export(conn, pid: str) -> dict:

@@ -98,8 +98,13 @@
     </div>
   </section>
 </div>
+{% else %}
+<div class="empty-state">{% if working %}This material is being read in the background. You can leave this page.{% else %}No analysis yet.{% endif %}</div>
+{% endif %}
 </div></section>
 
+{# Everything below stands whether or not a theme survived: a material the reading found nothing
+   in is exactly the one whose reasons need reading and whose check form needs pressing. #}
 <section class="research-actions"><div class="container"><details class="action-drawer">
   <summary><span><strong>Research actions</strong><br><small>Check a claim, respond to this theme, or inspect how the reading was made.</small></span></summary>
   <div class="action-grid">
@@ -109,12 +114,14 @@
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
       <button class="btn btn-primary">Check material</button>
     </form>
+    {% if selected %}
     <form method="post" action="/p/{{ project.id }}/react" class="action-card">
       <input type="hidden" name="theme_id" value="{{ selected.id }}"><input type="hidden" name="material_id" value="{{ material.id }}">
       <h3>Respond to this theme</h3><p>Your words accompany the next revision of this material.</p>
       <label>Feedback <textarea name="text" rows="3" placeholder="What does this analysis miss or over-read?"></textarea></label>
       <button class="btn btn-primary">Reanalyse theme</button>
     </form>
+    {% endif %}
   </div>
 {% if set_aside %}
   <details class="quiet-details"><summary>Excluded from the analysis · {{ set_aside | length }}</summary><ul class="mats">{% for n in set_aside %}<li class="dim">{{ n | txt }}</li>{% endfor %}</ul></details>
@@ -127,9 +134,8 @@
   {% endfor %}</ul>{% endif %}</li>{% endfor %}
 </ul></details>
 {% endif %}
+{% if selected %}
 <details class="quiet-details"><summary>Codes grouped under this theme · {{ selected.codes | length }}</summary><div class="codes">{% for c in selected.codes %}<span class="tag" title="{{ c.definition | txt }}">{{ c.name | txt }}</span>{% else %}<span class="dim">None recorded.</span>{% endfor %}</div></details>
-</details></div></section>
-{% else %}
-<div class="empty-state">{% if runs %}This material is being read in the background. You can leave this page.{% else %}No analysis yet.{% endif %}</div>
 {% endif %}
+</details></div></section>
 {% endblock %}

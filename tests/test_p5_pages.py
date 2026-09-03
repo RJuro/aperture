@@ -151,10 +151,19 @@ def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, a
     assert f'action="/p/{pid}/resynthesise"' in html
 
 
-def test_the_app_does_not_speak_our_vocabulary(client, analysed):
+def test_the_app_does_not_speak_our_vocabulary(client, conn, analysed):
+    """Two pages out of seven were checked. The leak this exists to catch — a step name printed
+    where a sentence belongs — was sitting in the record, which the check never looked at; and the
+    theme page was printing `focus_group`, which is a machine's word for a kind of material."""
     from app import context
-    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
-        said = strip_material(client.get(url).text).lower()
+    conn.execute("UPDATE material SET kind='focus_group' WHERE id=?", (analysed["grande"],))
+    conn.commit()
+    pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
+    for url in (f"/p/{pid}", f"/p/{pid}/m/{analysed['grande']}", f"/p/{pid}/t/{tid}",
+                f"/p/{pid}/export.md"):
+        page = client.get(url).text
+        assert "focus_group" not in page, f"a machine's name for a kind of material on {url}"
+        said = strip_material(page).lower()
         for word in context._BANNED:
             assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on {url}"
 
@@ -256,3 +265,114 @@ def test_what_a_reading_set_aside_is_shown_and_not_swallowed(client, conn, analy
     assert "Materials where this theme does not appear" in theme
     assert "Excluded from the analysis" in theme, \
         "an absence must not be asserted without the drops beside it"
+
+
+def test_a_project_whose_work_is_only_queued_still_says_it_is_working(client, conn, analysed):
+    """The banner reads run rows; the job row is what exists first. Between the redirect and the
+    worker's first run row — and for as long as another project holds the runner — the page said
+    nothing at all while the work was genuinely queued."""
+    pid = analysed["pid"]
+    store.enqueue_job(conn, pid, [{"kind": "project"}])
+    html = client.get(f"/p/{pid}").text
+    assert "Waiting for other work to finish." in html
+    assert f'action="/p/{pid}/stop"' in html
+    assert "<script" in html and f"/p/{pid}/runs" in html
+    assert '<noscript><meta http-equiv="refresh" content="30"></noscript>' in html
+
+
+def test_the_poller_does_not_reload_over_what_is_being_typed(client, conn, analysed):
+    """The reload arrives on a ten-second timer, and a browser never restores a file input."""
+    store.start_run(conn, analysed["pid"], "doc", analysed["grande"], "Writing Grande")
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "The reading has finished — reload to see it." in html
+    assert "textarea" in html.split("<script", 1)[1] and "files.length" in html
+
+
+def test_a_quote_that_crosses_a_sentence_boundary_marks_the_quote_and_not_the_cue(client, conn,
+                                                                                  project):
+    """A quote may run across up to three sentences, and the page attached it to the sentence it
+    starts in — where it is not — so the whole of that sentence was marked, speaker cue and all,
+    and the second half of the quote was left plain. Law 1 is that a claim shows the words it
+    rests on."""
+    from app import ingest
+    raw = "GRANDE:\tMy mother missed it a lot. But I am sorry to say it."
+    mid = store.add_material(conn, project, "Small", raw)
+    store.save_sentences(conn, mid, ingest.sentences(raw))
+    sids = [s for s, _ in store.sentences(conn, mid)]
+    tid = store.save_theme(conn, project, tid=None, name="T", gist="g", code_ids=[])
+    store.save_moments(conn, mid, tid, [{"claim": "c", "anchor": "missed it a lot. But I am",
+                                         "sid": sids[0]}])
+    html = client.get(f"/p/{project}/m/{mid}").text
+    marked = " ".join(re.findall(r"<mark>(.*?)</mark>", html))
+    assert marked == "missed it a lot. But I am"
+    assert "GRANDE" not in marked and "My mother" not in marked
+
+
+def test_a_citation_whose_claim_is_gone_leaves_nothing_behind(client, conn, analysed):
+    """A comment on one material rewrites it, every claim of that material is superseded and
+    re-inserted under a new id, and nothing re-runs the corpus summary — which is left citing
+    ids that no longer exist. The page printed them as if they were words; the record left the
+    brackets standing empty."""
+    pid = analysed["pid"]
+    live = store.moments(conn, analysed["grande"])[0]
+    dead = "mo7c1d4af90b"
+    store.save_summary(conn, "project", pid, "reading",
+                       f"Work runs through it [{dead}] and the crossing too [{live['id']}].")
+    for url in (f"/p/{pid}", f"/p/{pid}/export.md"):
+        text = client.get(url).text
+        assert dead not in text, f"a raw id reached {url}"
+        assert "[]" not in text, f"empty brackets reached {url}"
+        assert "it and the crossing too" in text
+        assert live["sid"] in text, "the citation that still resolves stays"
+
+
+def test_removing_material_is_never_one_click(client, analysed):
+    """Removal retires every claim, both summaries and any orphaned theme, starts paid work, and
+    nothing in the interface brings it back. It takes the shape re-framing already has: a fold
+    the researcher has to open before the button exists."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    for url in (f"/p/{pid}", f"/p/{pid}/m/{mid}"):
+        before = client.get(url).text.split(f'action="/p/{pid}/m/{mid}/remove"')[0]
+        assert before.count("<details") > before.count("</details"), \
+            f"the removal form is not folded away on {url}"
+        assert '<summary class="danger-text">Remove material</summary>' in before, \
+            f"nothing on {url} has to be opened before the button appears"
+
+
+def test_a_material_whose_lines_were_all_set_aside_shows_the_reasons_and_the_check_form(
+        client, conn, analysed):
+    """The reading ran, wrote its lines, and every one of them fell under the floor. The page said
+    "No analysis yet." and hid both the stored explanation and the one verb designed for a
+    material the reading found nothing in — because everything below the theme tabs was gated on
+    there being a theme to show."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    conn.execute("UPDATE moment SET status='superseded' WHERE material_id=?", (mid,))
+    conn.commit()
+    rid = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, rid, notes=['the line for "Belonging" was set aside: 2 claims left '
+                                       'after checking the quotes, 4 needed'])
+    html = client.get(f"/p/{pid}/m/{mid}").text
+    assert "was set aside: 2 claims left" in html, "the reason was computed, stored and hidden"
+    assert f'action="/p/{pid}/check"' in html, "the one verb for a material with nothing in it"
+
+
+def test_the_project_check_says_how_much_it_will_search(client, analysed):
+    """One sentence typed here is a call per material, each carrying a full chunk, and the Stop
+    button only appears once the first run row exists. The size belongs on the button."""
+    assert "Check all 2 materials" in client.get(f"/p/{analysed['pid']}").text
+
+
+def test_material_that_was_never_read_is_told_apart_from_material_read_since(client, monkeypatch,
+                                                                             analysed):
+    """A material that failed, was interrupted or is still queued is not one the summary is
+    behind: writing the summary again cannot change it, so the line says something else and
+    offers no button."""
+    from app import context
+    monkeypatch.setattr(context.store, "summary_state",
+                        lambda conn, pid: {"behind": 0, "unread": 2, "working": False,
+                                           "error": ""})
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "2 materials have not been read yet." in html
+    assert "have been read since this was written" not in html
+    assert f'action="/p/{analysed["pid"]}/resynthesise"' not in html, \
+        "writing it again cannot read a material that was never read"

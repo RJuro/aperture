@@ -141,6 +141,54 @@ def test_a_user_can_change_their_own_password_and_only_with_the_current_one(clie
     r = client.post("/account", data={"current": "battery staple", "new": "new-and-long", "again": "different"})
     assert "problem=" in r.headers["location"]
     r = client.post("/account", data={"current": "battery staple", "new": "new-and-long", "again": "new-and-long"})
-    assert r.status_code == 303 and "problem=" not in r.headers["location"]
+    assert r.status_code == 303
     assert store.verify_user(conn, "ann", "new-and-long") is not None
     assert store.verify_user(conn, "ann", "battery staple") is None
+
+
+def test_changing_a_password_says_so_and_ends_every_other_session(client, conn, people):
+    """It looked exactly like a failure: the form submitted and the projects list came back with
+    nothing said. And every other cookie for that account still worked, which is the case that
+    matters when the reason for changing it is that the first password was printed into a log."""
+    from fastapi.testclient import TestClient
+    from app import main
+    elsewhere = TestClient(main.app, follow_redirects=False)
+    login(elsewhere, "ann", "battery staple")
+    login(client, "ann", "battery staple")
+    assert elsewhere.get("/").status_code == 200
+    r = client.post("/account", data={"current": "battery staple", "new": "new-and-long",
+                                      "again": "new-and-long"})
+    assert r.headers["location"] == "/account?problem=Your+password+has+been+changed."
+    assert "Your password has been changed." in client.get(
+        "/account?problem=Your+password+has+been+changed.").text
+    assert client.get("/").status_code == 200, "the session that changed it stays signed in"
+    assert elsewhere.get("/").status_code == 303, "every other session is signed out"
+
+
+def test_an_admin_can_reset_a_password_and_hand_a_project_over(client, conn, people):
+    """An account whose password was mistyped could never be signed into and never be deleted,
+    and a project whose owner was never set was invisible to every researcher for ever."""
+    pid = store.create_project(conn, "Made before accounts existed", "")
+    login(client, "ada", "correct horse")
+    assert "Owner not set" in client.get("/admin").text or "not set" in client.get("/admin").text
+    r = client.post("/admin/password", data={"user_id": people["ann"], "password": "a longer one"})
+    assert r.status_code == 303
+    assert store.verify_user(conn, "ann", "a longer one") is not None
+    assert store.verify_user(conn, "ann", "battery staple") is None
+    r = client.post("/admin/owner", data={"project_id": pid, "user_id": people["bob"]})
+    assert r.status_code == 303
+    assert store.project(conn, pid)["owner_id"] == people["bob"]
+    client.post("/logout")
+    login(client, "bob", "purple monkey")
+    assert client.get(f"/p/{pid}").status_code == 200, "a project handed over is theirs to read"
+
+
+def test_only_an_admin_can_reset_a_password_or_hand_a_project_over(client, conn, people):
+    pid = store.create_project(conn, "Bob's study", "", owner_id=people["bob"])
+    login(client, "ann", "battery staple")
+    assert client.post("/admin/password",
+                       data={"user_id": people["bob"], "password": "hers now"}).status_code == 404
+    assert client.post("/admin/owner",
+                       data={"project_id": pid, "user_id": people["ann"]}).status_code == 404
+    assert store.verify_user(conn, "bob", "purple monkey") is not None
+    assert store.project(conn, pid)["owner_id"] == people["bob"]

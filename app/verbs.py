@@ -91,17 +91,24 @@ def add_material(request: Request, pid: str, files: list[UploadFile] = File(defa
         return RedirectResponse(f"/p/{pid}?problem={quote_plus(str(e))}", status_code=303)
     if text.strip():
         pieces.append((name.strip() or "Untitled", text))
-    mids = []
+    mids, again = [], []
     for piece_name, body in pieces:
+        if store.has_text(conn, pid, body):
+            again.append(piece_name)
+            continue
         mid = store.add_material(conn, pid, piece_name, body)
         store.save_sentences(conn, mid, ingest.sentences(body))
         mids.append(mid)
+    said = (f"{', '.join(again)} {'is' if len(again) == 1 else 'are'} already in this project."
+            if again else "")
+    where = f"?problem={quote_plus(said)}" if said else ""
     if not mids:
-        return RedirectResponse(f"/p/{pid}", status_code=303)
+        return RedirectResponse(f"/p/{pid}{where}", status_code=303)
     jobs.ingest_chain(pid, mids)
-    # One piece: straight to it. Several: the project page, where they are all listed reading.
-    return RedirectResponse(f"/p/{pid}/m/{mids[0]}" if len(mids) == 1 else f"/p/{pid}",
-                            status_code=303)
+    # One piece and nothing to report: straight to it. Otherwise the project page, where they are
+    # all listed reading and where a message can be read.
+    return RedirectResponse(f"/p/{pid}/m/{mids[0]}" if len(mids) == 1 and not where
+                            else f"/p/{pid}{where}", status_code=303)
 
 
 @router.post("/p/{pid}/m/{mid}/remove")

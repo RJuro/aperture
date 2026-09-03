@@ -87,6 +87,9 @@ def test_a_quote_is_marked_where_it_sits_and_the_rest_is_not(conn, project, clie
 
 
 def test_a_quote_that_cannot_be_located_marks_its_whole_sentence(conn, project, client):
+    """A quote re-typed with different punctuation is nowhere in the material, and the reader
+    must still see that the reading rested here: a lost mark is worse than a wide one. A quote
+    that DOES cross a sentence boundary is found there — see the pages test."""
     from app import ingest
     raw = "A:\tOne two three four. Five six seven eight."
     mid = store.add_material(conn, project, "Small", raw)
@@ -94,7 +97,7 @@ def test_a_quote_that_cannot_be_located_marks_its_whole_sentence(conn, project, 
     sids = [s for s, _ in store.sentences(conn, mid)]
     tid = store.save_theme(conn, project, tid=None, name="T", gist="g", code_ids=[])
     store.save_moments(conn, mid, tid,
-                       [{"claim": "c", "anchor": "four. Five six", "sid": sids[0]}])
+                       [{"claim": "c", "anchor": "four; Five six", "sid": sids[0]}])
     html = client.get(f"/p/{project}/m/{mid}").text
     assert re.findall(r"<mark>(.*?)</mark>", html) == ["A: One two three four."]
 

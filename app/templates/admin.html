@@ -13,6 +13,11 @@
   <label>Password <input name="password" type="password" required></label>
   <button class="btn btn-primary">Create account</button>
 </form>
+<form method="post" action="/admin/password" class="form-stack">
+  <label>Set a new password for <select name="user_id">{% for u in people %}<option value="{{ u.id }}">{{ u.name | txt }}</option>{% endfor %}</select></label>
+  <label>New password <input name="password" type="password" required minlength="8"></label>
+  <button class="btn btn-secondary">Set password</button>
+</form>
 <h2>Projects</h2>
 <ul class="mats">
 {% for p in projects %}
@@ -22,5 +27,12 @@
   <li class="dim">Nothing here yet.</li>
 {% endfor %}
 </ul>
+{% if projects and people %}
+<form method="post" action="/admin/owner" class="form-stack">
+  <label>Give <select name="project_id">{% for p in projects %}<option value="{{ p.id }}">{{ p.name | txt }}</option>{% endfor %}</select></label>
+  <label>to <select name="user_id">{% for u in people %}<option value="{{ u.id }}">{{ u.name | txt }}</option>{% endfor %}</select></label>
+  <button class="btn btn-secondary">Set owner</button>
+</form>
+{% endif %}
 </section>
 {% endblock %}
