@@ -18,7 +18,17 @@ in a commit message, never printed to a log.
 
 ## Coolify
 
-Create a **new application** from this repository. Build with the root `Dockerfile`. Mount
+Two things learned deploying this the first time, both of which cost a rollout:
+
+- **The image must contain `curl`.** Coolify's rollout healthcheck shells out to `curl` (or
+  `wget`) inside the new container. `python:3.12-slim` has neither, so a perfectly healthy start
+  was judged unhealthy and rolled back. The Dockerfile installs it.
+- **Persistent storage could not be attached through the API** (every `type` value was rejected
+  with a 422). Attach it in the Coolify UI: the application → *Persistent Storage* → add a volume
+  mounted at `/data`. **Do this before anyone uploads real material.** Without it a redeploy starts
+  with an empty database, and that is the loss the predecessor project already suffered once.
+
+The application `aperture` exists (created 2026-09-03 from `https://github.com/RJuro/aperture`, project `automate`, environment `production`, domain `aperture.automate.business.aau.dk`). Build with the root `Dockerfile`. Mount
 persistent storage at `/data`. Set the environment above. The healthcheck hits `/health`, which is
 always outside the sign-in.
 
