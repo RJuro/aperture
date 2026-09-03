@@ -249,6 +249,10 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     One upload is one chain, whatever it carried. Five files used to start five chains, and each
     of them found themes again and rewrote the corpus summary with four of the five still unread.
 
+    ponytail: a step that fails stops the whole chain, so a file later in the same upload is left
+    queued and unread rather than read on its own. Give the researcher a way to run the rest if a
+    failure mid-upload turns out to be common.
+
     Ingest itself is Python and already done by the time this is called — text became sentences
     when the material was added, synchronously, because ids are the spine everything else cites.
     This is the model half.
