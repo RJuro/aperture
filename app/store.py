@@ -512,3 +512,12 @@ def projects_for(conn: sqlite3.Connection, user_row: sqlite3.Row | None) -> list
         return conn.execute("SELECT * FROM project ORDER BY created_at DESC").fetchall()
     return conn.execute("SELECT * FROM project WHERE owner_id=? ORDER BY created_at DESC",
                         (user_row["id"],)).fetchall()
+
+
+def set_password(conn: sqlite3.Connection, uid: str, password: str) -> None:
+    """A fresh salt and derived key. The first admin's password comes from an environment variable
+    that Coolify prints into its build log, so being able to change it is not a nicety."""
+    salt = secrets.token_bytes(16)
+    conn.execute("UPDATE user SET password_hash=? WHERE id=?",
+                 (f"{salt.hex()}:{_hash(password, salt).hex()}", uid))
+    conn.commit()

@@ -126,3 +126,20 @@ def test_an_admin_is_told_when_data_is_not_on_persistent_storage(client, conn, p
     login(client, "ann", "battery staple")
     monkeypatch.setattr(os.path, "ismount", lambda p: False)
     assert "not on persistent storage" not in client.get("/").text, "an ordinary user cannot act on it"
+
+
+def test_a_user_can_change_their_own_password_and_only_with_the_current_one(client, conn, people):
+    """The first admin's password arrives through an environment variable that the deployment
+    log prints in clear; being able to change it is the fix, not a nicety."""
+    assert client.get("/account").status_code == 303, "signed out, there is nothing to change"
+    login(client, "ann", "battery staple")
+    assert client.get("/account").status_code == 200
+    r = client.post("/account", data={"current": "wrong", "new": "new-and-long", "again": "new-and-long"})
+    assert r.status_code == 303 and "problem=" in r.headers["location"]
+    assert store.verify_user(conn, "ann", "battery staple") is not None, "nothing changed"
+    r = client.post("/account", data={"current": "battery staple", "new": "new-and-long", "again": "different"})
+    assert "problem=" in r.headers["location"]
+    r = client.post("/account", data={"current": "battery staple", "new": "new-and-long", "again": "new-and-long"})
+    assert r.status_code == 303 and "problem=" not in r.headers["location"]
+    assert store.verify_user(conn, "ann", "new-and-long") is not None
+    assert store.verify_user(conn, "ann", "battery staple") is None

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="signin">
+  <h1>Change password</h1>
+  <p class="dim">Signed in as {{ user.name | txt }}.</p>
+  <form method="post" action="/account">
+    <label>Current password<input name="current" type="password" required autocomplete="current-password"></label>
+    <label>New password<input name="new" type="password" required minlength="8" autocomplete="new-password"></label>
+    <label>New password again<input name="again" type="password" required minlength="8" autocomplete="new-password"></label>
+    <button>Change password</button>
+  </form>
+  {% if problem %}<p class="problem">{{ problem }}</p>{% endif %}
+</section>
+{% endblock %}

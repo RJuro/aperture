@@ -126,3 +126,28 @@ def add_user(request: Request, name: str = Form(...), password: str = Form(...))
     except sqlite3.IntegrityError:          # a name is how someone signs in, so it is theirs alone
         return RedirectResponse("/admin?problem=That+name+is+taken.", status_code=303)
     return RedirectResponse("/admin", status_code=303)
+
+
+@router.get("/account", response_class=HTMLResponse)
+def account_page(request: Request, problem: str = "") -> str:
+    user = getattr(request.state, "user", None)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    return _render("account.html", {"user": dict(user), "problem": problem})
+
+
+@router.post("/account")
+def change_password(request: Request, current: str = Form(""), new: str = Form(""),
+                    again: str = Form("")):
+    """Change your own password: the current one to prove it is you, the new one twice."""
+    conn = connection()
+    user = getattr(request.state, "user", None)
+    if user is None:
+        return RedirectResponse("/login", status_code=303)
+    if store.verify_user(conn, user["name"], current) is None:
+        return RedirectResponse("/account?problem=The+current+password+is+not+right.", status_code=303)
+    if len(new) < 8 or new != again:
+        return RedirectResponse("/account?problem=The+new+password+must+be+at+least+8+characters+and+typed+the+same+twice.",
+                                status_code=303)
+    store.set_password(conn, user["id"], new)
+    return RedirectResponse("/?changed=1", status_code=303)
