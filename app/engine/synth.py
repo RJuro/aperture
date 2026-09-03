@@ -26,7 +26,10 @@ import re
 from .. import anchor, llm, store
 
 MIN_MOMENTS, MAX_MOMENTS = 4, 14
-SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 400, 120, 30, 40
+SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 300, 120, 30, 40
+# What the corpus may mean, as against what it shows: shorter, because it is the movement a
+# researcher argues with rather than the one they cite.
+INTERPRETATION_WORDS = 150
 
 _CITE = re.compile(r"\s*\[([^\[\]]+)\]")
 
@@ -309,6 +312,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
 def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     """The corpus summary, written over the theme accounts and the material summaries.
 
+    In two movements, stored as two rows. What the corpus shows is what the researcher will cite;
+    what it may mean is offered for them to argue with, and a page that ran the two together
+    invited them to take the second on the authority of the first.
+
     It used to read every claim in every material — 210k tokens at fifty materials. It now reads
     what the layer below it concluded, which is what the account layer exists for. No new quotes
     at this level: a claim rests on claims below, cited by id, and a citation to a claim that is
@@ -341,14 +348,22 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
         accounts="\n\n".join(accounts) or "No theme has an account yet.",
         materials="\n\n".join(mats) or "No material has been read yet.",
         feedback="\n\n".join(fb) or "The researcher has not said anything about the project yet.",
+        summary_words=PROJECT_WORDS, interpretation_words=INTERPRETATION_WORDS,
     )
     data = llm.chat_json(system, user, label="project")
 
+    # Two movements, two rows: what the corpus shows, and what it may mean. Kept apart because a
+    # researcher must be able to cite the first while still arguing with the second.
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
+    reading_of, more = _strip_dangling(words(data.get("interpretation"), INTERPRETATION_WORDS),
+                                       live_moments)
+    dangling += more
     dropped = [f"the summary cited {len(dangling)} claim(s) that do not exist or are no longer live "
                f"— {', '.join(sorted(set(dangling)))} — and those citations were removed"] if dangling else []
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
-    return {"summary": summary, "dropped": dropped}
+    # Written even when it is empty, so a fresh summary never sits over an older reading of it.
+    store.save_summary(conn, "project", pid, "interpretation", reading_of, run_id)
+    return {"summary": summary, "interpretation": reading_of, "dropped": dropped}
 
 
 def _strip_dangling(text: str, live: dict) -> tuple[str, list[str]]:

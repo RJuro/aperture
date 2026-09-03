@@ -325,11 +325,16 @@ def project_page(conn, pid: str) -> dict:
                              f'{sum(len(c["moments"]) for c in row["columns"])} claims')
         themes.append(row)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
+    index = _cite_index(conn, pid)
     summary = _row(store.get_summary(conn, "project", pid))
+    # What it may mean, kept apart from what it shows: one is cited, the other argued with.
+    reading_of = _row(store.get_summary(conn, "project", pid, "interpretation"))
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
             "page_section": "overview",
             "summary": summary,
-            "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
+            "summary_html": cite(summary["text"], index, pid) if summary else "",
+            "interpretation": reading_of,
+            "interpretation_html": cite(reading_of["text"], index, pid) if reading_of else "",
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
             "checks": _checks(conn, pid)}
 
@@ -438,6 +443,7 @@ def export(conn, pid: str) -> dict:
     said = _export_comments(conn, pid)
     ctx = {"app_name": APP_NAME, "project": dict(p), "materials": mats,
             "summary": _row(store.get_summary(conn, "project", pid)),
+            "interpretation": _row(store.get_summary(conn, "project", pid, "interpretation")),
             "themes": _export_themes(conn, pid, aside),
             "checks": _checks(conn, pid),
             "set_aside": aside,

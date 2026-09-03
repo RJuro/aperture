@@ -13,8 +13,11 @@
 <section class="section summary-section">
   <div class="container overview-grid">
     <div>
-      <p class="eyebrow">What the project adds up to</p>
+      <p class="eyebrow">{% if summary %}What the material shows{% else %}What the project adds up to{% endif %}</p>
       {% if summary %}<div class="summary-copy">{{ summary_html }}</div>
+      {% if interpretation and interpretation.text %}
+      <p class="eyebrow">What this may mean, so far</p>
+      <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}
       {% elif runs %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
       {% else %}<p class="lead">Add material to begin a project-wide synthesis.</p>{% endif %}
       {% if project.brief %}<details class="quiet-details"><summary>Open questions from the analysis</summary><p>{{ project.brief | txt }}</p></details>{% endif %}

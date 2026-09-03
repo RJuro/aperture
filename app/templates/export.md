@@ -13,8 +13,14 @@
 
 ## Across the corpus
 
-{% if summary %}{{ summary.text }}
+{% if summary %}**What the material shows**
+
+{{ summary.text }}
 {% else %}No project summary yet.
+{% endif %}{% if interpretation and interpretation.text %}
+**What this may mean, so far**
+
+{{ interpretation.text }}
 {% endif %}
 **Focus.** {{ project.focus or "not set" }}
 {% if focus_history %}

@@ -115,6 +115,18 @@ def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, con
     assert (row["title"] or row["name"]) in html
 
 
+def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, conn, analysed):
+    """What the corpus shows is cited; what it may mean is argued with. Run together on the page
+    they would be read as one kind of sentence."""
+    store.save_summary(conn, "project", analysed["pid"], "interpretation",
+                       "Taken together, this suggests a single wage logic.")
+    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/export.md"):
+        text = client.get(url).text
+        assert store.get_summary(conn, "project", analysed["pid"], "reading")["text"] in text
+        assert "Taken together, this suggests a single wage logic." in text
+        assert "What the material shows" in text and "What this may mean, so far" in text
+
+
 def test_the_app_does_not_speak_our_vocabulary(client, analysed):
     from app import context
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
