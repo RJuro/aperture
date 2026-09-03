@@ -30,6 +30,9 @@ SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 300, 1
 # What the corpus may mean, as against what it shows: shorter, because it is the movement a
 # researcher argues with rather than the one they cite.
 INTERPRETATION_WORDS = 150
+# What one theme amounts to in one material. Short, because the claims below it are the finding
+# and this only says how they hang together.
+THREAD_WORDS = 90
 
 _CITE = re.compile(r"\s*\[([^\[\]]+)\]")
 
@@ -203,7 +206,7 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         frame=frame_block(conn, mid),
         feedback=feedback_block(conn, pid, mid, tid),
         material=layout(conn, mid),
-        min_moments=MIN_MOMENTS, max_moments=MAX_MOMENTS,
+        min_moments=MIN_MOMENTS, max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
     )
     data = llm.chat_json(system, user, label="thread")
 
@@ -235,6 +238,10 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
                        f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
                        f"{MIN_MOMENTS} needed")
         return [], dropped, stats
+    # Written only over a line that was kept: an account of claims that were thrown away would be
+    # a reading with nothing under it, and the page cannot tell the two apart.
+    if summary := words(data.get("summary"), THREAD_WORDS):
+        store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", summary, run_id)
     store.save_moments(conn, mid, tid, kept, run_id)     # ordered by position in the material
     return kept, dropped, stats
 

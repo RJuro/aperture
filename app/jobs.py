@@ -35,8 +35,36 @@ def _text(conn: sqlite3.Connection, run: dict) -> str:
 
 
 def _frame(conn, pid, run):
-    from .engine import frame
-    return (frame.run(conn, run["material_id"], hint=_text(conn, run)) or {}).get("dropped")
+    """FRAME, and — only for speech that never says who is speaking — one more call to work it out.
+
+    Not a chain entry: whether it is needed depends on what FRAME just found, which nobody knows
+    when the chain is planned. It writes its own run row so the page can say what it is doing, and
+    it runs again after a re-frame under exactly the same condition.
+    """
+    from .engine import diarize, frame
+    mid = run["material_id"]
+    out = frame.run(conn, mid, hint=_text(conn, run)) or {}
+    notes = list(out.get("dropped") or [])
+    if not diarize.needed(out):
+        return notes
+    spent = dict(llm.usage)                 # the framing call's, which the row above still wants
+    rid = store.start_run(conn, pid, "diarize", mid,
+                          line(conn, {"kind": "diarize", "material_id": mid}))
+    llm.usage.update(tokens_in=0, tokens_out=0)
+    try:
+        said = (diarize.run(conn, mid) or {}).get("dropped") or []
+    except Exception as e:                  # its own row carries the reason; the chain stops
+        store.finish_run(conn, rid, error=f"{type(e).__name__}: {e}")
+        raise
+    store.finish_run(conn, rid, tokens_in=llm.usage.get("tokens_in", 0),
+                     tokens_out=llm.usage.get("tokens_out", 0), notes=said)
+    llm.usage.update(**spent)
+    return notes + said
+
+
+def _diarize(conn, pid, run):
+    from .engine import diarize
+    return (diarize.run(conn, run["material_id"]) or {}).get("dropped")
 
 
 def _angles(conn, pid, run):
@@ -91,6 +119,7 @@ def _check(conn, pid, run):
 #                 line a person can read              what it calls
 STEPS: dict[str, tuple[str, Callable]] = {
     "frame":   ("Working out how this is laid out",   _frame),
+    "diarize": ("Working out who is speaking in {name}", _diarize),
     "angles":  ("Working out what to look for in {name}", _angles),
     "read":    ("Reading {name}",                     _read),
     "themes":  ("Finding themes",                     _themes),

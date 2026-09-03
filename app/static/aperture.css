@@ -217,6 +217,14 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .summary-fold .summary-copy { padding: 2px 0 12px; }
 .provisional { max-width: 76ch; color: var(--muted); font-style: italic; }
 .inline-response { max-width: 76ch; padding: 12px 0 25px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.found-themes { padding-block: 26px 0; }
+.found-head { margin: 0 0 2px; font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.found-list { margin: 0 0 30px; padding: 0; list-style: none; }
+.found-list > li { padding: 15px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 20px; align-items: baseline; border-bottom: 1px solid var(--border); }
+.found-list .found-name { font: 500 19px/1.3 var(--font-display); }
+.found-list .found-name:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.found-list .num { color: var(--muted); white-space: nowrap; }
+.found-list p { grid-column: 1 / -1; max-width: 78ch; margin: 0; color: var(--muted); font: 15px/1.6 var(--font-display); }
 .themes-bar { position: sticky; top: 59px; z-index: 20; border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--bg) 94%, transparent); backdrop-filter: blur(12px); }
 .theme-tabs { display: flex; align-items: stretch; gap: 28px; padding-right: 48px; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); }
 .theme-tabs::-webkit-scrollbar { display: none; }
@@ -225,6 +233,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .theme-tab[aria-current='page'] { border-bottom-color: var(--accent); color: var(--fg); }
 .theme-intro { margin-bottom: 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; }
 .theme-intro p.gist { max-width: 70ch; margin: 8px 0 0; color: var(--muted); }
+.theme-intro p.account { max-width: 70ch; margin: 12px 0 0; color: var(--fg); font: 16px/1.62 var(--font-display); }
 .theme-stats { white-space: nowrap; }
 .reading-grid { display: grid; grid-template-columns: minmax(290px, .78fr) minmax(460px, 1.35fr); gap: 28px; align-items: start; }
 .evidence-list { min-width: 0; }

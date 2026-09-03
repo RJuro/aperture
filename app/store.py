@@ -141,11 +141,16 @@ def sid_position(conn: sqlite3.Connection, mid: str) -> dict[str, int]:
 # ---- frame ------------------------------------------------------------------------------------
 
 def save_frame(conn: sqlite3.Connection, mid: str, *, kind: str, display: str, title: str,
-               speakers: list[dict], segments: list[dict], year: str = "") -> None:
+               speakers: list[dict], segments: list[dict], year: str = "",
+               estimated: bool = False) -> None:
     """The material's shape. Replaces any earlier frame — a re-frame re-describes, and because it
-    never touches `sentence`, every code and moment survives it."""
-    conn.execute("UPDATE material SET kind=?, display=?, title=?, year=? WHERE id=?",
-                 (kind, display, title, year, mid))
+    never touches `sentence`, every code and moment survives it.
+
+    `estimated` says the sections are a guess at who is speaking rather than something the material
+    states. It defaults to false, so describing the material afresh clears the mark and whatever
+    runs after has to earn it again."""
+    conn.execute("UPDATE material SET kind=?, display=?, title=?, year=?, speakers_estimated=? "
+                 "WHERE id=?", (kind, display, title, year, int(estimated), mid))
     conn.execute("DELETE FROM speaker WHERE material_id=?", (mid,))
     conn.executemany("INSERT OR REPLACE INTO speaker (material_id, label, name, role) "
                      "VALUES (?,?,?,?)",

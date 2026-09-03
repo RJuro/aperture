@@ -163,7 +163,10 @@ def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) ->
             out.append(block(cur, n=at))
         return out
     if display == "segments":
-        starts = {s["sid"]: s["label"] for s in store.segments(conn, mid)}
+        # An estimated speaker is marked where the reader meets it. The label the model was shown
+        # stays plain; this word is the page's, and it is the difference between a guess and a fact.
+        mark = " \u00b7 estimated" if store.material(conn, mid)["speakers_estimated"] else ""
+        starts = {s["sid"]: s["label"] + mark for s in store.segments(conn, mid)}
         cur, label = [], ""
         for r in rows:
             if r["sid"] in starts:
@@ -286,7 +289,8 @@ def _threads(conn, mid: str, themes: dict) -> list[dict]:
     by: dict[str, list[dict]] = {}
     for m in store.moments(conn, mid):
         by.setdefault(m["theme_id"], []).append(dict(m))
-    return [{"theme": themes.get(t, {"id": t, "name": t, "gist": ""}), "moments": ms}
+    return [{"theme": themes.get(t, {"id": t, "name": t, "gist": ""}), "moments": ms,
+             "summary": _row(store.get_summary(conn, "thread", f"{mid}:{t}", "reading"))}
             for t, ms in by.items()]
 
 
@@ -359,6 +363,8 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         for x in ms:
             x["reactions"] = [dict(f) for f in store.feedback_for(conn, "moment", x["id"])]
         cards.append({**dict(t), "moments": ms,
+                      "summary": _row(store.get_summary(conn, "thread", f'{mid}:{t["id"]}',
+                                                        "reading")),
                       "codes": [dict(c) for c in store.theme_codes(conn, t["id"], mid)]})
     selected = next((c for c in cards if c["id"] == theme_id), None) or (cards[0] if cards else None)
     quotes: dict[str, list[str]] = {}

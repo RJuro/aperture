@@ -10,7 +10,7 @@ what changed, what is at stake, what is refused.
   Bad:   "Work shapes what is said here."          (a label, not a finding)
   Bad:   "The speaker discusses employment."       (true of half the material)
 
-Five rules. Each carries the same weight, and each is checked.
+Six rules. Each carries the same weight, and each is checked.
 
 1. Every claim rests on a quote. A moment without a quote is not a moment.
 2. Every quote is copied EXACTLY from the material below, word for word, at most 12 words. A quote
@@ -23,6 +23,11 @@ Five rules. Each carries the same weight, and each is checked.
    here, return fewer and the line will be set aside with that reason; never pad.
 5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
    focus group, field notes, a document, or answers to an open question.
+6. `summary` is at most {{summary_words}} words: what THIS material says on THIS theme, taken
+   across the moments you have just listed and read as one. Say what the line amounts to — the
+   shape of it, what holds and what pulls against it — not that a line exists. Your own words:
+   no new quotes, and rule 5 holds here too. If the moments are too few to make a line, write it
+   anyway of what you found; it is thrown away with them.
 
 Return JSON in exactly this shape and nothing else:
 
@@ -31,7 +36,8 @@ Return JSON in exactly this shape and nothing else:
     {"claim": "The stall, not the land, is what fed them; the farm is a place they left.",
      "anchor": "we had a stall in the market",
      "sid": "S118"}
-  ]
+  ],
+  "summary": "Making a living here is trade rather than land. The farm is named twice and both times as somewhere already left; the stall is where the money and the day both are. Work is counted in what it bought, and the year it stopped buying it is the year the crossing is first mentioned."
 }
 ---
 THE THEME you are following. Its definition says what belongs to it; you decide where, in THIS

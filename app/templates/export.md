@@ -90,6 +90,10 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {% endif %}
 {% for th in m.threads %}#### {{ th.theme.name }}
 
+{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}
+{% if th.summary %}
+{{ th.summary.text }}
+{% endif %}
 {% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
    > {{ x.anchor }}  [{{ x.sid }}]
 {% endfor %}

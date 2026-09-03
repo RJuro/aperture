@@ -49,13 +49,27 @@
   </details>
 </div></section>{% endif %}
 
+{% if cards %}<section class="found-themes"><div class="container">
+  <h2 class="found-head">Themes in this material</h2>
+  <ol class="found-list">
+  {% for c in cards %}
+    <li>
+      <a class="found-name" href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }}</a>
+      <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>
+      <p class="gist">{{ (c.summary.text if c.summary else c.gist) | txt }}</p>
+    </li>
+  {% endfor %}
+  </ol>
+</div></section>{% endif %}
+
 {% if cards %}<section class="themes-bar"><div class="container"><nav class="theme-tabs" aria-label="Themes in this material">
 {% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
 </nav></div></section>{% endif %}
 
 <section class="section"><div class="container">
 {% if selected %}
-<div class="theme-intro"><div><p class="eyebrow">Selected theme</p><h2>{{ selected.name | txt }}</h2><p class="gist">{{ selected.gist | txt }}</p></div>
+<div class="theme-intro"><div><p class="eyebrow">Selected theme</p><h2>{{ selected.name | txt }}</h2><p class="gist">{{ selected.gist | txt }}</p>
+  {% if selected.summary %}<p class="gist account">{{ selected.summary.text | txt }}</p>{% endif %}</div>
   <p class="theme-stats meta">{{ selected.moments | length }} {{ 'claim' | plural(selected.moments | length) }} · based on {{ selected.codes | length }} {{ 'code' | plural(selected.codes | length) }}</p></div>
 <div class="reading-grid">
   <section class="evidence-list">
