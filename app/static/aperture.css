@@ -56,8 +56,10 @@ h3 { margin: 0; font: 600 19px/1.3 var(--font-display); }
 .account-menu { position: relative; }
 .account-menu > summary { list-style: none; }
 .account-menu > summary::-webkit-details-marker { display: none; }
-.account { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 700; }
-.account-menu[open] .account, .account:hover { border-color: var(--fg); }
+/* Scoped to the menu: unscoped, this 42px circle also caught the theme account paragraph on the
+   material page, which shares the word. */
+.account-menu .account { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 700; }
+.account-menu[open] .account, .account-menu .account:hover { border-color: var(--fg); }
 .menu-sheet { position: absolute; right: 0; top: calc(100% + 7px); z-index: 40; width: 230px; padding: 7px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: 0 14px 36px color-mix(in oklch, var(--fg) 12%, transparent); }
 .menu-sheet > a, .menu-sheet > button, .menu-sheet > details > summary { min-height: 42px; display: flex; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; list-style: none; }
 .menu-sheet > a:hover, .menu-sheet > button:hover, .menu-sheet > details > summary:hover { background: var(--fg-soft); }
