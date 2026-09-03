@@ -49,11 +49,6 @@
     --mark: #c9a227; --mark-ink: #16120a; --target: #232c3f; --record-ink: #d9d6cf; --focus: #9db4ee;
   }
 }
-:root[data-theme="dark"] {
-  --paper: #15171b; --sheet: #1c1f24; --ink: #e8e6e1; --ink-2: #b4b1aa; --ink-3: #7d7b76;
-  --rule: #2c3038; --rule-2: #23262c; --link: #9db4ee; --link-hover: #c3d2f6;
-  --mark: #c9a227; --mark-ink: #16120a; --target: #232c3f; --record-ink: #d9d6cf; --focus: #9db4ee;
-}
 
 /* ---- ground and type ------------------------------------------------------------------------ */
 html { background: var(--paper); }

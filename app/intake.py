@@ -83,8 +83,8 @@ def extract(filename: str, data: bytes) -> str:
                           f"{', '.join(KINDS[:-1])} and {KINDS[-1]}.")
     try:
         text = read(data)
-    except Exception:                                   # noqa: BLE001 - a trace helps nobody here
-        raise IntakeError(f"{filename} could not be opened as {ext.lstrip('.')}.") from None
+    except Exception as e:                            # a trace helps nobody here, but its name does
+        raise IntakeError(f"{filename} could not be opened as {ext.lstrip('.' + f" ({type(e).__name__})")}.") from None
     if not text.strip():
         raise IntakeError(f"{filename} has no text in it.")
     return text

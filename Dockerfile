@@ -1,6 +1,9 @@
 FROM python:3.12-slim
 WORKDIR /srv
 COPY pyproject.toml ./
+# Coolify's rollout healthcheck shells out to curl inside the container; without it a
+# perfectly healthy start is judged unhealthy and rolled back. Three megabytes, well spent.
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir fastapi "uvicorn[standard]" jinja2 httpx python-multipart python-docx pypdf
 COPY app/ ./app/
 COPY seed/ ./seed/

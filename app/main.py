@@ -30,18 +30,9 @@ if _STATIC.is_dir():
 
 
 # Routers are attached last so a partially built app still serves /health.
-try:                                                    # pragma: no cover - wiring
-    from . import accounts
-    app.include_router(accounts.router)
-except ImportError:
-    pass
-try:                                                    # pragma: no cover - wiring
-    from . import pages
-    app.include_router(pages.router)
-except ImportError:
-    pass
-try:                                                    # pragma: no cover - wiring
-    from . import verbs
-    app.include_router(verbs.router)
-except ImportError:
-    pass
+from . import accounts  # noqa: E402
+app.include_router(accounts.router)
+from . import pages  # noqa: E402
+app.include_router(pages.router)
+from . import verbs  # noqa: E402
+app.include_router(verbs.router)
