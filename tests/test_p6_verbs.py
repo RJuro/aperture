@@ -23,8 +23,9 @@ def app(conn, monkeypatch):
     monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: planned.append(list(runs)) or "j")
     monkeypatch.setattr(verbs.jobs, "start", jobs.start)
     monkeypatch.setattr(verbs.jobs, "ingest_chain",
-                        lambda pid, mid, **k: planned.append([{"kind": "chain",
-                                                               "material_id": mid}]) or "j")
+                        lambda pid, mids, **k: planned.append([{"kind": "chain",
+                                                                "material_id": m}
+                                                               for m in mids]) or "j")
     client = TestClient(main.app, follow_redirects=False)
     client.planned = planned
     return client

@@ -243,19 +243,25 @@ def wait(job: str, timeout: float = 60.0) -> bool:
 
 # ---- the chain material arrives on --------------------------------------------------------------
 
-def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str:
-    """Up: ingest → FRAME → READ → THEMES → DOC → PROJECT.
+def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.connect) -> str:
+    """Up: FRAME → ANGLES → READ for each material, then THEMES and DOC for each, then the tail.
+
+    One upload is one chain, whatever it carried. Five files used to start five chains, and each
+    of them found themes again and rewrote the corpus summary with four of the five still unread.
 
     Ingest itself is Python and already done by the time this is called — text became sentences
     when the material was added, synchronously, because ids are the spine everything else cites.
     This is the model half.
     """
+    mids = list(mids)
     return start(conn_factory, pid, [
-        {"kind": "frame", "material_id": mid},
-        {"kind": "angles", "material_id": mid},
-        {"kind": "read", "material_id": mid},
-        {"kind": "themes", "material_id": mid},
-        {"kind": "doc", "material_id": mid},
+        *({"kind": k, "material_id": mid} for mid in mids
+          for k in ("frame", "angles", "read")),
+        # THEMES takes one material because it must see that material's codes by passage; every
+        # piece is read before any of them moves the theme set, so DOC writes against the set as
+        # it finally stands.
+        *({"kind": "themes", "material_id": mid} for mid in mids),
+        *({"kind": "doc", "material_id": mid} for mid in mids),
         # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
         # the live theme set at this moment is the old one.
         {"kind": "accounts"},
