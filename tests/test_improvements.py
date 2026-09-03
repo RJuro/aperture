@@ -129,3 +129,15 @@ def test_project_prompt_requires_grounded_and_interpretive_synthesis():
     assert "grounded synthesis" in prompt
     assert "interpretive synthesis" in prompt
     assert "visibly provisional" in prompt
+
+
+def test_an_answer_that_is_not_json_is_asked_for_once_more(monkeypatch, real_chat_json):
+    import pytest
+    from app import llm
+    answers = iter(['{"summary": "she said "no" and left"}', '{"summary": "fine"}'])
+    monkeypatch.setattr(llm, "_ask", lambda system, user, timeout: next(answers))
+    monkeypatch.delenv("APERTURE_REPLAY", raising=False)
+    assert real_chat_json("s", "u", label="t") == {"summary": "fine"}
+    monkeypatch.setattr(llm, "_ask", lambda system, user, timeout: "not json at all")
+    with pytest.raises(llm.LLMError, match="twice"):
+        real_chat_json("s", "u", label="t")

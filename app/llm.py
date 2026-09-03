@@ -117,16 +117,8 @@ def parse(raw: str) -> dict:
         return json.loads(text[start:end + 1])
 
 
-def chat_json(system: str, user: str, *, label: str = "", timeout: float | None = None) -> dict:
-    """The only way this codebase talks to a model."""
-    replay = os.environ.get("APERTURE_REPLAY")
-    if replay:
-        path = Path(replay) / f"{_key(label, system, user)}.json"
-        if not path.exists():
-            raise LLMError(f"no recording for {label!r} at {path}. Record one with "
-                           f"APERTURE_RECORD, or fix the prompt back to what was recorded.")
-        return json.loads(path.read_text())
-
+def _ask(system: str, user: str, timeout: float | None) -> str:
+    """One streamed call; the model's text, thinking and all, as it arrived."""
     base, key = _endpoint()
     body = {"model": model(), "stream": True, "stream_options": {"include_usage": True},
             "messages": [{"role": "system", "content": system},
@@ -155,7 +147,30 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
                     usage["tokens_in"] += u.get("prompt_tokens", 0) or 0
                     usage["tokens_out"] += u.get("completion_tokens", 0) or 0
 
-    out = parse("".join(chunks))
+    return "".join(chunks)
+
+
+def chat_json(system: str, user: str, *, label: str = "", timeout: float | None = None) -> dict:
+    """The only way this codebase talks to a model."""
+    replay = os.environ.get("APERTURE_REPLAY")
+    if replay:
+        path = Path(replay) / f"{_key(label, system, user)}.json"
+        if not path.exists():
+            raise LLMError(f"no recording for {label!r} at {path}. Record one with "
+                           f"APERTURE_RECORD, or fix the prompt back to what was recorded.")
+        return json.loads(path.read_text())
+
+    # A model that reasons well still drops an unescaped quote into a long string now and then,
+    # and a project summary is two long strings. The second answer nearly always parses; after
+    # two the failure is real and lands on the run row as before.
+    for attempt in (1, 2):
+        raw = _ask(system, user, timeout)
+        try:
+            out = parse(raw)
+            break
+        except (json.JSONDecodeError, LLMError) as e:
+            if attempt == 2:
+                raise LLMError(f"the model's answer was not JSON, twice: {e}") from e
     if record := os.environ.get("APERTURE_RECORD"):
         d = Path(record)
         d.mkdir(parents=True, exist_ok=True)
