@@ -277,3 +277,23 @@ def test_the_poller_does_not_reload_over_what_is_being_typed(client, conn, analy
     html = client.get(f"/p/{analysed['pid']}").text
     assert "The reading has finished — reload to see it." in html
     assert "textarea" in html.split("<script", 1)[1] and "files.length" in html
+
+
+def test_a_quote_that_crosses_a_sentence_boundary_marks_the_quote_and_not_the_cue(client, conn,
+                                                                                  project):
+    """A quote may run across up to three sentences, and the page attached it to the sentence it
+    starts in — where it is not — so the whole of that sentence was marked, speaker cue and all,
+    and the second half of the quote was left plain. Law 1 is that a claim shows the words it
+    rests on."""
+    from app import ingest
+    raw = "GRANDE:\tMy mother missed it a lot. But I am sorry to say it."
+    mid = store.add_material(conn, project, "Small", raw)
+    store.save_sentences(conn, mid, ingest.sentences(raw))
+    sids = [s for s, _ in store.sentences(conn, mid)]
+    tid = store.save_theme(conn, project, tid=None, name="T", gist="g", code_ids=[])
+    store.save_moments(conn, mid, tid, [{"claim": "c", "anchor": "missed it a lot. But I am",
+                                         "sid": sids[0]}])
+    html = client.get(f"/p/{project}/m/{mid}").text
+    marked = " ".join(re.findall(r"<mark>(.*?)</mark>", html))
+    assert marked == "missed it a lot. But I am"
+    assert "GRANDE" not in marked and "My mother" not in marked
