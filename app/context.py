@@ -225,8 +225,17 @@ def _css_version() -> str:
         return "0"
 
 
+def data_persistent() -> bool:
+    """Whether the data directory is a mounted volume. On a laptop APERTURE_DATA_DIR is unset and
+    nothing is said; in a container it must be a mount, or a redeploy starts from an empty
+    database — the loss the predecessor project already suffered once."""
+    import os
+    d = os.environ.get("APERTURE_DATA_DIR")
+    return True if not d else os.path.ismount(d)
+
+
 def _shell(conn, pid: str) -> dict:
-    return {"app_name": APP_NAME, "css_v": _css_version(),
+    return {"app_name": APP_NAME, "css_v": _css_version(), "data_persistent": data_persistent(),
             "runs": [dict(r) for r in store.active_runs(conn, pid)]}
 
 
@@ -245,7 +254,7 @@ def _threads(conn, mid: str, themes: dict) -> list[dict]:
 def home(conn, user=None) -> dict:
     """Their projects. `user` is None on a database with no accounts in it, and then it is all of
     them — see `store.projects_for`."""
-    return {"app_name": APP_NAME, "runs": [], "user": user,
+    return {"data_persistent": data_persistent(), "app_name": APP_NAME, "runs": [], "user": user,
             "projects": [dict(r) for r in store.projects_for(conn, user)]}
 
 

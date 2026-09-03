@@ -110,3 +110,19 @@ def test_the_first_admin_comes_from_the_environment_once(conn, monkeypatch):
 def test_the_pin_gate_is_gone():
     from app import auth
     assert not hasattr(auth, "PinAuth"), "accounts replace the PIN; two gates is one too many"
+
+
+def test_an_admin_is_told_when_data_is_not_on_persistent_storage(client, conn, people, monkeypatch):
+    """A redeploy on to an unmounted data directory starts from an empty database — the loss the
+    predecessor project already suffered once. The page says so, to administrators, while true."""
+    import os
+    login(client, "ada", "correct horse")
+    monkeypatch.setenv("APERTURE_DATA_DIR", "/data")
+    monkeypatch.setattr(os.path, "ismount", lambda p: False)
+    assert "not on persistent storage" in client.get("/").text
+    monkeypatch.setattr(os.path, "ismount", lambda p: True)
+    assert "not on persistent storage" not in client.get("/").text
+    client.post("/logout")
+    login(client, "ann", "battery staple")
+    monkeypatch.setattr(os.path, "ismount", lambda p: False)
+    assert "not on persistent storage" not in client.get("/").text, "an ordinary user cannot act on it"

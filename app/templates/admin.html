@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 {% block main %}
-<h1>People</h1>
+<h1>Accounts</h1>
 {% if problem %}<p class="dim">{{ problem }}</p>{% endif %}
 <ul class="mats">
 {% for u in people %}
-  <li>{{ u.name | txt }}{% if u.is_admin %} <span class="dim">makes accounts</span>{% endif %}</li>
+  <li>{{ u.name | txt }}{% if u.is_admin %} <span class="dim">Administrator</span>{% endif %}</li>
 {% endfor %}
 </ul>
 <form method="post" action="/admin/users">
-  <label>Name <input name="name" required></label>
+  <label>Account name <input name="name" required></label>
   <label>Password <input name="password" type="password" required></label>
-  <button>Add someone</button>
+  <button>Create account</button>
 </form>
 <h2>Projects</h2>
 <ul class="mats">
 {% for p in projects %}
   <li><a href="/p/{{ p.id }}">{{ p.name | txt }}</a>
-      <span class="dim">{{ p.owner | txt if p.owner else 'nobody yet' }} · {{ p.created_at | when }}</span></li>
+      <span class="dim">Owner {{ p.owner | txt if p.owner else 'not set' }} · Created {{ p.created_at | when }}</span></li>
 {% else %}
   <li class="dim">Nothing here yet.</li>
 {% endfor %}

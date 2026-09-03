@@ -10,13 +10,16 @@
   <a href="/">{{ app_name }}</a>
   {% if project %}
   · <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
-  · <a href="/p/{{ project.id }}/export.md">Reading record</a>
+  · <a href="/p/{{ project.id }}/export.md">Export reading record</a>
   {% endif %}
   {% if user %}
   <form class="who" method="post" action="/logout">{{ user.name | txt
-    }}{% if user.is_admin %} · <a href="/admin">People</a>{% endif %} · <button>Sign out</button></form>
+    }}{% if user.is_admin %} · <a href="/admin">Manage accounts</a>{% endif %} · <button>Sign out</button></form>
   {% endif %}
 </header>
+{% if user and user.is_admin and data_persistent is defined and not data_persistent %}
+<p class="warn">Data is not on persistent storage. Projects will be lost when the application is redeployed — attach a volume at the data directory.</p>
+{% endif %}
 {% if runs %}
 <p class="run">{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
 {% endif %}

@@ -7,40 +7,42 @@
 {% if summary %}
 <div class="summary">{{ summary_html }}</div>
 {% else %}
-<p class="provisional">No account written yet. It is written when a reading lands, or when you
-say something about this theme below.</p>
+<p class="provisional">No summary yet. One is written after a material is analysed, or after
+you send feedback below.</p>
 <p class="summary">{{ theme.gist | txt }}</p>
 {% endif %}
 
 <form method="post" action="/p/{{ project.id }}/react" class="say">
   <input type="hidden" name="theme_id" value="{{ theme.id }}">
-  <textarea name="text" rows="2" placeholder="Say what this account gets wrong across the corpus — it will be written again with your words in front of it."></textarea>
-  <button>Send</button>
+  <label>Feedback on this summary
+    <textarea name="text" rows="2" placeholder="Describe what this summary misses or gets wrong. It will be revised using your words."></textarea>
+  </label>
+  <button>Revise this summary</button>
 </form>
 
-<h2>Where it runs</h2>
+<h2>Materials where this theme appears</h2>
 {% for m in carrying %}
 <section class="carries">
   <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}">{{ (m.title or m.name) | txt }}</a>
-      <span class="dim">{{ m.kind }} · {{ m.claims }} claims</span></h3>
+      <span class="dim">{{ m.kind }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h3>
   <ol class="claims">
   {% for x in m.moments %}
     <li>
       <p class="claim">{{ x.claim | txt }}</p>
-      <a class="cite" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}#{{ x.sid }}"><q class="quote">{{ x.anchor | txt }}</q></a>
+      <a class="cite" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}#{{ x.sid }}"><q class="quote">{{ x.anchor | txt }}</q></a>
     </li>
   {% endfor %}
   </ol>
 </section>
 {% else %}
-<p class="dim">Nothing rests on this theme yet.</p>
+<p class="dim">No material contains claims for this theme yet.</p>
 {% endfor %}
 
 {% if absent %}
-<h2>Where it does not</h2>
-<p class="dim">No claim in these rests on this theme. That is a finding rather than a gap in a
-table — but check what the reading set aside below before treating it as silence: a line too
-thin to keep is dropped whole, and a dropped line and an empty one look the same here.</p>
+<h2>Materials where this theme does not appear</h2>
+<p class="dim">No claims in these materials support this theme. Before reading that as absence,
+check what was excluded below — a set of claims too thin to keep is dropped whole and would look
+the same as absence here.</p>
 <ul class="mats">
 {% for m in absent %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ (m.title or m.name) | txt }}</a>
@@ -50,7 +52,7 @@ thin to keep is dropped whole, and a dropped line and an empty one look the same
 {% endif %}
 
 {% if set_aside %}
-<details class="aside"><summary>What the readings set aside ({{ set_aside | length }})</summary>
+<details class="aside"><summary>Excluded from the analysis ({{ set_aside | length }})</summary>
 <ul class="mats">
 {% for n in set_aside %}<li class="dim">{{ n | txt }}</li>{% endfor %}
 </ul>
@@ -58,7 +60,7 @@ thin to keep is dropped whole, and a dropped line and an empty one look the same
 {% endif %}
 
 {% if codes %}
-<details><summary>The {{ codes | length }} code{{ '' if codes | length == 1 else 's' }} this theme gathers</summary>
+<details><summary>Codes grouped under this theme ({{ codes | length }})</summary>
 <ul class="mats">
 {% for c in codes %}<li><b class="gist">{{ c.name | txt }}</b> <span class="gist">{{ c.definition | txt }}</span></li>{% endfor %}
 </ul>

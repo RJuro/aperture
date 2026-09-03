@@ -2,9 +2,10 @@
 
 One markdown file, in this order, each a heading a contents list points at:
   Across the corpus · Themes (definition, account, where it runs and does not) · Materials
-  (before reading, after reading, every line with its claims and quotes) · Checks · What the
-  readings set aside · What the researcher said (with whether a rewrite honoured it) · Runs
-  (totals by kind — provider, model, tokens — not one row per run).
+  (before reading, after reading, every line with its claims and quotes) · Questions checked
+  against the materials · Excluded from the analysis · Researcher feedback (with whether a rewrite
+  honoured it) · Processing history (totals by kind — provider, model, tokens — not one row per
+  run).
 """
 from __future__ import annotations
 
@@ -40,13 +41,15 @@ def rich(conn, analysed):
 def test_the_document_has_a_contents_list_that_matches_its_headings(client, rich):
     md = client.get(f"/p/{rich['pid']}/export.md").text
     heads = re.findall(r"^## (.+)$", md, re.M)
-    for want in ("Across the corpus", "Themes", "Materials", "Checks", "What the readings set aside",
-                 "What the researcher said", "Runs"):
+    for want in ("Across the corpus", "Themes", "Materials",
+                 "Questions checked against the materials", "Excluded from the analysis",
+                 "Researcher feedback", "Processing history"):
         assert want in heads, f"missing section {want!r}"
     contents = md.split("## ", 1)[0]
     for h in heads:
         assert h in contents, f"{h!r} is a heading but not in the contents list"
-    assert heads.index("Across the corpus") < heads.index("Themes") < heads.index("Materials") < heads.index("Runs")
+    assert (heads.index("Across the corpus") < heads.index("Themes") < heads.index("Materials")
+            < heads.index("Processing history"))
 
 
 def test_every_live_row_reaches_the_document(client, conn, rich):
@@ -72,7 +75,9 @@ def test_a_theme_section_says_where_it_runs_and_where_it_does_not(client, conn, 
     tid = list(rich["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?", (rich["rodwin"], tid)); conn.commit()
     md = client.get(f"/p/{rich['pid']}/export.md").text
-    sect = md.split("## Themes", 1)[1].split("## Materials", 1)[0]
+    # Anchored on the line, not the substring: "#### Materials where this theme appears" now
+    # sits inside this very section.
+    sect = md.split("\n## Themes\n", 1)[1].split("\n## Materials\n", 1)[0]
     assert "of 2 materials" in sect
     assert "does not" in sect.lower()
     rod = store.material(conn, rich["rodwin"])
@@ -81,7 +86,7 @@ def test_a_theme_section_says_where_it_runs_and_where_it_does_not(client, conn, 
 
 def test_a_comment_says_whether_a_rewrite_honoured_it(client, rich):
     md = client.get(f"/p/{rich['pid']}/export.md").text
-    sect = md.split("## What the researcher said", 1)[1].split("## Runs", 1)[0]
+    sect = md.split("## Researcher feedback", 1)[1].split("## Processing history", 1)[0]
     assert "the crossing is underplayed" in sect and "honoured" in sect
     assert "still open, not yet honoured" in sect and "open" in sect
 
@@ -91,7 +96,7 @@ def test_runs_are_totals_by_kind_not_one_row_each(client, conn, rich):
     for _ in range(40):
         rid = store.start_run(conn, pid, "doc", rich["grande"], "x"); store.finish_run(conn, rid, tokens_in=10, tokens_out=5)
     md = client.get(f"/p/{pid}/export.md").text
-    sect = md.split("## Runs", 1)[1]
+    sect = md.split("## Processing history", 1)[1]
     assert sect.count("\n- ") < 15, "at fifty materials one row per run was 250 rows"
     assert "Writing what stands out" in sect, "the researcher's line for the step, not its stage name"
     assert "1400" in sect, "1000 + 40×10 input tokens, as one total"

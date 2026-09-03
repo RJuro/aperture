@@ -43,8 +43,15 @@ def _when(iso: str) -> str:
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
+def _plural(word: str, n) -> str:
+    """'1 claim', '2 claims'. Every page prints counts, and '1 claims' is a typo the reader
+    charges to the instrument."""
+    return word if n == 1 else word + "s"
+
+
 _env.filters["txt"] = context.txt
 _env.filters["when"] = _when
+_env.filters["plural"] = _plural
 
 _conn = None
 

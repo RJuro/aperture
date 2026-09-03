@@ -102,14 +102,15 @@ def test_a_theme_has_a_page_of_its_own(client, conn, analysed):
 
 def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, conn, analysed):
     """Absence at corpus level is a finding. An empty cell in a grid says nothing; a named
-    material under "where it does not" says the reading looked and claimed nothing."""
+    material under "materials where this theme does not appear" says the reading looked and
+    claimed nothing."""
     pid = analysed["pid"]
     tid = list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
     html = client.get(f"/p/{pid}/t/{tid}").text
-    assert "Where it does not" in html
+    assert "Materials where this theme does not appear" in html
     row = store.material(conn, analysed["rodwin"])
     assert (row["title"] or row["name"]) in html
 
@@ -156,7 +157,8 @@ def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back
     and real money, so the researcher is told rather than charged for it silently."""
     pid, mid = analysed["pid"], analysed["grande"]
     html = client.get(f"/p/{pid}").text
-    assert "Read it again" not in html, "nothing has run yet, so nothing can be out of date"
+    assert "Reanalyse this material" not in html, \
+        "nothing has run yet, so nothing can be out of date"
 
     doc = store.start_run(conn, pid, "doc", mid, "x")
     store.finish_run(conn, doc)
@@ -166,7 +168,7 @@ def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back
     stale = [m["id"] for m in store.out_of_date(conn, pid)]
     assert stale == [mid], "only the material read before the change is out of date"
     html = client.get(f"/p/{pid}").text
-    assert "Read it again" in html and mid in html
+    assert "Reanalyse this material" in html and mid in html
 
 
 def test_a_failed_run_does_not_make_everything_look_out_of_date(conn, analysed):
@@ -188,12 +190,13 @@ def test_what_a_reading_set_aside_is_shown_and_not_swallowed(client, conn, analy
     assert 'the line for "Work and trade" was dropped: 3 claims left' in store.set_aside(conn, pid)
 
     html = client.get(f"/p/{pid}/m/{mid}").text
-    assert "set aside" in html and "was dropped: 3 claims left" in html
+    assert "Excluded from the analysis" in html and "was dropped: 3 claims left" in html
 
     tid = list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
     theme = client.get(f"/p/{pid}/t/{tid}").text
-    assert "Where it does not" in theme
-    assert "set aside" in theme, "an absence must not be asserted without the drops beside it"
+    assert "Materials where this theme does not appear" in theme
+    assert "Excluded from the analysis" in theme, \
+        "an absence must not be asserted without the drops beside it"

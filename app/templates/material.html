@@ -9,21 +9,23 @@
   · {{ derivation }}
 </p>
 <details class="reframe">
-  <summary>Laid out wrong?</summary>
+  <summary>Is the material structured incorrectly?</summary>
   <form method="post" action="/p/{{ project.id }}/m/{{ material.id }}/reframe" class="row">
-    <label>Say how it should be read <input name="hint" size="40"></label>
-    <button>Look again</button>
+    <label>Describe the correct speakers, sections, or row structure <input name="hint" size="40"></label>
+    <button>Reanalyse structure</button>
   </form>
 </details>
 
 {% if summary %}
-{% if summary.stage != 'reading' %}<p class="provisional">Not read yet — this is a description
-of the material, written from its shape.</p>{% endif %}
+{% if summary.stage != 'reading' %}<p class="provisional">Not analysed yet. This description uses only the material's
+structure.</p>{% endif %}
 <div class="summary">{{ summary_html }}</div>
 <form method="post" action="/p/{{ project.id }}/react" class="say">
   <input type="hidden" name="material_id" value="{{ material.id }}">
-  <textarea name="text" rows="2" placeholder="Say what this account gets wrong, or what it is missing — it will be written again with your words in front of it."></textarea>
-  <button>Send</button>
+  <label>Feedback on this summary
+    <textarea name="text" rows="2" placeholder="Describe what this summary misses or gets wrong. It will be revised using your words."></textarea>
+  </label>
+  <button>Revise this summary</button>
 </form>
 {% endif %}
 
@@ -32,11 +34,11 @@ of the material, written from its shape.</p>{% endif %}
 {% for c in cards %}
   <a class="gist card{% if selected and c.id == selected.id %} on{% endif %}"
      href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }}
-     · {{ c.moments | length }} claims · {{ c.gist | txt }}</a>
+     · {{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }} · {{ c.gist | txt }}</a>
 {% endfor %}
 </nav>
 {% else %}
-<p class="dim">Nothing read here yet.</p>
+<p class="dim">No analysis yet.</p>
 {% endif %}
 
 {% if selected %}
@@ -46,7 +48,7 @@ of the material, written from its shape.</p>{% endif %}
     {% for x in selected.moments %}
       <li>
         <p class="claim">{{ x.claim | txt }}</p>
-        <blockquote class="quote"><a href="#{{ x.sid }}">{{ x.anchor | txt }}</a></blockquote>
+        <blockquote class="quote"><a title="Open this passage in the material" href="#{{ x.sid }}">{{ x.anchor | txt }}</a></blockquote>
         {% for f in x.reactions %}
         <p class="dim small">{{ f.kind }}{% if f.text %} <q>{{ f.text | txt }}</q>{% endif %}</p>
         {% endfor %}
@@ -65,16 +67,18 @@ of the material, written from its shape.</p>{% endif %}
 <form method="post" action="/p/{{ project.id }}/react" class="say">
   <input type="hidden" name="theme_id" value="{{ selected.id }}">
   <input type="hidden" name="material_id" value="{{ material.id }}">
-  <textarea name="text" rows="2" placeholder="Say what this line misses or over-reads — it will be followed again through this material with your words in front of it."></textarea>
-  <button>Send</button>
+  <label>Feedback on this theme's analysis
+    <textarea name="text" rows="2" placeholder="Describe what this theme misses or over-reads here. This material will be reanalysed using your words."></textarea>
+  </label>
+  <button>Reanalyse this theme</button>
 </form>
 <form method="post" action="/p/{{ project.id }}/check" class="row">
   <input type="hidden" name="material_id" value="{{ material.id }}">
-  <label>Check this against the material <input name="question" size="34"></label>
-  <button>Check</button>
+  <label>Question or claim to check in this material <input name="question" size="34"></label>
+  <button>Check this material</button>
 </form>
 {% if set_aside %}
-<details class="aside"><summary>What the reading set aside ({{ set_aside | length }})</summary>
+<details class="aside"><summary>Excluded from the analysis ({{ set_aside | length }})</summary>
 <ul class="mats">
 {% for n in set_aside %}<li class="dim">{{ n | txt }}</li>{% endfor %}
 </ul>
@@ -83,14 +87,14 @@ of the material, written from its shape.</p>{% endif %}
 
 {% if checks %}
 <ul class="dim small">
-{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
   {% if k.anchors %}<ul class="found">{% for a in k.anchors %}
-    <li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>
+    <li><a class="cite" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>
   {% endfor %}</ul>{% endif %}</li>{% endfor %}
 </ul>
 {% endif %}
 <details>
-  <summary>Based on {{ selected.codes | length }} codes</summary>
+  <summary>Codes grouped under this theme ({{ selected.codes | length }})</summary>
   <ul class="small">
   {% for c in selected.codes %}
     <li><b class="gist">{{ c.name | txt }}</b> <span class="gist">{{ c.definition | txt }}</span></li>
