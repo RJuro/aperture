@@ -269,13 +269,14 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     ])
 
 
-def removal_chain(pid: str, conn_factory: Callable = db.connect) -> str:
-    """Write the corpus-level account again after one material leaves it.
+def resynthesis_chain(pid: str, conn_factory: Callable = db.connect) -> str:
+    """Write the corpus level again over the reading as it stands: every account, then the summary.
 
-    Only the corpus level. `store.remove_material` has already dropped the orphaned codes and
-    retired the themes left without any, and what stayed was read on its own terms, not against
-    what went — so no material's synthesis is now wrong. Where the themes did move under one,
-    `store.out_of_date` says so on its row and the researcher decides whether it is worth
-    rereading; this used to spend a call on every remaining material to answer that for them.
+    What material leaves behind, and what a failed chain leaves behind, are the same job. Nothing
+    below the corpus level is redone: `store.remove_material` has already dropped the orphaned
+    codes and retired the themes left without any, and what stayed was read on its own terms, not
+    against what went — so no material's synthesis is now wrong. Where the themes did move under
+    one, `store.out_of_date` says so on its row and the researcher decides whether rereading it is
+    worth the money; this used to spend a call on every remaining material to answer that for them.
     """
     return start(conn_factory, pid, [{"kind": "accounts"}, {"kind": "project"}])

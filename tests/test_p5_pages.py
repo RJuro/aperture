@@ -127,6 +127,17 @@ def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, c
         assert "What the material shows" in text and "What this may mean, so far" in text
 
 
+def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, analysed):
+    pid = analysed["pid"]
+    assert "Written over all 2 materials" in client.get(f"/p/{pid}").text
+    jid = store.enqueue_job(conn, pid, [{"kind": "project"}])
+    assert "Being updated now" in client.get(f"/p/{pid}").text
+    store.finish_job(conn, jid, "LLMError: the model said nothing")
+    html = client.get(f"/p/{pid}").text
+    assert "The last update did not finish: LLMError: the model said nothing" in html
+    assert f'action="/p/{pid}/resynthesise"' in html
+
+
 def test_the_app_does_not_speak_our_vocabulary(client, analysed):
     from app import context
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):

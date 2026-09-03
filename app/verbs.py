@@ -112,7 +112,7 @@ def remove_material(request: Request, pid: str, mid: str):
     if not store.remove_material(conn, pid, mid):
         return _back(request, f"/p/{pid}")
     if store.materials(conn, pid):
-        jobs.removal_chain(pid)
+        jobs.resynthesis_chain(pid)
     else:
         store.clear_empty_project_analysis(conn, pid)
     return RedirectResponse(f"/p/{pid}", status_code=303)
@@ -172,6 +172,16 @@ def refresh(request: Request, pid: str, material_id: str = Form("")):
     if runs := [{"kind": "doc", "material_id": mid} for mid in targets if mid in stale]:
         jobs.start(db.connect, pid, runs + [{"kind": "project"}])
     return _back(request, f"/p/{pid}")
+
+
+@router.post("/p/{pid}/resynthesise")
+def resynthesise(request: Request, pid: str):
+    """Write the corpus level again after a chain died on the way to it. Same work as a removal:
+    the reading below is intact, only what is written over it is missing."""
+    conn = connection()
+    _mine(request, conn, pid)
+    jobs.resynthesis_chain(pid)
+    return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
 @router.post("/p/{pid}/focus")

@@ -335,6 +335,7 @@ def project_page(conn, pid: str) -> dict:
             "summary_html": cite(summary["text"], index, pid) if summary else "",
             "interpretation": reading_of,
             "interpretation_html": cite(reading_of["text"], index, pid) if reading_of else "",
+            "summary_state": store.summary_state(conn, pid),
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
             "checks": _checks(conn, pid)}
 
