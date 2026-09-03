@@ -13,8 +13,7 @@
   · <a href="/p/{{ project.id }}/export.md">Export reading record</a>
   {% endif %}
   {% if user %}
-  <form class="who" method="post" action="/logout">{{ user.name | txt
-    }}{% if user.is_admin %} · <a href="/admin">Manage accounts</a>{% endif %} · <button>Sign out</button></form>
+  <form class="who" method="post" action="/logout"><a href="/account" title="Change your password">{{ user.name | txt }}</a>{% if user.is_admin %} · <a href="/admin">Manage accounts</a>{% endif %} · <button>Sign out</button></form>
   {% endif %}
 </header>
 {% if user and user.is_admin and data_persistent is defined and not data_persistent %}
