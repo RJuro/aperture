@@ -130,6 +130,22 @@ def _known(runs: list[dict]) -> list[dict]:
     return runs
 
 
+LEFT_TO_THE_LAST = "left for the chain that follows — more material is still to be read"
+
+
+def _another_chain(conn: sqlite3.Connection, pid: str, job: str | None, kind: str) -> bool:
+    """Whether the corpus level should be left to a later chain.
+
+    Two uploads a minute apart are two chains, and each one ends in the accounts and the corpus
+    summary. Written by the first, they are written over material the second has not read yet —
+    and the page says "Updating the project summary" twice for one answer. The last chain in the
+    queue writes them once.
+    """
+    return kind in ("accounts", "project") and bool(conn.execute(
+        "SELECT COUNT(*) FROM job WHERE project_id=? AND status IN ('queued','running') "
+        "AND id<>?", (pid, job or "")).fetchone()[0])
+
+
 def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
             job: str | None = None) -> list[str]:
     """Run a chain to completion on this connection and return the run ids. `start` is this, in a
@@ -156,7 +172,8 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
         llm.report = lambda msg: store.set_run_line(conn, rid, f"{base} — {msg}")
         error, notes = None, None
         try:
-            notes = STEPS[kind][1](conn, pid, run)
+            notes = [LEFT_TO_THE_LAST] if _another_chain(conn, pid, job, kind) \
+                else STEPS[kind][1](conn, pid, run)
         except Exception as e:                          # the chain stops; the process does not
             error = f"{type(e).__name__}: {e}"
             failed = mid

@@ -77,6 +77,26 @@ def test_the_line_uses_the_title_the_frame_gave_it_once_there_is_one(conn, proje
     assert store.runs(conn, project)[-1]["line"] == "Reading Grande, M."
 
 
+def test_the_corpus_level_is_left_to_the_last_chain_in_the_queue(conn, project, monkeypatch):
+    """Two uploads a minute apart are two chains, each ending in the accounts and the corpus
+    summary. The first used to write both over material the second had not read yet."""
+    ran = _stub(monkeypatch)
+    tail = [{"kind": "accounts"}, {"kind": "project"}]
+    first, second = (store.enqueue_job(conn, project, tail) for _ in range(2))
+
+    store.start_job(conn, first)
+    jobs.run_now(conn, project, tail, job=first)
+    assert ran == [], "the second chain is still reading"
+    rows = store.runs(conn, project)
+    assert [r["kind"] for r in rows] == ["accounts", "project"]
+    assert all(jobs.LEFT_TO_THE_LAST in r["notes"] and r["error"] is None for r in rows)
+
+    store.finish_job(conn, first)
+    store.start_job(conn, second)
+    jobs.run_now(conn, project, tail, job=second)
+    assert ran == ["accounts", "project"], "the last chain writes them once"
+
+
 def test_a_step_can_say_where_it_has_got_to_on_its_own_run_row(conn, project, grande, monkeypatch):
     """A step is one model call or twelve, and between them the page said nothing at all. The
     hook is live only while a step runs — outside one there is no row to write on."""
