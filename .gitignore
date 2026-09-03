@@ -5,3 +5,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 real-data/
+
+# run artefacts and local editor config
+compare.json
+compare-data/
+law5-data/
+.claude/
