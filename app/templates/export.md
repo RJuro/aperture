@@ -36,7 +36,7 @@
 {% endif %}
 #### Materials where this theme appears
 
-{% for m in t.carrying %}**{{ m.title or m.name }}** — {{ m.kind or "material" }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
+{% for m in t.carrying %}**{{ m.display_title }}** — {{ m.kind or "material" }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
 
 {% for x in m.moments %}{{ loop.index }}. {{ x.claim }}
    > {{ x.anchor }}  [{{ x.sid }}]
@@ -47,7 +47,7 @@
 {% if t.absent %}
 No claims in these materials support this theme:
 
-{% for m in t.absent %}- {{ m.title or m.name }} — {{ m.kind or "material" }}
+{% for m in t.absent %}- {{ m.display_title }} — {{ m.kind or "material" }}
 {% endfor %}{% if t.set_aside %}
 Before reading that as absence, check what was excluded below — a set of claims too thin to keep
 is dropped whole and would look the same as absence here:
@@ -62,7 +62,7 @@ Every material contains claims for this theme.
 {% endfor %}
 ## Materials
 
-{% for m in materials %}### {{ m.title or m.name }}
+{% for m in materials %}### {{ m.display_title }}
 
 {{ m.kind or "material" }} · {{ m.state }} · {{ m.derivation }}
 {% if m.people %}

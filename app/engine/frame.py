@@ -17,6 +17,7 @@ re-frame re-describes and leaves them exactly where they were.
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 
 from .. import anchor, ingest, llm, store, titles, turns
@@ -34,6 +35,13 @@ def _trim(value, cap: int) -> str:
     """Over-long text is cut, never rejected: the cap is a prompt-compliance signal and a title
     three words too long is still the right title."""
     return " ".join(str(value or "").split()[:cap])
+
+
+def _year(value) -> str:
+    """The year the material was made, or nothing. A four-digit number outside the range in which
+    qualitative material is produced is a misreading, not a date."""
+    v = str(value or "").strip()
+    return v if re.fullmatch(r"\d{4}", v) and 1800 <= int(v) <= 2100 else ""
 
 
 def _one_of(value, allowed: tuple[str, ...], fallback: str) -> str:
@@ -136,9 +144,12 @@ def run(conn: sqlite3.Connection, mid: str, *, hint: str = "") -> dict:
     dropped: list[str] = []
     kind = _one_of(out.get("kind"), KINDS, "other")
     display = _one_of(out.get("display"), DISPLAYS, "plain")
-    title = titles.standardize(_trim(out.get("title"), TITLE_WORDS))
+    year = _year(out.get("year"))
     speakers = _speakers(raw, out.get("speakers"), dropped)
     segments = _segments(store.sentences(conn, mid), out.get("segments"), dropped)
+    # The naming standard is Python's, not a rule the model is asked to keep: the title is
+    # composed from the speakers that survived verification and the kind that was coerced.
+    title = titles.compose(kind, speakers, _trim(out.get("title"), TITLE_WORDS), year)
     orientation = _trim(out.get("orientation"), ORIENTATION_WORDS)
 
     # A layout with nothing to lay out is a layout the page cannot render. Both structured
@@ -152,7 +163,7 @@ def run(conn: sqlite3.Connection, mid: str, *, hint: str = "") -> dict:
         display = "plain"
 
     store.save_frame(conn, mid, kind=kind, display=display, title=title, speakers=speakers,
-                     segments=segments)
+                     segments=segments, year=year)
     store.save_summary(conn, "material", mid, "orientation", orientation)
-    return {"kind": kind, "display": display, "title": title, "speakers": speakers,
+    return {"kind": kind, "display": display, "title": title, "year": year, "speakers": speakers,
             "segments": segments, "orientation": orientation, "dropped": dropped}

@@ -78,6 +78,20 @@ def test_a_segment_whose_quote_is_not_there_is_dropped_and_a_real_one_is_bound(c
     assert "Ghost" in str(out["dropped"])
 
 
+def test_the_year_is_stored_and_the_title_is_composed_rather_than_asked_for(conn, grande, model):
+    """The naming standard is Python's: the model's own title is not what is stored when the
+    frame found somebody to name."""
+    model.queue(_answer(title="GRANDE, M. ORAL HISTORY", year="1989"),
+                _answer(year="around 1989"))
+    out = frame.run(conn, grande)
+    row = store.material(conn, grande)
+    assert row["year"] == "1989"
+    assert row["title"] == out["title"] == "M. Grande — interview, 1989"
+
+    frame.run(conn, grande)
+    assert store.material(conn, grande)["year"] == "", "a year Python cannot read is not a year"
+
+
 def test_an_unknown_kind_or_display_does_not_reach_the_database(conn, grande, model):
     model.queue(_answer(kind="haiku", display="carousel"))
     frame.run(conn, grande)
