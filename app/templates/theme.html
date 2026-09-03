@@ -22,7 +22,7 @@ you send feedback below.</p>
 {% for m in carrying %}
 <section class="carries">
   <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}">{{ m.display_title | txt }}</a>
-      <span class="dim">{{ m.kind }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h3>
+      <span class="dim">{{ m.kind | replace('_', ' ') }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h3>
   <ol class="claims">
   {% for x in m.moments %}
     <li>
@@ -47,7 +47,7 @@ the same as absence here.</p>
 <ul class="mats">
 {% for m in absent %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
-      <span class="dim">{{ m.kind }}</span></li>
+      <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
 {% endfor %}
 </ul>
 {% if set_aside %}

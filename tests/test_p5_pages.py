@@ -151,10 +151,19 @@ def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, a
     assert f'action="/p/{pid}/resynthesise"' in html
 
 
-def test_the_app_does_not_speak_our_vocabulary(client, analysed):
+def test_the_app_does_not_speak_our_vocabulary(client, conn, analysed):
+    """Two pages out of seven were checked. The leak this exists to catch — a step name printed
+    where a sentence belongs — was sitting in the record, which the check never looked at; and the
+    theme page was printing `focus_group`, which is a machine's word for a kind of material."""
     from app import context
-    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
-        said = strip_material(client.get(url).text).lower()
+    conn.execute("UPDATE material SET kind='focus_group' WHERE id=?", (analysed["grande"],))
+    conn.commit()
+    pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
+    for url in (f"/p/{pid}", f"/p/{pid}/m/{analysed['grande']}", f"/p/{pid}/t/{tid}",
+                f"/p/{pid}/export.md"):
+        page = client.get(url).text
+        assert "focus_group" not in page, f"a machine's name for a kind of material on {url}"
+        said = strip_material(page).lower()
         for word in context._BANNED:
             assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on {url}"
 

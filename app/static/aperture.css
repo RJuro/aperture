@@ -153,9 +153,12 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .themes { width: 100%; border-collapse: collapse; font-size: 13px; }
 .themes th, .themes td { min-width: 90px; padding: 15px 14px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; }
 .themes thead th { color: var(--muted); font: 10px/1.35 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
-.themes thead th:first-child { min-width: 310px; }
+/* Past about eight materials the table scrolls sideways and the theme names went with it, so
+   the grid of numbers belonged to nothing. The first column holds; it needs its own background
+   or the cells it passes show through. */
+.themes thead th:first-child { min-width: 310px; position: sticky; left: 0; z-index: 1; background: var(--bg); }
 .themes thead th.material { max-width: 22ch; font: 12px/1.4 var(--font-body); letter-spacing: 0; text-transform: none; }
-.themes th.gist { min-width: 310px; font-weight: 600; }
+.themes th.gist { min-width: 310px; font-weight: 600; position: sticky; left: 0; background: var(--bg); }
 .themes th.gist > a { font: 600 17px var(--font-display); }
 .themes th.gist > span { display: block; max-width: 42ch; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 400; }
 .themes td { text-align: center; }
