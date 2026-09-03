@@ -158,6 +158,24 @@ def test_reasoning_effort_is_per_provider_and_can_be_turned_off(monkeypatch):
     assert llm.reasoning() == "low"
 
 
+def test_a_call_that_only_describes_a_layout_is_not_asked_to_think(monkeypatch, real_chat_json):
+    """Working out a layout is not judgement, and thinking about it is minutes and money spent
+    copying labels a Python scan already found."""
+    sent = []
+    monkeypatch.setattr(llm, "_send", lambda body, timeout: sent.append(body) or '{"ok": 1}')
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+
+    real_chat_json("s", "u", label="frame")
+    real_chat_json("s", "u", label="read")
+    assert "reasoning_effort" not in sent[0]
+    assert sent[1]["reasoning_effort"] == "high", "a call that judges keeps the provider's default"
+
+    monkeypatch.setenv("APERTURE_REASONING", "medium")
+    real_chat_json("s", "u", label="frame")
+    assert sent[2]["reasoning_effort"] == "medium", "the override turns the whole run up at once"
+
+
 def test_switching_provider_cannot_inherit_the_other_ones_endpoint(monkeypatch):
     """A single global base-url override was a loaded gun: set it for one provider in .env,
     switch provider, and the new provider's key is sent to the old provider's endpoint. It cost

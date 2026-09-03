@@ -38,6 +38,11 @@ PROVIDERS = {
 DEFAULT_PROVIDER = "minimax"
 IDLE_TIMEOUT = 180.0
 
+# What a call is asked to think, by what it is for. FRAME describes a layout and names labels a
+# Python scan already found; ANGLES ranges rather than weighs. Every other call — READ, THEMES,
+# THREAD, DOC, ACCOUNT, PROJECT, CHECK — judges evidence, so it keeps the provider's default.
+EFFORT = {"frame": "", "angles": "low"}
+
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
 
@@ -63,11 +68,16 @@ def model() -> str:
     return os.environ.get(f"{p.upper()}_MODEL") or PROVIDERS[p][2]
 
 
-def reasoning() -> str:
-    """How hard the model should think, where the provider takes an instruction. `off` sends
-    nothing; a provider whose default is already to reason is left alone."""
+def reasoning(label: str = "") -> str:
+    """How hard the model should think on this call, where the provider takes an instruction.
+    `off` sends nothing; a provider whose default is already to reason is left alone. The env
+    override is global on purpose: it is how a whole run is turned up or down at once."""
     v = os.environ.get("APERTURE_REASONING")
-    v = PROVIDERS[provider()][3] if v is None else v.strip().lower()
+    if v is None:
+        v = PROVIDERS[provider()][3]
+        v = EFFORT.get(label, v) if v else v     # a provider that takes no effort is sent none
+    else:
+        v = v.strip().lower()
     return "" if v in ("", "off", "none", "default") else v
 
 
@@ -117,14 +127,19 @@ def parse(raw: str) -> dict:
         return json.loads(text[start:end + 1])
 
 
-def _ask(system: str, user: str, timeout: float | None) -> str:
+def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str:
     """One streamed call; the model's text, thinking and all, as it arrived."""
-    base, key = _endpoint()
     body = {"model": model(), "stream": True, "stream_options": {"include_usage": True},
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": user}]}
-    if effort := reasoning():
+    if effort:
         body["reasoning_effort"] = effort
+    return _send(body, timeout)
+
+
+def _send(body: dict, timeout: float | None) -> str:
+    """The request itself, so what is sent can be looked at without a network."""
+    base, key = _endpoint()
     chunks: list[str] = []
     with httpx.Client(timeout=httpx.Timeout(30.0, read=timeout or IDLE_TIMEOUT)) as client:
         with client.stream("POST", f"{base}/chat/completions",
@@ -164,7 +179,7 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
     # and a project summary is two long strings. The second answer nearly always parses; after
     # two the failure is real and lands on the run row as before.
     for attempt in (1, 2):
-        raw = _ask(system, user, timeout)
+        raw = _ask(system, user, timeout, reasoning(label))
         try:
             out = parse(raw)
             break
