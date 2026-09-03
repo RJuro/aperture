@@ -33,6 +33,22 @@ P6 export (Opus C)         ┘──── land first ──┘
 | P7 | **Reviews.** Codex reads each phase's diff for over-engineering and against law 5; reads every page's copy for banned vocabulary and for plain sense. Findings back to me; I fix. | codex | no finding above "nit" open |
 | P8 | **Deploy.** New public GitHub repo `RJuro/aperture`; new Coolify app mirroring the existing one's server and destination, at `aperture.automate.business.aau.dk`, storage at `/data`, provider `mistral`; first admin created from an env var on first boot; live walkthrough: sign in, make a user, make a project, upload the two seeds, read. **Never rename the app after creation.** | me (the user removes the old repo and app when ready) | the walkthrough passes on the deployed URL |
 
+## Status, 2026-09-03
+
+| # | Done | Notes |
+|---|---|---|
+| P1 | yes | `docs/RESEARCH.md`, `docs/INDEX.md`, long form in `docs/research/` |
+| P2 | yes | docs in `docs/`, run artefacts untracked, prompt snapshots in `docs/prompts/` |
+| P3 | yes | accounts; the PIN is gone; first admin from `APERTURE_ADMIN` |
+| P4 | yes | txt md docx pdf csv; a bad file fails with a sentence |
+| P5 | yes | two registers, both themes, no JS; the record scrolls with the page, the claims stick |
+| P6 | yes | one document with a contents list, ids resolved to sentence ids |
+| P7 | yes | codex reviews: ~40 lines cut of 204 claimed, with reasons; a full copy pass applied |
+| P8 | **partly** | live at `aperture.automate.business.aau.dk`, healthy since the second rollout; **persistent storage still needs attaching in the Coolify UI**; the live walkthrough runs after this rollout |
+
+Not yet: a password-change page (fifteen lines); repeated-run model comparison graded blind;
+the human validation, which is the only evidence that would count.
+
 ## Rules that hold across every phase
 
 - Law 5. A prompt template is universal; a slot holds material, structure, or the researcher's
