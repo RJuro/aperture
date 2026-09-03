@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="section project-head" id="top">
+  <div class="container">
+    <p class="eyebrow">Reading record</p>
+    <div class="head-row">
+      <div><h1>{{ project.name | txt }}</h1>
+        <p class="lead">Everything the reading has arrived at, in one place: what the corpus shows,
+          each theme across it, each material with its claims and the words they rest on, what was
+          checked, what was excluded, and what the analysis cost.</p>
+        <p class="meta head-stat">{{ materials | length }} {{ 'material' | plural(materials | length) }} · {{ themes | length }} {{ 'theme' | plural(themes | length) }} · started {{ project.created_at | when }}</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn btn-primary" href="/p/{{ project.id }}/export.docx">Download as Word</a>
+        <a class="btn btn-secondary" href="/p/{{ project.id }}/export.md">Download as Markdown</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section"><div class="container">
+<p class="eyebrow">Contents</p>
+<nav class="contents-list" aria-label="Contents">
+  <div>
+    <p class="contents-head"><a href="#themes">Themes</a></p>
+    <ul class="mats">
+    {% for t in themes %}<li><a href="#t-{{ t.id }}">{{ t.name | txt }}</a></li>
+    {% else %}<li class="dim">No themes yet.</li>
+    {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <p class="contents-head"><a href="#materials">Materials</a></p>
+    <ul class="mats">
+    {% for m in materials %}<li><a href="#m-{{ m.id }}">{{ m.display_title | txt }}</a></li>
+    {% else %}<li class="dim">No materials yet.</li>
+    {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <p class="contents-head">The rest of the record</p>
+    <ul class="mats">
+      <li><a href="#corpus">Across the corpus</a></li>
+      <li><a href="#checks">Questions checked against the materials</a></li>
+      <li><a href="#excluded">Excluded from the analysis</a></li>
+      <li><a href="#feedback">Researcher feedback</a></li>
+      <li><a href="#history">Processing history</a></li>
+      <li><a href="#renamed">Theme history</a></li>
+    </ul>
+  </div>
+</nav>
+</div></section>
+
+<section class="section" id="corpus"><div class="container narrow-section">
+<div class="section-heading"><div><p class="eyebrow">The corpus</p><h2>Across the corpus</h2></div></div>
+{% if summary %}
+<p class="eyebrow">What the material shows</p>
+<div class="summary-copy">{{ summary.text | cite(cites, project.id) }}</div>
+{% else %}<p class="dim">No project summary yet.</p>{% endif %}
+{% if interpretation and interpretation.text %}
+<p class="eyebrow">What this may mean, so far</p>
+<div class="summary-copy">{{ interpretation.text | cite(cites, project.id) }}</div>
+{% endif %}
+<p class="eyebrow">Research focus</p>
+{% if project.focus %}<blockquote>{{ project.focus | txt }}</blockquote>{% else %}<p class="dim">Not set.</p>{% endif %}
+{% if focus_history %}
+<ul class="mats">{% for f in focus_history %}<li><span class="num">{{ f.created_at[:10] }}</span> <q>{{ f.text | txt }}</q></li>{% endfor %}</ul>
+{% endif %}
+{% if project.brief %}
+<details class="quiet-details"><summary>Open questions from the analysis</summary><p class="summary">{{ project.brief | txt }}</p></details>
+{% endif %}
+</div></section>
+
+<section class="section" id="themes"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">Each theme in full</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its theme</span></div>
+{% for t in themes %}
+<section class="record-entry" id="t-{{ t.id }}">
+  <h3><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a></h3>
+  <p class="gist">{{ t.gist | txt }}</p>
+  <p class="meta">{{ t.derivation }}</p>
+  {% if t.account %}<div class="summary-copy">{{ t.account.text | cite(cites, project.id) }}</div>{% endif %}
+  {% for m in t.carrying %}
+  <h4>{{ m.display_title | txt }} <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h4>
+  <ol class="claims">
+  {% for x in m.moments %}
+    <li><span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
+      <p class="claim">{{ x.claim | txt }}</p>
+      <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ t.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
+      <span class="num">{{ x.sid }}</span>
+    </div></li>
+  {% endfor %}
+  </ol>
+  {% else %}
+  <p class="dim">No material contains claims for this theme yet.</p>
+  {% endfor %}
+  {% if t.absent %}
+  <h4>Materials where this theme does not appear</h4>
+  <p class="dim">No claims in these materials support this theme.{% if t.set_aside %} Before reading
+  that as absence, see what was excluded — a set of claims too thin to keep is dropped whole and
+  would look the same as absence here.{% endif %}</p>
+  <ul class="mats">
+  {% for m in t.absent %}<li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a> <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }}</span></li>{% endfor %}
+  </ul>
+  {% for n in t.set_aside %}<p class="dim small">{{ n.note | txt }}{% if n.material %} — {{ n.material | txt }}{% endif %}</p>{% endfor %}
+  {% endif %}
+</section>
+{% else %}
+<p class="empty-state">Themes will gather here as material is read.</p>
+{% endfor %}
+</div></section>
+
+<section class="section" id="materials"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">Source material</p><h2>Materials</h2></div></div>
+{% for m in materials %}
+<section class="record-entry" id="m-{{ m.id }}">
+  <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a></h3>
+  <p class="meta">{{ (m.kind or 'material') | replace('_', ' ') }} · {{ m.derivation }}</p>
+  {% if m.people %}<p class="dim small">People: {% for p in m.people %}{{ p.name | txt }}{% if p.aliases %} ({{ p.aliases | txt }}){% endif %}{% if p.role %} — {{ p.role | txt }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+  {% if m.speakers %}<p class="dim small">Speakers: {% for s in m.speakers %}{{ s.label | txt }}{% if s.name %}, identified as {{ s.name | txt }}{% endif %}{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+  {% if m.orientation %}<p class="eyebrow">Before reading</p><div class="summary-copy">{{ m.orientation.text | cite(cites, project.id) }}</div>{% endif %}
+  {% if m.reading %}<p class="eyebrow">After reading</p><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
+  {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
+  {% for th in m.threads %}
+  <h4>{{ th.theme.name | txt }} <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
+  {% if th.summary %}<div class="summary-copy">{{ th.summary.text | cite(cites, project.id) }}</div>{% endif %}
+  <p class="dim small">Printed in full under <a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> above.</p>
+  {% else %}
+  <p class="dim">No analysis yet.</p>
+  {% endfor %}
+</section>
+{% else %}
+<p class="empty-state">Nothing added yet.</p>
+{% endfor %}
+</div></section>
+
+<section class="section" id="checks"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">Doubt</p><h2>Questions checked against the materials</h2></div></div>
+<ul class="check-list">
+{% for k in checks %}
+  <li><span class="num">{{ k.created_at[:10] }}</span> <q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+  {% if k.anchors %}<ul class="found">{% for a in k.anchors %}<li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> {{ a.sid }}</a></li>{% endfor %}</ul>{% endif %}</li>
+{% else %}
+  <li class="dim">Nothing has been checked against the material yet.</li>
+{% endfor %}
+</ul>
+</div></section>
+
+<section class="section" id="excluded"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">What the reading dropped</p><h2>Excluded from the analysis</h2></div></div>
+<ul class="mats">
+{% for n in set_aside %}<li>{{ n.note | txt }}{% if n.material %} <span class="dim">— {{ n.material | txt }}</span>{% endif %}</li>
+{% else %}<li class="dim">Nothing was excluded from the analysis.</li>
+{% endfor %}
+</ul>
+</div></section>
+
+<section class="section" id="feedback"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">What the researcher said</p><h2>Researcher feedback</h2></div></div>
+<ul class="mats">
+{% for f in feedback %}<li><span class="num">{{ f.created_at[:10] }}</span> {{ f.kind }} on {{ f.about | txt }}{% if f.text %}: <q>{{ f.text | txt }}</q>{% endif %} <span class="dim">— {{ f.outcome }}</span></li>
+{% else %}<li class="dim">No researcher feedback yet.</li>
+{% endfor %}
+</ul>
+</div></section>
+
+<section class="section" id="history"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">What it cost</p><h2>Processing history</h2></div></div>
+<ul class="mats">
+{% for kind, rs in history | groupby("kind") %}
+  {% set ti = rs | sum(attribute="tokens_in") %}{% set to = rs | sum(attribute="tokens_out") %}
+  <li><strong>{{ rs[0].step }}</strong> <span class="dim">{{ rs | length }} {{ 'run' | plural(rs | length) }} · {{ ti }} input {{ 'token' | plural(ti) }} · {{ to }} output {{ 'token' | plural(to) }} · {{ rs | map(attribute="provider") | unique | join(", ") }} / {{ rs | map(attribute="model") | unique | join(", ") }}</span></li>
+{% endfor %}
+{% if not history %}<li class="dim">No processing history yet.</li>{% endif %}
+</ul>
+</div></section>
+
+<section class="section" id="renamed"><div class="container">
+<div class="section-heading"><div><p class="eyebrow">How the themes changed</p><h2>Theme history</h2></div></div>
+{% for t in theme_history %}
+<details class="quiet-details"><summary>{{ t.name | txt }}{% if t.status != 'live' %} — merged into another theme{% endif %}</summary>
+<ul class="mats">
+{% for h in t.history %}<li><span class="num">{{ h.at[:10] }}</span> <strong>{{ h.name | txt }}</strong> — <span class="gist">{{ h.gist | txt }}</span></li>{% endfor %}
+</ul>
+</details>
+{% else %}
+<p class="dim">No theme has been rewritten yet.</p>
+{% endfor %}
+</div></section>
+{% endblock %}

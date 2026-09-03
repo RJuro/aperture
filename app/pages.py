@@ -6,15 +6,18 @@ without reloading the page under the reader; an idle page carries neither script
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
 from jinja2 import Environment, FileSystemLoader
 
-from . import context, db, store
+from . import context, db, store, word
 
 router = APIRouter()
+
+DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
@@ -26,6 +29,11 @@ _env = Environment(
     # heading into the line above it.
     lstrip_blocks=True,
 )
+
+
+def _long(d) -> str:
+    """'2 September 2026'."""
+    return f"{d.day} {d.strftime('%B %Y')}"
 
 
 def _when(iso: str) -> str:
@@ -40,18 +48,20 @@ def _when(iso: str) -> str:
         return str(iso)[:10]
     if d == date.today():
         return "today"
-    return f"{d.day} {d.strftime('%B %Y')}"
+    return _long(d)
 
 
-def _plural(word: str, n) -> str:
+def _plural(noun: str, n) -> str:
     """'1 claim', '2 claims'. Every page prints counts, and '1 claims' is a typo the reader
     charges to the instrument."""
-    return word if n == 1 else word + "s"
+    return noun if n == 1 else noun + "s"
 
 
 _env.filters["txt"] = context.txt
 _env.filters["when"] = _when
 _env.filters["plural"] = _plural
+# The record page shows model prose, and a claim id in it is a link into the material it rests on.
+_env.filters["cite"] = context.cite
 
 _conn = None
 
@@ -114,12 +124,42 @@ def theme(request: Request, pid: str, tid: str) -> str:
     return _render("theme.html", context.theme_page(conn, pid, tid), user)
 
 
+def _attachment(name: str, ext: str) -> dict:
+    """A download that arrives as a file with the project's name on it, rather than a wall of
+    plain text in a browser tab. Anything outside plain ASCII goes: a header is latin-1, and a
+    filename is not the place to find out that a project is called something in Greek."""
+    safe = re.sub(r"\s+", " ", re.sub(r"[^A-Za-z0-9 ._-]", "", name or "")).strip(" .")
+    return {"content-disposition": f'attachment; filename="{safe or "reading record"}{ext}"'}
+
+
 @router.get("/p/{pid}/export.md")
 def export(request: Request, pid: str) -> Response:
     conn = connection()
     _mine(request, conn, pid)
-    body = _render("export.md", context.export(conn, pid))
-    return Response(body, media_type="text/markdown; charset=utf-8")
+    ctx = context.export(conn, pid)
+    body = _render("export.md", ctx)
+    return Response(body, media_type="text/markdown; charset=utf-8",
+                    headers=_attachment(ctx["project"]["name"], ".md"))
+
+
+@router.get("/p/{pid}/export.docx")
+def export_docx(request: Request, pid: str) -> Response:
+    """The same record, as a document a researcher can open, edit and hand in."""
+    from datetime import date
+
+    conn = connection()
+    _mine(request, conn, pid)
+    ctx = context.export(conn, pid)
+    name = ctx["project"]["name"]
+    body = word.document(_render("export.md", ctx), name, _long(date.today()))
+    return Response(body, media_type=DOCX, headers=_attachment(name, ".docx"))
+
+
+@router.get("/p/{pid}/record", response_class=HTMLResponse)
+def record(request: Request, pid: str) -> str:
+    conn = connection()
+    user = _mine(request, conn, pid)
+    return _render("record.html", context.record_page(conn, pid), user)
 
 
 @router.get("/p/{pid}/m/{mid}", response_class=HTMLResponse)

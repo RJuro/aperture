@@ -119,6 +119,7 @@ def test_the_document_never_shows_an_internal_claim_id(client, conn, rich):
     md = client.get(f"/p/{rich['pid']}/export.md").text
     assert first["id"] not in md
     assert f"[{first['sid']}]" in md
+    assert "[[" not in md, "the model's own brackets are the ones to fill, not a second pair"
     assert "(frame)" not in md and "(doc)" not in md, "stage names are for the code"
 
 
@@ -138,3 +139,66 @@ def test_each_claim_is_printed_once_and_no_step_name_stands_in_for_a_state(clien
     assert f"](#{name.lower().replace(' ', '-')})" in mats, \
         "a material must point at where its claims are printed"
     assert f" · {store.material(conn, rich['grande'])['state']} ·" not in md
+
+
+def test_the_markdown_arrives_as_a_file_and_not_as_a_page_of_plain_text(client, conn, rich):
+    """"The download is just leading to a website with plain text." It was: the browser rendered
+    the markdown in a tab and there was nothing to keep."""
+    r = client.get(f"/p/{rich['pid']}/export.md")
+    assert r.headers["content-type"] == "text/markdown; charset=utf-8"
+    assert r.headers["content-disposition"] == \
+        f'attachment; filename="{store.project(conn, rich["pid"])["name"]}.md"'
+
+
+def test_the_record_downloads_as_a_word_document(client, conn, rich):
+    """The same record, in the form the researcher actually writes in. Built from the rendered
+    markdown, so the structure has one home and the two versions cannot drift apart."""
+    import io
+
+    docx = pytest.importorskip("docx")
+    pid = rich["pid"]
+    r = client.get(f"/p/{pid}/export.docx")
+    assert r.status_code == 200
+    assert r.headers["content-disposition"] == 'attachment; filename="Test project.docx"'
+
+    doc = docx.Document(io.BytesIO(r.content))
+    paras = [p.text for p in doc.paragraphs]
+    text = "\n".join(paras)
+    assert "Test project" in paras[0] and "Aperture reading record" in paras
+    assert store.get_summary(conn, "project", pid)["text"] in paras
+    first = store.moments(conn, rich["grande"])[0]
+    assert any(first["claim"] in p for p in paras)
+    assert any(first["anchor"] in p and first["sid"] in p for p in paras), \
+        "a claim without its quote and the passage it came from is an opinion"
+    assert "Across the corpus" in paras and "Themes" in paras
+    styles = {p.style.name for p in doc.paragraphs}
+    assert {"Title", "Heading 1", "Heading 2", "List Bullet"} <= styles
+    assert "**" not in text and "](#" not in text, "markdown leaked into the document"
+
+
+def test_the_record_is_a_page_in_the_app_with_both_downloads_on_it(client, conn, rich):
+    pid = rich["pid"]
+    html = client.get(f"/p/{pid}/record").text
+    assert store.get_summary(conn, "project", pid)["text"] in html
+    first = store.moments(conn, rich["grande"])[0]
+    assert first["claim"] in html and first["anchor"] in html
+    assert "ACCOUNT: where this theme holds" in html
+    for name in rich["themes"]:
+        assert name in html, "the contents list names every theme"
+    assert f'href="/p/{pid}/export.docx">Download as Word' in html
+    assert f'href="/p/{pid}/export.md">Download as Markdown' in html
+    assert f'href="/p/{pid}/m/{rich["grande"]}?theme=' in html, "a quote opens where it was said"
+
+
+def test_the_record_and_its_downloads_are_only_for_whoever_owns_the_project(client, conn, rich):
+    pid = rich["pid"]
+    owner = store.create_user(conn, "ann", "battery staple")
+    store.create_user(conn, "bob", "purple monkey")
+    conn.execute("UPDATE project SET owner_id=? WHERE id=?", (owner, pid))
+    conn.commit()
+    client.post("/login", data={"name": "bob", "password": "purple monkey"})
+    for tail in ("record", "export.docx", "export.md"):
+        assert client.get(f"/p/{pid}/{tail}").status_code == 404, tail
+    client.post("/logout")
+    client.post("/login", data={"name": "ann", "password": "battery staple"})
+    assert client.get(f"/p/{pid}/record").status_code == 200

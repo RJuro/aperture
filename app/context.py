@@ -461,14 +461,25 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "set_aside": store.set_aside(conn, pid)}
 
 
+# The model brackets its citations, as the prompt asks it to: `[mo7c1d4af9]`, `[mo7c1d, mo90b2]`.
+_CITE_GROUP = re.compile(r"\[\s*(mo[0-9a-f]{6,}(?:[\s,]+mo[0-9a-f]{6,})*)\s*\]")
+
+
 def _export_resolve_ids(text: str, index: dict) -> str:
     """Model prose cites claims by internal id. On a page those become links; in a document they
     would sit there as opaque tokens — the first review's complaint about the record. Each becomes
-    the sentence id a reader can find in the same document."""
-    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", _live_cites(text, index))
+    the sentence id a reader can find in the same document.
+
+    A citation the model had already bracketed came out bracketed twice, `[[S041]]`, because the
+    id is replaced by a bracketed id: the brackets the model wrote are the ones to fill.
+    """
+    text = _live_cites(text, index)
+    text = _CITE_GROUP.sub(
+        lambda m: "[" + ", ".join(index[i]["sid"] for i in _CITE.findall(m.group(1))) + "]", text)
+    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", text)
 
 
-def export(conn, pid: str) -> dict:
+def export(conn, pid: str, resolve: bool = True) -> dict:
     """The whole record as one document.
 
     Sectioned rather than flat, because at fifty materials the flat version was unreadable: the
@@ -505,7 +516,24 @@ def export(conn, pid: str) -> dict:
             "theme_history": _export_theme_history(conn, pid),
             "runs": [{**dict(r), "step": _export_step(r["kind"])}
                      for r in store.runs(conn, pid)]}
-    return _export_resolve_all(ctx, _cite_index(conn, pid))
+    # `resolve` is off for the record page: there a claim id becomes a link into the material it
+    # rests on, and only a document — which has no links — needs it printed as a sentence id.
+    return _export_resolve_all(ctx, _cite_index(conn, pid)) if resolve else ctx
+
+
+def record_page(conn, pid: str) -> dict:
+    """The record as a page in the app, from the same context the downloads are built from.
+
+    Nothing here is new: it is the document, in the app's own two registers — the reading face for
+    what the model and the app say, monospace for the material's own words — with the citations
+    live and the two downloads at the top. `runs` belongs to the shell, which is why the record's
+    own runs travel as `history`.
+    """
+    ctx = export(conn, pid, resolve=False)
+    if not ctx:
+        return {}
+    return {**ctx, "history": ctx["runs"], **_shell(conn, pid),
+            "cites": _cite_index(conn, pid), "page_section": "record"}
 
 
 def _export_resolve_all(obj, index: dict):
