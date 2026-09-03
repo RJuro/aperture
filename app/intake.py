@@ -78,13 +78,14 @@ def extract(filename: str, data: bytes) -> str:
     ext = os.path.splitext(filename or "")[1].lower()
     read = _READERS.get(ext)
     if read is None:
-        kind = ext.lstrip(".") or "that"
-        raise IntakeError(f"{kind} is not a kind of material this reads — it takes "
-                          f"{', '.join(KINDS[:-1])} and {KINDS[-1]}.")
+        # The file, not the extension: twelve files go in at once and only one of them is wrong.
+        raise IntakeError(f"{filename or 'that file'} is not a kind of material this reads — it "
+                          f"takes {', '.join(KINDS[:-1])} and {KINDS[-1]}.")
     try:
         text = read(data)
     except Exception as e:                            # a trace helps nobody here, but its name does
-        raise IntakeError(f"{filename} could not be opened as {ext.lstrip('.' + f" ({type(e).__name__})")}.") from None
+        raise IntakeError(f"{filename} could not be opened as a {ext.lstrip('.')} file "
+                          f"({type(e).__name__}).") from None
     if not text.strip():
         raise IntakeError(f"{filename} has no text in it.")
     return text

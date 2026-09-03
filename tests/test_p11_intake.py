@@ -62,15 +62,22 @@ def test_a_csv_of_open_answers_keeps_respondents_apart():
     assert "What was hardest?" in text, "the question is kept beside its answer"
 
 
-def test_a_kind_nobody_handles_fails_with_a_sentence():
+def test_a_kind_nobody_handles_fails_with_a_sentence_that_names_the_file():
+    """Twelve files dropped in, one of them unsupported, and the message named the extension —
+    so the researcher had to guess which of the twelve to take out."""
     with pytest.raises(intake.IntakeError) as e:
         intake.extract("photo.png", b"\x89PNG....")
-    assert "png" in str(e.value).lower() and "\n" not in str(e.value)
+    assert str(e.value).startswith("photo.png is not a kind of material this reads")
+    assert ".txt" in str(e.value) and "\n" not in str(e.value)
 
 
 def test_an_unreadable_file_fails_with_a_sentence_not_a_trace():
-    with pytest.raises(intake.IntakeError):
+    """The sentence read "notes.docx could not be opened as x." — a nested f-string was being
+    used as lstrip's argument, so it ate the extension's own letters."""
+    with pytest.raises(intake.IntakeError) as e:
         intake.extract("broken.docx", b"not a zip at all")
+    assert str(e.value).startswith("broken.docx could not be opened as a docx file (")
+    assert str(e.value).endswith(").") and "\n" not in str(e.value)
 
 
 @pytest.fixture
@@ -115,3 +122,25 @@ def test_a_bad_file_makes_no_material_and_says_why(client, conn, project):
 def test_an_empty_submission_makes_nothing(client, conn, project):
     client.post(f"/p/{project}/material", data={"name": "", "text": "   "})
     assert store.materials(conn, project) == []
+
+
+def test_a_bad_file_leaves_the_add_form_open_where_it_was(client, conn, project):
+    """A browser cannot restore a file input, so a rejection that also folds the form away costs
+    the researcher every selection and anything they had pasted beside it."""
+    r = client.post(f"/p/{project}/material",
+                    files=[("files", ("photo.png", b"\x89PNG", "image/png"))])
+    page = client.get(f"/p{r.headers['location'].split('/p', 1)[1]}").text
+    assert "photo.png is not a kind of material this reads" in page
+    assert 'class="add-drawer" open' in page, "the drawer folded itself away over the message"
+
+
+def test_the_same_file_twice_makes_one_material_and_says_so(client, conn, project):
+    """A double-click on Add material, or a folder dropped twice, made two identical materials —
+    a second chain's worth of money, and every derivation counting one source as two."""
+    piece = [("files", ("a.txt", b"First piece. It has sentences.", "text/plain"))]
+    client.post(f"/p/{project}/material", files=piece)
+    r = client.post(f"/p/{project}/material", files=piece)
+    assert len(store.materials(conn, project)) == 1
+    assert "problem=" in r.headers["location"]
+    page = client.get(f"/p{r.headers['location'].split('/p', 1)[1]}").text
+    assert "a.txt is already in this project." in page

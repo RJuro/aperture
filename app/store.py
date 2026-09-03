@@ -662,3 +662,17 @@ def set_password(conn: sqlite3.Connection, uid: str, password: str) -> None:
     conn.execute("UPDATE user SET password_hash=? WHERE id=?",
                  (f"{salt.hex()}:{_hash(password, salt).hex()}", uid))
     conn.commit()
+
+
+# ---- added for the page fixes
+
+def has_text(conn: sqlite3.Connection, pid: str, text: str) -> bool:
+    """Whether this project already holds this exact text.
+
+    A double-click on Add material, or a folder dropped in twice, made two identical materials.
+    Both were framed, read and synthesised — a second chain's worth of money — and every
+    derivation then counted one source as two, which is the corroboration Law 4 exists to make
+    trustworthy. A material that was removed is not in the way of adding it again.
+    """
+    return conn.execute("SELECT 1 FROM material WHERE project_id=? AND text=? "
+                        "AND removed_at IS NULL LIMIT 1", (pid, text)).fetchone() is not None

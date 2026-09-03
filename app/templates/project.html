@@ -108,7 +108,7 @@
 {% endfor %}
 </ul>
 {% if problem %}<p class="problem">{{ problem | txt }}</p>{% endif %}
-<details class="add-drawer"{% if not materials %} open{% endif %}>
+<details class="add-drawer"{% if not materials or problem %} open{% endif %}>
   <summary><span><strong>Add material</strong><small>Upload files or paste source text. Analysis starts in the background.</small></span></summary>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
     <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"><small>.txt, .md, .docx, .pdf, or .csv · each file becomes one material</small></label>
