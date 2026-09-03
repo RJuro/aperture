@@ -28,7 +28,7 @@
 {% if project.focus %}<p><q>{{ project.focus | txt }}</q></p>{% else %}<p class="dim">Not set.</p>{% endif %}
 {% if focus_history %}
 <ul class="dim small">
-{% for f in focus_history %}<li><q>{{ f.text | txt }}</q> <span>{{ f.created_at }}</span></li>{% endfor %}
+{% for f in focus_history %}<li><q>{{ f.text | txt }}</q> <span>{{ f.created_at | when }}</span></li>{% endfor %}
 </ul>
 {% endif %}
 <form method="post" action="/p/{{ project.id }}/focus" class="row">

@@ -26,7 +26,25 @@ _env = Environment(
     # heading into the line above it.
     lstrip_blocks=True,
 )
+
+
+def _when(iso: str) -> str:
+    """A date a person reads: '2 September 2026', or 'today'. The page was printing
+    2026-09-02T19:21:50.112+00:00 beside a project's name."""
+    from datetime import date, datetime
+    if not iso:
+        return ""
+    try:
+        d = datetime.fromisoformat(str(iso).replace("Z", "+00:00")).date()
+    except ValueError:
+        return str(iso)[:10]
+    if d == date.today():
+        return "today"
+    return f"{d.day} {d.strftime('%B %Y')}"
+
+
 _env.filters["txt"] = context.txt
+_env.filters["when"] = _when
 
 _conn = None
 

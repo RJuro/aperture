@@ -138,7 +138,9 @@ mark { background: var(--mark); color: var(--mark-ink); padding: .04em .12em; bo
 .carries h3 { margin: 0 0 .5rem; }
 
 /* ---- what the researcher does: one comment per block, a question to the material -------------- */
-form { margin: .6rem 0 1.2rem; }
+form { margin: .6rem 0 1.2rem; max-width: var(--measure); }
+form label { display: block; margin: .5rem 0; color: var(--ink-2); font-size: .9rem; }
+form label > input, form label > textarea { margin-top: .25rem; }
 .say { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: start; max-width: var(--measure); }
 .say textarea, .row input, input, textarea, select { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule);
         border-radius: 3px; padding: .45rem .6rem; width: 100%; box-sizing: border-box; }

@@ -16,7 +16,7 @@
 <ul class="mats">
 {% for p in projects %}
   <li><a href="/p/{{ p.id }}">{{ p.name | txt }}</a>
-      <span class="dim">{{ p.owner | txt if p.owner else 'nobody yet' }} · {{ p.created_at }}</span></li>
+      <span class="dim">{{ p.owner | txt if p.owner else 'nobody yet' }} · {{ p.created_at | when }}</span></li>
 {% else %}
   <li class="dim">Nothing here yet.</li>
 {% endfor %}
