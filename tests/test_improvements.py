@@ -141,3 +141,14 @@ def test_an_answer_that_is_not_json_is_asked_for_once_more(monkeypatch, real_cha
     monkeypatch.setattr(llm, "_ask", lambda system, user, timeout: "not json at all")
     with pytest.raises(llm.LLMError, match="twice"):
         real_chat_json("s", "u", label="t")
+
+
+def test_a_run_left_open_by_a_dead_process_is_closed_when_the_next_one_starts(conn, project, grande,
+                                                                              monkeypatch):
+    rid = store.start_run(conn, project, "doc", grande, "Writing what stands out")
+    assert store.active_runs(conn, project)
+    monkeypatch.setattr(jobs, "_launch", lambda *a: None)
+    jobs.resume_pending(db.connect)          # resume_pending closes what the factory gives it
+    row = conn.execute("SELECT finished, error FROM run WHERE id=?", (rid,)).fetchone()
+    assert row["finished"] and "restarted" in row["error"]
+    assert not store.active_runs(conn, project)

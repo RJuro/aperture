@@ -452,6 +452,16 @@ def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, li
     return rid
 
 
+def close_orphaned_runs(conn: sqlite3.Connection) -> int:
+    """At process start nothing can be running, so every open run row belongs to a process that
+    died mid-step. Left open, it keeps the page reloading itself every few seconds for ever — and a
+    form nobody can finish filling in looks exactly like 'I cannot upload'."""
+    cur = conn.execute("UPDATE run SET finished=?, error=? WHERE finished IS NULL",
+                       (now(), "interrupted: the application restarted before this step finished"))
+    conn.commit()
+    return cur.rowcount
+
+
 def finish_run(conn: sqlite3.Connection, rid: str, *, error: str | None = None,
                tokens_in: int = 0, tokens_out: int = 0, notes: list[str] | None = None) -> None:
     """`notes` is what the step set aside — a claim whose quote was not in the material, a line

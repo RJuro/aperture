@@ -219,6 +219,7 @@ def resume_pending(conn_factory: Callable[[], sqlite3.Connection] = db.connect) 
     """Resume work committed before this process started (or stopped unexpectedly)."""
     conn = conn_factory()
     try:
+        store.close_orphaned_runs(conn)          # before relaunching: the new attempt writes its own
         rows = [dict(r) for r in store.pending_jobs(conn)]
     finally:
         conn.close()
