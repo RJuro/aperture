@@ -66,7 +66,9 @@ def _accounts(conn, pid, run):
     """Every live theme's account, expanded when this step runs rather than when it was planned —
     the theme set is only known after THEMES has been over the new material."""
     from .engine import account
-    for t in store.live_themes(conn, pid):
+    themes = store.live_themes(conn, pid)
+    for i, t in enumerate(themes, 1):
+        llm.report(f"theme {i} of {len(themes)}: {t['name']}")
         account.run(conn, pid, t["id"], run_id=run.get("run_id"))
 
 
@@ -138,7 +140,8 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
         if job and store.job(conn, job)["status"] != "running":
             break                                   # stopped by the researcher between steps
         kind, mid = run["kind"], run.get("material_id")
-        rid = store.start_run(conn, pid, kind, mid, line(conn, run))
+        base = line(conn, run)
+        rid = store.start_run(conn, pid, kind, mid, base)
         run["run_id"] = rid
         ids.append(rid)
         if mid:
@@ -148,12 +151,17 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
         # counter. One chain at a time is the whole of this instrument; give the run its own
         # counter if chains ever overlap.
         llm.usage.update(tokens_in=0, tokens_out=0)
+        # Where the step has got to, on the row the page is already reading. Only for the length
+        # of the step: nothing outside one has a row to write on.
+        llm.report = lambda msg: store.set_run_line(conn, rid, f"{base} — {msg}")
         error, notes = None, None
         try:
             notes = STEPS[kind][1](conn, pid, run)
         except Exception as e:                          # the chain stops; the process does not
             error = f"{type(e).__name__}: {e}"
             failed = mid
+        finally:
+            llm.report = lambda msg: None
         store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
                          tokens_out=llm.usage.get("tokens_out", 0),
                          notes=[str(n) for n in (notes or [])])

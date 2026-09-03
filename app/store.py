@@ -452,6 +452,13 @@ def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, li
     return rid
 
 
+def set_run_line(conn: sqlite3.Connection, rid: str, text: str) -> None:
+    """What this step is doing now, as against what it set out to do. A long step says where it
+    has got to on the same row the page is already reading."""
+    conn.execute("UPDATE run SET line=? WHERE id=?", (text, rid))
+    conn.commit()
+
+
 def close_orphaned_runs(conn: sqlite3.Connection) -> int:
     """At process start nothing can be running, so every open run row belongs to a process that
     died mid-step. Left open, it keeps the page reloading itself every few seconds for ever — and a

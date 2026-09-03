@@ -270,7 +270,8 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped = [], []
-    for tid in live:
+    for i, tid in enumerate(live, 1):
+        llm.report(f"theme {i} of {len(live)}: {live[tid]['name']}")
         kept, d, st = _thread(conn, mid, tid, run_id=run_id)
         tally(st)
         dropped += d

@@ -77,6 +77,23 @@ def test_the_line_uses_the_title_the_frame_gave_it_once_there_is_one(conn, proje
     assert store.runs(conn, project)[-1]["line"] == "Reading Grande, M."
 
 
+def test_a_step_can_say_where_it_has_got_to_on_its_own_run_row(conn, project, grande, monkeypatch):
+    """A step is one model call or twelve, and between them the page said nothing at all. The
+    hook is live only while a step runs — outside one there is no row to write on."""
+    seen = []
+
+    def slow(conn_, pid, run):
+        llm.report("busy")
+        seen.append(store.runs(conn_, pid)[-1]["line"])
+
+    _stub(monkeypatch, read=slow)
+    jobs.run_now(conn, project, [{"kind": "read", "material_id": grande}])
+    assert seen == ["Reading DP-40 Grande — busy"]
+
+    llm.report("nobody is listening to this")
+    assert store.runs(conn, project)[-1]["line"] == "Reading DP-40 Grande — busy"
+
+
 # ---- when a step fails --------------------------------------------------------------------------
 
 def test_a_failing_step_records_itself_and_stops_the_chain_without_killing_anything(
