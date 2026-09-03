@@ -11,3 +11,4 @@ compare.json
 compare-data/
 law5-data/
 .claude/
+.DS_Store
