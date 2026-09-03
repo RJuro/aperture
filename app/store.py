@@ -16,6 +16,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+from collections import Counter
 from datetime import datetime, timezone
 
 from . import db
@@ -447,12 +448,15 @@ def checks(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 
 # ---- runs -------------------------------------------------------------------------------------
 
-def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, line: str) -> str:
+def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, line: str,
+              job: str | None = None) -> str:
+    """`job` is which chain this step belongs to, so a chain interrupted by a restart can tell
+    which of its steps are already done and resume rather than replay them."""
     from . import llm
     rid = db.new_id("r")
     conn.execute("INSERT INTO run (id, project_id, kind, material_id, provider, model, started, "
-                 "line) VALUES (?,?,?,?,?,?,?,?)",
-                 (rid, pid, kind, mid, llm.provider(), llm.model(), now(), line))
+                 "line, job_id) VALUES (?,?,?,?,?,?,?,?,?)",
+                 (rid, pid, kind, mid, llm.provider(), llm.model(), now(), line, job))
     conn.commit()
     return rid
 
@@ -590,6 +594,32 @@ def pending_jobs(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     """Queued work plus interrupted work from a previous process, oldest first."""
     return conn.execute("SELECT * FROM job WHERE status IN ('queued','running') "
                         "ORDER BY created_at, rowid").fetchall()
+
+
+def requeue_job(conn: sqlite3.Connection, jid: str) -> list[dict]:
+    """An interrupted chain, ready to run again: back to 'queued', minus the steps it finished.
+
+    The worker only accepts a 'queued' job, so a job left 'running' by a restart was refused and
+    then marked finished by the worker's `finally` — the rest of an upload was never read, and
+    nothing on any page would start it again. Steps are matched by kind and material in the order
+    they were planned, which is the order they ran, so twelve accounts in one chain resume at the
+    one that died rather than all at once.
+    """
+    row = job(conn, jid)
+    done = Counter((r["kind"], r["material_id"]) for r in conn.execute(
+        "SELECT kind, material_id FROM run WHERE job_id=? AND finished IS NOT NULL "
+        "AND error IS NULL", (jid,)))
+    left = []
+    for r in json.loads(row["runs_json"]):
+        key = (r["kind"], r.get("material_id"))
+        if done[key]:
+            done[key] -= 1
+        else:
+            left.append(r)
+    conn.execute("UPDATE job SET status='queued', runs_json=? WHERE id=?",
+                 (json.dumps(left, ensure_ascii=False), jid))
+    conn.commit()
+    return left
 
 
 def start_job(conn: sqlite3.Connection, jid: str) -> None:

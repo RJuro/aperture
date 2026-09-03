@@ -154,6 +154,29 @@ def test_a_run_left_open_by_a_dead_process_is_closed_when_the_next_one_starts(co
     assert not store.active_runs(conn, project)
 
 
+def test_a_restart_resumes_the_chain_at_the_step_it_died_on(conn, project, grande, rodwin,
+                                                            monkeypatch):
+    """The worker only takes a queued job, so a job left running by a restart was refused and
+    then marked finished — the rest of an upload was never read, on any page, ever again."""
+    ran = []
+    for kind, (text, _) in list(jobs.STEPS.items()):
+        monkeypatch.setitem(jobs.STEPS, kind, (text, lambda c, p, r, _k=kind: ran.append(_k)))
+    runs = [{"kind": "read", "material_id": grande}, {"kind": "read", "material_id": rodwin}]
+    jid = store.enqueue_job(conn, project, runs)
+    store.start_job(conn, jid)
+    rid = store.start_run(conn, project, "read", grande, "Reading DP-40 Grande", jid)
+    store.finish_run(conn, rid)                      # and here the process dies
+
+    assert jobs.resume_pending(db.connect) == [jid]
+    assert jobs.wait(jid, 10)
+
+    assert ran == ["read"], "only the step that never ran"
+    rows = store.runs(conn, project)
+    assert [r["material_id"] for r in rows] == [grande, rodwin]
+    assert store.job(conn, jid)["status"] == "finished"
+    assert store.material(conn, rodwin)["state"] == "ready"
+
+
 def test_stopping_a_project_ends_its_chain_after_the_step_in_flight(conn, project, grande, monkeypatch):
     done = []
     monkeypatch.setitem(jobs.STEPS, "frame", ("a", lambda c, p, r: (done.append("frame"), store.stop_jobs(c, p), None)[-1]))

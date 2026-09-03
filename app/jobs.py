@@ -186,7 +186,7 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
             break                                   # stopped by the researcher between steps
         kind, mid = run["kind"], run.get("material_id")
         base = line(conn, run)
-        rid = store.start_run(conn, pid, kind, mid, base)
+        rid = store.start_run(conn, pid, kind, mid, base, job)
         run["run_id"] = rid
         ids.append(rid)
         if mid:
@@ -278,6 +278,10 @@ def resume_pending(conn_factory: Callable[[], sqlite3.Connection] = db.connect) 
     try:
         store.close_orphaned_runs(conn)          # before relaunching: the new attempt writes its own
         rows = [dict(r) for r in store.pending_jobs(conn)]
+        for row in rows:
+            alive = _JOBS.get(row["id"])
+            if row["status"] == "running" and not (alive is not None and alive.is_alive()):
+                store.requeue_job(conn, row["id"])   # queued again, minus the steps already done
     finally:
         conn.close()
     launched = []
