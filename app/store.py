@@ -519,12 +519,21 @@ def active_runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
                         "ORDER BY started", (pid,)).fetchall()
 
 
-def last_run(conn: sqlite3.Connection, pid: str, kind: str,
-             mid: str | None = None) -> sqlite3.Row | None:
+def mark_unchanged(conn: sqlite3.Connection, rid: str) -> None:
+    """This run left what it was written to move exactly as it was. Only a THEMES pass says so,
+    and only `out_of_date` reads it — the reason is there."""
+    conn.execute("UPDATE run SET changed=0 WHERE id=?", (rid,))
+    conn.commit()
+
+
+def last_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None = None,
+             changed: bool = False) -> sqlite3.Row | None:
     """The most recent run of this kind that finished without error."""
     sql = ("SELECT rowid AS seq, * FROM run WHERE project_id=? AND kind=? "
            "AND finished IS NOT NULL AND error IS NULL")
     args: list = [pid, kind]
+    if changed:
+        sql += " AND changed=1"
     if mid:
         sql += " AND material_id=?"
         args.append(mid)
@@ -540,8 +549,13 @@ def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     A material synthesised against an older set is not wrong, but it was written to a different
     question, and the researcher should be told rather than have it silently re-run: bringing one
     up to date is minutes of thinking and real money, so it is their call, not ours.
+
+    Against the last THEMES pass that actually moved the set. Every upload runs THEMES, and most
+    passes leave the set exactly as it was — so measured against every pass, adding the fiftieth
+    material put "Analysed before the themes last changed" on the other forty-nine rows, each
+    with a paid button under it and nothing behind the claim.
     """
-    themes = last_run(conn, pid, "themes")
+    themes = last_run(conn, pid, "themes", changed=True)
     if themes is None:
         return []
     stale = []

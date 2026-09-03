@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS run (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, material_id TEXT,
     provider TEXT DEFAULT '', model TEXT DEFAULT '', tokens_in INTEGER DEFAULT 0,
     tokens_out INTEGER DEFAULT 0, started TEXT, finished TEXT, error TEXT, line TEXT DEFAULT '',
-    job_id TEXT);
+    job_id TEXT, changed INTEGER DEFAULT 1);
 
 CREATE TABLE IF NOT EXISTS job (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, runs_json TEXT NOT NULL,
@@ -139,6 +139,12 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE run ADD COLUMN notes TEXT DEFAULT ''")
     if "job_id" not in have:
         conn.execute("ALTER TABLE run ADD COLUMN job_id TEXT")
+    if "changed" not in have:
+        # Whether this run moved what it was written to move. Only THEMES clears it and only
+        # `out_of_date` reads it: a pass that grouped nothing new staled nothing. It defaults to
+        # 1 so a run nobody said anything about — every row written before this column — keeps
+        # counting as it always did.
+        conn.execute("ALTER TABLE run ADD COLUMN changed INTEGER DEFAULT 1")
     have = {r[1] for r in conn.execute("PRAGMA table_info(project)")}
     if "owner_id" not in have:
         conn.execute("ALTER TABLE project ADD COLUMN owner_id TEXT")

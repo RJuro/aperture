@@ -77,10 +77,23 @@ def _read(conn, pid, run):
     read.run(conn, run["material_id"])
 
 
+def _theme_set(conn, pid) -> list[tuple]:
+    return [(t["id"], t["name"], t["gist"]) for t in store.live_themes(conn, pid)]
+
+
 def _themes(conn, pid, run):
+    """THEMES, and whether it moved the set — created, merged, renamed or redefined a theme.
+
+    `out_of_date` measures every material against it, and most passes over new material leave the
+    set exactly as it stands. Unrecorded, each of those marked every other material as analysed
+    before the themes last changed, which was not true and cost a call each to answer.
+    """
     from .engine import themes
+    before = _theme_set(conn, pid)
     themes.run(conn, pid, feedback=_text(conn, run), material_id=run.get("material_id"),
                run_id=run.get("run_id"))
+    if _theme_set(conn, pid) == before and run.get("run_id"):
+        store.mark_unchanged(conn, run["run_id"])
 
 
 def _doc(conn, pid, run):

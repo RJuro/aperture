@@ -144,6 +144,29 @@ def test_the_description_of_a_material_is_never_the_list_of_places_to_look(conn,
     assert store.get_summary(conn, "material", grande)["stage"] == "reading"
 
 
+def test_only_a_themes_pass_that_moved_the_themes_dates_the_material_before_it(
+        conn, project, grande, rodwin, monkeypatch):
+    """Every upload runs THEMES and most passes leave the set as it stands. Measured against
+    every pass, adding the fiftieth material put "Analysed before the themes last changed" on
+    the other forty-nine rows, each with a paid button under it."""
+    from app.engine import themes as engine
+    for kind, (text, _) in list(jobs.STEPS.items()):
+        if kind != "themes":
+            monkeypatch.setitem(jobs.STEPS, kind, (text, lambda c, p, r: None))
+    tid = store.save_theme(conn, project, tid=None, name="Work", gist="how a living is made",
+                           code_ids=[])
+
+    monkeypatch.setattr(engine, "run", lambda *a, **k: None)         # read, grouped nothing new
+    jobs.run_now(conn, project, [{"kind": "doc", "material_id": grande},
+                                 {"kind": "themes", "material_id": rodwin}])
+    assert store.out_of_date(conn, project) == []
+
+    monkeypatch.setattr(engine, "run", lambda c, p, **k: store.save_theme(
+        c, p, tid=tid, name="Work and trade", gist="how a living is made", code_ids=[]))
+    jobs.run_now(conn, project, [{"kind": "themes", "material_id": rodwin}])
+    assert [m["id"] for m in store.out_of_date(conn, project)] == [grande]
+
+
 def test_project_prompt_requires_grounded_and_interpretive_synthesis():
     prompt = (Path(__file__).parent.parent / "app" / "prompts" / "project.md").read_text()
     assert "grounded synthesis" in prompt
