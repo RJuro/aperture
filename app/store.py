@@ -676,3 +676,22 @@ def has_text(conn: sqlite3.Connection, pid: str, text: str) -> bool:
     """
     return conn.execute("SELECT 1 FROM material WHERE project_id=? AND text=? "
                         "AND removed_at IS NULL LIMIT 1", (pid, text)).fetchone() is not None
+
+
+def sign_out_others(conn: sqlite3.Connection, uid: str, keep: str = "") -> int:
+    """Every session for this account except the one asking.
+
+    Changing a password is only a change if the sessions the old one opened stop working — and
+    the reason for changing the first admin's is that an environment variable put it in a build
+    log in clear.
+    """
+    n = conn.execute("DELETE FROM session WHERE user_id=? AND token<>?", (uid, keep)).rowcount
+    conn.commit()
+    return n
+
+
+def set_owner(conn: sqlite3.Connection, pid: str, uid: str) -> None:
+    """Hand a project over. One made before accounts existed has no owner and is invisible to
+    every researcher for ever; the admin page said "Owner not set" and offered nothing."""
+    conn.execute("UPDATE project SET owner_id=? WHERE id=?", (uid, pid))
+    conn.commit()
