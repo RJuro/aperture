@@ -1,8 +1,8 @@
 """GET routes. Each one is a context function and a template, and nothing else.
 
-There is no client script anywhere in this app: a link is navigation, `:target` does the
-highlighting, and `<details>` opens what is folded. A page with work running carries a five-second
-meta refresh; an idle page carries none.
+A link is navigation, `:target` does the highlighting, and `<details>` opens what is folded. The
+one script in this app polls `/p/{pid}/runs` while work is running, so the progress line changes
+without reloading the page under the reader; an idle page carries neither script nor refresh.
 """
 from __future__ import annotations
 
@@ -96,6 +96,15 @@ def project(request: Request, pid: str, problem: str = "") -> str:
     user = _mine(request, conn, pid)
     ctx = context.project_page(conn, pid)
     return _render("project.html", ctx and {**ctx, "problem": problem}, user)
+
+
+@router.get("/p/{pid}/runs")
+def active_runs(request: Request, pid: str) -> list[dict]:
+    """What is running now, for the one script in this app to poll. Empty means it has finished
+    and the page is out of date."""
+    conn = connection()
+    _mine(request, conn, pid)
+    return [{"line": r["line"]} for r in store.active_runs(conn, pid)]
 
 
 @router.get("/p/{pid}/t/{tid}", response_class=HTMLResponse)

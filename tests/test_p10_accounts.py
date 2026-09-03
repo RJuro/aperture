@@ -66,6 +66,7 @@ def test_a_user_sees_their_projects_and_nobody_elses(client, conn, people):
     assert "Ann's study" in home and "Bob's study" not in home
     assert client.get(f"/p/{mine}").status_code == 200
     assert client.get(f"/p/{theirs}").status_code == 404, "not 403: its existence is not hers"
+    assert client.get(f"/p/{theirs}/runs").status_code == 404, "nor is what it is doing"
     assert client.get("/admin").status_code == 404
 
 

@@ -160,12 +160,30 @@ def test_the_app_does_not_speak_our_vocabulary(client, analysed):
 
 
 def test_an_idle_page_carries_no_poller_and_a_running_one_does(client, conn, analysed):
+    """The poller replaces the line where it stands. A meta refresh reloaded the whole page and
+    put the reader back at the top of it every fifteen seconds, which is unreadable while a chain
+    runs — so it survives only inside <noscript>."""
     url = f"/p/{analysed['pid']}"
-    assert "http-equiv" not in client.get(url).text
+    idle = client.get(url).text
+    assert "http-equiv" not in idle and "<script" not in idle.lower()
     store.start_run(conn, analysed["pid"], "doc", analysed["grande"],
                     "Writing what stands out in Grande")
     html = client.get(url).text
-    assert "http-equiv" in html and "Writing what stands out in Grande" in html
+    assert "<noscript><meta http-equiv=\"refresh\" content=\"30\"></noscript>" in html
+    assert "<script" in html and f"/p/{analysed['pid']}/runs" in html
+    assert "Writing what stands out in Grande" in html
+
+
+def test_what_is_running_is_readable_on_its_own_and_only_by_whoever_owns_it(client, conn,
+                                                                           analysed):
+    pid = analysed["pid"]
+    assert client.get(f"/p/{pid}/runs").json() == []
+    store.start_run(conn, pid, "doc", analysed["grande"], "Writing what stands out in Grande")
+    store.start_run(conn, pid, "accounts", None, "Writing where each theme runs across everything")
+    assert client.get(f"/p/{pid}/runs").json() == [
+        {"line": "Writing what stands out in Grande"},
+        {"line": "Writing where each theme runs across everything"}]
+    assert client.get("/p/nope/runs").status_code == 404
 
 
 def test_the_export_prints_the_whole_record(client, conn, analysed):
@@ -180,7 +198,9 @@ def test_the_export_prints_the_whole_record(client, conn, analysed):
         assert c["question"] in md and c["verdict"] in md and str(c["searched_n"]) in md
 
 
-def test_no_javascript_anywhere(client, analysed):
+def test_no_javascript_except_the_one_poller(client, analysed):
+    """Nothing has run, so nothing is polling: the progress line is the only thing a script in
+    this app is for."""
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
         html = client.get(url).text
         assert "<script" not in html.lower()
