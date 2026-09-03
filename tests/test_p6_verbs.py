@@ -23,8 +23,9 @@ def app(conn, monkeypatch):
     monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: planned.append(list(runs)) or "j")
     monkeypatch.setattr(verbs.jobs, "start", jobs.start)
     monkeypatch.setattr(verbs.jobs, "ingest_chain",
-                        lambda pid, mid, **k: planned.append([{"kind": "chain",
-                                                               "material_id": mid}]) or "j")
+                        lambda pid, mids, **k: planned.append([{"kind": "chain",
+                                                                "material_id": m}
+                                                               for m in mids]) or "j")
     client = TestClient(main.app, follow_redirects=False)
     client.planned = planned
     return client
@@ -123,6 +124,13 @@ def test_a_comment_on_the_corpus_never_re_reads_a_material(app, analysed):
     chain = kinds(app.planned)[0]
     assert chain.count("account") == 2 and chain[-1] == "project"
     assert "doc" not in chain and "read" not in chain and "frame" not in chain
+
+
+def test_the_button_after_a_broken_update_writes_only_the_corpus_level_again(app, analysed):
+    """What a chain that died on the way to the summary left undone is the corpus level, and
+    that is exactly the work removing material leaves undone too."""
+    assert app.post(f"/p/{analysed['pid']}/resynthesise").status_code == 303
+    assert kinds(app.planned) == [["accounts", "project"]]
 
 
 def test_a_check_asks_the_material_and_a_blank_one_asks_nothing(app, analysed, conn):

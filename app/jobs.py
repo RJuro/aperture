@@ -243,19 +243,29 @@ def wait(job: str, timeout: float = 60.0) -> bool:
 
 # ---- the chain material arrives on --------------------------------------------------------------
 
-def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str:
-    """Up: ingest → FRAME → READ → THEMES → DOC → PROJECT.
+def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.connect) -> str:
+    """Up: FRAME → ANGLES → READ for each material, then THEMES and DOC for each, then the tail.
+
+    One upload is one chain, whatever it carried. Five files used to start five chains, and each
+    of them found themes again and rewrote the corpus summary with four of the five still unread.
+
+    ponytail: a step that fails stops the whole chain, so a file later in the same upload is left
+    queued and unread rather than read on its own. Give the researcher a way to run the rest if a
+    failure mid-upload turns out to be common.
 
     Ingest itself is Python and already done by the time this is called — text became sentences
     when the material was added, synchronously, because ids are the spine everything else cites.
     This is the model half.
     """
+    mids = list(mids)
     return start(conn_factory, pid, [
-        {"kind": "frame", "material_id": mid},
-        {"kind": "angles", "material_id": mid},
-        {"kind": "read", "material_id": mid},
-        {"kind": "themes", "material_id": mid},
-        {"kind": "doc", "material_id": mid},
+        *({"kind": k, "material_id": mid} for mid in mids
+          for k in ("frame", "angles", "read")),
+        # THEMES takes one material because it must see that material's codes by passage; every
+        # piece is read before any of them moves the theme set, so DOC writes against the set as
+        # it finally stands.
+        *({"kind": "themes", "material_id": mid} for mid in mids),
+        *({"kind": "doc", "material_id": mid} for mid in mids),
         # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
         # the live theme set at this moment is the old one.
         {"kind": "accounts"},
@@ -263,13 +273,14 @@ def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str
     ])
 
 
-def removal_chain(pid: str, material_ids: Iterable[str],
-                  conn_factory: Callable = db.connect) -> str:
-    """Rebuild the live corpus after one material leaves it."""
-    mids = list(material_ids)
-    return start(conn_factory, pid, [
-        {"kind": "themes"},
-        *({"kind": "doc", "material_id": mid} for mid in mids),
-        {"kind": "accounts"},
-        {"kind": "project"},
-    ])
+def resynthesis_chain(pid: str, conn_factory: Callable = db.connect) -> str:
+    """Write the corpus level again over the reading as it stands: every account, then the summary.
+
+    What material leaves behind, and what a failed chain leaves behind, are the same job. Nothing
+    below the corpus level is redone: `store.remove_material` has already dropped the orphaned
+    codes and retired the themes left without any, and what stayed was read on its own terms, not
+    against what went — so no material's synthesis is now wrong. Where the themes did move under
+    one, `store.out_of_date` says so on its row and the researcher decides whether rereading it is
+    worth the money; this used to spend a call on every remaining material to answer that for them.
+    """
+    return start(conn_factory, pid, [{"kind": "accounts"}, {"kind": "project"}])

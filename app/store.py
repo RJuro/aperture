@@ -519,6 +519,29 @@ def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return stale
 
 
+def summary_state(conn: sqlite3.Connection, pid: str) -> dict:
+    """Whether the corpus summary on the page is the current one, and if not, what happened.
+
+    `behind` is how many materials were read after it was written — or not read yet at all.
+    Counted by insertion order rather than by clock, for the reason `last_run` gives: a chain's
+    steps land inside the same millisecond and their timestamps then say neither came first.
+    `working` is a chain of this project's queued or running now; `error` is what stopped the
+    last one, so a summary that was never rewritten does not sit there looking finished.
+    """
+    at = conn.execute("SELECT rowid FROM summary WHERE scope='project' AND ref_id=? "
+                      "AND stage='reading' AND status='live'", (pid,)).fetchone()
+    behind = conn.execute(
+        "SELECT COUNT(*) FROM material m WHERE m.project_id=? AND m.removed_at IS NULL "
+        "AND NOT EXISTS (SELECT 1 FROM summary s WHERE s.scope='material' AND s.ref_id=m.id "
+        "AND s.stage='reading' AND s.status='live' AND s.rowid < ?)",
+        (pid, at["rowid"] if at else 0)).fetchone()[0]
+    job = conn.execute("SELECT * FROM job WHERE project_id=? ORDER BY rowid DESC LIMIT 1",
+                       (pid,)).fetchone()
+    return {"behind": behind,
+            "working": bool(job and job["status"] in ("queued", "running")),
+            "error": (job["error"] or "") if job and job["status"] == "failed" else ""}
+
+
 def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM run WHERE project_id=? ORDER BY started", (pid,)).fetchall()
 

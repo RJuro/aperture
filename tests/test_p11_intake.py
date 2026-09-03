@@ -80,13 +80,14 @@ def client(conn, monkeypatch):
     for mod in (pages, verbs):
         monkeypatch.setattr(mod, "connection", lambda: conn, raising=False)
     started = []
-    monkeypatch.setattr(verbs.jobs, "ingest_chain", lambda pid, mid, **k: started.append(mid) or "j")
+    monkeypatch.setattr(verbs.jobs, "ingest_chain",
+                        lambda pid, mids, **k: started.append(list(mids)) or "j")
     c = TestClient(main.app, follow_redirects=False)
     c.started = started
     return c
 
 
-def test_several_files_at_once_become_several_materials_each_starting_its_chain(client, conn, project):
+def test_several_files_at_once_become_several_materials_in_one_chain(client, conn, project):
     files = [("files", ("a.txt", b"First piece. It has sentences.", "text/plain")),
              ("files", ("b.md", b"# Second\n\nSecond piece here.", "text/markdown"))]
     r = client.post(f"/p/{project}/material", files=files)
@@ -94,7 +95,7 @@ def test_several_files_at_once_become_several_materials_each_starting_its_chain(
     mats = store.materials(conn, project)
     assert [m["name"] for m in mats] == ["a.txt", "b.md"]
     assert all(store.sentences(conn, m["id"]) for m in mats), "ids exist before anything cites them"
-    assert client.started == [m["id"] for m in mats]
+    assert client.started == [[m["id"] for m in mats]]
 
 
 def test_pasted_text_still_works(client, conn, project):

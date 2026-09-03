@@ -65,7 +65,7 @@ compiled prompt for the fixture, so a change to what the model sees is a visible
 | THEMES | **the material just read, with its codes marked by passage**; live themes; the codebook with spread as *counts* (never material names); the focus; theme feedback verbatim | `themes: [{id \| new, name, gist, code_names, merge_into?}]` | codes exist; ≤ 12 live; merges before creates so a full set can turn over; **a gist defines — true if fifty more materials arrived — never locates or compares**; every rewrite kept in `theme_history` |
 | THREAD | one theme's definition and its codes marked here; the focus; the frame; open comments on this line verbatim; the material laid out | `moments: [{claim ≤30 words, anchor ≤12 words, sid}]` | **every anchor bound**: unfound → dropped, wrong sid → repaired; 4–14 moments else the line is set aside *and the set-aside is kept on the run*; ordered by position |
 | DOC | the orientation; the frame; the focus; **the lines just written** (claims + quotes); open comments verbatim; the material | `summary` ≤320 words · `questions` ≤120 words · `people` | summary introduces the lines by name; **`questions` are questions the material raised and did not answer — never findings**; read by ANGLES only |
-| PROJECT | the focus; **each theme's account** and definition; each material's kind and summary; project feedback verbatim | `summary` ≤400 words citing moment ids | cited ids exist and are live; **no new quotes and no gist rewriting** — a gist defines, an account concludes, the summary is written over the accounts |
+| PROJECT | the focus; **each theme's account** and definition; each material's kind and summary; project feedback verbatim | `summary` ≤300 words citing moment ids · `interpretation` ≤150 words, provisional, no imported named theory, citing moment ids | cited ids exist and are live; **no new quotes and no gist rewriting** — a gist defines, an account concludes, the summary is written over the accounts. **Two movements, two rows** (`stage` = `reading` \| `interpretation`): what the corpus shows is cited, what it may mean is argued with, and the page must not run them together |
 | CHECK | the question verbatim; the uncited passages in scope, chunked | `found: [{anchor, sid}]` | anchors bound; the verdict is Python's: bound quotes → *found*, none → *not found in N passages*; the model's opinion can only lower confidence |
 
 **The orientation is written once and re-synthesized, never replaced.** FRAME writes *what this
@@ -164,7 +164,7 @@ code (id, project_id, name, definition, origin)                    -- origin: re
 code_hit (code_id, material_id, sid)
 theme (id, project_id, name, gist, status, merged_into)            -- status: live|merged
 moment (id, material_id, theme_id, sid, position, claim, anchor, run_id, status)
-summary (id, scope, ref_id, stage, text, run_id, status)           -- scope: material|project ; stage: orientation|reading
+summary (id, scope, ref_id, stage, text, run_id, status)           -- scope: material|project ; stage: orientation|reading|interpretation
 person (material_id, name, aliases, role)
 feedback (id, target_kind, target_id, kind, text, created_at, consumed_by_run)
 check_ (id, scope, ref_id, question, verdict, anchors_json, searched_n, run_id, created_at)

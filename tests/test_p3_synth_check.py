@@ -4,7 +4,8 @@
     synth.doc(conn, mid, *, only_theme=None) -> {"summary","threads","anchors","dropped"}
         one `thread` call per live theme (in live_themes order), then one `doc` call for the
         summary — unless only_theme, which is one `thread` call and nothing else
-    synth.project(conn, pid) -> {"summary","dropped"}   one `project` call, reads the accounts
+    synth.project(conn, pid) -> {"summary","interpretation","dropped"}   one `project` call over
+        the accounts, stored as two rows: what the corpus shows, and what it may mean
     check.run(conn, pid, scope, ref_id, question) -> {"check_id","verdict","anchors","searched_n"}
 
 This is where the anchor law lives at runtime, so most of these tests are that law.
@@ -155,6 +156,37 @@ def test_the_project_level_reads_the_accounts_and_may_not_introduce_a_quote(read
     text = store.get_summary(conn, "project", ready["pid"])["text"]
     assert live[0] in text and "mo-does-not-exist" not in text
     assert out["dropped"]
+
+
+def test_what_the_corpus_shows_and_what_it_may_mean_are_two_rows(ready, conn, model, quote):
+    """A reader must be able to cite the first and argue with the second, so they are stored
+    apart and the plain call still hands back the grounded one."""
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    live = [m["id"] for m in store.moments(conn, ready["mid"])]
+    model.queue({"summary": f"Work recurs [{live[0]}].",
+                 "interpretation": f"Taken together, this suggests a wage logic "
+                                   f"[{live[0]}, mo-does-not-exist]."})
+    out = synth.project(conn, ready["pid"])
+    pid = ready["pid"]
+    assert store.get_summary(conn, "project", pid, "reading")["text"] == out["summary"]
+    assert store.get_summary(conn, "project", pid, "interpretation")["text"] == out["interpretation"]
+    assert store.get_summary(conn, "project", pid)["stage"] == "reading"
+    assert "Taken together" in out["interpretation"]
+    assert "mo-does-not-exist" not in out["interpretation"], "a dangling citation survived"
+    assert out["dropped"]
+    shown = model.shown("project")
+    assert str(synth.PROJECT_WORDS) in shown and str(synth.INTERPRETATION_WORDS) in shown
+
+
+def test_an_interpretation_is_never_left_standing_over_a_newer_summary(ready, conn, model, quote):
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    model.queue({"summary": "first", "interpretation": "an early reading of it"})
+    synth.project(conn, ready["pid"])
+    model.queue({"summary": "second"})
+    synth.project(conn, ready["pid"])
+    assert store.get_summary(conn, "project", ready["pid"], "interpretation")["text"] == ""
 
 
 def test_the_project_level_leaves_a_themes_definition_alone(ready, conn, model, quote):

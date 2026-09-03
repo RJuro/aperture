@@ -115,6 +115,37 @@ def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, con
     assert (row["title"] or row["name"]) in html
 
 
+def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, conn, analysed):
+    """What the corpus shows is cited; what it may mean is argued with. Run together on the page
+    they would be read as one kind of sentence."""
+    store.save_summary(conn, "project", analysed["pid"], "interpretation",
+                       "Taken together, this suggests a single wage logic.")
+    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/export.md"):
+        text = client.get(url).text
+        assert store.get_summary(conn, "project", analysed["pid"], "reading")["text"] in text
+        assert "Taken together, this suggests a single wage logic." in text
+        assert "What the material shows" in text and "What this may mean, so far" in text
+
+
+def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):
+    """The receipt marked a step failed and nothing said why, though the run row had the reason."""
+    rid = store.start_run(conn, analysed["pid"], "read", analysed["grande"], "Reading Grande")
+    store.finish_run(conn, rid, error="LLMError: the model returned no JSON")
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "LLMError: the model returned no JSON" in html
+
+
+def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, analysed):
+    pid = analysed["pid"]
+    assert "Written over all 2 materials" in client.get(f"/p/{pid}").text
+    jid = store.enqueue_job(conn, pid, [{"kind": "project"}])
+    assert "Being updated now" in client.get(f"/p/{pid}").text
+    store.finish_job(conn, jid, "LLMError: the model said nothing")
+    html = client.get(f"/p/{pid}").text
+    assert "The last update did not finish: LLMError: the model said nothing" in html
+    assert f'action="/p/{pid}/resynthesise"' in html
+
+
 def test_the_app_does_not_speak_our_vocabulary(client, analysed):
     from app import context
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):

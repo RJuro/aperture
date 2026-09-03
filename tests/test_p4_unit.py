@@ -24,10 +24,23 @@ def _stub(monkeypatch, **by_kind):
 
 def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, grande, monkeypatch):
     ran = _stub(monkeypatch)
-    assert jobs.wait(jobs.ingest_chain(project, grande, conn_factory=db.connect), 10)
+    assert jobs.wait(jobs.ingest_chain(project, [grande], conn_factory=db.connect), 10)
     assert ran == ["frame", "angles", "read", "themes", "doc", "accounts", "project"]
     assert [r["kind"] for r in store.runs(conn, project)] == ran
     assert all(r["finished"] and r["error"] is None for r in store.runs(conn, project))
+
+
+def test_one_upload_of_several_files_is_one_chain_with_one_tail(conn, project, grande, rodwin,
+                                                                monkeypatch):
+    """Five files used to mean five chains, each re-finding themes and rewriting the corpus
+    summary behind the four still waiting behind it."""
+    ran = _stub(monkeypatch)
+    assert jobs.wait(jobs.ingest_chain(project, [grande, rodwin], conn_factory=db.connect), 10)
+    assert ran == ["frame", "angles", "read", "frame", "angles", "read",
+                   "themes", "themes", "doc", "doc", "accounts", "project"]
+    rows = store.runs(conn, project)
+    assert [r["material_id"] for r in rows if r["kind"] == "themes"] == [grande, rodwin]
+    assert [r["material_id"] for r in rows if r["kind"] == "doc"] == [grande, rodwin]
 
 
 def test_every_run_row_carries_a_sentence_a_researcher_can_read(conn, project, grande, monkeypatch):
@@ -97,7 +110,7 @@ def test_a_failure_in_a_background_chain_does_not_escape_the_thread(conn, projec
         raise RuntimeError("nope")
 
     _stub(monkeypatch, frame=boom)
-    assert jobs.wait(jobs.ingest_chain(project, grande, conn_factory=db.connect), 10)
+    assert jobs.wait(jobs.ingest_chain(project, [grande], conn_factory=db.connect), 10)
     assert "nope" in store.runs(conn, project)[-1]["error"]
 
 

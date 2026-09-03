@@ -95,12 +95,33 @@ def test_removing_material_excludes_its_evidence_and_invalidates_the_project_sum
     assert store.get_summary(conn, "project", pid) is None
 
 
-def test_removal_rebuilds_every_remaining_material_then_the_corpus(monkeypatch):
+def test_removal_writes_the_corpus_again_and_reads_nothing_again(monkeypatch):
+    """What stayed was not read against what left, so nothing below the corpus needs redoing."""
     planned = []
     monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: planned.extend(runs) or "j")
-    jobs.removal_chain("p1", ["m1", "m2"])
-    assert [r["kind"] for r in planned] == ["themes", "doc", "doc", "accounts", "project"]
-    assert [r["material_id"] for r in planned if r["kind"] == "doc"] == ["m1", "m2"]
+    jobs.resynthesis_chain("p1")
+    assert [r["kind"] for r in planned] == ["accounts", "project"]
+
+
+def test_the_corpus_summary_says_when_it_is_behind_or_did_not_finish(conn, analysed):
+    """It used to be shown as current while a chain was rewriting it, and to say nothing at all
+    when that chain had died."""
+    pid = analysed["pid"]
+    assert store.summary_state(conn, pid) == {"behind": 0, "working": False, "error": ""}
+
+    late = store.add_material(conn, pid, "Late arrival", "One more piece. It has sentences.")
+    store.save_sentences(conn, late, ingest.sentences("One more piece. It has sentences."))
+    assert store.summary_state(conn, pid)["behind"] == 1
+
+    jid = store.enqueue_job(conn, pid, [{"kind": "project"}])
+    assert store.summary_state(conn, pid)["working"] is True
+    store.finish_job(conn, jid, "LLMError: the model said nothing")
+    state = store.summary_state(conn, pid)
+    assert state["working"] is False and state["error"] == "LLMError: the model said nothing"
+
+    store.save_summary(conn, "material", late, "reading", "What the late piece showed.")
+    store.save_summary(conn, "project", pid, "reading", "Written again over all three.")
+    assert store.summary_state(conn, pid)["behind"] == 0
 
 
 def test_project_prompt_requires_grounded_and_interpretive_synthesis():

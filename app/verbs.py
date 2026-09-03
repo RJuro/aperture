@@ -70,7 +70,7 @@ def new_project(request: Request, name: str = Form(...), focus: str = Form("")):
 @router.post("/p/{pid}/material")
 def add_material(request: Request, pid: str, files: list[UploadFile] = File(default=[]),
                  name: str = Form(""), text: str = Form("")):
-    """Files and/or pasted text in, sentences out, and each reading starts on its own.
+    """Files and/or pasted text in, sentences out, and one reading over all of them.
 
     Extraction is synchronous and so is the sentence cut: ids are the spine every code and claim
     cites, so they exist before anything can cite them, and the chain that follows is the only
@@ -91,15 +91,16 @@ def add_material(request: Request, pid: str, files: list[UploadFile] = File(defa
         return RedirectResponse(f"/p/{pid}?problem={quote_plus(str(e))}", status_code=303)
     if text.strip():
         pieces.append((name.strip() or "Untitled", text))
-    mid = ""
+    mids = []
     for piece_name, body in pieces:
         mid = store.add_material(conn, pid, piece_name, body)
         store.save_sentences(conn, mid, ingest.sentences(body))
-        jobs.ingest_chain(pid, mid)
-    if not pieces:
+        mids.append(mid)
+    if not mids:
         return RedirectResponse(f"/p/{pid}", status_code=303)
+    jobs.ingest_chain(pid, mids)
     # One piece: straight to it. Several: the project page, where they are all listed reading.
-    return RedirectResponse(f"/p/{pid}/m/{mid}" if len(pieces) == 1 else f"/p/{pid}",
+    return RedirectResponse(f"/p/{pid}/m/{mids[0]}" if len(mids) == 1 else f"/p/{pid}",
                             status_code=303)
 
 
@@ -110,9 +111,8 @@ def remove_material(request: Request, pid: str, mid: str):
     _mine(request, conn, pid)
     if not store.remove_material(conn, pid, mid):
         return _back(request, f"/p/{pid}")
-    remaining = [m["id"] for m in store.materials(conn, pid)]
-    if remaining:
-        jobs.removal_chain(pid, remaining)
+    if store.materials(conn, pid):
+        jobs.resynthesis_chain(pid)
     else:
         store.clear_empty_project_analysis(conn, pid)
     return RedirectResponse(f"/p/{pid}", status_code=303)
@@ -172,6 +172,16 @@ def refresh(request: Request, pid: str, material_id: str = Form("")):
     if runs := [{"kind": "doc", "material_id": mid} for mid in targets if mid in stale]:
         jobs.start(db.connect, pid, runs + [{"kind": "project"}])
     return _back(request, f"/p/{pid}")
+
+
+@router.post("/p/{pid}/resynthesise")
+def resynthesise(request: Request, pid: str):
+    """Write the corpus level again after a chain died on the way to it. Same work as a removal:
+    the reading below is intact, only what is written over it is missing."""
+    conn = connection()
+    _mine(request, conn, pid)
+    jobs.resynthesis_chain(pid)
+    return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
 @router.post("/p/{pid}/focus")
