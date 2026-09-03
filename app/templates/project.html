@@ -59,7 +59,7 @@
 {% for t in themes %}
   <tr>
     <th class="gist"><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a>
-        <br><span>{{ t.gist | txt }}</span>
+        <br><span>{{ t.gist | prose }}</span>
         <br><span class="dim">{{ t.derivation }}</span></th>
   {% for col in t.columns %}
     <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim">—</span>{% endif %}</td>

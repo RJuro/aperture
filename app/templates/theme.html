@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block main %}
 <section class="section project-head"><div class="container"><p class="eyebrow">Theme across the corpus</p>
-<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | txt }}</p><p class="meta head-stat">{{ derivation }}</p></div></section>
+<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }}</p></div></section>
 
 <section class="section"><div class="container narrow-section">
 {% if summary %}<p class="eyebrow">Interpretive account</p><div class="summary-copy">{{ summary_html }}</div>
 {% else %}
 <p class="provisional">No summary yet. One is written after a material is analysed, or after
 you send feedback below.</p>
-<p class="summary">{{ theme.gist | txt }}</p>
+<p class="summary">{{ theme.gist | prose }}</p>
 {% endif %}
 
 <form method="post" action="/p/{{ project.id }}/react" class="inline-response">

@@ -58,6 +58,8 @@ def _plural(noun: str, n) -> str:
 
 
 _env.filters["txt"] = context.txt
+# Model prose: the same escaping, plus the markdown emphasis the model writes regardless.
+_env.filters["prose"] = context.prose
 _env.filters["when"] = _when
 _env.filters["plural"] = _plural
 # The record page shows model prose, and a claim id in it is a link into the material it rests on.

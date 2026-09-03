@@ -79,7 +79,7 @@
     <li>
       <a class="found-name" href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }}</a>
       <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>
-      <p class="gist">{{ (c.summary.text if c.summary else c.gist) | txt }}</p>
+      <p class="gist">{{ (c.summary.text if c.summary else c.gist) | prose }}</p>
     </li>
   {% endfor %}
   </ol>
@@ -91,8 +91,8 @@
 
 <section class="section"><div class="container">
 {% if selected %}
-<div class="theme-intro"><div><p class="eyebrow">Selected theme</p><h2>{{ selected.name | txt }}</h2><p class="gist">{{ selected.gist | txt }}</p>
-  {% if selected.summary %}<p class="gist account">{{ selected.summary.text | txt }}</p>{% endif %}</div>
+<div class="theme-intro"><div><p class="eyebrow">Selected theme</p><h2>{{ selected.name | txt }}</h2><p class="gist">{{ selected.gist | prose }}</p>
+  {% if selected.summary %}<p class="gist account">{{ selected.summary.text | prose }}</p>{% endif %}</div>
   <p class="theme-stats meta">{{ selected.moments | length }} {{ 'claim' | plural(selected.moments | length) }} · based on {{ selected.codes | length }} {{ 'code' | plural(selected.codes | length) }}</p></div>
 <div class="reading-grid">
   <section class="evidence-list">

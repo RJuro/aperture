@@ -171,6 +171,22 @@ def test_the_app_does_not_speak_our_vocabulary(client, conn, analysed):
             assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on {url}"
 
 
+def test_a_gist_renders_its_emphasis_and_a_quote_keeps_its_asterisks(client, conn, analysed):
+    """The model writes markdown whatever it is asked for, and a theme's gist was reaching the
+    page with its asterisks showing. A claim and its quote are not the model's prose about the
+    material — they are the material — so a star in one stays a star."""
+    tid = list(analysed["themes"].values())[0]
+    store.set_theme_gist(conn, tid, "how a *living* is made")
+    store.save_moments(conn, analysed["grande"], tid,
+                       [{"claim": "A claim about *stars*", "anchor": "paid 2 * 3 a day",
+                         "sid": store.sentences(conn, analysed["grande"])[0][0]}])
+    conn.commit()
+    assert "<em>living</em>" in client.get(f"/p/{analysed['pid']}").text
+    page = client.get(f"/p/{analysed['pid']}/m/{analysed['grande']}?theme={tid}").text
+    assert "A claim about *stars*" in page and "paid 2 * 3 a day" in page
+    assert "<em>stars</em>" not in page
+
+
 def test_an_idle_page_carries_no_poller_and_a_running_one_does(client, conn, analysed):
     """The poller replaces the line where it stands. A meta refresh reloaded the whole page and
     put the reader back at the top of it every fifteen seconds, which is unreadable while a chain

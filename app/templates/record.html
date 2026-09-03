@@ -76,7 +76,7 @@
 {% for t in themes %}
 <section class="record-entry" id="t-{{ t.id }}">
   <h3><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a></h3>
-  <p class="gist">{{ t.gist | txt }}</p>
+  <p class="gist">{{ t.gist | prose }}</p>
   <p class="meta">{{ t.derivation }}</p>
   {% if t.account %}<div class="summary-copy">{{ t.account.text | cite(cites, project.id) }}</div>{% endif %}
   {% for m in t.carrying %}
@@ -179,7 +179,7 @@
 {% for t in theme_history %}
 <details class="quiet-details"><summary>{{ t.name | txt }}{% if t.status != 'live' %} — merged into another theme{% endif %}</summary>
 <ul class="mats">
-{% for h in t.history %}<li><span class="num">{{ h.at[:10] }}</span> <strong>{{ h.name | txt }}</strong> — <span class="gist">{{ h.gist | txt }}</span></li>{% endfor %}
+{% for h in t.history %}<li><span class="num">{{ h.at[:10] }}</span> <strong>{{ h.name | txt }}</strong> — <span class="gist">{{ h.gist | prose }}</span></li>{% endfor %}
 </ul>
 </details>
 {% else %}

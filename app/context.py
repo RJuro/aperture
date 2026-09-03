@@ -70,6 +70,15 @@ def _emph(html: str) -> str:
                      else f"<em>{m[3]}</em>", html)
 
 
+def prose(s) -> Markup:
+    """`txt` for model prose: escaped, then its markdown emphasis rendered.
+
+    Only for sentences the model wrote — a theme's gist, a thread's account. A quote, a name, a
+    speaker label or the researcher's own words stay on `txt`, where an asterisk is an asterisk.
+    """
+    return Markup(_emph(_esc(s)))
+
+
 # A project claim rests on moments, not on new quotes, so PROJECT cites moment ids in its prose.
 _CITE = re.compile(r"\bmo[0-9a-f]{6,}\b")
 
