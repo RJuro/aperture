@@ -256,3 +256,24 @@ def test_what_a_reading_set_aside_is_shown_and_not_swallowed(client, conn, analy
     assert "Materials where this theme does not appear" in theme
     assert "Excluded from the analysis" in theme, \
         "an absence must not be asserted without the drops beside it"
+
+
+def test_a_project_whose_work_is_only_queued_still_says_it_is_working(client, conn, analysed):
+    """The banner reads run rows; the job row is what exists first. Between the redirect and the
+    worker's first run row — and for as long as another project holds the runner — the page said
+    nothing at all while the work was genuinely queued."""
+    pid = analysed["pid"]
+    store.enqueue_job(conn, pid, [{"kind": "project"}])
+    html = client.get(f"/p/{pid}").text
+    assert "Waiting for other work to finish." in html
+    assert f'action="/p/{pid}/stop"' in html
+    assert "<script" in html and f"/p/{pid}/runs" in html
+    assert '<noscript><meta http-equiv="refresh" content="30"></noscript>' in html
+
+
+def test_the_poller_does_not_reload_over_what_is_being_typed(client, conn, analysed):
+    """The reload arrives on a ten-second timer, and a browser never restores a file input."""
+    store.start_run(conn, analysed["pid"], "doc", analysed["grande"], "Writing Grande")
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "The reading has finished — reload to see it." in html
+    assert "textarea" in html.split("<script", 1)[1] and "files.length" in html

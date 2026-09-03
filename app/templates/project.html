@@ -18,7 +18,7 @@
       {% if interpretation and interpretation.text %}
       <p class="eyebrow">What this may mean, so far</p>
       <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}
-      {% elif runs %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
+      {% elif working %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
       {% else %}<p class="lead">Add material to begin a project-wide synthesis.</p>{% endif %}
       {% if summary or summary_state.error %}
       <p class="dim small">

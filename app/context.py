@@ -277,8 +277,13 @@ def data_persistent() -> bool:
 def _shell(conn, pid: str) -> dict:
     nav_materials = [{**dict(m), "display_title": _material_title(m)}
                      for m in store.materials(conn, pid)]
+    runs = [dict(r) for r in store.active_runs(conn, pid)]
+    # The banner used to read run rows alone, and a job that is queued has none yet — so a page
+    # whose work was waiting on another project's chain said nothing, offered no Stop and did not
+    # poll. The committed job row is what exists first; the run line is only the wording.
     return {"app_name": APP_NAME, "css_v": _css_version(), "data_persistent": data_persistent(),
-            "runs": [dict(r) for r in store.active_runs(conn, pid)],
+            "runs": runs,
+            "working": bool(runs) or store.summary_state(conn, pid)["working"],
             "nav_materials": nav_materials,
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
