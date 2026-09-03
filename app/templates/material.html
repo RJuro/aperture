@@ -5,10 +5,18 @@
     <div class="head-row">
       <div><p class="eyebrow">Material · {{ (material.kind or 'Source') | replace('_', ' ') }}</p>
         <h1 class="material">{{ material.display_title | txt }}</h1>
+        {# Who is in the room, not everyone the reading named: twenty mentioned people ran the
+           head over four lines and pushed the material off the fold. With nobody speaking — a
+           document, field notes — the first three named stand in, and the count says how many
+           more are folded away below. #}
         <div class="head-meta">
-          {% if people %}<span>{% for p in people %}<span class="material">{{ p.name | txt }}</span>{% if p.role %} ({{ p.role }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span>{% endif %}
+          {% if speakers %}<span>{% for s in speakers %}<span class="material">{{ (s.name or s.label) | txt }}</span>{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+          {% elif people %}<span>{% for p in people[:3] %}<span class="material">{{ p.name | txt }}</span>{% if not loop.last %}, {% endif %}{% endfor %}{% if people | length > 3 %} and {{ people | length - 3 }} more{% endif %}</span>{% endif %}
           <span>{{ derivation }}</span><span>{{ cards | length }} {{ 'theme' | plural(cards | length) }}</span>
         </div>
+        {% if people %}<details class="quiet-details head-people"><summary>People mentioned · {{ people | length }}</summary>
+          <ul class="mats">{% for p in people %}<li><span class="material">{{ p.name | txt }}</span>{% if p.role %} <span class="dim">({{ p.role | txt }})</span>{% endif %}</li>{% endfor %}</ul>
+        </details>{% endif %}
         <div class="analysis-receipt material-receipt" aria-label="Analysis completed for this material">
           {% for step in material.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% endfor %}
         </div>

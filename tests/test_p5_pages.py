@@ -32,6 +32,9 @@ def strip_material(html: str) -> str:
     """What the app says in its own voice: the page with quoted speech, the transcript and model
     prose removed. The banned-word check runs over this, never over the material itself."""
     html = re.sub(r"<mark\b.*?</mark>", " ", html, flags=re.S)
+    # Emphasis the model wrote sits inside model prose; leaving the tags in ends the strip below
+    # at the first </em> and hands half a summary back as if the app had said it.
+    html = re.sub(r"</?(em|strong)>", "", html)
     html = re.sub(r"<(pre|blockquote|q)\b.*?</\1>", " ", html, flags=re.S)
     html = re.sub(r'<[^>]*class="[^"]*\b(material|claim|summary|gist)\b[^"]*".*?</[a-z]+>', " ",
                   html, flags=re.S)
@@ -376,3 +379,36 @@ def test_material_that_was_never_read_is_told_apart_from_material_read_since(cli
     assert "have been read since this was written" not in html
     assert f'action="/p/{analysed["pid"]}/resynthesise"' not in html, \
         "writing it again cannot read a material that was never read"
+
+
+def _head_meta(html: str) -> str:
+    return html.split('class="head-meta"')[1].split("</div>")[0]
+
+
+def test_the_head_names_who_speaks_and_folds_away_everyone_the_reading_mentioned(client, conn,
+                                                                                analysed):
+    """A real interview named twenty people — an aunt, a brother, a neighbour — and the head line
+    ran to four lines above the material's own title. Who spoke is the fact about the material;
+    who was talked about is a list, and a list belongs folded."""
+    mid = analysed["grande"]
+    store.save_people(conn, mid, [{"name": f"Person {i:02d}", "role": "mentioned"}
+                                  for i in range(20)])
+    html = client.get(f"/p/{analysed['pid']}/m/{mid}").text
+    head = _head_meta(html)
+    assert "Phillips" in head and "interviewer" in head
+    assert "M. Grande" in head and "participant" in head
+    assert "Person 00" not in head, "the mentioned people are not the head line"
+    assert "People mentioned · 20" in html
+    assert "Person 19" in html, "and the list itself is still on the page"
+
+
+def test_with_nobody_speaking_the_head_names_three_people_and_counts_the_rest(client, conn,
+                                                                             analysed):
+    """A document or a set of field notes has no speakers at all, and then the people named are
+    the only handle the reader has on what the material is about."""
+    mid = analysed["rodwin"]                       # saved with no speakers
+    store.save_people(conn, mid, [{"name": f"Person {i:02d}", "role": ""} for i in range(20)])
+    head = _head_meta(client.get(f"/p/{analysed['pid']}/m/{mid}").text)
+    assert "Person 00" in head and "Person 02" in head
+    assert "Person 03" not in head
+    assert "and 17 more" in head

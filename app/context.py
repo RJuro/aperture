@@ -56,6 +56,20 @@ def txt(s) -> Markup:
     return Markup(_esc(s))
 
 
+# The model writes markdown whatever it is asked for, and a summary reached the page reading
+# `*Belonging, identity, and return* follows an economic crossing` — asterisks and all. Emphasis
+# is turned into markup AFTER escaping, so nothing in the prose can become markup that way.
+# Both delimiters must touch a non-space character, which leaves `2 * 3` and a lone footnote
+# star alone, and `_` is only a delimiter off a word boundary, so `mo_1` stays as written.
+_EMPH = re.compile(r"\*\*(?=\S)(.+?)(?<=\S)\*\*|(?<![\w*])([*_])(?=\S)(.+?)(?<=\S)\2(?!\w)")
+
+
+def _emph(html: str) -> str:
+    """Escaped prose with markdown emphasis rendered. Only ever called on escaped text."""
+    return _EMPH.sub(lambda m: f"<strong>{m[1]}</strong>" if m[1] is not None
+                     else f"<em>{m[3]}</em>", html)
+
+
 # A project claim rests on moments, not on new quotes, so PROJECT cites moment ids in its prose.
 _CITE = re.compile(r"\bmo[0-9a-f]{6,}\b")
 
@@ -94,11 +108,11 @@ def cite(text: str, index: dict, pid: str) -> Markup:
             t = index.get(m.group(0))
             if t is None:
                 continue
-            out.append(f'<span class="summary">{_esc(part[at:m.start()])}</span>')
+            out.append(f'<span class="summary">{_emph(_esc(part[at:m.start()]))}</span>')
             out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
                        f'?theme={t["theme_id"]}#{t["sid"]}">{t["sid"]}</a>')
             at = m.end()
-        out.append(f'<span class="summary">{_esc(part[at:])}</span>')
+        out.append(f'<span class="summary">{_emph(_esc(part[at:]))}</span>')
         return "".join(out)
 
     # The summary is three hundred words of argument, and the model breaks it into paragraphs
