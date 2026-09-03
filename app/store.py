@@ -369,16 +369,20 @@ def uncited(conn: sqlite3.Connection, mid: str) -> list[tuple[str, str]]:
 # ---- summaries --------------------------------------------------------------------------------
 
 def save_summary(conn: sqlite3.Connection, scope: str, ref_id: str, stage: str, text: str,
-                 run_id: str | None = None) -> str:
+                 run_id: str | None = None, fingerprint: str = "") -> str:
     """stage is 'orientation' (what this material is, written at framing) or 'reading' (what the
-    reading found). Both are kept: the export shows what the analysis added to a description."""
+    reading found). Both are kept: the export shows what the analysis added to a description.
+
+    `fingerprint` is what this text was written from, where the writer can say — only a theme's
+    account does, so that the next chain can tell it would come back word for word."""
     if scope == "material" and material(conn, ref_id) is None:
         return ""
     conn.execute("UPDATE summary SET status='superseded' "
                  "WHERE scope=? AND ref_id=? AND stage=? AND status='live'", (scope, ref_id, stage))
     sid_ = db.new_id("s")
-    conn.execute("INSERT INTO summary (id, scope, ref_id, stage, text, run_id, status) "
-                 "VALUES (?,?,?,?,?,?,'live')", (sid_, scope, ref_id, stage, text, run_id))
+    conn.execute("INSERT INTO summary (id, scope, ref_id, stage, text, run_id, status, "
+                 "fingerprint) VALUES (?,?,?,?,?,?,'live',?)",
+                 (sid_, scope, ref_id, stage, text, run_id, fingerprint))
     conn.commit()
     return sid_
 

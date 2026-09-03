@@ -194,3 +194,88 @@ def test_laying_out_no_materials_is_empty_rather_than_a_crash():
     """`run` guards this case before it gets here, but a helper that divides by the number of
     materials must not be one refactor away from a ZeroDivisionError."""
     assert account._blocks([], []) == ("", 0)
+
+
+# ---- what is written again, and what is not ----------------------------------------------------
+
+def accounts(conn, pid) -> str:
+    """The chain's accounts step, on this connection, returning its run id."""
+    from app import jobs
+    return jobs.run_now(conn, pid, [{"kind": "accounts"}])[0]
+
+
+def row(conn, rid):
+    return conn.execute("SELECT line, error FROM run WHERE id=?", (rid,)).fetchone()
+
+
+def text_of(conn, tid) -> str:
+    got = store.get_summary(conn, "theme", tid, "reading")
+    return got["text"] if got else ""
+
+
+def test_a_theme_whose_evidence_did_not_move_is_not_written_about_again(conn, corpus, model):
+    """Every chain ends in this step, so twelve themes were twelve calls on every upload, every
+    removal and every retry — most of them rewriting an account over exactly the same claims."""
+    pid = corpus["pid"]
+    model.queue({"account": "The first pass.", "gist": "g1"},
+                {"account": "The first pass.", "gist": "g2"})
+    first = accounts(conn, pid)
+    assert len(model.calls) == 2 and row(conn, first)["error"] is None
+    assert row(conn, first)["line"] == "Wrote 2 of 2 theme accounts"
+
+    second = accounts(conn, pid)
+    assert model.calls[2:] == [], "nothing moved under either theme; nothing to pay for"
+    assert row(conn, second)["error"] is None
+    assert row(conn, second)["line"] == "Wrote 0 of 2 theme accounts — 2 unchanged"
+
+    # Asked for by hand, on one theme, it runs regardless: the researcher said do this again.
+    from app import jobs
+    model.queue({"account": "Because you asked.", "gist": "g3"})
+    jobs.run_now(conn, pid, [{"kind": "account", "theme_id": corpus["tid"]}])
+    assert len(model.calls) == 3 and text_of(conn, corpus["tid"]) == "Because you asked."
+
+
+def test_a_claim_added_under_one_theme_rewrites_that_theme_and_no_other(conn, corpus, model,
+                                                                        quote):
+    pid = corpus["pid"]
+    model.queue({"account": "The first pass.", "gist": "g1"},
+                {"account": "The first pass.", "gist": "g2"})
+    accounts(conn, pid)
+
+    sid, said = quote(corpus["grande"], at=140)
+    store.save_moments(conn, corpus["grande"], corpus["tid"],
+                       [{"claim": "one more", "anchor": " ".join(said.split()[:8]), "sid": sid}])
+
+    model.queue({"account": "Written again over the new claim.", "gist": "g4"})
+    rid = accounts(conn, pid)
+    assert len(model.calls) == 3, "one call, for the one theme the upload touched"
+    assert text_of(conn, corpus["tid"]) == "Written again over the new claim."
+    assert text_of(conn, corpus["other"]) == "The first pass."
+    assert row(conn, rid)["line"] == "Wrote 1 of 2 theme accounts — 1 unchanged"
+
+
+def test_renaming_a_theme_rewrites_its_account(conn, corpus, model):
+    """The account is written from the theme's definition as much as from its claims, so a theme
+    that was renamed or redefined has to be written about again even where no claim moved."""
+    pid = corpus["pid"]
+    model.queue({"account": "The first pass.", "gist": "g1"},
+                {"account": "The first pass.", "gist": "g2"})
+    accounts(conn, pid)
+
+    now = conn.execute("SELECT gist FROM theme WHERE id=?", (corpus["tid"],)).fetchone()["gist"]
+    store.save_theme(conn, pid, tid=corpus["tid"], name="Work, trade and the market", gist=now,
+                     code_ids=[])
+
+    model.queue({"account": "Written again under the new name.", "gist": "g5"})
+    accounts(conn, pid)
+    assert len(model.calls) == 3
+    assert text_of(conn, corpus["tid"]) == "Written again under the new name."
+    assert text_of(conn, corpus["other"]) == "The first pass."
+
+
+def test_the_line_says_what_it_wrote_and_what_it_left_alone():
+    from app import context, jobs
+    said = jobs.accounts_line(5, 12)
+    assert said == "Wrote 5 of 12 theme accounts — 7 unchanged"
+    assert jobs.accounts_line(12, 12) == "Wrote 12 of 12 theme accounts", "no '0 unchanged'"
+    assert not [w for w in context._BANNED if w in said.lower()], "a line a researcher reads"

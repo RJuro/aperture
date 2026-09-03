@@ -34,6 +34,7 @@ only the three would weigh them as if they were all there was.
 """
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 
 from .. import llm, store
@@ -63,6 +64,20 @@ SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor 
  WHERE m.project_id = ? AND m.removed_at IS NULL AND mo.theme_id = ? AND mo.status = 'live'
  ORDER BY m.created_at, m.id, mo.position
 """
+
+
+def fingerprint(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
+    """Everything this level reads: the theme as it is defined, and which claims are live under it
+    right now. Stored with the account it produced, so the step that writes every theme's account
+    at the end of every chain can tell which of them would come back word for word.
+
+    Deliberately not the claims' text — a claim is never edited in place, it is superseded by a
+    new row with a new id, so the ids alone move whenever the evidence does.
+    """
+    t = conn.execute("SELECT name, gist FROM theme WHERE id=?", (theme_id,)).fetchone()
+    parts = [t["name"], t["gist"] or ""] if t else [""]
+    parts += sorted(r["id"] for r in conn.execute(_CLAIMS, (pid, theme_id)))
+    return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()[:16]
 
 
 def coverage(conn: sqlite3.Connection, pid: str, theme_id: str) -> dict:
@@ -176,10 +191,13 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         dropped.append(f"the account came back at {len(text.split())} words, under the "
                        f"{ACCOUNT_WORDS_MIN} asked for")
 
-    if text:
-        store.save_summary(conn, "theme", theme_id, "reading", text, run_id)
+    # The gist first: it is part of what the next chain compares against, so an account stored
+    # with a fingerprint taken before it was rewritten would be rewritten again for nothing.
     gist = synth.words(data.get("gist"), GIST_WORDS)
     if gist:
         store.set_theme_gist(conn, theme_id, gist)
+    if text:
+        store.save_summary(conn, "theme", theme_id, "reading", text, run_id,
+                           fingerprint=fingerprint(conn, pid, theme_id))
 
     return {"text": text, "gist": gist, "dropped": dropped, "coverage": cover}

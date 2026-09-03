@@ -105,12 +105,31 @@ def _doc(conn, pid, run):
 
 def _accounts(conn, pid, run):
     """Every live theme's account, expanded when this step runs rather than when it was planned —
-    the theme set is only known after THEMES has been over the new material."""
+    the theme set is only known after THEMES has been over the new material.
+
+    A theme whose definition and whose live claims are exactly what the stored account was written
+    from is left alone. Every chain ends here — every upload, every removal, every retry — and an
+    upload that touched one theme was paying for twelve accounts, eleven of which would have come
+    back word for word. `_account`, which the researcher asks for by hand, always runs.
+    """
     from .engine import account
     themes = store.live_themes(conn, pid)
+    wrote = 0
     for i, t in enumerate(themes, 1):
+        stored = store.get_summary(conn, "theme", t["id"], "reading")
+        if stored and stored["fingerprint"] == account.fingerprint(conn, pid, t["id"]):
+            continue
+        wrote += 1
         llm.report(f"theme {i} of {len(themes)}: {t['name']}")
         account.run(conn, pid, t["id"], run_id=run.get("run_id"))
+    if run.get("run_id"):
+        store.set_run_line(conn, run["run_id"], accounts_line(wrote, len(themes)))
+
+
+def accounts_line(wrote: int, total: int) -> str:
+    """What the accounts step leaves on its row: what it wrote, and what it did not have to."""
+    said = f"Wrote {wrote} of {total} theme accounts"
+    return said + (f" — {total - wrote} unchanged" if wrote < total else "")
 
 
 def _account(conn, pid, run):

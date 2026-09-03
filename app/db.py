@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS moment (
 
 CREATE TABLE IF NOT EXISTS summary (
     id TEXT PRIMARY KEY, scope TEXT NOT NULL, ref_id TEXT NOT NULL, stage TEXT NOT NULL,
-    text TEXT NOT NULL, run_id TEXT, status TEXT NOT NULL DEFAULT 'live');
+    text TEXT NOT NULL, run_id TEXT, status TEXT NOT NULL DEFAULT 'live',
+    fingerprint TEXT DEFAULT '');
 
 CREATE TABLE IF NOT EXISTS person (
     material_id TEXT NOT NULL, name TEXT NOT NULL, aliases TEXT DEFAULT '',
@@ -156,6 +157,12 @@ def migrate(conn: sqlite3.Connection) -> None:
         _recompose_titles(conn)
     if "speakers_estimated" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN speakers_estimated INTEGER DEFAULT 0")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
+    if "fingerprint" not in have:
+        # What a theme's account was written from, so the step that writes every account can tell
+        # which ones would come back word for word. Empty on every row written before this
+        # column, which no fingerprint can equal, so each of those is written once more.
+        conn.execute("ALTER TABLE summary ADD COLUMN fingerprint TEXT DEFAULT ''")
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
 
