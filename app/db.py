@@ -14,7 +14,9 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-SCHEMA_VERSION = 5
+from . import titles
+
+SCHEMA_VERSION = 6
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS project (
 CREATE TABLE IF NOT EXISTS material (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL,
     kind TEXT DEFAULT '', display TEXT DEFAULT 'plain', title TEXT DEFAULT '',
-    state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL);
+    year TEXT DEFAULT '', state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS sentence (
     material_id TEXT NOT NULL, idx INTEGER NOT NULL, sid TEXT NOT NULL,
@@ -139,8 +141,28 @@ def migrate(conn: sqlite3.Connection) -> None:
     have = {r[1] for r in conn.execute("PRAGMA table_info(material)")}
     if "removed_at" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN removed_at TEXT")
+    if "year" not in have:
+        conn.execute("ALTER TABLE material ADD COLUMN year TEXT DEFAULT ''")
+        _recompose_titles(conn)
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
+
+
+def _recompose_titles(conn: sqlite3.Connection) -> None:
+    """Material framed before Python composed titles, brought under the same standard once.
+
+    The participants are already in the database, so this costs no model call. A material with
+    none keeps the title it has, cleaned: a kind appended to a title that may already name its
+    kind reads worse than the mixture this is fixing. No year, because none was ever stored.
+    """
+    for mid, kind, title in conn.execute("SELECT id, kind, title FROM material").fetchall():
+        who = [{"name": n, "role": r} for n, r in
+               conn.execute("SELECT name, role FROM speaker WHERE material_id=?", (mid,))]
+        new = (titles.compose(kind or "", who, title or "", "")
+               if any(s["role"] == "participant" and s["name"] for s in who)
+               else titles.standardize(title or ""))
+        if new != (title or ""):
+            conn.execute("UPDATE material SET title=? WHERE id=?", (new, mid))
 
 
 def new_id(prefix: str) -> str:

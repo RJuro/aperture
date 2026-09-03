@@ -18,12 +18,12 @@ every field is required.
    `plain` — the material is continuous prose with neither speakers nor sections.
 
 3. `title` is at most 10 words. It names the material; it does not describe it. Use sentence case,
-   never all caps or Markdown emphasis. Follow this naming standard when the information exists:
-   `[person or subject] — interview, [year]`; `[topic] — focus group, [year]`;
-   `[place or topic] — field notes, [date]`; `[document name], [year]`; or
-   `[topic] — open responses`. Omit unknown parts rather than guessing them.
+   never all caps or Markdown emphasis.
 
-4. `speakers` is a list of `{"label", "name", "role"}`, at most one entry per speaker.
+4. `year` is the four-digit year the material was produced when the material states or clearly
+   implies it, and `""` when it does not.
+
+5. `speakers` is a list of `{"label", "name", "role"}`, at most one entry per speaker.
    `label` is the exact string that begins that speaker's lines, without the colon.
    `name` is the person as they should be shown to a reader; `""` when the material never says.
    `role` is exactly one of: `interviewer`, `participant`, `other`.
@@ -33,7 +33,7 @@ every field is required.
    is dropped before it is used, so propose nothing you cannot point at.
    `speakers` is `[]` when the material has no speakers.
 
-5. `segments` is a list of `{"anchor", "label"}`, at most 12 entries.
+6. `segments` is a list of `{"anchor", "label"}`, at most 12 entries.
    `anchor` is a verbatim quote of at most 12 words, copied character for character from the
    material, that opens the section.
    `label` names that section in a few words.
@@ -41,7 +41,7 @@ every field is required.
    is used, so copy rather than paraphrase.
    `segments` is `[]` unless `display` is `segments`.
 
-6. `orientation` is at most 150 words of plain prose: what this material is, who is in it, what
+7. `orientation` is at most 150 words of plain prose: what this material is, who is in it, what
    it covers, when and how it was produced. Describe the material. Do not report findings, do
    not summarise arguments, do not say what it shows.
 
@@ -52,6 +52,7 @@ A worked answer, with the exact shape:
   "kind": "focus_group",
   "display": "turns",
   "title": "Night-shift nurses on handover",
+  "year": "",
   "speakers": [
     {"label": "MOD", "name": "Facilitator", "role": "interviewer"},
     {"label": "P1", "name": "", "role": "participant"},
@@ -69,6 +70,7 @@ The same shape for material with no speakers:
   "kind": "fieldnotes",
   "display": "segments",
   "title": "Market observation, three mornings",
+  "year": "2019",
   "speakers": [],
   "segments": [
     {"anchor": "Arrived before six, stalls still", "label": "Setting up"},

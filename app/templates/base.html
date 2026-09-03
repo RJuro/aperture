@@ -51,7 +51,7 @@
         <p class="eyebrow">Open material</p>
         {% for m in nav_materials %}
         <a class="material-link" href="/p/{{ project.id }}/m/{{ m.id }}"{% if material and material.id == m.id %} aria-current="page"{% endif %}>
-          <strong>{{ m.display_title | txt }}</strong><span>{{ (m.kind or 'Material') | replace('_', ' ') }} · {{ m.state }}</span>
+          <strong>{{ m.display_title | txt }}</strong><span>{{ (m.kind or 'Material') | replace('_', ' ') }}{% if m.year %} · {{ m.year }}{% endif %}</span>
         </a>
         {% endfor %}
       </div>

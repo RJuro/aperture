@@ -240,7 +240,7 @@ def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
         # list says what was asked and never of what.
         if c["scope"] == "material":
             m = store.material(conn, c["ref_id"])
-            d["material_name"] = (m["title"] or m["name"]) if m else ""
+            d["material_name"] = _material_title(m) if m else ""
         else:
             d["material_name"] = ""
         out.append(d)
@@ -480,7 +480,7 @@ def _export_step(kind: str) -> str:
 
 def _export_names(conn, pid: str) -> dict[str, str]:
     """Material id → what a person calls it. An id in a document is not a reference."""
-    return {m["id"]: (m["title"] or m["name"]) for m in store.materials(conn, pid)}
+    return {m["id"]: _material_title(m) for m in store.materials(conn, pid)}
 
 
 def _export_set_aside(conn, pid: str) -> list[dict]:
@@ -513,6 +513,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
         carrying, absent = [], []
         for m in cover["per_material"]:
             row = dict(m)
+            row["display_title"] = _material_title(m)
             if m["claims"]:
                 row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], t["id"])]
                 carrying.append(row)

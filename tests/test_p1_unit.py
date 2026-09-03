@@ -26,10 +26,12 @@ def test_the_scan_shows_header_labels_too_so_the_model_can_see_why_one_is_a_spea
 
 
 def test_a_long_title_and_orientation_are_trimmed_not_rejected(conn, grande, model):
-    model.queue(_answer(title=" ".join(f"w{i}" for i in range(30)),
+    """With nobody named, the model's title is what the composed one is built on, and the cap
+    still applies to it."""
+    model.queue(_answer(speakers=[], title=" ".join(f"w{i}" for i in range(30)),
                         orientation=" ".join(f"o{i}" for i in range(400))))
     out = frame.run(conn, grande)
-    assert len(out["title"].split()) == frame.TITLE_WORDS
+    assert out["title"] == " ".join(f"w{i}" for i in range(frame.TITLE_WORDS)) + " — interview"
     assert len(out["orientation"].split()) == frame.ORIENTATION_WORDS
     assert store.material(conn, grande)["title"] == out["title"]
 
