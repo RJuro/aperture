@@ -479,7 +479,7 @@ def _export_resolve_ids(text: str, index: dict) -> str:
     return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", text)
 
 
-def export(conn, pid: str) -> dict:
+def export(conn, pid: str, resolve: bool = True) -> dict:
     """The whole record as one document.
 
     Sectioned rather than flat, because at fifty materials the flat version was unreadable: the
@@ -516,7 +516,24 @@ def export(conn, pid: str) -> dict:
             "theme_history": _export_theme_history(conn, pid),
             "runs": [{**dict(r), "step": _export_step(r["kind"])}
                      for r in store.runs(conn, pid)]}
-    return _export_resolve_all(ctx, _cite_index(conn, pid))
+    # `resolve` is off for the record page: there a claim id becomes a link into the material it
+    # rests on, and only a document — which has no links — needs it printed as a sentence id.
+    return _export_resolve_all(ctx, _cite_index(conn, pid)) if resolve else ctx
+
+
+def record_page(conn, pid: str) -> dict:
+    """The record as a page in the app, from the same context the downloads are built from.
+
+    Nothing here is new: it is the document, in the app's own two registers — the reading face for
+    what the model and the app say, monospace for the material's own words — with the citations
+    live and the two downloads at the top. `runs` belongs to the shell, which is why the record's
+    own runs travel as `history`.
+    """
+    ctx = export(conn, pid, resolve=False)
+    if not ctx:
+        return {}
+    return {**ctx, "history": ctx["runs"], **_shell(conn, pid),
+            "cites": _cite_index(conn, pid), "page_section": "record"}
 
 
 def _export_resolve_all(obj, index: dict):

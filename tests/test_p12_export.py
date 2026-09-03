@@ -174,3 +174,31 @@ def test_the_record_downloads_as_a_word_document(client, conn, rich):
     styles = {p.style.name for p in doc.paragraphs}
     assert {"Title", "Heading 1", "Heading 2", "List Bullet"} <= styles
     assert "**" not in text and "](#" not in text, "markdown leaked into the document"
+
+
+def test_the_record_is_a_page_in_the_app_with_both_downloads_on_it(client, conn, rich):
+    pid = rich["pid"]
+    html = client.get(f"/p/{pid}/record").text
+    assert store.get_summary(conn, "project", pid)["text"] in html
+    first = store.moments(conn, rich["grande"])[0]
+    assert first["claim"] in html and first["anchor"] in html
+    assert "ACCOUNT: where this theme holds" in html
+    for name in rich["themes"]:
+        assert name in html, "the contents list names every theme"
+    assert f'href="/p/{pid}/export.docx">Download as Word' in html
+    assert f'href="/p/{pid}/export.md">Download as Markdown' in html
+    assert f'href="/p/{pid}/m/{rich["grande"]}?theme=' in html, "a quote opens where it was said"
+
+
+def test_the_record_and_its_downloads_are_only_for_whoever_owns_the_project(client, conn, rich):
+    pid = rich["pid"]
+    owner = store.create_user(conn, "ann", "battery staple")
+    store.create_user(conn, "bob", "purple monkey")
+    conn.execute("UPDATE project SET owner_id=? WHERE id=?", (owner, pid))
+    conn.commit()
+    client.post("/login", data={"name": "bob", "password": "purple monkey"})
+    for tail in ("record", "export.docx", "export.md"):
+        assert client.get(f"/p/{pid}/{tail}").status_code == 404, tail
+    client.post("/logout")
+    client.post("/login", data={"name": "ann", "password": "battery staple"})
+    assert client.get(f"/p/{pid}/record").status_code == 200

@@ -276,11 +276,23 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .found { margin-top: 7px; }
 .cite, .quote { font-family: var(--font-mono); }
 
+/* Reading record */
+.contents-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 34px; }
+.contents-head { margin: 0 0 4px; font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.contents-list .mats li { padding: 6px 0; border: 0; font-size: 14px; }
+.contents-list a:hover, .record-entry h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.record-entry { padding-bottom: 34px; border-bottom: 1px solid var(--border); }
+.record-entry > h3 { font: 500 27px/1.2 var(--font-display); }
+.record-entry > h4 { margin-top: 26px; font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.record-entry .gist { max-width: 70ch; margin: 7px 0 0; color: var(--muted); }
+.record-entry .summary-copy { margin-top: 16px; font-size: 16px; }
+.claims .num { margin-left: 9px; }
+
 /* Theme page, sign-in and administration */
 .narrow-section { max-width: 1000px; margin-inline: 0; }
-.carries { max-width: 900px; margin: 0 0 38px; }
-.carries h3 { padding-bottom: 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--border); }
-.carries .claims { max-width: 720px; }
+.carries, .record-entry { max-width: 900px; margin: 0 0 38px; }
+.carries h3, .record-entry h4 { padding-bottom: 10px; display: flex; align-items: baseline; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--border); }
+.carries .claims, .record-entry .claims { max-width: 720px; }
 .mats li { padding: 12px 0; border-bottom: 1px solid var(--border); }
 .signin { max-width: 360px; margin: 5vh auto; }
 .signin form { margin-top: 24px; display: grid; gap: 14px; }
@@ -341,7 +353,8 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
   .upload-grid { grid-template-columns: 1fr; }
   .upload-grid > button { grid-column: auto; }
   .add-drawer > summary small, .action-drawer > summary small { display: none; }
-  .carries h3 { align-items: start; flex-direction: column; gap: 5px; }
+  .carries h3, .record-entry h4 { align-items: start; flex-direction: column; gap: 5px; }
+  .contents-list { grid-template-columns: 1fr; }
   .standalone { padding-block: 46px; }
 }
 @media (prefers-reduced-motion: reduce) {

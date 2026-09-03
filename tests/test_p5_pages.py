@@ -160,7 +160,7 @@ def test_the_app_does_not_speak_our_vocabulary(client, conn, analysed):
     conn.commit()
     pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
     for url in (f"/p/{pid}", f"/p/{pid}/m/{analysed['grande']}", f"/p/{pid}/t/{tid}",
-                f"/p/{pid}/export.md"):
+                f"/p/{pid}/record", f"/p/{pid}/export.md"):
         page = client.get(url).text
         assert "focus_group" not in page, f"a machine's name for a kind of material on {url}"
         said = strip_material(page).lower()

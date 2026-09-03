@@ -60,6 +60,8 @@ def _plural(noun: str, n) -> str:
 _env.filters["txt"] = context.txt
 _env.filters["when"] = _when
 _env.filters["plural"] = _plural
+# The record page shows model prose, and a claim id in it is a link into the material it rests on.
+_env.filters["cite"] = context.cite
 
 _conn = None
 
@@ -151,6 +153,13 @@ def export_docx(request: Request, pid: str) -> Response:
     name = ctx["project"]["name"]
     body = word.document(_render("export.md", ctx), name, _long(date.today()))
     return Response(body, media_type=DOCX, headers=_attachment(name, ".docx"))
+
+
+@router.get("/p/{pid}/record", response_class=HTMLResponse)
+def record(request: Request, pid: str) -> str:
+    conn = connection()
+    user = _mine(request, conn, pid)
+    return _render("record.html", context.record_page(conn, pid), user)
 
 
 @router.get("/p/{pid}/m/{mid}", response_class=HTMLResponse)

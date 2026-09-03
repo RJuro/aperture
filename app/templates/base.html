@@ -44,7 +44,7 @@
           <li><a href="/p/{{ project.id }}#overview"{% if page_section == 'overview' %} aria-current="page"{% endif %}><span>Overview</span></a></li>
           <li><a href="/p/{{ project.id }}#materials"{% if page_section == 'materials' %} aria-current="page"{% endif %}><span>Materials</span><span class="rail-count">{{ '%02d' | format(nav_materials | length) }}</span></a></li>
           <li><a href="/p/{{ project.id }}#themes"{% if page_section == 'themes' %} aria-current="page"{% endif %}><span>Themes</span><span class="rail-count">{{ '%02d' | format(nav_theme_count) }}</span></a></li>
-          <li><a href="/p/{{ project.id }}/export.md"><span>Reading record</span></a></li>
+          <li><a href="/p/{{ project.id }}/record"{% if page_section == 'record' %} aria-current="page"{% endif %}><span>Reading record</span></a></li>
         </ul>
       </nav>
       {% if nav_materials %}
