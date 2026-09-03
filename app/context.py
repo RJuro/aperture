@@ -163,7 +163,10 @@ def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) ->
             out.append(block(cur, n=at))
         return out
     if display == "segments":
-        starts = {s["sid"]: s["label"] for s in store.segments(conn, mid)}
+        # An estimated speaker is marked where the reader meets it. The label the model was shown
+        # stays plain; this word is the page's, and it is the difference between a guess and a fact.
+        mark = " \u00b7 estimated" if store.material(conn, mid)["speakers_estimated"] else ""
+        starts = {s["sid"]: s["label"] + mark for s in store.segments(conn, mid)}
         cur, label = [], ""
         for r in rows:
             if r["sid"] in starts:

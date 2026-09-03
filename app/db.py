@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS project (
 CREATE TABLE IF NOT EXISTS material (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL,
     kind TEXT DEFAULT '', display TEXT DEFAULT 'plain', title TEXT DEFAULT '',
-    year TEXT DEFAULT '', state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL);
+    year TEXT DEFAULT '', state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL,
+    speakers_estimated INTEGER DEFAULT 0);
 
 CREATE TABLE IF NOT EXISTS sentence (
     material_id TEXT NOT NULL, idx INTEGER NOT NULL, sid TEXT NOT NULL,
@@ -144,6 +145,8 @@ def migrate(conn: sqlite3.Connection) -> None:
     if "year" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN year TEXT DEFAULT ''")
         _recompose_titles(conn)
+    if "speakers_estimated" not in have:
+        conn.execute("ALTER TABLE material ADD COLUMN speakers_estimated INTEGER DEFAULT 0")
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
 
