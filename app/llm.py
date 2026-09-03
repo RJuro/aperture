@@ -41,9 +41,11 @@ DEFAULT_PROVIDER = "minimax"
 IDLE_TIMEOUT = 180.0
 
 # What a call is asked to think, by what it is for. FRAME describes a layout and names labels a
-# Python scan already found; ANGLES ranges rather than weighs. Every other call — READ, THEMES,
-# THREAD, DOC, ACCOUNT, PROJECT, CHECK — judges evidence, so it keeps the provider's default.
-EFFORT = {"frame": "", "angles": "low"}
+# Python scan already found; ANGLES ranges rather than weighs. THREAD judges evidence like the
+# rest, but it runs once per theme: at the provider default one nine-theme material's DOC step
+# measured 1351 s and 151,768 output tokens, the dominant cost of the whole chain. Every other
+# call — READ, THEMES, DOC, ACCOUNT, PROJECT, CHECK — keeps the provider's default.
+EFFORT = {"frame": "", "angles": "low", "thread": "medium"}
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)

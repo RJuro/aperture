@@ -168,12 +168,15 @@ def test_a_call_that_only_describes_a_layout_is_not_asked_to_think(monkeypatch, 
 
     real_chat_json("s", "u", label="frame")
     real_chat_json("s", "u", label="read")
+    real_chat_json("s", "u", label="thread")
     assert "reasoning_effort" not in sent[0]
     assert sent[1]["reasoning_effort"] == "high", "a call that judges keeps the provider's default"
+    assert sent[2]["reasoning_effort"] == "medium", \
+        "one line per theme, measured as the dominant cost of the chain"
 
     monkeypatch.setenv("APERTURE_REASONING", "medium")
     real_chat_json("s", "u", label="frame")
-    assert sent[2]["reasoning_effort"] == "medium", "the override turns the whole run up at once"
+    assert sent[3]["reasoning_effort"] == "medium", "the override turns the whole run up at once"
 
 
 def test_a_busy_provider_is_waited_out_and_says_so_while_it_waits(monkeypatch, real_chat_json):
