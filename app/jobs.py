@@ -69,12 +69,12 @@ def _diarize(conn, pid, run):
 
 def _angles(conn, pid, run):
     from .engine import angles
-    angles.run(conn, run["material_id"])
+    angles.run(conn, run["material_id"], feedback=_text(conn, run))
 
 
 def _read(conn, pid, run):
     from .engine import read
-    read.run(conn, run["material_id"])
+    read.run(conn, run["material_id"], feedback=_text(conn, run))
 
 
 def _theme_set(conn, pid) -> list[tuple]:
@@ -200,7 +200,7 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
     thread; call it directly when you want the chain to have landed before you look."""
     runs = _known(list(runs))
     ids, touched, failed = [], [], None
-    for run in runs:
+    for i, run in enumerate(runs):
         if job and store.job(conn, job)["status"] != "running":
             break                                   # stopped by the researcher between steps
         kind, mid = run["kind"], run.get("material_id")
@@ -235,7 +235,11 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
         store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
                          tokens_out=llm.usage.get("tokens_out", 0),
                          notes=[str(n) for n in (notes or [])])
-        if not error and run.get("feedback_id"):
+        # Honoured by the LAST run that was shown it, not the first. One note can ride a whole
+        # chain — and consumed at the first step, it would be gone from the open comments the
+        # synthesis at the end of that same chain is written from.
+        if not error and run.get("feedback_id") and not any(
+                r.get("feedback_id") == run["feedback_id"] for r in runs[i + 1:]):
             store.consume_feedback(conn, run["feedback_id"], rid)
         if not error and kind == "doc" and mid:
             # A rewrite answers every comment it was shown, not only the one that planned it.

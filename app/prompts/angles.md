@@ -96,6 +96,10 @@ that goes nowhere near them
 
 {{themes}}
 
+WHAT THE RESEARCHER SAID ABOUT WHAT TO LOOK FOR HERE, IN THEIR OWN WORDS — take it as instruction
+
+{{feedback}}
+
 THE MATERIAL — the opening and the closing of the raw text, exactly as it is stored
 
 <<<

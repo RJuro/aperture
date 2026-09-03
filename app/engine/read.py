@@ -118,10 +118,16 @@ def _angles_block(conn: sqlite3.Connection, mid: str) -> str:
             "No angles were worked out for this material. Read it on its own terms.")
 
 
-def run(conn: sqlite3.Connection, mid: str) -> dict:
-    """Code one material. Returns {new, reused, hits, dropped_sids}."""
+def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
+    """Code one material. Returns {new, reused, hits, dropped_sids}.
+
+    `feedback` is the researcher's own words about this reading, verbatim, when they have
+    asked for it to be read again. A reading that replaces this one replaces its hits too:
+    left in place, the old ones would be counted beside the new in every code and theme.
+    """
     m = store.material(conn, mid)
     pid = m["project_id"]
+    store.clear_hits(conn, pid, mid)
     proj = store.project(conn, pid)
     rows = store.sentence_rows(conn, mid)
     segments = store.segments(conn, mid)
@@ -134,6 +140,7 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
         frame=_frame_block(m, store.speakers(conn, mid), segments),
         material=_material_block(m, rows, segments),
         angles=_angles_block(conn, mid),
+        feedback=_verbatim(feedback, "The researcher has said nothing about this reading."),
         max_codes=MAX_CODES, max_new=new_cap(len(rows)))
     out = llm.chat_json(system, user, label="read")
 

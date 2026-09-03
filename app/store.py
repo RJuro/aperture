@@ -214,6 +214,19 @@ def save_codes(conn: sqlite3.Connection, pid: str, mid: str, codes: list[dict],
     return {"new": new, "reused": reused, "hits": hits}
 
 
+def clear_hits(conn: sqlite3.Connection, pid: str, mid: str) -> int:
+    """Take one material's coding out, the way removing the material does, so a second reading
+    replaces the first instead of being counted beside it. The code rows stay — the next reading
+    is shown them and reuses the names — but a code left with nothing loses its place in every
+    theme, exactly as it does when the material it came from goes."""
+    n = conn.execute("DELETE FROM code_hit WHERE material_id=?", (mid,)).rowcount
+    conn.execute("DELETE FROM theme_code WHERE code_id IN ("
+                 "SELECT c.id FROM code c LEFT JOIN code_hit h ON h.code_id=c.id "
+                 "WHERE c.project_id=? GROUP BY c.id HAVING COUNT(h.sid)=0)", (pid,))
+    conn.commit()
+    return n
+
+
 def hits(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
     return conn.execute(
         "SELECT c.id, c.name, c.definition, h.sid FROM code_hit h JOIN code c ON c.id=h.code_id "

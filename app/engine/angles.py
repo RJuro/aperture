@@ -153,8 +153,9 @@ def block(conn: sqlite3.Connection, mid: str) -> str:
         "Nobody has ideated about this material yet. Read it on its own terms.")
 
 
-def run(conn: sqlite3.Connection, mid: str) -> dict:
-    """Ideate before this material is coded. Returns {field, subareas, angles, text, dropped} and
+def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
+    """Ideate before this material is coded. `feedback` is the researcher's own words about
+    what to look for here, verbatim, when they have asked for this to be worked out again. Returns {field, subareas, angles, text, dropped} and
     stores the prose as this material's `angles` summary."""
     m = store.material(conn, mid)
     pid = m["project_id"]
@@ -169,6 +170,8 @@ def run(conn: sqlite3.Connection, mid: str) -> dict:
         questions=(proj["brief"] or "").strip()
               or "Nothing has been written about this corpus yet; this is an early piece.",
         themes=_themes_block(store.live_themes(conn, pid)),
+        feedback=_verbatim(feedback, "The researcher has said nothing about what to look "
+                                     "for here."),
         material=ingest.head_and_tail(m["text"], HEAD, TAIL),
         max_angles=MAX_ANGLES, max_questions=MAX_QUESTIONS)
     out = llm.chat_json(system, user, label="angles")

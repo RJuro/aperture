@@ -51,6 +51,26 @@ material's *form*, so no analytic feedback touches it — it has its own verb (�
 
 `rerun.plan(feedback) -> [Run]` is a table-driven Python function, and its test is this table.
 
+**And the researcher may simply ask for it again.** One verb, on one material, from a step they
+pick: `rerun.from_step(mid, step)` plans everything that happens to that material from there on,
+in the order the upward chain uses. It is not feedback — they said *do that again*, and re-reading
+is the point of it — so it is the one thing that may run READ a second time. An optional note is
+stored once as a comment on the material and rides on every run in the chain.
+
+| Run again from | Runs | Where the note goes |
+|---|---|---|
+| Structure | FRAME → ANGLES → READ → THEMES → DOC → ACCOUNT ×themes → PROJECT | FRAME as its hint, then ANGLES, READ, THEMES, and DOC as an open comment |
+| Angles | ANGLES → READ → THEMES → DOC → ACCOUNT ×themes → PROJECT | ANGLES, READ, THEMES, DOC |
+| Coding | READ → THEMES → DOC → ACCOUNT ×themes → PROJECT | READ, THEMES, DOC |
+| Themes | THEMES → DOC → ACCOUNT ×themes → PROJECT | THEMES, DOC |
+| Synthesis | DOC → ACCOUNT ×themes → PROJECT | DOC |
+
+A second READ **replaces** the first: that material's code hits go before it runs, and a code left
+with nothing loses its place in every theme, exactly as when the material itself is removed.
+Themes and moments already supersede, FRAME already replaces. A note is honoured by the last run
+that was shown it, so one that rides a whole chain is still open when the synthesis at its end is
+written.
+
 Three rows read differently from how they were first written. A comment on a theme planned
 *THEMES, then DOC for each material where the theme has moments*, and one on the corpus planned a
 DOC per material; a scaling review measured the second at fifty syntheses, seventeen hours, for
@@ -69,8 +89,8 @@ compiled prompt for the fixture, so a change to what the model sees is a visible
 | Prompt | Sees | Returns (JSON) | Python validates |
 |---|---|---|---|
 | **FRAME** | the first ~6000 and last ~1500 characters of the raw text; the mechanical speaker scan's result (labels and how often each recurs, or *none found*); the researcher's hint if this is a re-frame | `kind` · `display` · `title` ≤10 words · `speakers: [{label, name, role}]` · `segments: [{anchor, label}]` ≤12 · `orientation` ≤150 words | `kind` ∈ {interview, focus_group, fieldnotes, document, open_text, other}; `display` ∈ {turns, segments, plain}; **every speaker `label` must occur ≥2 times at a line start in the raw text**, unverified ones dropped; if none survive, `display` falls back to plain; every segment `anchor` bound by `anchor.bind`, unbound dropped |
-| ANGLES | the frame; the orientation; **the open questions** from earlier material; a larger slice of the text than FRAME. **Never the focus** — angles are the counter-focus, an independent source of where to look | `field` · `subareas` · `angles: [{name, why, questions}]` | 5–8 angles, 2–4 questions each; stored as prose a researcher reads; fed to READ under *an angle decides where to look, never what is found* |
-| READ | the focus verbatim; the live codebook; **the frame**; **the angles** (places to look, never things to find); the material as ids + text, laid out per `display` | `codes: [{code: <existing name> \| {name, definition}, sids}]` | sids exist here; ≤ 60 codes; new codes ≤ one per dozen passages, 15–50; names unique. **No brief.** |
+| ANGLES | the frame; the orientation; **the open questions** from earlier material; the researcher's words about what to look for here, verbatim, when they asked for this again; a larger slice of the text than FRAME. **Never the focus** — angles are the counter-focus, an independent source of where to look | `field` · `subareas` · `angles: [{name, why, questions}]` | 5–8 angles, 2–4 questions each; stored as prose a researcher reads; fed to READ under *an angle decides where to look, never what is found* |
+| READ | the focus verbatim; **the researcher's words about this reading, verbatim**, when they asked for it to be read again; the live codebook; **the frame**; **the angles** (places to look, never things to find); the material as ids + text, laid out per `display` | `codes: [{code: <existing name> \| {name, definition}, sids}]` | sids exist here; ≤ 60 codes; new codes ≤ one per dozen passages, 15–50; names unique. **No brief.** |
 | THEMES | **the material just read, with its codes marked by passage**; live themes; the codebook with spread as *counts* (never material names); the focus; theme feedback verbatim | `themes: [{id \| new, name, gist, code_names, merge_into?}]` | codes exist; ≤ 12 live; merges before creates so a full set can turn over; **a gist defines — true if fifty more materials arrived — never locates or compares**; every rewrite kept in `theme_history` |
 | THREAD | one theme's definition and its codes marked here; the focus; the frame; open comments on this line verbatim; the material laid out | `moments: [{claim ≤30 words, anchor ≤12 words, sid}]` | **every anchor bound**: unfound → dropped, wrong sid → repaired; 4–14 moments else the line is set aside *and the set-aside is kept on the run*; ordered by position |
 | DOC | the orientation; the frame; the focus; **the lines just written** (claims + quotes); open comments verbatim; the material | `summary` ≤320 words · `questions` ≤120 words · `people` | summary introduces the lines by name; **`questions` are questions the material raised and did not answer — never findings**; read by ANGLES only |
@@ -118,7 +138,8 @@ the text before it is used. Same law as anchors, applied to structure.
 - **Nouns:** material · moment (claim + quote, highlighted in place) · thread (one theme's moments
   through one material, in order) · summary (per material; per project).
 - **Verbs:** react (one free-text comment) on a moment, thread or summary · check ("check this
-  against the material") · focus · add material · **re-frame** ("this is laid out wrong" + a hint).
+  against the material") · focus · add material · **re-frame** ("this is laid out wrong" + a hint)
+  **run again** on one material, from a step the researcher picks, with an optional note.
 - **Pages:** home · project · material. Plus `export.md`. Codes have no page; a thread shows
   *"based on 4 codes"* in a native `<details>`.
 

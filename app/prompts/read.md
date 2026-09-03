@@ -29,6 +29,10 @@ WHAT THE RESEARCHER IS LOOKING FOR, IN THEIR OWN WORDS
 
 {{focus}}
 
+WHAT THE RESEARCHER SAID ABOUT THIS READING, IN THEIR OWN WORDS — take it as instruction
+
+{{feedback}}
+
 THE CODEBOOK AS IT STANDS — reuse these names exactly, as plain strings
 
 {{codebook}}

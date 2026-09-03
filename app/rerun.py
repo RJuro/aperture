@@ -11,6 +11,9 @@ reliable than their assent, so doubt routes to verification against the material
 rewrite. Agreement and notes plan nothing now; they are stored, shown, and ride into the next
 rerun as directives.
 
+The researcher's own re-run verb is the exception and is `from_step` below: they say what to
+do again and from where, so it may re-read and re-frame. Nothing in the feedback table can.
+
 This module imports nothing from `app.engine` — it decides, it does not run. `jobs.py` runs.
 """
 from __future__ import annotations
@@ -30,6 +33,32 @@ def _run(kind: str, material_id: str | None = None, theme_id: str | None = None,
     steps that take it as an argument — FRAME's hint, THEMES' feedback, CHECK's question."""
     return {"kind": kind, "material_id": material_id, "theme_id": theme_id,
             "feedback_id": feedback_id}
+
+
+# ---- running one material again, because the researcher asked ------------------------------------
+# Not feedback. Feedback runs one layer down and never re-reads (above); this is the researcher
+# saying "do that again", from wherever they choose, and re-reading is the whole point of it. The
+# order is the order material arrives in (`jobs.ingest_chain`), so "from the beginning" and "a
+# fresh upload" do the same work in the same sequence.
+CHAIN = ("frame", "angles", "read", "themes", "doc")
+
+# What the page calls each of them. Three of our five names are ours, not the researcher's, and
+# two of those the app may not print at all (PLAN.md §7) — even in a form value — so the form
+# sends the words the page already uses on its receipt and this maps them back.
+PAGE_NAMES = {"structure": "frame", "coding": "read", "synthesis": "doc"}
+
+
+def from_step(mid: str, step: str, feedback_id: str | None = None) -> list[dict]:
+    """Everything that happens to one material from `step` onward, then the corpus level.
+
+    A note rides on every run rather than only the first, so each step that takes the
+    researcher's words verbatim is handed them, and the synthesis at the end still counts the
+    note among the material's open comments.
+    """
+    if step not in CHAIN:
+        raise KeyError(f"no such step {step!r}; expected one of {list(CHAIN)}")
+    return [_run(k, mid, feedback_id=feedback_id) for k in CHAIN[CHAIN.index(step):]] + [
+        _run("accounts", feedback_id=feedback_id), _run("project", feedback_id=feedback_id)]
 
 
 # ---- what a row of the table does ---------------------------------------------------------------
