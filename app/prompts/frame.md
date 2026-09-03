@@ -17,7 +17,11 @@ every field is required.
    `segments` — the material runs as sections you can point at by their opening words.
    `plain` — the material is continuous prose with neither speakers nor sections.
 
-3. `title` is at most 10 words. It names the material; it does not describe it.
+3. `title` is at most 10 words. It names the material; it does not describe it. Use sentence case,
+   never all caps or Markdown emphasis. Follow this naming standard when the information exists:
+   `[person or subject] — interview, [year]`; `[topic] — focus group, [year]`;
+   `[place or topic] — field notes, [date]`; `[document name], [year]`; or
+   `[topic] — open responses`. Omit unknown parts rather than guessing them.
 
 4. `speakers` is a list of `{"label", "name", "role"}`, at most one entry per speaker.
    `label` is the exact string that begins that speaker's lines, without the colon.

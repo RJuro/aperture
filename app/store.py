@@ -48,19 +48,62 @@ def add_material(conn: sqlite3.Connection, pid: str, name: str, text: str) -> st
 
 
 def set_state(conn: sqlite3.Connection, mid: str, state: str) -> None:
-    conn.execute("UPDATE material SET state=? WHERE id=?", (state, mid))
+    conn.execute("UPDATE material SET state=? WHERE id=? AND removed_at IS NULL", (state, mid))
     conn.commit()
 
 
 def material(conn: sqlite3.Connection, mid: str) -> sqlite3.Row | None:
-    return conn.execute("SELECT * FROM material WHERE id=?", (mid,)).fetchone()
+    return conn.execute("SELECT * FROM material WHERE id=? AND removed_at IS NULL", (mid,)).fetchone()
 
 
 def materials(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     # rowid, not id, breaks the tie: ids are random, and several files uploaded together land in
     # the same millisecond, so ordering by id shuffles one submission's materials on the page.
-    return conn.execute("SELECT * FROM material WHERE project_id=? ORDER BY created_at, rowid",
+    return conn.execute("SELECT * FROM material WHERE project_id=? AND removed_at IS NULL "
+                        "ORDER BY created_at, rowid",
                         (pid,)).fetchall()
+
+
+def remove_material(conn: sqlite3.Connection, pid: str, mid: str) -> bool:
+    """Remove one material from the live corpus while keeping its source row recoverable.
+
+    Evidence derived from it is taken out of every live calculation immediately. Orphaned codes
+    are removed from the live codebook; old run rows remain as the audit record of what happened.
+    """
+    row = conn.execute("SELECT id FROM material WHERE id=? AND project_id=? AND removed_at IS NULL",
+                       (mid, pid)).fetchone()
+    if row is None:
+        return False
+    at = now()
+    conn.execute("UPDATE material SET removed_at=?, state='removed' WHERE id=?", (at, mid))
+    conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND status='live'", (mid,))
+    conn.execute("UPDATE summary SET status='superseded' WHERE scope='material' AND ref_id=? "
+                 "AND status='live'", (mid,))
+    conn.execute("DELETE FROM code_hit WHERE material_id=?", (mid,))
+    conn.execute("DELETE FROM theme_code WHERE code_id IN ("
+                 "SELECT c.id FROM code c LEFT JOIN code_hit h ON h.code_id=c.id "
+                 "WHERE c.project_id=? GROUP BY c.id HAVING COUNT(h.sid)=0)", (pid,))
+    conn.execute("DELETE FROM code WHERE project_id=? AND id NOT IN "
+                 "(SELECT DISTINCT code_id FROM code_hit)", (pid,))
+    # Until the queued rebuild lands, never present the old corpus account as current.
+    conn.execute("UPDATE summary SET status='superseded' WHERE scope='project' AND ref_id=? "
+                 "AND status='live'", (pid,))
+    conn.execute("UPDATE summary SET status='superseded' WHERE scope='theme' AND ref_id IN "
+                 "(SELECT id FROM theme WHERE project_id=?) AND status='live'", (pid,))
+    conn.execute("UPDATE theme SET status='retired' WHERE project_id=? AND status='live' "
+                 "AND id NOT IN (SELECT theme_id FROM theme_code) "
+                 "AND id NOT IN (SELECT DISTINCT theme_id FROM moment WHERE status='live')", (pid,))
+    conn.commit()
+    return True
+
+
+def clear_empty_project_analysis(conn: sqlite3.Connection, pid: str) -> None:
+    """Leave an empty project genuinely empty while retaining its historical rows."""
+    conn.execute("UPDATE theme SET status='retired' WHERE project_id=? AND status='live'", (pid,))
+    conn.execute("UPDATE summary SET status='superseded' WHERE scope='theme' AND ref_id IN "
+                 "(SELECT id FROM theme WHERE project_id=?) AND status='live'", (pid,))
+    conn.execute("UPDATE project SET brief='' WHERE id=?", (pid,))
+    conn.commit()
 
 
 def project(conn: sqlite3.Connection, pid: str) -> sqlite3.Row | None:
@@ -137,6 +180,8 @@ def save_codes(conn: sqlite3.Connection, pid: str, mid: str, codes: list[dict],
                origin: str = "read") -> dict:
     """`codes` is [{name, definition, sids}]. An existing name keeps its id and gains hits; a new
     name gets one. Returns {new, reused, hits} for the run line."""
+    if material(conn, mid) is None:
+        return {"new": 0, "reused": 0, "hits": 0}
     known = {r["name"]: r["id"] for r in codebook(conn, pid)}
     new = reused = hits = 0
     for c in codes:
@@ -262,6 +307,8 @@ def save_moments(conn: sqlite3.Connection, mid: str, theme_id: str, moments: lis
     export can show what a piece of feedback changed. `moments` is [{claim, anchor, sid}] and is
     ordered here by position in the material — the reader walks the material, not the model's
     output order."""
+    if material(conn, mid) is None:
+        return 0
     conn.execute("UPDATE moment SET status='superseded' "
                  "WHERE material_id=? AND theme_id=? AND status='live'", (mid, theme_id))
     pos = sid_position(conn, mid)
@@ -306,6 +353,8 @@ def save_summary(conn: sqlite3.Connection, scope: str, ref_id: str, stage: str, 
                  run_id: str | None = None) -> str:
     """stage is 'orientation' (what this material is, written at framing) or 'reading' (what the
     reading found). Both are kept: the export shows what the analysis added to a description."""
+    if scope == "material" and material(conn, ref_id) is None:
+        return ""
     conn.execute("UPDATE summary SET status='superseded' "
                  "WHERE scope=? AND ref_id=? AND stage=? AND status='live'", (scope, ref_id, stage))
     sid_ = db.new_id("s")
@@ -472,6 +521,42 @@ def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 
 def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM run WHERE project_id=? ORDER BY started", (pid,)).fetchall()
+
+
+# ---- durable background jobs -----------------------------------------------------------------
+
+def enqueue_job(conn: sqlite3.Connection, pid: str, runs: list[dict]) -> str:
+    jid = db.new_id("j")
+    conn.execute("INSERT INTO job (id, project_id, runs_json, status, created_at) "
+                 "VALUES (?,?,?,'queued',?)",
+                 (jid, pid, json.dumps(runs, ensure_ascii=False), now()))
+    mids = {r.get("material_id") for r in runs if r.get("material_id")}
+    conn.executemany("UPDATE material SET state='queued' WHERE id=? AND removed_at IS NULL",
+                     [(mid,) for mid in mids])
+    conn.commit()
+    return jid
+
+
+def job(conn: sqlite3.Connection, jid: str) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM job WHERE id=?", (jid,)).fetchone()
+
+
+def pending_jobs(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Queued work plus interrupted work from a previous process, oldest first."""
+    return conn.execute("SELECT * FROM job WHERE status IN ('queued','running') "
+                        "ORDER BY created_at, rowid").fetchall()
+
+
+def start_job(conn: sqlite3.Connection, jid: str) -> None:
+    conn.execute("UPDATE job SET status='running', started_at=?, finished_at=NULL, error='' "
+                 "WHERE id=?", (now(), jid))
+    conn.commit()
+
+
+def finish_job(conn: sqlite3.Connection, jid: str, error: str = "") -> None:
+    conn.execute("UPDATE job SET status=?, finished_at=?, error=? WHERE id=?",
+                 ("failed" if error else "finished", now(), error, jid))
+    conn.commit()
 
 
 # ---- accounts ----------------------------------------------------------------------------------

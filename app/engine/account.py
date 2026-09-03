@@ -51,7 +51,7 @@ SELECT m.id AS material_id, m.name AS name, m.title AS title, m.kind AS kind,
        COUNT(mo.id) AS claims
   FROM material m
   LEFT JOIN moment mo ON mo.material_id = m.id AND mo.theme_id = ? AND mo.status = 'live'
- WHERE m.project_id = ?
+ WHERE m.project_id = ? AND m.removed_at IS NULL
  GROUP BY m.id
  ORDER BY m.created_at, m.id
 """
@@ -60,7 +60,7 @@ _CLAIMS = """
 SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor AS anchor
   FROM moment mo
   JOIN material m ON m.id = mo.material_id
- WHERE m.project_id = ? AND mo.theme_id = ? AND mo.status = 'live'
+ WHERE m.project_id = ? AND m.removed_at IS NULL AND mo.theme_id = ? AND mo.status = 'live'
  ORDER BY m.created_at, m.id, mo.position
 """
 

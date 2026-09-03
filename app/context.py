@@ -18,7 +18,7 @@ import re
 
 from markupsafe import Markup
 
-from . import store
+from . import store, titles
 
 APP_NAME = "Aperture"
 
@@ -192,6 +192,39 @@ def _row(r) -> dict | None:
     return dict(r) if r is not None else None
 
 
+def _material_title(row) -> str:
+    return titles.standardize(row["title"] or row["name"])
+
+
+def _analysis_steps(conn, row) -> list[dict]:
+    """A compact receipt of which material-level analyses have actually landed."""
+    mid = row["id"]
+    finished = {r["kind"] for r in conn.execute(
+        "SELECT kind FROM run WHERE material_id=? AND finished IS NOT NULL AND error IS NULL", (mid,))}
+    active = {r["kind"] for r in conn.execute(
+        "SELECT kind FROM run WHERE material_id=? AND finished IS NULL", (mid,))}
+    failed_row = conn.execute("SELECT kind FROM run WHERE material_id=? AND error IS NOT NULL "
+                              "ORDER BY rowid DESC LIMIT 1", (mid,)).fetchone()
+    inferred = {
+        "frame": bool(row["title"] or row["kind"]),
+        "angles": store.get_summary(conn, "material", mid, "angles") is not None,
+        "read": conn.execute("SELECT 1 FROM code_hit WHERE material_id=? LIMIT 1", (mid,)).fetchone()
+                is not None,
+        "doc": store.get_summary(conn, "material", mid, "reading") is not None,
+    }
+    labels = (("frame", "Structure"), ("angles", "Angles"), ("read", "Coding"),
+              ("doc", "Synthesis"))
+    out = []
+    for kind, label in labels:
+        state = "done" if kind in finished or inferred[kind] else "waiting"
+        if kind in active:
+            state = "active"
+        elif failed_row and failed_row["kind"] == kind and state != "done":
+            state = "failed"
+        out.append({"kind": kind, "label": label, "state": state})
+    return out
+
+
 def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
     """Whole rows, with the stored quotes decoded — a check without its quotes is an opinion."""
     out = []
@@ -235,8 +268,12 @@ def data_persistent() -> bool:
 
 
 def _shell(conn, pid: str) -> dict:
+    nav_materials = [{**dict(m), "display_title": _material_title(m)}
+                     for m in store.materials(conn, pid)]
     return {"app_name": APP_NAME, "css_v": _css_version(), "data_persistent": data_persistent(),
-            "runs": [dict(r) for r in store.active_runs(conn, pid)]}
+            "runs": [dict(r) for r in store.active_runs(conn, pid)],
+            "nav_materials": nav_materials,
+            "nav_theme_count": len(store.live_themes(conn, pid))}
 
 
 def _threads(conn, mid: str, themes: dict) -> list[dict]:
@@ -265,8 +302,11 @@ def project_page(conn, pid: str) -> dict:
     mats = [dict(m) for m in store.materials(conn, pid)]
     stale = {m["id"] for m in store.out_of_date(conn, pid)}
     for m in mats:
+        m["display_title"] = _material_title(m)
         m["derivation"] = derivation(conn, m["id"])
         m["out_of_date"] = m["id"] in stale
+        m["analysis"] = _analysis_steps(conn, m)
+        m["analysis_done"] = sum(s["state"] == "done" for s in m["analysis"])
     # One query for the whole grid rather than themes x materials calls to `thread`: at twelve
     # themes and fifty materials that loop was six hundred queries to render a table of counts.
     counts: dict[tuple[str, str], int] = {}
@@ -287,6 +327,7 @@ def project_page(conn, pid: str) -> dict:
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     summary = _row(store.get_summary(conn, "project", pid))
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
+            "page_section": "overview",
             "summary": summary,
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
@@ -298,6 +339,8 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     if p is None or m is None or m["project_id"] != pid:
         return {}
     mat = dict(m)
+    mat["display_title"] = _material_title(m)
+    mat["analysis"] = _analysis_steps(conn, m)
     cards = []
     for t in store.live_themes(conn, pid):
         ms = [dict(x) for x in store.thread(conn, mid, t["id"])]
@@ -313,6 +356,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         quotes.setdefault(x["sid"], []).append(x["anchor"])
     summary = _row(store.get_summary(conn, "material", mid))
     return {**_shell(conn, pid), "project": dict(p), "material": mat, "cards": cards,
+            "page_section": "materials",
             "selected": selected, "derivation": derivation(conn, mid),
             "summary": summary,
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
@@ -341,6 +385,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
     carrying, absent = [], []
     for m in cover["per_material"]:
         row = dict(m)
+        row["display_title"] = _material_title(m)
         if m["claims"]:
             row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], tid)]
             carrying.append(row)
@@ -348,6 +393,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             absent.append(row)
     summary = _row(store.get_summary(conn, "theme", tid))
     return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
+            "page_section": "themes",
             "coverage": cover, "carrying": carrying, "absent": absent, "summary": summary,
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
@@ -381,6 +427,7 @@ def export(conn, pid: str) -> dict:
     mats = []
     for m in store.materials(conn, pid):
         d = dict(m)
+        d["display_title"] = _material_title(m)
         for stage in ("orientation", "reading", "angles"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         d["people"] = [dict(x) for x in store.people(conn, m["id"])]

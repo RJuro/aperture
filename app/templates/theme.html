@@ -1,29 +1,27 @@
 {% extends "base.html" %}
 {% block main %}
-<p class="dim"><a href="/p/{{ project.id }}">{{ project.name | txt }}</a></p>
-<h1>{{ theme.name | txt }}</h1>
-<p class="dim">{{ derivation }}</p>
+<section class="section project-head"><div class="container"><p class="eyebrow">Theme across the corpus</p>
+<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | txt }}</p><p class="meta head-stat">{{ derivation }}</p></div></section>
 
-{% if summary %}
-<div class="summary">{{ summary_html }}</div>
+<section class="section"><div class="container narrow-section">
+{% if summary %}<p class="eyebrow">Interpretive account</p><div class="summary-copy">{{ summary_html }}</div>
 {% else %}
 <p class="provisional">No summary yet. One is written after a material is analysed, or after
 you send feedback below.</p>
 <p class="summary">{{ theme.gist | txt }}</p>
 {% endif %}
 
-<form method="post" action="/p/{{ project.id }}/react" class="say">
+<form method="post" action="/p/{{ project.id }}/react" class="inline-response">
   <input type="hidden" name="theme_id" value="{{ theme.id }}">
-  <label>Feedback on this summary
-    <textarea name="text" rows="2" placeholder="Describe what this summary misses or gets wrong. It will be revised using your words."></textarea>
-  </label>
-  <button>Revise this summary</button>
+  <label>Feedback on this account <textarea name="text" rows="2" placeholder="What does this account miss or overstate?"></textarea></label>
+  <button class="btn btn-secondary">Revise account</button>
 </form>
+</div></section>
 
-<h2>Materials where this theme appears</h2>
+<section class="section"><div class="container"><div class="section-heading"><div><p class="eyebrow">Evidence</p><h2>Materials where this theme appears</h2></div></div>
 {% for m in carrying %}
 <section class="carries">
-  <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}">{{ (m.title or m.name) | txt }}</a>
+  <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h3>
   <ol class="claims">
   {% for x in m.moments %}
@@ -37,20 +35,19 @@ you send feedback below.</p>
 {% else %}
 <p class="dim">No material contains claims for this theme yet.</p>
 {% endfor %}
+</div></section>
 
 {% if absent %}
-<h2>Materials where this theme does not appear</h2>
+<section class="section"><div class="container"><h2>Materials where this theme does not appear</h2>
 <p class="dim">No claims in these materials support this theme. Before reading that as absence,
 check what was excluded below — a set of claims too thin to keep is dropped whole and would look
 the same as absence here.</p>
 <ul class="mats">
 {% for m in absent %}
-  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ (m.title or m.name) | txt }}</a>
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind }}</span></li>
 {% endfor %}
 </ul>
-{% endif %}
-
 {% if set_aside %}
 <details class="aside"><summary>Excluded from the analysis ({{ set_aside | length }})</summary>
 <ul class="mats">
@@ -58,12 +55,12 @@ the same as absence here.</p>
 </ul>
 </details>
 {% endif %}
+</div></section>
+{% endif %}
 
 {% if codes %}
-<details><summary>Codes grouped under this theme ({{ codes | length }})</summary>
-<ul class="mats">
-{% for c in codes %}<li><b class="gist">{{ c.name | txt }}</b> <span class="gist">{{ c.definition | txt }}</span></li>{% endfor %}
-</ul>
-</details>
+<section class="section"><div class="container"><details class="quiet-details"><summary>Codes grouped under this theme · {{ codes | length }}</summary>
+<div class="codes">{% for c in codes %}<span class="tag" title="{{ c.definition | txt }}">{{ c.name | txt }}</span>{% endfor %}</div>
+</details></div></section>
 {% endif %}
 {% endblock %}

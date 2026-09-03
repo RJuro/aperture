@@ -1,29 +1,82 @@
 <!doctype html>
 <html lang="en">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-{% if runs %}<meta http-equiv="refresh" content="5">{% endif %}
-<title>{{ app_name }}</title>
-<link rel="stylesheet" href="/static/aperture.css?v={{ css_v }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  {% if runs %}<meta http-equiv="refresh" content="5">{% endif %}
+  <title>{% if material %}{{ material.display_title | txt }} · {% elif theme %}{{ theme.name | txt }} · {% elif project %}{{ project.name | txt }} · {% endif %}{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/aperture.css?v={{ css_v }}">
+</head>
 <body>
-<header class="top">
-  <a href="/">{{ app_name }}</a>
-  {% if project %}
-  · <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
-  · <a href="/p/{{ project.id }}/export.md">Export reading record</a>
-  {% endif %}
-  {% if user %}
-  <form class="who" method="post" action="/logout"><a href="/account" title="Change your password">{{ user.name | txt }}</a>{% if user.is_admin %} · <a href="/admin">Manage accounts</a>{% endif %} · <button>Sign out</button></form>
-  {% endif %}
+<header class="topnav">
+  <div class="container topnav-inner">
+    <a class="logo" href="/">{{ app_name }}</a>
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+      {% if project %}
+      <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
+      {% if material %}<i aria-hidden="true">/</i><span>{{ material.display_title | txt }}</span>{% endif %}
+      {% if theme %}<i aria-hidden="true">/</i><span>{{ theme.name | txt }}</span>{% endif %}
+      {% else %}<span>Qualitative reading workspace</span>{% endif %}
+    </nav>
+    {% if user %}
+    <details class="account-menu">
+      <summary class="account" aria-label="Open account menu">{{ user.name[:2] | upper | txt }}</summary>
+      <div class="menu-sheet">
+        <a href="/account">Account settings</a>
+        {% if user.is_admin %}<a href="/admin">Manage accounts</a>{% endif %}
+        <form method="post" action="/logout"><button>Sign out</button></form>
+      </div>
+    </details>
+    {% else %}<span></span>{% endif %}
+  </div>
 </header>
-{% if user and user.is_admin and data_persistent is defined and not data_persistent %}
-<p class="warn">Data is not on persistent storage. Projects will be lost when the application is redeployed — attach a volume at the data directory.</p>
+
+{% if project %}
+<div class="app-shell">
+  <aside class="project-rail">
+    <div class="rail-sticky">
+      <p class="eyebrow">Project</p>
+      <h2 class="rail-title"><a href="/p/{{ project.id }}">{{ project.name | txt }}</a></h2>
+      <p class="meta">{{ nav_materials | length }} {{ 'material' | plural(nav_materials | length) }} · {{ nav_theme_count }} {{ 'theme' | plural(nav_theme_count) }}</p>
+      <nav aria-label="Project sections">
+        <ul class="rail-list">
+          <li><a href="/p/{{ project.id }}#overview"{% if page_section == 'overview' %} aria-current="page"{% endif %}><span>Overview</span></a></li>
+          <li><a href="/p/{{ project.id }}#materials"{% if page_section == 'materials' %} aria-current="page"{% endif %}><span>Materials</span><span class="rail-count">{{ '%02d' | format(nav_materials | length) }}</span></a></li>
+          <li><a href="/p/{{ project.id }}#themes"{% if page_section == 'themes' %} aria-current="page"{% endif %}><span>Themes</span><span class="rail-count">{{ '%02d' | format(nav_theme_count) }}</span></a></li>
+          <li><a href="/p/{{ project.id }}/export.md"><span>Reading record</span></a></li>
+        </ul>
+      </nav>
+      {% if nav_materials %}
+      <div class="rail-materials">
+        <p class="eyebrow">Open material</p>
+        {% for m in nav_materials %}
+        <a class="material-link" href="/p/{{ project.id }}/m/{{ m.id }}"{% if material and material.id == m.id %} aria-current="page"{% endif %}>
+          <strong>{{ m.display_title | txt }}</strong><span>{{ (m.kind or 'Material') | replace('_', ' ') }} · {{ m.state }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+  <main class="workspace" id="content">
+{% else %}
+  <main class="standalone" id="content">
 {% endif %}
-{% if runs %}
-<p class="run">{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
-{% endif %}
-<main>
-{% block main %}{% endblock %}
-</main>
+    {% if user and user.is_admin and data_persistent is defined and not data_persistent %}
+    <p class="warn">Data is not on persistent storage. Projects will be lost when the application is redeployed — attach a volume at the data directory.</p>
+    {% endif %}
+    {% if runs %}
+    <div class="run" role="status"><span class="run-pulse" aria-hidden="true"></span><div>
+      <strong>{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}</strong>
+      <small>Analysis continues in the background. You can leave this page.</small>
+    </div></div>
+    {% endif %}
+    {% block main %}{% endblock %}
+  </main>
+{% if project %}</div>{% endif %}
+
+<footer class="pagefoot">
+  <div class="container row-between"><span>Aperture · reading companion for qualitative material</span><span class="meta">Source and interpretation remain distinct</span></div>
+</footer>
 </body>
 </html>

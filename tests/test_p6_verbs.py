@@ -43,7 +43,14 @@ def test_every_form_on_every_page_reaches_a_handler(app, analysed):
         html = app.get(url).text
         seen |= set(re.findall(r'<form[^>]*action="([^"]+)"', html))
     assert seen, "no forms rendered — this test is not looking at the right pages"
-    routes = [r for r in __import__("app.main", fromlist=["x"]).app.routes]
+    def walk(routes):
+        for route in routes:
+            yield route
+            nested = getattr(getattr(route, "original_router", None), "routes", None)
+            if nested:
+                yield from walk(nested)
+
+    routes = list(walk(__import__("app.main", fromlist=["x"]).app.routes))
     posts = {getattr(r, "path", "") for r in routes if "POST" in getattr(r, "methods", set())}
     for action in seen:
         # A literal route wins; otherwise put the ids back into their placeholders and look again.

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from urllib.parse import quote_plus
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
 from . import db, ingest, intake, jobs, rerun, store
@@ -28,6 +28,15 @@ def _back(request: Request, fallback: str) -> RedirectResponse:
     """Back where they were, so a reaction leaves them looking at the same thing they reacted to.
     303 because this was a POST and the browser must follow it with a GET."""
     return RedirectResponse(request.headers.get("referer") or fallback, status_code=303)
+
+
+def _mine(request: Request, conn, pid: str) -> None:
+    """POSTs observe the same ownership boundary as project pages."""
+    user = getattr(request.state, "user", None)
+    project = store.project(conn, pid)
+    if project is None or (user is not None and not user["is_admin"]
+                           and project["owner_id"] != user["id"]):
+        raise HTTPException(status_code=404, detail="not here")
 
 
 def _go(conn, pid: str, feedback_id: str) -> None:
@@ -59,7 +68,7 @@ def new_project(request: Request, name: str = Form(...), focus: str = Form("")):
 
 
 @router.post("/p/{pid}/material")
-def add_material(pid: str, files: list[UploadFile] = File(default=[]),
+def add_material(request: Request, pid: str, files: list[UploadFile] = File(default=[]),
                  name: str = Form(""), text: str = Form("")):
     """Files and/or pasted text in, sentences out, and each reading starts on its own.
 
@@ -72,6 +81,7 @@ def add_material(pid: str, files: list[UploadFile] = File(default=[]),
     files became material.
     """
     conn = connection()
+    _mine(request, conn, pid)
     pieces = []
     try:
         for f in files:
@@ -86,9 +96,26 @@ def add_material(pid: str, files: list[UploadFile] = File(default=[]),
         mid = store.add_material(conn, pid, piece_name, body)
         store.save_sentences(conn, mid, ingest.sentences(body))
         jobs.ingest_chain(pid, mid)
+    if not pieces:
+        return RedirectResponse(f"/p/{pid}", status_code=303)
     # One piece: straight to it. Several: the project page, where they are all listed reading.
     return RedirectResponse(f"/p/{pid}/m/{mid}" if len(pieces) == 1 else f"/p/{pid}",
                             status_code=303)
+
+
+@router.post("/p/{pid}/m/{mid}/remove")
+def remove_material(request: Request, pid: str, mid: str):
+    """Take material out now, then rebuild every corpus-level account in the background."""
+    conn = connection()
+    _mine(request, conn, pid)
+    if not store.remove_material(conn, pid, mid):
+        return _back(request, f"/p/{pid}")
+    remaining = [m["id"] for m in store.materials(conn, pid)]
+    if remaining:
+        jobs.removal_chain(pid, remaining)
+    else:
+        store.clear_empty_project_analysis(conn, pid)
+    return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
 @router.post("/p/{pid}/react")
@@ -106,6 +133,7 @@ def react(request: Request, pid: str, text: str = Form(""), kind: str = Form("no
     An empty comment does nothing. Nothing here is a stance to be tallied.
     """
     conn = connection()
+    _mine(request, conn, pid)
     if not text.strip():
         return _back(request, f"/p/{pid}")
     target_kind, target_id = _target(claim_id, theme_id, material_id, pid)
@@ -118,6 +146,7 @@ def react(request: Request, pid: str, text: str = Form(""), kind: str = Form("no
 def check(request: Request, pid: str, question: str = Form(...), material_id: str = Form("")):
     """"Check this against the material" — searches the passages no claim rests on."""
     conn = connection()
+    _mine(request, conn, pid)
     if not question.strip():
         return _back(request, f"/p/{pid}")
     target_kind, target_id = ("material_summary", material_id) if material_id \
@@ -137,6 +166,7 @@ def refresh(request: Request, pid: str, material_id: str = Form("")):
     goes straight to the work.
     """
     conn = connection()
+    _mine(request, conn, pid)
     stale = [m["id"] for m in store.out_of_date(conn, pid)]
     targets = [material_id] if material_id else stale
     if runs := [{"kind": "doc", "material_id": mid} for mid in targets if mid in stale]:
@@ -149,6 +179,7 @@ def focus(request: Request, pid: str, focus: str = Form("")):
     """What the researcher is looking for. Nothing re-runs: it shapes the next reading, and
     nothing already read is read again. Kept as feedback too, so the export shows its history."""
     conn = connection()
+    _mine(request, conn, pid)
     store.set_focus(conn, pid, focus.strip())
     store.add_feedback(conn, pid, "focus", pid, "note", focus.strip())
     return _back(request, f"/p/{pid}")
@@ -159,6 +190,7 @@ def reframe(request: Request, pid: str, mid: str, hint: str = Form("")):
     """"This is laid out wrong." Re-describes the material's shape and nothing else — no sentence
     moves, so every code and claim survives it."""
     conn = connection()
+    _mine(request, conn, pid)
     fid = store.add_feedback(conn, pid, "frame", mid, "note", hint.strip())
     _go(conn, pid, fid)
     return _back(request, f"/p/{pid}/m/{mid}")

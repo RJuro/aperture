@@ -14,7 +14,7 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -93,6 +93,11 @@ CREATE TABLE IF NOT EXISTS run (
     provider TEXT DEFAULT '', model TEXT DEFAULT '', tokens_in INTEGER DEFAULT 0,
     tokens_out INTEGER DEFAULT 0, started TEXT, finished TEXT, error TEXT, line TEXT DEFAULT '');
 
+CREATE TABLE IF NOT EXISTS job (
+    id TEXT PRIMARY KEY, project_id TEXT NOT NULL, runs_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued', created_at TEXT NOT NULL,
+    started_at TEXT, finished_at TEXT, error TEXT DEFAULT '');
+
 CREATE INDEX IF NOT EXISTS ix_material_project ON material(project_id);
 CREATE INDEX IF NOT EXISTS ix_sentence_material ON sentence(material_id, idx);
 CREATE INDEX IF NOT EXISTS ix_hit_material ON code_hit(material_id);
@@ -100,6 +105,7 @@ CREATE INDEX IF NOT EXISTS ix_moment_thread ON moment(material_id, theme_id, sta
 CREATE INDEX IF NOT EXISTS ix_summary_ref ON summary(scope, ref_id, status);
 CREATE INDEX IF NOT EXISTS ix_feedback_target ON feedback(target_kind, target_id);
 CREATE INDEX IF NOT EXISTS ix_run_project ON run(project_id, started);
+CREATE INDEX IF NOT EXISTS ix_job_status ON job(status, created_at);
 """
 
 
@@ -130,6 +136,9 @@ def migrate(conn: sqlite3.Connection) -> None:
     have = {r[1] for r in conn.execute("PRAGMA table_info(project)")}
     if "owner_id" not in have:
         conn.execute("ALTER TABLE project ADD COLUMN owner_id TEXT")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(material)")}
+    if "removed_at" not in have:
+        conn.execute("ALTER TABLE material ADD COLUMN removed_at TEXT")
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
 

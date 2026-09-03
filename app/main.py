@@ -6,17 +6,24 @@ actions). Both are attached here so that neither imports the other.
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from . import auth
+from . import auth, jobs
 
-app = FastAPI(title="Aperture")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Resume work committed before this process started."""
+    jobs.resume_pending()
+    yield
+
+app = FastAPI(title="Aperture", lifespan=lifespan)
 
 app.add_middleware(auth.Accounts)
-
 
 @app.get("/health")
 def health() -> dict:

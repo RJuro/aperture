@@ -318,7 +318,7 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     live_themes = {t["id"]: t for t in store.live_themes(conn, pid)}
     live_moments = {r["id"]: r for r in conn.execute(
         "SELECT m.* FROM moment m JOIN material x ON x.id=m.material_id "
-        "WHERE x.project_id=? AND m.status='live'", (pid,))}
+        "WHERE x.project_id=? AND x.removed_at IS NULL AND m.status='live'", (pid,))}
 
     accounts = []
     for tid, t in live_themes.items():

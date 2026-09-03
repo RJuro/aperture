@@ -22,7 +22,13 @@ for the themes listed below.
 Return JSON in exactly this shape, and nothing else:
 
 {
-  "summary": "At most 400 words on what the corpus shows so far. Write about the CORPUS, not
+  "summary": "At most 400 words on what the corpus shows so far. Balance two movements: first,
+              a grounded synthesis of the recurring facts, differences, exceptions and thin
+              areas; second, an interpretive synthesis of what the relations among the emerging
+              themes may mean. Keep interpretation visibly provisional (for example, 'taken
+              together, this suggests') and grounded in the same cited claims. Do not import a
+              named theory or specialist vocabulary that the materials and focus did not supply.
+              Write about the CORPUS, not
               about each piece in turn. Do not walk the materials one by one; a summary shaped as
               'the first account does X, the second does Y' stops working the moment a third
               arrives, and this project will have many. Instead name the patterns: what recurs

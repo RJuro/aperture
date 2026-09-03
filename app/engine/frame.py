@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from .. import anchor, ingest, llm, store, turns
+from .. import anchor, ingest, llm, store, titles, turns
 
 KINDS = ("interview", "focus_group", "fieldnotes", "document", "open_text", "other")
 DISPLAYS = ("turns", "segments", "plain")
@@ -136,7 +136,7 @@ def run(conn: sqlite3.Connection, mid: str, *, hint: str = "") -> dict:
     dropped: list[str] = []
     kind = _one_of(out.get("kind"), KINDS, "other")
     display = _one_of(out.get("display"), DISPLAYS, "plain")
-    title = _trim(out.get("title"), TITLE_WORDS)
+    title = titles.standardize(_trim(out.get("title"), TITLE_WORDS))
     speakers = _speakers(raw, out.get("speakers"), dropped)
     segments = _segments(store.sentences(conn, mid), out.get("segments"), dropped)
     orientation = _trim(out.get("orientation"), ORIENTATION_WORDS)

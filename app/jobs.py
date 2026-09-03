@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import sqlite3
 import threading
+import json
 from collections.abc import Callable, Iterable
 
 from . import db, llm, rerun, store
@@ -56,7 +57,8 @@ def _themes(conn, pid, run):
 
 def _doc(conn, pid, run):
     from .engine import synth
-    out = synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"))
+    out = synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"),
+                    run_id=run.get("run_id"))
     return (out or {}).get("dropped")
 
 
@@ -75,7 +77,7 @@ def _account(conn, pid, run):
 
 def _project(conn, pid, run):
     from .engine import synth
-    return (synth.project(conn, pid) or {}).get("dropped")
+    return (synth.project(conn, pid, run_id=run.get("run_id")) or {}).get("dropped")
 
 
 def _check(conn, pid, run):
@@ -134,6 +136,7 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict]) -> list[st
     for run in runs:
         kind, mid = run["kind"], run.get("material_id")
         rid = store.start_run(conn, pid, kind, mid, line(conn, run))
+        run["run_id"] = rid
         ids.append(rid)
         if mid:
             touched.append(mid)
@@ -161,29 +164,72 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict]) -> list[st
 
 
 _JOBS: dict[str, threading.Thread] = {}
+_RUNNER_LOCK = threading.Lock()
 
 
-def start(conn_factory: Callable[[], sqlite3.Connection], pid: str,
-          runs: Iterable[dict]) -> str:
-    """Run these in order, in the background, and return the job id.
-
-    `conn_factory` is called *inside* the worker. `db.connect` passes check_same_thread=False, but
-    that only silences the guard — one connection object still must not be worked from two threads.
-    """
-    runs = _known(list(runs))
-    job = db.new_id("j")
-
+def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) -> None:
     def work() -> None:
         conn = conn_factory()
+        error = ""
         try:
-            run_now(conn, pid, runs)
+            row = store.job(conn, job)
+            if row is None:
+                return
+            runs = _known(json.loads(row["runs_json"]))
+            store.start_job(conn, job)
+            # The model client keeps usage in one module-level counter. Run one chain globally so
+            # different projects cannot reset each other's token accounting.
+            with _RUNNER_LOCK:
+                ids = run_now(conn, pid, runs)
+            if ids:
+                failed = conn.execute("SELECT error FROM run WHERE id=?", (ids[-1],)).fetchone()
+                error = (failed["error"] if failed else "") or ""
+        except Exception as exc:  # a broken queue item is recorded; the worker stays alive
+            error = f"{type(exc).__name__}: {exc}"
         finally:
-            conn.close()
+            try:
+                store.finish_job(conn, job, error)
+            finally:
+                conn.close()
 
     t = threading.Thread(target=work, name=job, daemon=True)
     _JOBS[job] = t
     t.start()
+
+
+def start(conn_factory: Callable[[], sqlite3.Connection], pid: str,
+          runs: Iterable[dict]) -> str:
+    """Persist these steps, run them off-request, and return the job id.
+
+    The row is committed before the thread starts, so leaving the page has no bearing on the work.
+    `resume_pending` picks it up after a process restart. Chains for one project are serialised
+    because their codebook, themes and summaries are shared state.
+    """
+    runs = _known(list(runs))
+    conn = conn_factory()
+    try:
+        job = store.enqueue_job(conn, pid, runs)
+    finally:
+        conn.close()
+    _launch(job, pid, conn_factory)
     return job
+
+
+def resume_pending(conn_factory: Callable[[], sqlite3.Connection] = db.connect) -> list[str]:
+    """Resume work committed before this process started (or stopped unexpectedly)."""
+    conn = conn_factory()
+    try:
+        rows = [dict(r) for r in store.pending_jobs(conn)]
+    finally:
+        conn.close()
+    launched = []
+    for row in rows:
+        current = _JOBS.get(row["id"])
+        if current is not None and current.is_alive():
+            continue
+        _launch(row["id"], row["project_id"], conn_factory)
+        launched.append(row["id"])
+    return launched
 
 
 def wait(job: str, timeout: float = 60.0) -> bool:
@@ -212,6 +258,18 @@ def ingest_chain(pid: str, mid: str, conn_factory: Callable = db.connect) -> str
         {"kind": "doc", "material_id": mid},
         # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
         # the live theme set at this moment is the old one.
+        {"kind": "accounts"},
+        {"kind": "project"},
+    ])
+
+
+def removal_chain(pid: str, material_ids: Iterable[str],
+                  conn_factory: Callable = db.connect) -> str:
+    """Rebuild the live corpus after one material leaves it."""
+    mids = list(material_ids)
+    return start(conn_factory, pid, [
+        {"kind": "themes"},
+        *({"kind": "doc", "material_id": mid} for mid in mids),
         {"kind": "accounts"},
         {"kind": "project"},
     ])
