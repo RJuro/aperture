@@ -244,8 +244,8 @@ def test_read_md_compiles_with_its_new_slot_and_states_the_rule():
 def test_angles_md_compiles_with_exactly_the_slots_the_engine_fills(conn, grande, model):
     text = (PROMPTS / "angles.md").read_text()
     slots = sorted(set(re.findall(r"\{\{(\w+)\}\}", text)))
-    assert slots == ["frame", "material", "max_angles", "max_questions", "orientation",
-                     "questions", "themes"]
+    assert slots == ["feedback", "frame", "material", "max_angles", "max_questions",
+                     "orientation", "questions", "themes"]
     _framed(conn, grande)
     model.queue(_answer())
     angles.run(conn, grande)          # llm.prompt raises on a slot that drifted either way
