@@ -89,12 +89,29 @@ def test_the_corpus_level_is_left_to_the_last_chain_in_the_queue(conn, project, 
     assert ran == [], "the second chain is still reading"
     rows = store.runs(conn, project)
     assert [r["kind"] for r in rows] == ["accounts", "project"]
-    assert all(jobs.LEFT_TO_THE_LAST in r["notes"] and r["error"] is None for r in rows)
+    # On the line. In the notes it printed under "Excluded from the analysis", which is where a
+    # claim the reading dropped is listed.
+    assert all(r["line"] == jobs.LEFT_TO_THE_LAST and r["error"] is None for r in rows)
+    assert not any(jobs.LEFT_TO_THE_LAST in (r["notes"] or "") for r in rows)
 
     store.finish_job(conn, first)
     store.start_job(conn, second)
     jobs.run_now(conn, project, tail, job=second)
     assert ran == ["accounts", "project"], "the last chain writes them once"
+
+
+def test_a_question_waiting_its_turn_does_not_cost_the_upload_its_corpus_summary(
+        conn, project, grande, monkeypatch):
+    """Any second job of any kind used to make the running chain leave the corpus level to the
+    chain that follows — and a check job, an account job or a doc job never writes it."""
+    ran = _stub(monkeypatch)
+    tail = [{"kind": "accounts"}, {"kind": "project"}]
+    mine = store.enqueue_job(conn, project, tail)
+    store.enqueue_job(conn, project, [{"kind": "check", "material_id": grande}])
+
+    store.start_job(conn, mine)
+    jobs.run_now(conn, project, tail, job=mine)
+    assert ran == ["accounts", "project"], "nothing behind it will write the corpus summary"
 
 
 def test_a_step_can_say_where_it_has_got_to_on_its_own_run_row(conn, project, grande, monkeypatch):

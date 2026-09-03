@@ -159,7 +159,7 @@ def _known(runs: list[dict]) -> list[dict]:
     return runs
 
 
-LEFT_TO_THE_LAST = "left for the chain that follows — more material is still to be read"
+LEFT_TO_THE_LAST = "Left for the chain that follows — more material is still to be read."
 
 
 def _another_chain(conn: sqlite3.Connection, pid: str, job: str | None, kind: str) -> bool:
@@ -169,10 +169,16 @@ def _another_chain(conn: sqlite3.Connection, pid: str, job: str | None, kind: st
     summary. Written by the first, they are written over material the second has not read yet —
     and the page says "Updating the project summary" twice for one answer. The last chain in the
     queue writes them once.
+
+    Only a chain that will itself write the corpus level counts. Any waiting job used to, so a
+    question typed into the check box while an upload was reading left that upload with no theme
+    accounts and no corpus summary, and nothing behind it to write them.
     """
-    return kind in ("accounts", "project") and bool(conn.execute(
-        "SELECT COUNT(*) FROM job WHERE project_id=? AND status IN ('queued','running') "
-        "AND id<>?", (pid, job or "")).fetchone()[0])
+    if kind not in ("accounts", "project"):
+        return False
+    return any(r["kind"] in ("accounts", "project") for row in conn.execute(
+        "SELECT runs_json FROM job WHERE project_id=? AND status IN ('queued','running') "
+        "AND id<>?", (pid, job or "")) for r in json.loads(row["runs_json"]))
 
 
 def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
@@ -201,8 +207,13 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
         llm.report = lambda msg: store.set_run_line(conn, rid, f"{base} — {msg}")
         error, notes = None, None
         try:
-            notes = [LEFT_TO_THE_LAST] if _another_chain(conn, pid, job, kind) \
-                else STEPS[kind][1](conn, pid, run)
+            # On the line, not in the notes: the notes are what a reading threw away, and the
+            # page prints them under "Excluded from the analysis", where this read as a claim
+            # that had been dropped.
+            if _another_chain(conn, pid, job, kind):
+                store.set_run_line(conn, rid, LEFT_TO_THE_LAST)
+            else:
+                notes = STEPS[kind][1](conn, pid, run)
         except Exception as e:                          # the chain stops; the process does not
             error = f"{type(e).__name__}: {e}"
             failed = mid
