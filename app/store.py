@@ -12,7 +12,9 @@ one added last. Here, rows are built from dicts and tests walk real payloads.
 """
 from __future__ import annotations
 
+import hashlib
 import json
+import secrets
 import sqlite3
 from datetime import datetime, timezone
 
@@ -28,10 +30,11 @@ def now() -> str:
 
 # ---- projects and material --------------------------------------------------------------------
 
-def create_project(conn: sqlite3.Connection, name: str, focus: str = "") -> str:
+def create_project(conn: sqlite3.Connection, name: str, focus: str = "",
+                   owner_id: str | None = None) -> str:
     pid = db.new_id("p")
-    conn.execute("INSERT INTO project (id, name, focus, created_at) VALUES (?,?,?,?)",
-                 (pid, name, focus, now()))
+    conn.execute("INSERT INTO project (id, name, focus, created_at, owner_id) VALUES (?,?,?,?,?)",
+                 (pid, name, focus, now(), owner_id))
     conn.commit()
     return pid
 
@@ -54,7 +57,9 @@ def material(conn: sqlite3.Connection, mid: str) -> sqlite3.Row | None:
 
 
 def materials(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT * FROM material WHERE project_id=? ORDER BY created_at, id",
+    # rowid, not id, breaks the tie: ids are random, and several files uploaded together land in
+    # the same millisecond, so ordering by id shuffles one submission's materials on the page.
+    return conn.execute("SELECT * FROM material WHERE project_id=? ORDER BY created_at, rowid",
                         (pid,)).fetchall()
 
 
@@ -467,3 +472,43 @@ def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 
 def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM run WHERE project_id=? ORDER BY started", (pid,)).fetchall()
+
+
+# ---- accounts ----------------------------------------------------------------------------------
+
+def _hash(password: str, salt: bytes) -> bytes:
+    """scrypt from the standard library. n=2**14 is the interactive-login setting: about a tenth
+    of a second here, and 16 MB of memory per guess for anyone with the file."""
+    return hashlib.scrypt(password.encode(), salt=salt, n=2 ** 14, r=8, p=1, dklen=32)
+
+
+def create_user(conn: sqlite3.Connection, name: str, password: str, is_admin: bool = False) -> str:
+    """The password is never stored, only a per-user salt and the derived key."""
+    uid = db.new_id("u")
+    salt = secrets.token_bytes(16)
+    conn.execute("INSERT INTO user (id, name, password_hash, is_admin) VALUES (?,?,?,?)",
+                 (uid, name, f"{salt.hex()}:{_hash(password, salt).hex()}", int(is_admin)))
+    conn.commit()
+    return uid
+
+
+def verify_user(conn: sqlite3.Connection, name: str, password: str) -> sqlite3.Row | None:
+    row = conn.execute("SELECT * FROM user WHERE name=?", (name,)).fetchone()
+    if row is None:
+        return None
+    salt, want = row["password_hash"].split(":")
+    ok = secrets.compare_digest(_hash(password, bytes.fromhex(salt)), bytes.fromhex(want))
+    return row if ok else None
+
+
+def users(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM user ORDER BY name").fetchall()
+
+
+def projects_for(conn: sqlite3.Connection, user_row: sqlite3.Row | None) -> list[sqlite3.Row]:
+    """Theirs, newest first — every project for an admin, and for a database with no accounts in
+    it at all, which is how this runs on a laptop."""
+    if user_row is None or user_row["is_admin"]:
+        return conn.execute("SELECT * FROM project ORDER BY created_at DESC").fetchall()
+    return conn.execute("SELECT * FROM project WHERE owner_id=? ORDER BY created_at DESC",
+                        (user_row["id"],)).fetchall()

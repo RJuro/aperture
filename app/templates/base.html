@@ -4,13 +4,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 {% if runs %}<meta http-equiv="refresh" content="5">{% endif %}
 <title>{{ app_name }}</title>
-<link rel="stylesheet" href="/static/aperture.css">
+<link rel="stylesheet" href="/static/aperture.css?v={{ css_v }}">
 <body>
 <header class="top">
   <a href="/">{{ app_name }}</a>
   {% if project %}
   · <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
   · <a href="/p/{{ project.id }}/export.md">Reading record</a>
+  {% endif %}
+  {% if user %}
+  <form class="who" method="post" action="/logout">{{ user.name | txt
+    }}{% if user.is_admin %} · <a href="/admin">People</a>{% endif %} · <button>Sign out</button></form>
   {% endif %}
 </header>
 {% if runs %}

@@ -214,8 +214,20 @@ def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
     return out
 
 
+def _css_version() -> str:
+    """The stylesheet's mtime, appended to its URL. A browser cached the old file across a design
+    change and the page ran rules that no longer existed; a versioned URL is the whole fix."""
+    import os
+    p = os.path.join(os.path.dirname(__file__), "static", "aperture.css")
+    try:
+        return str(int(os.stat(p).st_mtime))
+    except OSError:
+        return "0"
+
+
 def _shell(conn, pid: str) -> dict:
-    return {"app_name": APP_NAME, "runs": [dict(r) for r in store.active_runs(conn, pid)]}
+    return {"app_name": APP_NAME, "css_v": _css_version(),
+            "runs": [dict(r) for r in store.active_runs(conn, pid)]}
 
 
 def _threads(conn, mid: str, themes: dict) -> list[dict]:
@@ -230,9 +242,11 @@ def _threads(conn, mid: str, themes: dict) -> list[dict]:
 
 # ---- the pages ----------------------------------------------------------------------------------
 
-def home(conn) -> dict:
-    rows = conn.execute("SELECT * FROM project ORDER BY created_at DESC").fetchall()
-    return {"app_name": APP_NAME, "runs": [], "projects": [dict(r) for r in rows]}
+def home(conn, user=None) -> dict:
+    """Their projects. `user` is None on a database with no accounts in it, and then it is all of
+    them — see `store.projects_for`."""
+    return {"app_name": APP_NAME, "runs": [], "user": user,
+            "projects": [dict(r) for r in store.projects_for(conn, user)]}
 
 
 def project_page(conn, pid: str) -> dict:
@@ -334,23 +348,144 @@ def theme_page(conn, pid: str, tid: str) -> dict:
 
 
 def export(conn, pid: str) -> dict:
+    """The whole record as one document.
+
+    Sectioned rather than flat, because at fifty materials the flat version was unreadable: the
+    corpus, then each theme across the corpus, then each material, then the checks, what the
+    readings set aside, what the researcher said, the runs as totals, and how the themes were
+    renamed. `runs` stays the rows — the template groups them; a page that printed one line per
+    run printed two hundred and fifty of them.
+    """
     p = store.project(conn, pid)
     if p is None:
         return {}
+    aside = _export_set_aside(conn, pid)
     themes = {t["id"]: dict(t) for t in store.live_themes(conn, pid)}
     mats = []
     for m in store.materials(conn, pid):
         d = dict(m)
-        d["orientation"] = _row(store.get_summary(conn, "material", m["id"], "orientation"))
-        d["reading"] = _row(store.get_summary(conn, "material", m["id"], "reading"))
+        for stage in ("orientation", "reading", "angles"):
+            d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         d["people"] = [dict(x) for x in store.people(conn, m["id"])]
         d["speakers"] = [dict(x) for x in store.speakers(conn, m["id"])]
         d["threads"] = _threads(conn, m["id"], themes)
         d["derivation"] = derivation(conn, m["id"])
         mats.append(d)
+    said = _export_comments(conn, pid)
     return {"app_name": APP_NAME, "project": dict(p), "materials": mats,
             "summary": _row(store.get_summary(conn, "project", pid)),
-            "themes": list(themes.values()),
+            "themes": _export_themes(conn, pid, aside),
             "checks": _checks(conn, pid),
-            "feedback": [dict(f) for f in store.project_feedback(conn, pid)],
-            "runs": [dict(r) for r in store.runs(conn, pid)]}
+            "set_aside": aside,
+            "feedback": said,
+            "focus_history": [f for f in said if f["target_kind"] == "focus"],
+            "theme_history": _export_theme_history(conn, pid),
+            "runs": [{**dict(r), "step": _export_step(r["kind"])}
+                     for r in store.runs(conn, pid)]}
+
+
+def _export_step(kind: str) -> str:
+    """What a run of this kind was doing, in the words the app already uses while it runs.
+
+    `kind` alone is a machine label — a researcher reading `doc — 2 runs` learns nothing. The
+    material's name comes out of the line: a totals row is every run of that step, not one
+    material's.
+    """
+    from . import jobs
+    return re.sub(r"\s*(in )?\{name\}", "", jobs.STEPS.get(kind, (kind,))[0])
+
+
+def _export_names(conn, pid: str) -> dict[str, str]:
+    """Material id → what a person calls it. An id in a document is not a reference."""
+    return {m["id"]: (m["title"] or m["name"]) for m in store.materials(conn, pid)}
+
+
+def _export_set_aside(conn, pid: str) -> list[dict]:
+    """What the readings dropped, newest first, each with the material it came from.
+
+    `store.set_aside` returns the notes alone, which is right for one material's page and wrong
+    here: at fifty materials a note that names no material cannot be followed up.
+    """
+    names = _export_names(conn, pid)
+    out = []
+    for r in conn.execute("SELECT notes, material_id FROM run WHERE project_id=? "
+                          "AND notes NOT IN ('', '[]') ORDER BY rowid DESC", (pid,)):
+        try:
+            notes = json.loads(r["notes"])
+        except ValueError:
+            continue
+        out += [{"note": n, "material": names.get(r["material_id"], "")} for n in notes]
+    return out
+
+
+def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
+    """Each live theme across the corpus: where it runs, where it does not, and — beside the
+    absence — any note that named it on the way out, so a silence is never asserted over a line
+    that was found and dropped."""
+    from .engine import account
+
+    out = []
+    for t in store.live_themes(conn, pid):
+        cover = account.coverage(conn, pid, t["id"])
+        carrying, absent = [], []
+        for m in cover["per_material"]:
+            row = dict(m)
+            if m["claims"]:
+                row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], t["id"])]
+                carrying.append(row)
+            else:
+                absent.append(row)
+        out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
+                    "carrying": carrying, "absent": absent,
+                    "derivation": (f'in {cover["materials_with"]} of {cover["materials_total"]} '
+                                   f'materials · {cover["claims"]} claims'),
+                    "set_aside": [n for n in aside if t["name"] and t["name"] in n["note"]]})
+    return out
+
+
+def _export_theme_history(conn, pid: str) -> list[dict]:
+    """Every theme that was renamed or rewritten, with what it used to say. Merged themes are in
+    here too: the evolution of a theme is the analysis, and a merge is part of it."""
+    out = []
+    for t in conn.execute("SELECT * FROM theme WHERE project_id=? ORDER BY name", (pid,)):
+        rows = [dict(h) for h in store.theme_history(conn, t["id"])]
+        if rows:
+            out.append({**dict(t), "history": rows})
+    return out
+
+
+def _export_comments(conn, pid: str) -> list[dict]:
+    """Every comment, with the thing it was about named and whether a rewrite has honoured it.
+
+    A comment is an instruction for the next rewrite of one block. Printed as `theme t3f9…` it is
+    unreadable a month later, and printed without its outcome it cannot be audited: the researcher
+    needs to see which of their objections the analysis has actually answered.
+    """
+    names = _export_names(conn, pid)
+    themes = {t["id"]: t["name"] for t in
+              conn.execute("SELECT id, name FROM theme WHERE project_id=?", (pid,))}
+    runs = {r["id"]: dict(r) for r in store.runs(conn, pid)}
+
+    def about(f) -> str:
+        kind, ref = f["target_kind"], f["target_id"]
+        if kind in ("project_summary", "focus"):
+            return "the corpus"
+        if kind == "theme":
+            return themes.get(ref, ref)
+        if kind == "thread":
+            mid, _, tid = ref.partition(":")
+            return f'{names.get(mid, mid)}, under {themes.get(tid, tid)}'
+        if kind == "moment":
+            x = store.moment(conn, ref)
+            return (f'a claim in {names.get(x["material_id"], "")} [{x["sid"]}]' if x
+                    else "a claim")
+        return names.get(ref, ref)      # material_summary, frame — both name a material
+
+    out = []
+    for f in store.project_feedback(conn, pid):
+        d, r = dict(f), runs.get(f["consumed_by_run"])
+        d["about"] = about(f)
+        d["outcome"] = (f'honoured by a rewrite on {(r["finished"] or r["started"] or "")[:10]}'
+                        if r else "open")
+        out.append(d)
+    return out

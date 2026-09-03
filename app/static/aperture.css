@@ -95,8 +95,11 @@ body > main > p:first-child a { color: var(--ink-2); }
 
 /* ---- the record register (the material itself) ------------------------------------------------ */
 .text, .record, pre { font-family: var(--record); font-size: .9rem; line-height: 1.6; color: var(--record-ink); }
-.text { background: var(--sheet); border: 1px solid var(--rule); border-radius: 3px; padding: 1rem 1.1rem;
-        max-height: 78vh; overflow: auto; scroll-behavior: smooth; }
+/* The record scrolls with the page; the claims beside it stick. A nested scroll box inside the
+   page broke the one interaction the design rests on — a claim's link scrolled the page to the
+   pane and never the pane to the sentence — and it is a worse way to read a long text anyway. */
+.text { background: var(--sheet); border: 1px solid var(--rule); border-radius: 3px; padding: 1rem 1.1rem; }
+.cols > .side:first-child { position: sticky; top: 1rem; align-self: start; }
 .text pre.material { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 .9em; font: inherit; color: inherit; }
 .text pre.material > b { color: var(--ink-3); font-size: .78em; font-weight: 400; margin-right: .5em; user-select: none; }
 .text h3.material { font-family: var(--reading); color: var(--ink-3); font-size: .78rem; font-weight: 600; letter-spacing: .07em;
@@ -107,11 +110,11 @@ q.quote::before, q.quote::after { color: var(--ink-3); }
 /* the marker: the one saturated colour, and the sentence a claim points at */
 mark { background: var(--mark); color: var(--mark-ink); padding: .04em .12em; border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .s:target { background: var(--target); box-shadow: 0 0 0 .35rem var(--target); border-radius: 2px; }
-.s { scroll-margin-top: 30vh; }
+.s { scroll-margin-top: 38vh; }
 
 /* ---- the material page: claims beside the record ---------------------------------------------- */
 .cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2rem; align-items: start; margin-top: 1rem; }
-@media (max-width: 60rem) { .cols { grid-template-columns: 1fr; } .text { max-height: none; } }
+@media (max-width: 60rem) { .cols { grid-template-columns: 1fr; } .cols > .side:first-child { position: static; } }
 .stack { display: flex; flex-wrap: wrap; gap: .45rem; margin: .4rem 0 1.2rem; }
 .card { display: block; padding: .5rem .75rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--sheet);
         color: var(--ink-2); font-size: .9rem; max-width: 22rem; line-height: 1.35; }
@@ -161,5 +164,13 @@ p.run::before { content: '·'; color: var(--mark); font-weight: 700; }
 /* ---- the top of the page: name, kind, people, derivation ------------------------------------- */
 .meta { color: var(--ink-3); font-size: .9rem; line-height: 1.5; margin: -.2rem 0 1rem; max-width: 60rem; }
 
-@media (prefers-reduced-motion: reduce) { .text { scroll-behavior: auto; } }
 @media print { .say, form, button { display: none; } .text { max-height: none; overflow: visible; border: 0; } }
+
+/* who is signed in, and the way out — one quiet line at the top right */
+.who { display: flex; gap: .75rem; align-items: baseline; justify-content: flex-end; margin: -1.6rem 0 1rem;
+       font-size: .8rem; color: var(--ink-3); }
+.who form { margin: 0; display: inline; }
+.who button { padding: .1rem .5rem; font-size: .78rem; border-color: var(--rule); color: var(--ink-2); background: transparent; }
+.who button:hover { border-color: var(--ink-3); color: var(--ink); background: transparent; }
+.problem { max-width: var(--measure); padding: .55rem .8rem; border: 1px solid var(--rule); border-left: 3px solid var(--mark);
+           border-radius: 3px; background: var(--sheet); font-size: .95rem; }

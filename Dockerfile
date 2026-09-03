@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 WORKDIR /srv
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir fastapi "uvicorn[standard]" jinja2 httpx python-multipart
+RUN pip install --no-cache-dir fastapi "uvicorn[standard]" jinja2 httpx python-multipart python-docx pypdf
 COPY app/ ./app/
 COPY seed/ ./seed/
 # State lives in a persistent volume mounted here (Coolify storage at /data).

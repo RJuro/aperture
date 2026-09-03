@@ -13,10 +13,12 @@ tested in one place.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Form, Request
+from urllib.parse import quote_plus
+
+from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
-from . import db, ingest, jobs, rerun, store
+from . import db, ingest, intake, jobs, rerun, store
 from .pages import connection
 
 router = APIRouter()
@@ -48,24 +50,45 @@ def _target(claim_id: str, theme_id: str, material_id: str, pid: str) -> tuple[s
 
 
 @router.post("/p/new")
-def new_project(name: str = Form(...), focus: str = Form("")):
+def new_project(request: Request, name: str = Form(...), focus: str = Form("")):
     conn = connection()
-    pid = store.create_project(conn, name.strip() or "Untitled", focus.strip())
+    user = getattr(request.state, "user", None)
+    pid = store.create_project(conn, name.strip() or "Untitled", focus.strip(),
+                               owner_id=user["id"] if user else None)
     return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
 @router.post("/p/{pid}/material")
-def add_material(pid: str, name: str = Form(...), text: str = Form(...)):
-    """Text in, sentences out, and the reading starts on its own.
+def add_material(pid: str, files: list[UploadFile] = File(default=[]),
+                 name: str = Form(""), text: str = Form("")):
+    """Files and/or pasted text in, sentences out, and each reading starts on its own.
 
-    Sentences are cut here and now, synchronously, before the background work begins: ids are the
-    spine every code and claim cites, so they exist before anything can cite them.
+    Extraction is synchronous and so is the sentence cut: ids are the spine every code and claim
+    cites, so they exist before anything can cite them, and the chain that follows is the only
+    part slow enough to be worth backgrounding.
+
+    A file that cannot be read stops the whole submission. Half an upload landing is worse than
+    none of it — the researcher dropped in a folder and has no way of knowing which four of five
+    files became material.
     """
     conn = connection()
-    mid = store.add_material(conn, pid, name.strip() or "Untitled", text)
-    store.save_sentences(conn, mid, ingest.sentences(text))
-    jobs.ingest_chain(pid, mid)
-    return RedirectResponse(f"/p/{pid}/m/{mid}", status_code=303)
+    pieces = []
+    try:
+        for f in files:
+            if f.filename:
+                pieces.append((f.filename, intake.extract(f.filename, f.file.read())))
+    except intake.IntakeError as e:
+        return RedirectResponse(f"/p/{pid}?problem={quote_plus(str(e))}", status_code=303)
+    if text.strip():
+        pieces.append((name.strip() or "Untitled", text))
+    mid = ""
+    for piece_name, body in pieces:
+        mid = store.add_material(conn, pid, piece_name, body)
+        store.save_sentences(conn, mid, ingest.sentences(body))
+        jobs.ingest_chain(pid, mid)
+    # One piece: straight to it. Several: the project page, where they are all listed reading.
+    return RedirectResponse(f"/p/{pid}/m/{mid}" if len(pieces) == 1 else f"/p/{pid}",
+                            status_code=303)
 
 
 @router.post("/p/{pid}/react")

@@ -14,9 +14,16 @@ import sqlite3
 import uuid
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS user (
+    id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
+    is_admin INTEGER NOT NULL DEFAULT 0);
+
+CREATE TABLE IF NOT EXISTS session (
+    token TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT NOT NULL);
+
 CREATE TABLE IF NOT EXISTS project (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, focus TEXT DEFAULT '',
     brief TEXT DEFAULT '', created_at TEXT NOT NULL);
@@ -120,6 +127,9 @@ def migrate(conn: sqlite3.Connection) -> None:
     have = {r[1] for r in conn.execute("PRAGMA table_info(run)")}
     if "notes" not in have:
         conn.execute("ALTER TABLE run ADD COLUMN notes TEXT DEFAULT ''")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(project)")}
+    if "owner_id" not in have:
+        conn.execute("ALTER TABLE project ADD COLUMN owner_id TEXT")
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     conn.commit()
 

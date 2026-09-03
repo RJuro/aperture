@@ -178,7 +178,7 @@ stable** — a re-frame never re-ingests, so codes and moments survive it.
 
 ## 7. Pages
 
-**Home `/`** — projects; new project. PIN gate when `APERTURE_PIN` is set.
+**Home `/`** — the signed-in user's projects; new project. Sign-in with an account an admin made; `/admin` creates users and lists every project.
 
 **Project `/p/{pid}`** — the project summary (moment citations link into materials). The brief, one
 line. Focus with history and a form. **Themes as rows**: name, gist, one column per material
@@ -239,7 +239,7 @@ checked against real output is not a validator.
 ## 9. Deploy
 
 New Coolify application from this repo; persistent storage at `/data`; env: `APERTURE_DATA_DIR`,
-`APERTURE_PIN`, `APERTURE_PROVIDER`, `MINIMAX_API_KEY`, `MISTRAL_API_KEY`, `PORT`. Health at
+`APERTURE_ADMIN` (`name:password`, first boot only), `APERTURE_PROVIDER`, `MINIMAX_API_KEY`, `MISTRAL_API_KEY`, `PORT`. Health at
 `/health`. **Never rename the application after creation** — a rename orphaned the previous app's
 volume. Secrets live only in Coolify's env and a gitignored `.env`.
 

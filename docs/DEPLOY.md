@@ -5,7 +5,7 @@
 | Variable | Required | What it does |
 |---|---|---|
 | `APERTURE_DATA_DIR` | yes in production | Where the SQLite file lives. **Must be a persistent volume** or every project vanishes on redeploy. The image sets `/data`. |
-| `APERTURE_PIN` | yes on a shared host | Turns on the PIN gate. Unset means no auth at all — correct for local development, wrong for anything reachable. |
+| `APERTURE_ADMIN` | yes on a shared host | `name:password`. Creates the first admin on first boot when no user exists; the admin then makes users on `/admin`. With no users the instance is open — correct for a laptop, wrong for anything reachable. |
 | `APERTURE_PROVIDER` | no | `minimax` (default) or `mistral`. Never inferred from which key is set. |
 | `MINIMAX_API_KEY` | with `minimax` | MiniMax-M3. The cheaper of the two; used for development and testing. |
 | `MISTRAL_API_KEY` | with `mistral` | GLM-5.2 under the university's Mistral contract. The EU-hosted option. |
@@ -20,7 +20,7 @@ in a commit message, never printed to a log.
 
 Create a **new application** from this repository. Build with the root `Dockerfile`. Mount
 persistent storage at `/data`. Set the environment above. The healthcheck hits `/health`, which is
-always outside the PIN gate.
+always outside the sign-in.
 
 **Never rename the application after it is created.** A rename in a previous project orphaned the
 data volume and the recovery still has not happened. If the name is wrong, live with it or migrate

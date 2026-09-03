@@ -15,12 +15,12 @@ from . import auth
 
 app = FastAPI(title="Aperture")
 
-app.add_middleware(auth.PinAuth)
+app.add_middleware(auth.Accounts)
 
 
 @app.get("/health")
 def health() -> dict:
-    """Always reachable, never behind the PIN — the container's healthcheck hits it."""
+    """Always reachable, never behind the sign-in — the container's healthcheck hits it."""
     return {"ok": True}
 
 
@@ -30,6 +30,11 @@ if _STATIC.is_dir():
 
 
 # Routers are attached last so a partially built app still serves /health.
+try:                                                    # pragma: no cover - wiring
+    from . import accounts
+    app.include_router(accounts.router)
+except ImportError:
+    pass
 try:                                                    # pragma: no cover - wiring
     from . import pages
     app.include_router(pages.router)

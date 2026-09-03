@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>{{ app_name }}</h1>
+<p class="dim">A reading companion for qualitative material.</p>
+<form method="post" action="/login">
+  <label>Name <input name="name" autofocus required></label>
+  <label>Password <input name="password" type="password" required></label>
+  <button>Sign in</button>
+</form>
+{% if problem %}<p class="dim">{{ problem }}</p>{% endif %}
+{% endblock %}
