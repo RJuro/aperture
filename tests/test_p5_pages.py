@@ -328,3 +328,20 @@ def test_removing_material_is_never_one_click(client, analysed):
             f"the removal form is not folded away on {url}"
         assert '<summary class="danger-text">Remove material</summary>' in before, \
             f"nothing on {url} has to be opened before the button appears"
+
+
+def test_a_material_whose_lines_were_all_set_aside_shows_the_reasons_and_the_check_form(
+        client, conn, analysed):
+    """The reading ran, wrote its lines, and every one of them fell under the floor. The page said
+    "No analysis yet." and hid both the stored explanation and the one verb designed for a
+    material the reading found nothing in — because everything below the theme tabs was gated on
+    there being a theme to show."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    conn.execute("UPDATE moment SET status='superseded' WHERE material_id=?", (mid,))
+    conn.commit()
+    rid = store.start_run(conn, pid, "doc", mid, "x")
+    store.finish_run(conn, rid, notes=['the line for "Belonging" was set aside: 2 claims left '
+                                       'after checking the quotes, 4 needed'])
+    html = client.get(f"/p/{pid}/m/{mid}").text
+    assert "was set aside: 2 claims left" in html, "the reason was computed, stored and hidden"
+    assert f'action="/p/{pid}/check"' in html, "the one verb for a material with nothing in it"
