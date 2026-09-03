@@ -46,8 +46,30 @@ P6 export (Opus C)         ┘──── land first ──┘
 | P7 | yes | codex reviews: ~40 lines cut of 204 claimed, with reasons; a full copy pass applied |
 | P8 | **partly** | live at `aperture.automate.business.aau.dk`, healthy since the second rollout; **persistent storage still needs attaching in the Coolify UI**; the live walkthrough runs after this rollout |
 
-Not yet: a password-change page (fifteen lines); repeated-run model comparison graded blind;
-the human validation, which is the only evidence that would count.
+Not yet: repeated-run model comparison graded blind; the human validation, which is the only
+evidence that would count.
+
+## Status, 2026-09-03, later
+
+Storage is attached at `/data` (Coolify storage 25), so a push to `main` redeploys without losing
+data. The password-change page exists (`/account`). Then a second round, from a review of the
+running app and a design exploration (`Aperture-UI-Exploration.zip`, kept out of the repo):
+
+| What | How | Where |
+|---|---|---|
+| Analysis runs whether or not a page is open | a `job` row is committed before the thread starts; `resume_pending` relaunches queued or interrupted jobs when the process starts; one chain at a time | `jobs.py`, `store.enqueue_job` |
+| One upload is one chain, however many files | frame, angles, read per material; themes per material; doc per material; accounts; project — not one tail per file | `jobs.ingest_chain` |
+| Material can be removed | `POST /p/{pid}/m/{mid}/remove` retires its claims, summaries, orphaned codes and themes mechanically, then runs accounts + project (`resynthesis_chain`) | `store.remove_material`, `verbs.remove_material` |
+| The corpus summary in two movements | PROJECT returns `summary` (grounded, ≤300 words) and `interpretation` (provisional, ≤150 words); stored as stages `reading` and `interpretation`; shown under two labels | `synth.project`, `prompts/project.md` |
+| The page says when the summary is behind | `store.summary_state`: materials read after it was written, a chain working now, or the error that stopped the last one, with a button to write it again | `project.html` |
+| A receipt per material | which of structure, angles, coding, synthesis have landed; a failed step shows its reason | `context._analysis_steps` |
+| One title standard | Python composes `{participants} — {kind}, {year}` from validated speakers, kind and a new FRAME `year`; the prompt no longer carries a naming convention; existing titles backfilled at migration v6 | `titles.compose`, `engine/frame.py`, `db.migrate` |
+| Design | the exploration's shell (top bar, project rail, theme tabs, claims beside the record) ported to every page; single cool-archival theme; the theme page's claim list repaired | `aperture.css`, templates |
+
+Follow-ups: `docs/prompts/1-frame.md` and `8-project.md` are stale snapshots (no compiler is
+tracked); a chain that dies mid-upload leaves later files unread with no resume beyond the
+corpus-level button (`ponytail:` note on `ingest_chain`); the failed-step reason shows on the
+project page's material row, not yet on the material page.
 
 ## Rules that hold across every phase
 

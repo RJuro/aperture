@@ -135,6 +135,9 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .overview-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .55fr); gap: clamp(42px, 7vw, 90px); align-items: start; }
 .summary-copy { max-width: 78ch; font: 18px/1.68 var(--font-display); }
 .summary-copy p { margin: 0 0 1em; }
+.summary-copy + .eyebrow { margin-top: 30px; }
+.summary-copy + .dim.small, .summary-copy + .eyebrow + .summary-copy + .dim.small { max-width: 78ch; margin: 10px 0 0; }
+.summary-copy ~ form { margin-top: 12px; }
 .summary-copy a.cite { color: var(--accent); font: 11px var(--font-mono); vertical-align: .1em; }
 .summary-copy a.cite:hover { text-decoration: underline; text-underline-offset: 3px; }
 .focus-note { padding-top: 3px; border-top: 1px solid var(--fg); }
@@ -173,6 +176,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .analysis-step.active i { background: var(--accent); animation: pulse 1.7s infinite; }
 .analysis-step.failed { color: var(--danger); }
 .analysis-step.failed i { background: var(--danger); }
+.analysis-receipt > .small { flex-basis: 100%; color: var(--danger); font-size: 12px; }
 .row-menu, .head-menu { position: relative; }
 .row-menu > summary, .head-menu > summary { min-width: 44px; min-height: 44px; display: grid; place-items: center; border-radius: var(--radius); list-style: none; font-weight: 700; letter-spacing: .08em; }
 .row-menu > summary::-webkit-details-marker, .head-menu > summary::-webkit-details-marker { display: none; }

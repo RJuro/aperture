@@ -32,8 +32,8 @@ _BANNED = [
 ]
 
 # Context keys whose strings this app wrote, as opposed to the researcher's, the material's or the
-# model's. Only these are ours to police. `line` is deliberately absent: a run's progress line is
-# written by jobs.py and shown verbatim, the same as any other text we did not author.
+# model's. Only these are ours to police. `line` is ours too: a run's progress line is written by
+# jobs.py, and it once said "threads" to a researcher.
 APP_AUTHORED = ("app_name", "derivation", "kind", "state", "stage", "verdict", "line")
 
 PARA = 5        # sentences per block when the material has no structure to group by
