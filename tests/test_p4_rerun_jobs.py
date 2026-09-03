@@ -30,12 +30,15 @@ def _plan(conn, pid, kind, target_id, fb_kind="note", text="x"):
     return rerun.plan(conn, fid)
 
 
-def test_doubt_on_a_moment_is_a_check_and_never_a_rerun(conn, state):
-    plan = _plan(conn, state["pid"], "moment", state["moment"], "doubt", "I don't buy this")
+def test_doubt_about_a_claim_is_a_check_and_never_a_rerun(conn, state):
+    """Doubt reaches the table as the check verb. The page offers one free-text comment per
+    block and no `doubt` at all, so the row that matched one was unreachable."""
+    plan = _plan(conn, state["pid"], "moment", state["moment"], "check", "I don't buy this")
     assert kinds(plan) == ["check"]
 
 
-def test_agreement_on_a_moment_runs_nothing_now(conn, state):
+def test_a_comment_on_a_claim_runs_nothing_now(conn, state):
+    assert _plan(conn, state["pid"], "moment", state["moment"], "note", "overstated") == []
     assert _plan(conn, state["pid"], "moment", state["moment"], "agree", "") == []
 
 

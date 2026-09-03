@@ -40,17 +40,26 @@ material's *form*, so no analytic feedback touches it — it has its own verb (�
 
 | Feedback on | Runs | Sees, in addition to its normal inputs | May change |
 |---|---|---|---|
-| a moment — *doubt* | **CHECK**, not a rerun | the doubt verbatim; passages of this material no moment cites | nothing; records a verdict with quotes |
-| a moment — *agree / note* | nothing now | — | stance stored, shown, exported; enters the next DOC rerun as a directive |
+| a comment on a moment | nothing now | — | stored, shown, exported; enters the next DOC rerun as a directive, and that rerun consumes it |
 | a thread in one material | DOC for that material, that theme only | all feedback on this thread, verbatim | the thread's moments; may cite new sentences; may *propose* a theme gist change (flagged, not applied) |
 | a material's summary | DOC for that material | all feedback on this material | its summary and every thread; may add codes, marked `origin=rerun` |
-| a theme (project level) | THEMES, then DOC for each material where the theme has moments | the feedback verbatim | the theme set (rename, merge, split); affected threads |
-| the project summary | DOC for every material with the feedback as directive, then PROJECT | per material as above | summaries, threads, project summary — **never codes' original hits, never READ, never FRAME** |
+| a theme (project level) | **ACCOUNT** for that theme | that theme's claims across the corpus; which materials carry it and which do not | that theme's account, and its gist if the account sharpens one |
+| the project summary | **ACCOUNT** for every live theme, then PROJECT | PROJECT sees the feedback verbatim; each ACCOUNT as the theme row | every account and the project summary — **never a material's threads, never codes' original hits, never READ, never FRAME** |
 | focus (what you are looking for) | nothing now | — | the next READ and every later DOC carry it |
 | *"check this against the material"* anywhere | CHECK | the question; uncited passages in scope | nothing; records verdict, quotes, searched count |
 | *"this is laid out wrong"* + a hint | FRAME for that material | the hint verbatim; the current frame | frame only; codes, themes and moments are untouched (sentence ids never change) |
 
 `rerun.plan(feedback) -> [Run]` is a table-driven Python function, and its test is this table.
+
+Three rows read differently from how they were first written. A comment on a theme planned
+*THEMES, then DOC for each material where the theme has moments*, and one on the corpus planned a
+DOC per material; a scaling review measured the second at fifty syntheses, seventeen hours, for
+one sentence. The theme account exists precisely so a corpus-level correction can be answered at
+corpus level, and a comment that genuinely needs one material re-read belongs on that material,
+where it is one run. **Known gap: the ACCOUNT prompt has no feedback slot, so a comment on a theme
+is consumed by a run that was never shown it.** And doubt about a claim reaches this table as
+*check this against the material*: the page offers one free-text comment per block and sends no
+`doubt`, so the row that matched one could never fire.
 
 ## 2. What each prompt shows the model
 
@@ -108,7 +117,7 @@ the text before it is used. Same law as anchors, applied to structure.
 
 - **Nouns:** material · moment (claim + quote, highlighted in place) · thread (one theme's moments
   through one material, in order) · summary (per material; per project).
-- **Verbs:** react (agree / doubt / note) on a moment, thread or summary · check ("check this
+- **Verbs:** react (one free-text comment) on a moment, thread or summary · check ("check this
   against the material") · focus · add material · **re-frame** ("this is laid out wrong" + a hint).
 - **Pages:** home · project · material. Plus `export.md`. Codes have no page; a thread shows
   *"based on 4 codes"* in a native `<details>`.
@@ -116,7 +125,8 @@ the text before it is used. Same law as anchors, applied to structure.
 ## 5. Stack
 
 FastAPI · Jinja2 · sqlite (stdlib) · httpx · pydantic · python-multipart · uvicorn. Dev: pytest.
-No JS. No spaCy. Tests replay recorded model output from `tests/recorded/`.
+One poller for the progress line, nothing else. No spaCy. Tests replay recorded model output from
+`tests/recorded/`.
 
 **Two providers, both OpenAI-compatible, selected by `APERTURE_PROVIDER`:**
 

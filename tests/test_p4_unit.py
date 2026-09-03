@@ -209,9 +209,10 @@ def test_the_researchers_words_reach_the_steps_that_take_them_verbatim(conn, pro
     assert got["frame"] == "this is not an interview, it is a set of notes"
 
 
-def test_doubt_on_a_moment_checks_against_that_moments_material(conn, analysed):
+def test_a_check_on_a_claim_searches_that_claims_material(conn, analysed):
     """`check.run` needs a scope, and the runner takes it from the planned run's material."""
-    fid = store.add_feedback(conn, analysed["pid"], "moment", analysed["moment"], "doubt", "no")
+    fid = store.add_feedback(conn, analysed["pid"], "moment", analysed["moment"], "check",
+                             "does anyone else say this?")
     assert rerun.plan(conn, fid)[0]["material_id"] == analysed["grande"]
 
 

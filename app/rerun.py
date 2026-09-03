@@ -52,14 +52,6 @@ def _doc_material(conn, fb) -> list[dict]:
     return [_run("doc", fb["target_id"], None, fb["id"])]
 
 
-def _themes_then_docs(conn, fb) -> list[dict]:
-    """Regroup first, then re-synthesise every material where that theme has moments. The DOC runs
-    are whole-material (no theme_id): THEMES may rename, merge or split, so the thread that comes
-    out is not always the thread that went in."""
-    return [_run("themes", feedback_id=fb["id"])] + [
-        _run("doc", mid, None, fb["id"]) for mid in _materials_with_theme(conn, fb["target_id"])]
-
-
 def _account(conn, fb) -> list[dict]:
     """One theme, rewritten across the corpus. Regrouping the whole codebook and re-reading every
     material that carries the theme — which is what this used to plan — answers a comment about
@@ -92,8 +84,10 @@ def _frame(conn, fb) -> list[dict]:
 #   feedback on          its kind    runs
 TABLE = [
     ("*",                "check",    _check),            # "check this against the material"
-    ("moment",           "doubt",    _check),            # CHECK, not a rerun
-    ("moment",           "*",        _nothing),          # agree / note: stored, rides the next DOC
+    # A comment on a claim: stored, shown, exported, and read by the next rewrite of this
+    # material, which consumes it. Doubt about a claim is the check verb, one row up — the page
+    # offers one free-text comment per block and nothing that sends a `doubt`.
+    ("moment",           "*",        _nothing),
     ("thread",           "agree",    _nothing),          # assent is not an instruction
     ("material_summary", "agree",    _nothing),
     ("theme",            "agree",    _nothing),
@@ -131,9 +125,3 @@ def _material_of(conn: sqlite3.Connection, fb: sqlite3.Row) -> str | None:
     if tk in ("material_summary", "frame"):
         return target
     return None
-
-
-def _materials_with_theme(conn: sqlite3.Connection, tid: str) -> list[str]:
-    return [r["id"] for r in conn.execute(
-        "SELECT DISTINCT m.id AS id FROM moment mo JOIN material m ON m.id = mo.material_id "
-        "WHERE mo.theme_id=? AND mo.status='live' ORDER BY m.created_at, m.id", (tid,))]
