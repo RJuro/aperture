@@ -71,6 +71,31 @@ tracked); a chain that dies mid-upload leaves later files unread with no resume 
 corpus-level button (`ponytail:` note on `ingest_chain`); the failed-step reason shows on the
 project page's material row, not yet on the material page.
 
+## Status, 2026-09-03, evening
+
+A third round, driven by the researcher using the live instance and by a read-only review
+(`scratchpad/review/whats-messed-up.md`, twenty verified items, the top five fixed first). All of it
+built by Opus subagents in worktrees, merged and deployed the same evening.
+
+| What | How | Where |
+|---|---|---|
+| Nothing loops, and work can be stopped | open run rows are closed at process start; `POST /p/{pid}/stop` ends a chain between steps; an interrupted job resumes at the step it died on (`run.job_id`) | `jobs.py`, `store.close_orphaned_runs`, `store.requeue_job` |
+| Thinking per step | `llm.EFFORT`: FRAME none, ANGLES low, THREAD medium (one nine-theme DOC at high measured 1351 s / 152k output tokens); everything else the provider default | `llm.py` |
+| A busy model is waited out | 429/5xx → Retry-After or 15/30/60/120/240 s, reported on the run line; a stray quote or raw newline in a long JSON string is repaired before the retry | `llm._ask`, `llm.parse` |
+| Progress without jumping | the run line updates in place every 10 s (the one script in the app), reloads once when work ends unless a form has content; `noscript` keeps a slow refresh; "theme 3 of 12" sub-steps | `base.html`, `pages.py` `/p/{pid}/runs` |
+| One corpus summary per batch | a chain skips accounts/project only when another QUEUED chain will write them | `jobs._another_chain` |
+| Estimated speakers | DIARIZE runs only for an interview or focus group with no `NAME:` cues; stored as segments, shown "Participant · estimated" | `engine/diarize.py`, `prompts/diarize.md` |
+| A short account per thread, and an overview | THREAD returns a ≤90-word summary (scope `thread`); "Themes in this material" under the reading summary | `synth._thread`, `material.html` |
+| Run again from a chosen step, with a note | `POST /p/{pid}/m/{mid}/rerun` from structure/angles/coding/themes/synthesis; the note rides every step as the researcher's verbatim words (READ and ANGLES gained a feedback slot); a re-read replaces the old hits | `rerun.from_step`, `verbs.rerun_material` |
+| The reading record is a document | `/p/{pid}/record` page with contents; `.docx` (python-docx) and `.md` downloads with filenames | `pages.py`, `word.py`, `record.html` |
+| Twenty review items | dead page while queued; state line counts read-since apart from unread; ANGLES prose kept out of the description slot; stale only when the theme set changed; claim comments consumed; quote marks across sentences; rotten citations dropped; two-step remove; duplicate upload refused; file errors name the file; admin set-password / set-owner; other sessions signed out on password change; export prints each claim once; sticky theme column; vocabulary test covers every page | see the review file for the list |
+
+Still open: the ACCOUNT prompt has no slot for a comment on a theme (the comment is consumed unseen —
+a prompt edit plus re-recording, deliberately not done in passing); `tests/recorded/read-*.json`
+are stale for a manual replay after READ gained its slot; a chain that dies mid-upload leaves later
+files unread until the researcher runs again from Structure.
+
+
 ## Rules that hold across every phase
 
 - Law 5. A prompt template is universal; a slot holds material, structure, or the researcher's
