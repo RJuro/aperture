@@ -23,6 +23,8 @@ import hashlib
 import json
 import os
 import re
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
@@ -46,12 +48,28 @@ EFFORT = {"frame": "", "angles": "low"}
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
 
+# Seconds between attempts while the provider is loaded. Five waits, then the error stands.
+BUSY_WAITS = (15, 30, 60, 120, 240)
+_sleep = time.sleep
+
 # Set by jobs.py around a run so usage lands on the right run row.
 usage: dict = {"tokens_in": 0, "tokens_out": 0}
+
+# Set by jobs.py around a step, so a wait says so on the page instead of looking like a hang.
+report: Callable[[str], None] = lambda msg: None
 
 
 class LLMError(RuntimeError):
     pass
+
+
+class _Busy(LLMError):
+    """A provider that is loaded, not one that is refusing: 429, or anything 5xx. Waiting is the
+    answer, so this is retried where a plain LLMError is not. `after` is its Retry-After header."""
+
+    def __init__(self, message: str, after: str = ""):
+        super().__init__(message)
+        self.after = after
 
 
 def provider() -> str:
@@ -134,7 +152,17 @@ def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str
                          {"role": "user", "content": user}]}
     if effort:
         body["reasoning_effort"] = effort
-    return _send(body, timeout)
+    # A busy provider is not a failed call. It is the middle of the afternoon, and the answer is
+    # to wait — saying so, because a silent chain that takes four minutes looks like a hang.
+    for i, wait in enumerate(BUSY_WAITS, 1):
+        try:
+            return _send(body, timeout)
+        except _Busy as busy:
+            pause = int(busy.after) if busy.after.strip().isdigit() else wait
+            report(f"The model is busy; trying again in {pause} s "
+                   f"(attempt {i} of {len(BUSY_WAITS)})")
+            _sleep(pause)
+    return _send(body, timeout)         # the sixth try, and its error is the one that stands
 
 
 def _send(body: dict, timeout: float | None) -> str:
@@ -145,7 +173,10 @@ def _send(body: dict, timeout: float | None) -> str:
         with client.stream("POST", f"{base}/chat/completions",
                            headers={"Authorization": f"Bearer {key}"}, json=body) as r:
             if r.status_code >= 400:
-                raise LLMError(f"{r.status_code} from {base}: {r.read()[:300]!r}")
+                detail = f"{r.status_code} from {base}: {r.read()[:300]!r}"
+                if r.status_code == 429 or r.status_code >= 500:
+                    raise _Busy(detail, r.headers.get("retry-after", ""))
+                raise LLMError(detail)
             for line in r.iter_lines():
                 if not line.startswith("data: "):
                     continue

@@ -176,6 +176,78 @@ def test_a_call_that_only_describes_a_layout_is_not_asked_to_think(monkeypatch, 
     assert sent[2]["reasoning_effort"] == "medium", "the override turns the whole run up at once"
 
 
+def test_a_busy_provider_is_waited_out_and_says_so_while_it_waits(monkeypatch, real_chat_json):
+    """429 in the middle of the afternoon is not a failed reading. The waits are reported because
+    a chain that goes quiet for four minutes is indistinguishable from a hung one."""
+    waits, said, tries = [], [], []
+    monkeypatch.setattr(llm, "_sleep", waits.append)
+    monkeypatch.setattr(llm, "report", said.append)
+
+    def busy_twice(body, timeout):
+        tries.append(1)
+        if len(tries) < 3:
+            raise llm._Busy("429 from x: b'slow down'")
+        return '{"ok": 1}'
+
+    monkeypatch.setattr(llm, "_send", busy_twice)
+    assert real_chat_json("s", "u", label="read") == {"ok": 1}
+    assert waits == [15, 30]
+    assert said == ["The model is busy; trying again in 15 s (attempt 1 of 5)",
+                    "The model is busy; trying again in 30 s (attempt 2 of 5)"]
+
+
+def test_a_provider_that_stays_busy_waits_five_times_and_then_the_error_stands(monkeypatch,
+                                                                              real_chat_json):
+    waits = []
+    monkeypatch.setattr(llm, "_sleep", waits.append)
+
+    def always(body, timeout):
+        raise llm._Busy("503 from x: b'busy'", after="7")     # honoured over the schedule
+
+    monkeypatch.setattr(llm, "_send", always)
+    with pytest.raises(llm.LLMError, match="503"):
+        real_chat_json("s", "u", label="read")
+    assert waits == [7, 7, 7, 7, 7]
+
+
+def test_a_loaded_provider_is_told_apart_from_one_that_is_refusing(monkeypatch):
+    class Resp:
+        status_code, headers = 429, {"retry-after": "7"}
+
+        def read(self):
+            return b"the model is busy"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    class Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def stream(self, *a, **k):
+            return Resp()
+
+    monkeypatch.setattr(llm.httpx, "Client", Client)
+    raised = {}
+    for status in (429, 503, 401):
+        Resp.status_code = status
+        with pytest.raises(llm.LLMError) as e:
+            llm._send({"model": "m"}, None)
+        raised[status] = e.value
+    assert isinstance(raised[429], llm._Busy) and raised[429].after == "7"
+    assert isinstance(raised[503], llm._Busy)
+    assert not isinstance(raised[401], llm._Busy), "a refusal is not something to wait out"
+
+
 def test_switching_provider_cannot_inherit_the_other_ones_endpoint(monkeypatch):
     """A single global base-url override was a loaded gun: set it for one provider in .env,
     switch provider, and the new provider's key is sent to the old provider's endpoint. It cost
