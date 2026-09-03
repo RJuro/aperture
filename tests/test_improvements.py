@@ -177,7 +177,9 @@ def test_project_prompt_requires_grounded_and_interpretive_synthesis():
 def test_an_answer_that_is_not_json_is_asked_for_once_more(monkeypatch, real_chat_json):
     import pytest
     from app import llm
-    answers = iter(['{"summary": "she said "no" and left"}', '{"summary": "fine"}'])
+    # An inner quote followed by `,` is past what `_repair` can do (see test_p16_json_repair),
+    # so this is still a real second call rather than a repair — which is what this test is for.
+    answers = iter(['{"summary": "she said "no", and left"}', '{"summary": "fine"}'])
     monkeypatch.setattr(llm, "_ask", lambda *a: next(answers))
     monkeypatch.delenv("APERTURE_REPLAY", raising=False)
     assert real_chat_json("s", "u", label="t") == {"summary": "fine"}

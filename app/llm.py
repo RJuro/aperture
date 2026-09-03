@@ -135,8 +135,80 @@ def _content(delta) -> str:
     return ""
 
 
+_RAW_IN_STRING = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}
+
+
+def _repair(text: str) -> str:
+    """Escape what a model leaves raw inside a long string: an unescaped `"` and a raw newline.
+
+    The failure this exists for: the PROJECT step asks for a 300-word summary and a 150-word
+    interpretation, and the model writes a term in quotes — `she called it "the shop" and left` —
+    or lets a line break into the value. `json.loads` dies at column 420, the one-more-try gets the
+    same kind of answer, and nine THREAD calls and a DOC call are thrown away by one stray quote.
+
+    The rule, in one sentence: walking the text with a stack of open containers, a `"` inside a
+    string closes it only when the next non-space character is the one the grammar expects there —
+    `:` for a string in key position, `,` `}` `]` (or end of text) for one in value position —
+    and every other `"` is an inner quote and gets escaped.
+
+    Key position is what makes `the sign said "closed": nobody came` repairable: a bare greedy rule
+    would take the `"` before that `:` as the end of the value, because `:` follows it. Here the
+    string is a value, `:` is not in its follow set, and the quote is escaped like any other.
+
+    ponytail: an inner quote that happens to be followed by `,` `}` or `]` — `he said "no", then
+    left` — still reads as a close and the repair still fails, landing on the one-more-try as
+    before. Fixing that needs backtracking; do it if the logs ever show one.
+    """
+    out: list[str] = []
+    stack: list[str] = []           # the open containers, innermost last
+    want_key = False                # is the next string a key?
+    in_string = is_key = False
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if in_string:
+            if c == "\\" and i + 1 < n:               # an escape the model got right, kept whole
+                out.append(text[i:i + 2])
+                i += 2
+                continue
+            if c in _RAW_IN_STRING:
+                out.append(_RAW_IN_STRING[c])
+            elif c == '"':
+                j = i + 1
+                while j < n and text[j] in " \t\r\n":
+                    j += 1
+                after = text[j] if j < n else ""
+                if (after == ":") if is_key else (after in ",}]" or j >= n):
+                    in_string = False
+                    out.append('"')
+                else:
+                    out.append('\\"')
+            else:
+                out.append(c)
+            i += 1
+            continue
+        if c == '"':
+            in_string, is_key = True, want_key
+        elif c in "{[":
+            stack.append(c)
+            want_key = c == "{"
+        elif c in "}]":
+            if stack:
+                stack.pop()
+            want_key = False
+        elif c == ":":
+            want_key = False
+        elif c == ",":
+            want_key = bool(stack) and stack[-1] == "{"
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
 def parse(raw: str) -> dict:
-    """Model text → dict. Strips thinking and code fences, then finds the outermost JSON object."""
+    """Model text → dict. Strips thinking and code fences, then finds the outermost JSON object.
+    A slice that still will not parse gets one repair pass (see `_repair`) before it is given up
+    on, so the one-more-try in `chat_json` is spent on real failures rather than a stray quote."""
     text = _FENCE.sub("", _THINK.sub("", raw or "")).strip()
     try:
         return json.loads(text)
@@ -144,7 +216,11 @@ def parse(raw: str) -> dict:
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end <= start:
             raise LLMError(f"no JSON object in model output: {text[:200]!r}")
-        return json.loads(text[start:end + 1])
+        sliced = text[start:end + 1]
+        try:
+            return json.loads(sliced)
+        except json.JSONDecodeError:
+            return json.loads(_repair(sliced))          # still bad → raises, as it did before
 
 
 def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str:
