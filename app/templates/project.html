@@ -133,7 +133,7 @@
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
       <h3>Check against all material</h3><p>Search uncited passages without changing the reading.</p>
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
-      <button class="btn btn-primary">Check all material</button>
+      <button class="btn btn-primary">Check all {{ materials | length }} {{ 'material' | plural(materials | length) }}</button>
     </form>
   </div>
   {% if checks %}<details class="quiet-details"><summary>Previous checks · {{ checks | length }}</summary><ul class="check-list">

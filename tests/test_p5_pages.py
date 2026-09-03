@@ -345,3 +345,9 @@ def test_a_material_whose_lines_were_all_set_aside_shows_the_reasons_and_the_che
     html = client.get(f"/p/{pid}/m/{mid}").text
     assert "was set aside: 2 claims left" in html, "the reason was computed, stored and hidden"
     assert f'action="/p/{pid}/check"' in html, "the one verb for a material with nothing in it"
+
+
+def test_the_project_check_says_how_much_it_will_search(client, analysed):
+    """One sentence typed here is a call per material, each carrying a full chunk, and the Stop
+    button only appears once the first run row exists. The size belongs on the button."""
+    assert "Check all 2 materials" in client.get(f"/p/{analysed['pid']}").text
