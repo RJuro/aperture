@@ -120,3 +120,21 @@ def test_the_document_never_shows_an_internal_claim_id(client, conn, rich):
     assert first["id"] not in md
     assert f"[{first['sid']}]" in md
     assert "(frame)" not in md and "(doc)" not in md, "stage names are for the code"
+
+
+def test_each_claim_is_printed_once_and_no_step_name_stands_in_for_a_state(client, conn, rich):
+    """At fifty materials and twelve themes the record was 1.31 MB and 12,000 quoted claim lines
+    for 6,000 claims — every claim once under its theme and once again under its material. And
+    the material header read "interview · doc · ...": `doc` is the engine's word for a step, not
+    a sentence about a material."""
+    pid = rich["pid"]
+    md = client.get(f"/p/{pid}/export.md").text
+    first = store.moments(conn, rich["grande"])[0]
+    themes = md.split("\n## Themes\n", 1)[1].split("\n## Materials\n", 1)[0]
+    mats = md.split("\n## Materials\n", 1)[1]
+    assert first["claim"] in themes and first["anchor"] in themes
+    assert first["claim"] not in mats, "printed under its theme and again under its material"
+    name = list(rich["themes"])[0]
+    assert f"](#{name.lower().replace(' ', '-')})" in mats, \
+        "a material must point at where its claims are printed"
+    assert f" · {store.material(conn, rich['grande'])['state']} ·" not in md
