@@ -14,7 +14,10 @@ Four rules, equal weight, each checked.
    does not answer, and the questions the corpus so far has left open that this piece bears on.
    QUESTIONS, not findings. They are handed to whoever works out what to look for in the next
    piece. If a sentence here states what the corpus shows, it is in the wrong place — delete it.
-3. `people` lists who is named in this material, with aliases and a role where the text gives one.
+3. `people` lists who appears IN the material — participants, the people they speak about, an
+   interviewer or facilitator if there is one — with aliases and a role where the text gives one.
+   Not transcribers, archivists, recording engineers or anyone named only in front matter: they are
+   part of the record's production, not of what it records.
 4. Every word is your own and assumes no speaker. Interview, focus group, field notes, document,
    or open answers — all ordinary here.
 

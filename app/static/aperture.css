@@ -1,92 +1,165 @@
-/* Two registers, and they must not be confusable: the material is monospace, everything the app
-   or the model says is a proportional reading face. A quote and a claim never look alike. */
+/* Aperture — the stylesheet, and the design plan it follows.
+
+   THE IDEA. Two registers, kept apart on sight. The material is a RECORD: a typescript, set in a
+   typewriter face, numbered, never restyled — the researcher must always know they are looking at
+   what was said. The analysis is READING: a text face with real italics, the app's and the model's
+   sentences, never in the record's face. The one saturated colour on the page is the marker that
+   joins them: a quote lit in the record where a claim rests on it. Everything else is ink on paper.
+
+   COLOUR. A cool archival ground — the grey-blue of a reading room, not cream — with near-black
+   ink; links and controls in a deep ink blue; the marker a highlighter yellow in light and a muted
+   amber in dark. Neutrals carry a slight blue bias so they read as chosen. Dark is designed, not
+   inverted: warm-grey text on charcoal, the record pane a shade darker than the page.
+
+   TYPE. Literata (reading), Courier Prime (record). Two faces, nothing else — the register rule
+   is enforced by the palette of faces. Labels are Literata, small, letter-spaced caps. Numbers are
+   tabular everywhere a count appears. Measure held to ~66ch for prose.
+
+   LAYOUT. A single column of prose at the top of every page; the material page opens into two
+   columns — claims left, record right — with the record scrolling in its own pane so the claim
+   stays put. A 4px spacing grid. Hairlines, not boxes. No JavaScript anywhere; :target does the
+   highlighting, <details> does the folding. */
+
+@import url('https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
 :root {
+  --paper: #f3f4f6;        /* page ground, cool */
+  --sheet: #fbfbfc;        /* raised surfaces: the record pane, cards */
+  --ink: #16181d;
+  --ink-2: #4a4f5a;        /* secondary text */
+  --ink-3: #8a909c;        /* labels, derivations, dims */
+  --rule: #d9dce2;         /* hairlines */
+  --rule-2: #e9ebef;       /* fainter hairlines */
+  --link: #1f3f8f;         /* deep ink blue */
+  --link-hover: #142b66;
+  --mark: #ffe066;         /* the one saturated colour */
+  --mark-ink: #1a1400;
+  --target: #e6eefc;       /* the sentence a claim points at */
+  --record-ink: #22262d;
+  --focus: #1f3f8f;
+  --reading: 'Literata', Georgia, 'Iowan Old Style', serif;
+  --record: 'Courier Prime', 'Courier New', Courier, monospace;
+  --measure: 66ch;
   color-scheme: light dark;
-  --bg: #fbfaf7; --ink: #1b1a17; --dim: #6d6a63; --line: #dcd7cd;
-  --card: #ffffff; --mark: #f6e6a8; --tint: #cfe6fb; --link: #2a5cab;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16171a; --ink: #e5e3de; --dim: #97938b; --line: #30323a;
-    --card: #1d1f24; --mark: #5b4a13; --tint: #1e3d59; --link: #8fb6ff;
+  :root:not([data-theme="light"]) {
+    --paper: #15171b; --sheet: #1c1f24; --ink: #e8e6e1; --ink-2: #b4b1aa; --ink-3: #7d7b76;
+    --rule: #2c3038; --rule-2: #23262c; --link: #9db4ee; --link-hover: #c3d2f6;
+    --mark: #c9a227; --mark-ink: #16120a; --target: #232c3f; --record-ink: #d9d6cf; --focus: #9db4ee;
   }
 }
-* { box-sizing: border-box }
-body { margin: 0; background: var(--bg); color: var(--ink);
-  font: 16px/1.55 Charter, Georgia, "Iowan Old Style", serif; }
-main, .top, .run { max-width: 74rem; margin: 0 auto; padding: 0 1.2rem }
-.top { display: flex; gap: .5rem; align-items: baseline; padding-top: 1rem; color: var(--dim);
-  font-size: .85rem; letter-spacing: .04em; text-transform: uppercase }
-.run { padding: .5rem 1.2rem; color: var(--dim); font-style: italic }
-main { padding-bottom: 5rem }
-a { color: var(--link) }
-h1 { font-size: 1.5rem; margin: 1rem 0 .2rem }
-h2 { font-size: .8rem; letter-spacing: .09em; text-transform: uppercase; color: var(--dim);
-  margin: 2rem 0 .4rem; font-weight: 600 }
-h3 { font-size: .85rem; color: var(--dim); margin: 1.2rem 0 .3rem }
-.dim { color: var(--dim) }
-.small { font-size: .82rem }
-.meta { color: var(--dim); font-size: .9rem; margin: .2rem 0 .6rem }
-ul, ol { padding-left: 1.2rem }
-.mats, .claims, .stack { list-style: none; padding: 0 }
+:root[data-theme="dark"] {
+  --paper: #15171b; --sheet: #1c1f24; --ink: #e8e6e1; --ink-2: #b4b1aa; --ink-3: #7d7b76;
+  --rule: #2c3038; --rule-2: #23262c; --link: #9db4ee; --link-hover: #c3d2f6;
+  --mark: #c9a227; --mark-ink: #16120a; --target: #232c3f; --record-ink: #d9d6cf; --focus: #9db4ee;
+}
 
-/* the app's and the model's voice */
-.summary { max-width: 42rem }
-.gist { font-weight: normal }
-.claim { margin: 0 0 .2rem; font-weight: 600; line-height: 1.35 }
-.claims > li { margin: 0 0 1.4rem }
+/* ---- ground and type ------------------------------------------------------------------------ */
+html { background: var(--paper); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.55 var(--reading);
+       font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+main { max-width: 78rem; margin: 0 auto; padding: 1.5rem 1.5rem 4rem; }
+@media (min-width: 60rem) { main { padding: 2.5rem 3rem 5rem; } }
+h1 { font-size: 1.85rem; line-height: 1.15; font-weight: 500; letter-spacing: -0.005em; margin: .2rem 0 .6rem; text-wrap: balance; }
+h2 { font-size: .78rem; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3); margin: 2.6rem 0 .8rem; }
+h3 { font-size: 1.05rem; font-weight: 600; margin: 1.4rem 0 .4rem; }
+p  { margin: 0 0 .85em; }
+a  { color: var(--link); text-decoration: none; text-underline-offset: .14em; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+::selection { background: var(--mark); color: var(--mark-ink); }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+ul, ol { padding-left: 1.2rem; }
+li { margin: 0 0 .3rem; }
+q { quotes: '\201C' '\201D'; }
 
-/* a quote: never mistakable for a claim */
-.quote { margin: 0 0 .3rem; padding-left: .7rem; border-left: 2px solid var(--line) }
-.quote, .quote a { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: .82rem; color: var(--dim); text-decoration: none }
+/* the app's small voice: derivations, states, kinds */
+.dim { color: var(--ink-3); }
+.small, .dim.small { font-size: .875rem; }
+.provisional { max-width: var(--measure); color: var(--ink-3); font-size: .875rem; font-style: italic; margin: 0 0 .5rem; }
 
-/* the material */
-.text { background: var(--card); border: 1px solid var(--line); border-radius: 3px;
-  padding: .6rem .9rem; max-height: 78vh; overflow-y: auto }
-pre.material { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: .8rem; line-height: 1.6; white-space: pre-wrap; margin: 0 0 .7rem }
-pre.material b { color: var(--dim); font-weight: normal }
-mark { background: var(--mark); color: inherit }
-.s:target { background: var(--tint); outline: 3px solid var(--tint) }
+/* the top line of every page */
+body > main > p:first-child { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+body > main > p:first-child a { color: var(--ink-2); }
 
-/* the stack, and the two columns */
-.stack { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem }
-.card { display: block; padding: .4rem .7rem; border: 1px solid var(--line); border-radius: 3px;
-  background: var(--card); color: inherit; text-decoration: none; font-size: .85rem;
-  max-width: 22rem }
-.card.on { border-color: var(--ink) }
-.cols { display: flex; gap: 1.5rem; align-items: flex-start }
-.side { flex: 1 1 0; min-width: 0 }
+/* ---- the reading register (summaries, accounts, claims) --------------------------------------- */
+.summary { max-width: var(--measure); font-size: 1.04rem; line-height: 1.65; }
+.summary p { margin: 0 0 .9em; }
+.claim { font-weight: 500; line-height: 1.4; margin: 0 0 .25rem; }
+.claims { list-style: none; padding: 0; margin: 0; }
+.claims > li { margin: 0 0 1.35rem; padding-left: .9rem; border-left: 2px solid var(--rule); }
+.claims > li:hover { border-left-color: var(--ink-3); }
+.cite { font-family: var(--record); font-size: .82em; letter-spacing: 0; }
+.gist { font-weight: normal; color: var(--ink-2); }
 
-/* tables and forms */
-.themes { border-collapse: collapse; width: 100%; font-size: .9rem }
-.themes th, .themes td { border-top: 1px solid var(--line); padding: .5rem .6rem;
-  text-align: left; vertical-align: top }
-.themes th span { color: var(--dim); font-weight: normal; font-size: .85rem }
-form { margin: .5rem 0 1rem }
-form.row { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center }
-label { display: block; margin: .3rem 0; color: var(--dim); font-size: .85rem }
-input, textarea, button { font: inherit; font-size: .88rem; color: inherit;
-  background: var(--card); border: 1px solid var(--line); border-radius: 3px; padding: .3rem .5rem }
-textarea { width: 100%; font-family: ui-monospace, Menlo, monospace }
-button { cursor: pointer }
-details { margin: .6rem 0; font-size: .88rem }
-summary { cursor: pointer; color: var(--dim) }
-@media (max-width: 60rem) { .cols { flex-direction: column } .text { max-height: none } }
-.cite { font-family: ui-monospace, Menlo, monospace; font-size: .8em; text-decoration: none }
+/* ---- the record register (the material itself) ------------------------------------------------ */
+.text, .record, pre { font-family: var(--record); font-size: .9rem; line-height: 1.6; color: var(--record-ink); }
+.text { background: var(--sheet); border: 1px solid var(--rule); border-radius: 3px; padding: 1rem 1.1rem;
+        max-height: 78vh; overflow: auto; scroll-behavior: smooth; }
+.text pre.material { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0 0 .9em; font: inherit; color: inherit; }
+.text pre.material > b { color: var(--ink-3); font-size: .78em; font-weight: 400; margin-right: .5em; user-select: none; }
+.text h3.material { font-family: var(--reading); color: var(--ink-3); font-size: .78rem; font-weight: 600; letter-spacing: .07em;
+                    text-transform: uppercase; margin: 1.4em 0 .4em; }
+.quote { font-family: var(--record); font-size: .84rem; color: var(--ink-2); display: inline-block; padding: .05em 0; }
+q.quote::before, q.quote::after { color: var(--ink-3); }
 
-/* The summary is the first thing read and carries no heading, so it does the work of one:
-   set slightly larger than the claims beside it, and held to a readable measure. */
-.summary { max-width: 34rem; font-size: 1.02rem; line-height: 1.65; }
-.summary p { margin: 0 0 .8em; }
-.provisional { max-width: 34rem; color: var(--dim); font-size: .85rem; margin: 0 0 .4em; }
+/* the marker: the one saturated colour, and the sentence a claim points at */
+mark { background: var(--mark); color: var(--mark-ink); padding: .04em .12em; border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.s:target { background: var(--target); box-shadow: 0 0 0 .35rem var(--target); border-radius: 2px; }
+.s { scroll-margin-top: 30vh; }
 
-.row.inline { display: inline-flex; gap: .4rem; align-items: baseline; margin-left: .3rem }
+/* ---- the material page: claims beside the record ---------------------------------------------- */
+.cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 2rem; align-items: start; margin-top: 1rem; }
+@media (max-width: 60rem) { .cols { grid-template-columns: 1fr; } .text { max-height: none; } }
+.stack { display: flex; flex-wrap: wrap; gap: .45rem; margin: .4rem 0 1.2rem; }
+.card { display: block; padding: .5rem .75rem; border: 1px solid var(--rule); border-radius: 3px; background: var(--sheet);
+        color: var(--ink-2); font-size: .9rem; max-width: 22rem; line-height: 1.35; }
+.card:hover { border-color: var(--ink-3); text-decoration: none; }
+.card.on { border-color: var(--ink); color: var(--ink); box-shadow: inset 3px 0 0 var(--mark); }
 
-/* The grid must never scroll the page sideways: it is one element that can overflow, so it
-   carries its own scroller. Beyond a handful of materials the counts link out to the theme. */
-.scroller { overflow-x: auto; max-width: 100% }
-.themes td { text-align: center; font-variant-numeric: tabular-nums }
-.carries { margin: 0 0 1.6rem }
-.carries h3 { margin: 0 0 .4rem; font-size: 1rem }
+/* ---- the project page: themes by material ----------------------------------------------------- */
+.scroller { overflow-x: auto; max-width: 100%; }
+.themes { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.themes th, .themes td { padding: .7rem .8rem; border-top: 1px solid var(--rule-2); vertical-align: top; text-align: left; }
+.themes thead th, .themes tr:first-child th { border-top: 0; color: var(--ink-3); font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.themes th.gist { width: 34%; font-weight: 500; }
+.themes th.gist span { display: block; font-weight: normal; color: var(--ink-2); font-size: .9rem; margin-top: .15rem; }
+.themes td { text-align: center; font-variant-numeric: tabular-nums; }
+.themes td a { display: inline-block; min-width: 2.2rem; padding: .15rem .4rem; border-radius: 3px; border: 1px solid var(--rule); }
+.themes td a:hover { border-color: var(--ink-3); text-decoration: none; }
+.mats { list-style: none; padding: 0; }
+.mats li { padding: .55rem 0; border-top: 1px solid var(--rule-2); }
+.mats li:first-child { border-top: 0; }
+.carries { margin: 0 0 1.8rem; }
+.carries h3 { margin: 0 0 .5rem; }
+
+/* ---- what the researcher does: one comment per block, a question to the material -------------- */
+form { margin: .6rem 0 1.2rem; }
+.say { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: start; max-width: var(--measure); }
+.say textarea, .row input, input, textarea, select { font: inherit; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule);
+        border-radius: 3px; padding: .45rem .6rem; width: 100%; box-sizing: border-box; }
+.say textarea { resize: vertical; min-height: 2.6rem; font-size: .95rem; }
+.say textarea::placeholder, input::placeholder { color: var(--ink-3); font-style: italic; }
+button { font: inherit; font-size: .9rem; font-weight: 500; color: var(--ink); background: var(--paper); border: 1px solid var(--ink-3);
+         border-radius: 3px; padding: .42rem .9rem; cursor: pointer; white-space: nowrap; }
+button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.row label { display: flex; gap: .5rem; align-items: center; color: var(--ink-2); font-size: .9rem; }
+.row.inline { display: inline-flex; gap: .4rem; align-items: baseline; margin-left: .3rem; }
+.found { margin: .35rem 0 .2rem 1rem; }
+details { margin: .8rem 0; }
+details > summary { cursor: pointer; color: var(--ink-3); font-size: .9rem; }
+details > summary:hover { color: var(--ink-2); }
+.aside li { font-size: .9rem; }
+
+/* ---- progress: one narrated line while something runs ----------------------------------------- */
+p.run { display: flex; gap: .6rem; align-items: baseline; padding: .6rem .8rem; margin: 0 0 1.2rem; border: 1px solid var(--rule);
+           border-left: 3px solid var(--mark); border-radius: 3px; background: var(--sheet); font-size: .95rem; }
+p.run::before { content: '·'; color: var(--mark); font-weight: 700; }
+
+/* ---- the top of the page: name, kind, people, derivation ------------------------------------- */
+.meta { color: var(--ink-3); font-size: .9rem; line-height: 1.5; margin: -.2rem 0 1rem; max-width: 60rem; }
+
+@media (prefers-reduced-motion: reduce) { .text { scroll-behavior: auto; } }
+@media print { .say, form, button { display: none; } .text { max-height: none; overflow: visible; border: 0; } }

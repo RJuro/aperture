@@ -5,7 +5,7 @@
 {% if summary %}
 <p>{{ summary_html }}</p>
 {% endif %}
-{% if project.brief %}<p class="dim">Brief: <span class="summary">{{ project.brief | txt }}</span></p>{% endif %}
+{% if project.brief %}<p class="dim"><span class="dim">Open questions the readings carry forward —</span> <span class="summary">{{ project.brief | txt }}</span></p>{% endif %}
 
 <form method="post" action="/p/{{ project.id }}/react" class="say">
   <textarea name="text" rows="2" placeholder="Say what this misses across the corpus — the account will be written again with your words in front of it."></textarea>
@@ -73,9 +73,14 @@
   <li class="dim">Nothing added yet.</li>
 {% endfor %}
 </ul>
-<form method="post" action="/p/{{ project.id }}/material">
-  <label>Name <input name="name" required></label>
-  <label>Text <textarea name="text" rows="6" required></textarea></label>
+{% if problem %}<p class="problem">{{ problem | txt }}</p>{% endif %}
+<form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data">
+  <label>Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"></label>
+  <p class="dim small">Plain text, Markdown, Word (.docx), PDF, or a spreadsheet saved as CSV.
+     One file becomes one material; a spreadsheet of open answers becomes one material with its
+     respondents kept apart.</p>
+  <label>Or paste it — Name <input name="name"></label>
+  <label>Text <textarea name="text" rows="6"></textarea></label>
   <button>Add material</button>
 </form>
 {% endblock %}
