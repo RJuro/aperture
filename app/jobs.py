@@ -237,6 +237,9 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
                          notes=[str(n) for n in (notes or [])])
         if not error and run.get("feedback_id"):
             store.consume_feedback(conn, run["feedback_id"], rid)
+        if not error and kind == "doc" and mid:
+            # A rewrite answers every comment it was shown, not only the one that planned it.
+            store.consume_material_feedback(conn, pid, mid, rid, run.get("theme_id"))
         if error:
             break
     for mid in dict.fromkeys(touched):                  # in order, without repeats

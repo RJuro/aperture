@@ -431,6 +431,30 @@ def consume_feedback(conn: sqlite3.Connection, fid: str, run_id: str) -> None:
     conn.commit()
 
 
+def consume_material_feedback(conn: sqlite3.Connection, pid: str, mid: str, run_id: str,
+                              theme_id: str | None = None) -> int:
+    """Every open comment that this rewrite of the material has just answered.
+
+    A comment on a claim plans no run of its own — a claim is checked against the material, not
+    rewritten — so nothing ever marked one honoured. It went verbatim into every later prompt for
+    that material, indefinitely, and the export called it open after five rewrites had answered
+    it. A rewrite of one line answers that line's comments only, and leaves the summary's alone.
+    """
+    rows = conn.execute("SELECT * FROM feedback WHERE project_id=? AND consumed_by_run IS NULL "
+                        "AND target_kind IN ('material_summary','moment')", (pid,)).fetchall()
+    n = 0
+    for f in rows:
+        if f["target_kind"] == "moment":
+            mo = moment(conn, f["target_id"])
+            if mo is None or mo["material_id"] != mid or (theme_id and mo["theme_id"] != theme_id):
+                continue
+        elif f["target_id"] != mid or theme_id:
+            continue
+        consume_feedback(conn, f["id"], run_id)
+        n += 1
+    return n
+
+
 def project_feedback(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM feedback WHERE project_id=? ORDER BY created_at",
                         (pid,)).fetchall()

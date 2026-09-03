@@ -237,6 +237,34 @@ def test_a_comment_is_consumed_by_the_run_that_honours_it(conn, analysed, monkey
     assert store.feedback_for(conn, "material_summary", mid), "still in the record for the export"
 
 
+def test_a_comment_on_a_claim_is_consumed_by_the_rewrite_that_answers_it(conn, analysed,
+                                                                         monkeypatch):
+    """A note on a claim plans no run of its own, so nothing ever stamped it honoured: it went
+    into every later prompt for that material for ever, and the export kept calling it open."""
+    from app.engine import synth
+    pid, mid = analysed["pid"], analysed["grande"]
+    _stub(monkeypatch)
+
+    def consumed(fid):
+        return conn.execute("SELECT consumed_by_run FROM feedback WHERE id=?",
+                            (fid,)).fetchone()[0]
+
+    here = store.moment(conn, analysed["moment"])
+    elsewhere = next(m for m in store.moments(conn, mid) if m["theme_id"] != here["theme_id"])
+    mine = store.add_feedback(conn, pid, "moment", here["id"], "note", "this overstates it")
+    theirs = store.add_feedback(conn, pid, "moment", elsewhere["id"], "note", "and so does this")
+    assert rerun.plan(conn, mine) == [], "a claim is checked against the material, not rewritten"
+    assert "this overstates it" in synth.feedback_block(conn, pid, mid, None)
+
+    jobs.run_now(conn, pid, [{"kind": "doc", "material_id": mid, "theme_id": here["theme_id"]}])
+    assert consumed(mine) and not consumed(theirs), "one line's rewrite answers one line"
+
+    jobs.run_now(conn, pid, [{"kind": "doc", "material_id": mid}])
+    assert consumed(theirs)
+    assert "and so does this" not in synth.feedback_block(conn, pid, mid, None)
+    assert len(store.feedback_for(conn, "moment", elsewhere["id"])) == 1, "still in the record"
+
+
 def test_a_failed_run_leaves_its_comment_open(conn, analysed, monkeypatch):
     def boom(conn, pid, run):
         raise RuntimeError("no")
