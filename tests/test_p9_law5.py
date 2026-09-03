@@ -17,6 +17,7 @@ SELF_PROMPT = "SENTINEL-QUESTIONS the corpus left open"
 ACCOUNT_PROSE = "SENTINEL-ACCOUNT conclusion about the whole corpus"
 SUMMARY_PROSE = "SENTINEL-SUMMARY what the reading found in this piece"
 PROJECT_PROSE = "SENTINEL-PROJECT what the corpus shows"
+ANGLES_PROSE = "SENTINEL-ANGLES where to look next"
 
 
 @pytest.fixture
@@ -29,11 +30,18 @@ def compiled(conn, analysed, model):
     store.save_summary(conn, "theme", tid, "reading", ACCOUNT_PROSE)
     store.save_summary(conn, "material", mid, "reading", SUMMARY_PROSE)
     store.save_summary(conn, "project", pid, "reading", PROJECT_PROSE)
+    # A second material that has been ideated and re-framed but not yet read. Its summary is the
+    # one the corpus summary is shown, and the stageless lookup used to hand it the angles.
+    other = analysed["rodwin"]
+    conn.execute("UPDATE summary SET status='superseded' WHERE scope='material' AND ref_id=? "
+                 "AND stage='reading'", (other,))
+    store.save_summary(conn, "material", other, "angles", ANGLES_PROSE)
+    store.save_summary(conn, "material", other, "orientation", "An interview, described.")
 
     seen: dict[str, str] = {}
     empty = {"frame": {"kind": "interview", "display": "turns", "title": "t", "speakers": [],
                        "segments": [], "orientation": "o"},
-             "angles": {"field": "f", "subareas": [], "angles": []},
+             "angles": {"field": ANGLES_PROSE, "subareas": [], "angles": []},
              "read": {"codes": []}, "themes": {"themes": []},
              "thread": {"moments": []},
              "doc": {"summary": "", "questions": "", "people": []},
@@ -68,6 +76,15 @@ def test_the_self_prompting_slot_reaches_exactly_one_step(compiled):
     finding carried forward as an instruction. It carries questions now, to ideation only."""
     where = sorted(label for label, text in compiled.items() if SELF_PROMPT in text)
     assert where == ["angles"], f"the self-prompting slot leaked into {where}"
+
+
+def test_the_places_to_look_reach_only_the_reading(compiled):
+    """Angles say where to look, and the reading is the one step allowed to be pointed. Anywhere
+    else they are the system's own prose about the corpus standing in a slot Law 5 reserves for
+    the material, validated structure, or the researcher's words — and the stageless summary
+    lookup handed them to the corpus summary as a material's summary until it was ordered."""
+    where = sorted(label for label, text in compiled.items() if ANGLES_PROSE in text)
+    assert where == ["read"], f"the places to look leaked into {where}"
 
 
 def test_a_theme_account_reaches_only_the_layer_above_it(compiled):

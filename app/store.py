@@ -373,13 +373,20 @@ def save_summary(conn: sqlite3.Connection, scope: str, ref_id: str, stage: str, 
 def get_summary(conn: sqlite3.Connection, scope: str, ref_id: str,
                 stage: str | None = None) -> sqlite3.Row | None:
     """Without `stage`, the reading summary if there is one, else the orientation — which is what
-    a page wants: the best account that exists right now."""
+    a page wants: the best account that exists right now.
+
+    Every stage is ranked, not just `reading`. `angles` was added as a fourth stage and tied with
+    `orientation` here, so on a material that had not been read yet the ideation list — where to
+    look, in the system's own words — could be handed to the page as the material's description
+    and to the corpus summary's prompt as this material's summary, which Law 5 forbids outright.
+    """
     if stage:
         return conn.execute("SELECT * FROM summary WHERE scope=? AND ref_id=? AND stage=? "
                             "AND status='live'", (scope, ref_id, stage)).fetchone()
     return conn.execute(
         "SELECT * FROM summary WHERE scope=? AND ref_id=? AND status='live' "
-        "ORDER BY CASE stage WHEN 'reading' THEN 0 ELSE 1 END LIMIT 1", (scope, ref_id)).fetchone()
+        "ORDER BY CASE stage WHEN 'reading' THEN 0 WHEN 'orientation' THEN 1 "
+        "WHEN 'angles' THEN 2 ELSE 3 END LIMIT 1", (scope, ref_id)).fetchone()
 
 
 def save_people(conn: sqlite3.Connection, mid: str, people: list[dict]) -> None:

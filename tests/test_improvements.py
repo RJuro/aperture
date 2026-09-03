@@ -130,6 +130,20 @@ def test_the_corpus_summary_says_when_it_is_behind_or_did_not_finish(conn, analy
     assert (state["behind"], state["unread"]) == (0, 0)
 
 
+def test_the_description_of_a_material_is_never_the_list_of_places_to_look(conn, project, grande,
+                                                                          rodwin):
+    """`angles` is a fourth stage and the stageless lookup only told `reading` from the rest, so
+    on a material that had not been read the ideation list could win the tie and stand as the
+    material's description — and go into the corpus summary's prompt as its summary."""
+    for mid, order in ((grande, ("orientation", "angles")), (rodwin, ("angles", "orientation"))):
+        for stage in order:
+            store.save_summary(conn, "material", mid, stage, f"the {stage}")
+        assert store.get_summary(conn, "material", mid)["stage"] == "orientation"
+
+    store.save_summary(conn, "material", grande, "reading", "what the reading found")
+    assert store.get_summary(conn, "material", grande)["stage"] == "reading"
+
+
 def test_project_prompt_requires_grounded_and_interpretive_synthesis():
     prompt = (Path(__file__).parent.parent / "app" / "prompts" / "project.md").read_text()
     assert "grounded synthesis" in prompt
