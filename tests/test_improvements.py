@@ -186,6 +186,28 @@ def test_an_answer_that_is_not_json_is_asked_for_once_more(monkeypatch, real_cha
         real_chat_json("s", "u", label="t")
 
 
+def test_a_busy_provider_is_waited_out_once_and_not_twice(monkeypatch, real_chat_json):
+    """One ladder, once. `_ask` waits 15+30+60+120+240 s and then tries once more, and the
+    one-more-try above it must not catch what comes back: inside that try it would run the whole
+    ladder again — sixteen minutes and twelve requests on one step, with the page's counter
+    restarting at "attempt 1 of 5" halfway through. It is outside it; this holds it there."""
+    import pytest
+    from app import llm
+    sent, waited = [], []
+
+    def busy(body, timeout):
+        sent.append(body)
+        raise llm._Busy("503 from the provider")
+
+    monkeypatch.setattr(llm, "_send", busy)
+    monkeypatch.setattr(llm, "_sleep", waited.append)
+    monkeypatch.delenv("APERTURE_REPLAY", raising=False)
+    with pytest.raises(llm.LLMError, match="503"):
+        real_chat_json("s", "u", label="t")
+    assert waited == list(llm.BUSY_WAITS)
+    assert len(sent) == len(llm.BUSY_WAITS) + 1
+
+
 def test_a_run_left_open_by_a_dead_process_is_closed_when_the_next_one_starts(conn, project, grande,
                                                                               monkeypatch):
     rid = store.start_run(conn, project, "doc", grande, "Writing what stands out")
