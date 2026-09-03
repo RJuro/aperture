@@ -93,7 +93,8 @@ def test_runs_are_totals_by_kind_not_one_row_each(client, conn, rich):
     md = client.get(f"/p/{pid}/export.md").text
     sect = md.split("## Runs", 1)[1]
     assert sect.count("\n- ") < 15, "at fifty materials one row per run was 250 rows"
-    assert "doc" in sect and "1400" in sect or "1,400" in sect   # 1000 + 40×10 input tokens
+    assert "Writing what stands out" in sect, "the researcher's line for the step, not its stage name"
+    assert "1400" in sect, "1000 + 40×10 input tokens, as one total"
     assert "mistral" in sect or "minimax" in sect
 
 

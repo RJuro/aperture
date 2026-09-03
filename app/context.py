@@ -397,6 +397,11 @@ def _export_resolve_all(obj, index: dict):
     """Every prose string in the export context, with internal claim ids turned into sentence ids.
     Walks the whole context rather than naming fields — a named list is how a field gets missed."""
     if isinstance(obj, str):
+        # A string that IS an id is a row's identifier and stays exactly as it is — the first
+        # version of this walk turned every moment's own `id` into "[S040]" and a column-coverage
+        # test caught it. Only text that CONTAINS an id among other words is prose citing a claim.
+        if _CITE.fullmatch(obj.strip()):
+            return obj
         return _export_resolve_ids(obj, index) if _CITE.search(obj) else obj
     if isinstance(obj, dict):
         return {k: _export_resolve_all(v, index) for k, v in obj.items()}

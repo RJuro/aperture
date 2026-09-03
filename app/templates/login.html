@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block main %}
-<h1>{{ app_name }}</h1>
-<p class="dim">A reading companion for qualitative material.</p>
-<form method="post" action="/login">
-  <label>Name <input name="name" autofocus required></label>
-  <label>Password <input name="password" type="password" required></label>
-  <button>Sign in</button>
-</form>
-{% if problem %}<p class="dim">{{ problem }}</p>{% endif %}
+<section class="signin">
+  <h1>{{ app_name }}</h1>
+  <p class="dim">A reading companion for qualitative material.</p>
+  <form method="post" action="/login">
+    <label>Name<input name="name" autofocus required autocomplete="username"></label>
+    <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
+    <button>Sign in</button>
+  </form>
+  {% if problem %}<p class="problem">{{ problem }}</p>{% endif %}
+  <p class="dim small">Accounts are made by an administrator. If you do not have one, ask whoever runs this instance.</p>
+</section>
 {% endblock %}

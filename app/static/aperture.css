@@ -174,3 +174,16 @@ p.run::before { content: '·'; color: var(--mark); font-weight: 700; }
 .who button:hover { border-color: var(--ink-3); color: var(--ink); background: transparent; }
 .problem { max-width: var(--measure); padding: .55rem .8rem; border: 1px solid var(--rule); border-left: 3px solid var(--mark);
            border-radius: 3px; background: var(--sheet); font-size: .95rem; }
+
+/* signing in: one narrow column, the form and nothing else */
+.signin { max-width: 22rem; margin: 12vh auto 0; }
+.signin h1 { margin-bottom: .2rem; }
+.signin form { margin: 1.6rem 0 1rem; display: grid; gap: .9rem; }
+.signin label { display: grid; gap: .3rem; font-size: .85rem; color: var(--ink-2); letter-spacing: .02em; }
+.signin input { padding: .6rem .7rem; font-size: 1rem; }
+.signin button { justify-self: start; padding: .5rem 1.1rem; }
+/* the admin page: people, then every project */
+.people, .projects { list-style: none; padding: 0; }
+.people li, .projects li { padding: .55rem 0; border-top: 1px solid var(--rule-2); display: flex; gap: 1rem; align-items: baseline; }
+.people li:first-child, .projects li:first-child { border-top: 0; }
+.admin form.row { margin: .8rem 0 1.6rem; }
