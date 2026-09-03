@@ -147,3 +147,17 @@ def test_a_project_claim_links_to_the_material_it_rests_on(conn, analysed, clien
 def test_a_material_is_only_reachable_under_its_own_project(conn, analysed, client):
     other = store.create_project(conn, "Elsewhere")
     assert client.get(f"/p/{other}/m/{analysed['grande']}").status_code == 404
+
+
+def test_markdown_emphasis_in_model_prose_becomes_markup_and_a_lone_star_is_left_alone():
+    """The model wraps theme names in asterisks whatever the prompt asks of it, and the page was
+    printing the asterisks. Markup the model wrote itself is still escaped, because emphasis is
+    applied after escaping and never before it."""
+    assert "<em>Belonging, identity, and return</em>" in str(
+        context.cite("*Belonging, identity, and return* follows a crossing.", {}, "p1"))
+    assert "<em>one</em>" in str(context.cite("It is _one_ story.", {}, "p1"))
+    assert "<strong>Work and trade</strong>" in str(
+        context.cite("**Work and trade** carries it.", {}, "p1"))
+    assert "The rate was 2 * 3." in str(context.cite("The rate was 2 * 3.", {}, "p1"))
+    hostile = str(context.cite("A <b>bold</b> claim.", {}, "p1"))
+    assert "&lt;b&gt;bold&lt;/b&gt;" in hostile and "<b>" not in hostile

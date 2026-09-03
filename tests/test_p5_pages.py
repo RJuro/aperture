@@ -32,6 +32,9 @@ def strip_material(html: str) -> str:
     """What the app says in its own voice: the page with quoted speech, the transcript and model
     prose removed. The banned-word check runs over this, never over the material itself."""
     html = re.sub(r"<mark\b.*?</mark>", " ", html, flags=re.S)
+    # Emphasis the model wrote sits inside model prose; leaving the tags in ends the strip below
+    # at the first </em> and hands half a summary back as if the app had said it.
+    html = re.sub(r"</?(em|strong)>", "", html)
     html = re.sub(r"<(pre|blockquote|q)\b.*?</\1>", " ", html, flags=re.S)
     html = re.sub(r'<[^>]*class="[^"]*\b(material|claim|summary|gist)\b[^"]*".*?</[a-z]+>', " ",
                   html, flags=re.S)
