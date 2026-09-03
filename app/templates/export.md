@@ -89,7 +89,9 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {{ m.angles.text }}
 {% endif %}
 {% for th in m.threads %}#### {{ th.theme.name }}
-
+{% if th.summary %}
+{{ th.summary.text }}
+{% endif %}
 {% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
    > {{ x.anchor }}  [{{ x.sid }}]
 {% endfor %}

@@ -225,6 +225,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .theme-tab[aria-current='page'] { border-bottom-color: var(--accent); color: var(--fg); }
 .theme-intro { margin-bottom: 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; }
 .theme-intro p.gist { max-width: 70ch; margin: 8px 0 0; color: var(--muted); }
+.theme-intro p.account { max-width: 70ch; margin: 12px 0 0; color: var(--fg); font: 16px/1.62 var(--font-display); }
 .theme-stats { white-space: nowrap; }
 .reading-grid { display: grid; grid-template-columns: minmax(290px, .78fr) minmax(460px, 1.35fr); gap: 28px; align-items: start; }
 .evidence-list { min-width: 0; }

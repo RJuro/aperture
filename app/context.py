@@ -289,7 +289,8 @@ def _threads(conn, mid: str, themes: dict) -> list[dict]:
     by: dict[str, list[dict]] = {}
     for m in store.moments(conn, mid):
         by.setdefault(m["theme_id"], []).append(dict(m))
-    return [{"theme": themes.get(t, {"id": t, "name": t, "gist": ""}), "moments": ms}
+    return [{"theme": themes.get(t, {"id": t, "name": t, "gist": ""}), "moments": ms,
+             "summary": _row(store.get_summary(conn, "thread", f"{mid}:{t}", "reading"))}
             for t, ms in by.items()]
 
 
@@ -362,6 +363,8 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         for x in ms:
             x["reactions"] = [dict(f) for f in store.feedback_for(conn, "moment", x["id"])]
         cards.append({**dict(t), "moments": ms,
+                      "summary": _row(store.get_summary(conn, "thread", f'{mid}:{t["id"]}',
+                                                        "reading")),
                       "codes": [dict(c) for c in store.theme_codes(conn, t["id"], mid)]})
     selected = next((c for c in cards if c["id"] == theme_id), None) or (cards[0] if cards else None)
     quotes: dict[str, list[str]] = {}

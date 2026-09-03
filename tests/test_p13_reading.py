@@ -139,3 +139,55 @@ def test_a_reframe_works_out_who_is_speaking_again(conn, project, model):
     jobs.run_now(conn, project, [{"kind": "frame", "material_id": mid, "feedback_id": fid}])
     assert [(s["sid"], s["label"]) for s in store.segments(conn, mid)] == [(sids[1], "Participant")]
     assert store.material(conn, mid)["speakers_estimated"] == 1
+
+
+# ---- 2. a short account of what one theme amounts to here ---------------------------------------
+
+@pytest.fixture
+def ready(conn, project, grande, quote):
+    store.save_frame(conn, grande, kind="interview", display="turns", title="Grande",
+                     speakers=[{"label": "GRANDE", "name": "M. Grande", "role": "participant"}],
+                     segments=[])
+    store.save_summary(conn, "material", grande, "orientation", "A 1978 oral history.")
+    tid = store.save_theme(conn, project, tid=None, name="Work", gist="a living", code_ids=[])
+    return {"pid": project, "mid": grande, "tid": tid}
+
+
+def _moments(quote, mid, n=5, at=40):
+    return [{"claim": f"claim {i}", "anchor": " ".join(quote(mid, at=at + i * 9)[1].split()[:8]),
+             "sid": quote(mid, at=at + i * 9)[0]} for i in range(n)]
+
+
+def test_a_line_carries_a_short_account_of_what_it_amounts_to(ready, conn, model, quote):
+    said = "The stall fed them and the farm did not. " * 30
+    model.queue({"moments": _moments(quote, ready["mid"], 5), "summary": said})
+    model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    synth.doc(conn, ready["mid"])
+
+    row = store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading")
+    assert row is not None, "the account is stored against this material and this theme"
+    assert row["text"].startswith("The stall fed them")
+    assert len(row["text"].split()) <= synth.THREAD_WORDS, "the cap is Python's as well as the prompt's"
+    assert "at most 90 words" in model.shown("thread")
+
+
+def test_a_line_set_aside_leaves_no_account_behind(ready, conn, model, quote):
+    """Three claims is not a line, and an account of a line that was not kept would be a reading
+    with nothing under it."""
+    model.queue({"moments": _moments(quote, ready["mid"], 3), "summary": "an account of nothing"})
+    model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    out = synth.doc(conn, ready["mid"])
+    assert any("set aside" in d for d in out["dropped"])
+    assert store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading") is None
+
+
+def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, model, quote, client):
+    model.queue({"moments": _moments(quote, ready["mid"], 5),
+                 "summary": "The stall, not the land, is what fed this household."})
+    model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    synth.doc(conn, ready["mid"])
+
+    html = client.get(f'/p/{ready["pid"]}/m/{ready["mid"]}?theme={ready["tid"]}').text
+    assert "The stall, not the land, is what fed this household." in html
+    md = client.get(f'/p/{ready["pid"]}/export.md').text
+    assert "The stall, not the land, is what fed this household." in md
