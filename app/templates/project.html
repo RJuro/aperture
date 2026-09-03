@@ -23,10 +23,10 @@
       {% if summary or summary_state.error %}
       <p class="dim small">
       {%- if summary_state.error %}The last update did not finish: {{ summary_state.error | txt }}
-      {%- elif summary_state.behind %}Written before {{ summary_state.behind }} {{ 'material' | plural(summary_state.behind) }} {{ 'was' if summary_state.behind == 1 else 'were' }} added{% if summary_state.working %} — being updated now{% endif %}.
+      {%- elif summary_state.behind %}{{ summary_state.behind }} {{ 'material' | plural(summary_state.behind) }} {{ 'has' if summary_state.behind == 1 else 'have' }} been read since this was written{% if summary_state.working %} — being updated now{% endif %}.
       {%- elif summary_state.working %}Being updated now.
       {%- else %}Written over all {{ materials | length }} {{ 'material' | plural(materials | length) }}.{% endif %}</p>
-      {% if summary_state.error %}<form method="post" action="/p/{{ project.id }}/resynthesise">
+      {% if summary_state.error or (summary_state.behind and not summary_state.working) %}<form method="post" action="/p/{{ project.id }}/resynthesise">
         <button class="btn btn-small btn-secondary">Write the project summary again</button>
       </form>{% endif %}
       {% endif %}
