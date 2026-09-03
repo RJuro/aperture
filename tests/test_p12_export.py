@@ -101,3 +101,16 @@ def test_a_claim_in_the_export_is_reachable_by_id(client, conn, rich):
     md = client.get(f"/p/{rich['pid']}/export.md").text
     first = store.moments(conn, rich["grande"])[0]
     assert first["sid"] in md
+
+
+def test_the_document_never_shows_an_internal_claim_id(client, conn, rich):
+    """On a page an internal id becomes a link. In a document it would sit there as an opaque
+    token — the first review's complaint about the record — so each becomes the sentence id a
+    reader can find in the same document."""
+    first = store.moments(conn, rich["grande"])[0]
+    store.save_summary(conn, "project", rich["pid"], "reading",
+                       f"Work runs through it [{first['id']}] and beyond.")
+    md = client.get(f"/p/{rich['pid']}/export.md").text
+    assert first["id"] not in md
+    assert f"[{first['sid']}]" in md
+    assert "(frame)" not in md and "(doc)" not in md, "stage names are for the code"

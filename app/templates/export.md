@@ -113,7 +113,7 @@ Speaking: {% for s in m.speakers %}{{ s.label }}{% if s.name %} = {{ s.name }}{%
 {% endfor %}
 ## Runs
 
-{% for kind, rs in runs | groupby("kind") %}- **{{ rs[0].step }}** ({{ kind }}) — {{ rs | length }} runs · {{ rs | sum(attribute="tokens_in") }} input tokens · {{ rs | sum(attribute="tokens_out") }} output tokens · {{ rs | map(attribute="provider") | unique | join(", ") }} / {{ rs | map(attribute="model") | unique | join(", ") }}
+{% for kind, rs in runs | groupby("kind") %}- **{{ rs[0].step }}** — {{ rs | length }} runs · {{ rs | sum(attribute="tokens_in") }} input tokens · {{ rs | sum(attribute="tokens_out") }} output tokens · {{ rs | map(attribute="provider") | unique | join(", ") }} / {{ rs | map(attribute="model") | unique | join(", ") }}
 {% endfor %}{% if not runs %}Nothing has run yet.
 {% endif %}
 ## Theme history

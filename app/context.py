@@ -347,6 +347,14 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "set_aside": store.set_aside(conn, pid)}
 
 
+def _export_resolve_ids(text: str, index: dict) -> str:
+    """Model prose cites claims by internal id. On a page those become links; in a document they
+    would sit there as opaque tokens — the first review's complaint about the record. Each becomes
+    the sentence id a reader can find in the same document."""
+    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]" if m.group(0) in index else "",
+                     text or "")
+
+
 def export(conn, pid: str) -> dict:
     """The whole record as one document.
 
@@ -372,7 +380,7 @@ def export(conn, pid: str) -> dict:
         d["derivation"] = derivation(conn, m["id"])
         mats.append(d)
     said = _export_comments(conn, pid)
-    return {"app_name": APP_NAME, "project": dict(p), "materials": mats,
+    ctx = {"app_name": APP_NAME, "project": dict(p), "materials": mats,
             "summary": _row(store.get_summary(conn, "project", pid)),
             "themes": _export_themes(conn, pid, aside),
             "checks": _checks(conn, pid),
@@ -382,6 +390,20 @@ def export(conn, pid: str) -> dict:
             "theme_history": _export_theme_history(conn, pid),
             "runs": [{**dict(r), "step": _export_step(r["kind"])}
                      for r in store.runs(conn, pid)]}
+    return _export_resolve_all(ctx, _cite_index(conn, pid))
+
+
+def _export_resolve_all(obj, index: dict):
+    """Every prose string in the export context, with internal claim ids turned into sentence ids.
+    Walks the whole context rather than naming fields — a named list is how a field gets missed."""
+    if isinstance(obj, str):
+        return _export_resolve_ids(obj, index) if _CITE.search(obj) else obj
+    if isinstance(obj, dict):
+        return {k: _export_resolve_all(v, index) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_export_resolve_all(v, index) for v in obj]
+    return obj
+
 
 
 def _export_step(kind: str) -> str:
