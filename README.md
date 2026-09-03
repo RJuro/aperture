@@ -8,7 +8,7 @@ and then shows each theme as a line through the material: short claims, each res
 quote highlighted where it occurs. You react to what it says; doubt sends it back to the material
 rather than into a rewrite. Nothing it claims is unquoted.
 
-`PLAN.md` is the design and the build plan. `DEPLOY.md` is the deployment.
+`docs/PLAN.md` is the design and the build plan. `docs/DEPLOY.md` is the deployment.
 
 ```bash
 python3 -m pytest tests -q          # the suite, offline, no model calls
