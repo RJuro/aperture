@@ -163,7 +163,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .material-list > li { min-height: 88px; position: relative; display: grid; grid-template-columns: minmax(220px, 1fr) minmax(360px, auto) 44px; align-items: center; gap: 24px; padding: 16px 0; border-bottom: 1px solid var(--border); }
 .material-main { min-width: 0; }
 .material-name { display: block; overflow: hidden; font: 600 18px var(--font-display); text-overflow: ellipsis; white-space: nowrap; }
-.material-main .meta { display: block; margin-top: 4px; text-transform: capitalize; }
+.material-main .meta { display: block; margin-top: 4px; }
 .analysis-receipt { display: flex; flex-wrap: wrap; gap: 6px; }
 .analysis-step { min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font: 9px var(--font-mono); letter-spacing: .03em; text-transform: uppercase; }
 .analysis-step i { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
