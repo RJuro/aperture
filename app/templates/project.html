@@ -83,7 +83,7 @@
       <span class="meta">{{ (m.kind or 'Material') | replace('_', ' ') }} · {{ m.derivation }}</span>
     </div>
     <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of 4 analysis steps complete">
-      {% for step in m.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% endfor %}
+      {% for step in m.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% if step.error %}<span class="dim small">{{ step.error | txt }}</span>{% endif %}{% endfor %}
     </div>
     <details class="row-menu"><summary aria-label="Options for {{ m.display_title | txt }}">•••</summary>
       <div class="menu-sheet"><a href="/p/{{ project.id }}/m/{{ m.id }}">Open material</a>

@@ -203,8 +203,8 @@ def _analysis_steps(conn, row) -> list[dict]:
         "SELECT kind FROM run WHERE material_id=? AND finished IS NOT NULL AND error IS NULL", (mid,))}
     active = {r["kind"] for r in conn.execute(
         "SELECT kind FROM run WHERE material_id=? AND finished IS NULL", (mid,))}
-    failed_row = conn.execute("SELECT kind FROM run WHERE material_id=? AND error IS NOT NULL "
-                              "ORDER BY rowid DESC LIMIT 1", (mid,)).fetchone()
+    failed_row = conn.execute("SELECT kind, error FROM run WHERE material_id=? AND error IS NOT "
+                              "NULL ORDER BY rowid DESC LIMIT 1", (mid,)).fetchone()
     inferred = {
         "frame": bool(row["title"] or row["kind"]),
         "angles": store.get_summary(conn, "material", mid, "angles") is not None,
@@ -221,7 +221,11 @@ def _analysis_steps(conn, row) -> list[dict]:
             state = "active"
         elif failed_row and failed_row["kind"] == kind and state != "done":
             state = "failed"
-        out.append({"kind": kind, "label": label, "state": state})
+        # A step marked failed and nothing else said what happened; the reason was on the run row
+        # the whole time, and a researcher who cannot see it cannot tell a bad file from a dead
+        # model.
+        out.append({"kind": kind, "label": label, "state": state,
+                    "error": failed_row["error"] if state == "failed" else ""})
     return out
 
 

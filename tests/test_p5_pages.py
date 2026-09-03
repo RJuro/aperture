@@ -127,6 +127,14 @@ def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, c
         assert "What the material shows" in text and "What this may mean, so far" in text
 
 
+def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):
+    """The receipt marked a step failed and nothing said why, though the run row had the reason."""
+    rid = store.start_run(conn, analysed["pid"], "read", analysed["grande"], "Reading Grande")
+    store.finish_run(conn, rid, error="LLMError: the model returned no JSON")
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "LLMError: the model returned no JSON" in html
+
+
 def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, analysed):
     pid = analysed["pid"]
     assert "Written over all 2 materials" in client.get(f"/p/{pid}").text
