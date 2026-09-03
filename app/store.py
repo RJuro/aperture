@@ -549,7 +549,7 @@ def summary_state(conn: sqlite3.Connection, pid: str) -> dict:
                        (pid,)).fetchone()
     return {"behind": behind,
             "working": bool(job and job["status"] in ("queued", "running")),
-            "error": (job["error"] or "") if job and job["status"] == "failed" else ""}
+            "error": (job["error"] or "") if job and job["status"] in ("failed", "stopped") else ""}
 
 
 def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
@@ -587,9 +587,20 @@ def start_job(conn: sqlite3.Connection, jid: str) -> None:
 
 
 def finish_job(conn: sqlite3.Connection, jid: str, error: str = "") -> None:
-    conn.execute("UPDATE job SET status=?, finished_at=?, error=? WHERE id=?",
+    # Only a running job finishes; one the researcher stopped keeps saying so.
+    conn.execute("UPDATE job SET status=?, finished_at=?, error=? WHERE id=? AND status IN ('queued','running')",
                  ("failed" if error else "finished", now(), error, jid))
     conn.commit()
+
+
+def stop_jobs(conn: sqlite3.Connection, pid: str) -> int:
+    """The researcher's stop. Queued work never starts; running work ends after the step in
+    flight, because a model call cannot be taken back once sent — but nothing after it is."""
+    cur = conn.execute("UPDATE job SET status='stopped', finished_at=?, error='stopped by the "
+                       "researcher' WHERE project_id=? AND status IN ('queued','running')",
+                       (now(), pid))
+    conn.commit()
+    return cur.rowcount
 
 
 # ---- accounts ----------------------------------------------------------------------------------

@@ -118,6 +118,15 @@ def remove_material(request: Request, pid: str, mid: str):
     return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
+@router.post("/p/{pid}/stop")
+def stop(request: Request, pid: str):
+    """Stop what is running for this project. The step in flight finishes; nothing after it starts."""
+    conn = connection()
+    _mine(request, conn, pid)
+    store.stop_jobs(conn, pid)
+    return _back(request, f"/p/{pid}")
+
+
 @router.post("/p/{pid}/react")
 def react(request: Request, pid: str, text: str = Form(""), kind: str = Form("note"),
           claim_id: str = Form(""), theme_id: str = Form(""), material_id: str = Form("")):

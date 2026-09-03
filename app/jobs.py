@@ -128,12 +128,15 @@ def _known(runs: list[dict]) -> list[dict]:
     return runs
 
 
-def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict]) -> list[str]:
+def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
+            job: str | None = None) -> list[str]:
     """Run a chain to completion on this connection and return the run ids. `start` is this, in a
     thread; call it directly when you want the chain to have landed before you look."""
     runs = _known(list(runs))
     ids, touched, failed = [], [], None
     for run in runs:
+        if job and store.job(conn, job)["status"] != "running":
+            break                                   # stopped by the researcher between steps
         kind, mid = run["kind"], run.get("material_id")
         rid = store.start_run(conn, pid, kind, mid, line(conn, run))
         run["run_id"] = rid
@@ -173,14 +176,14 @@ def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) 
         error = ""
         try:
             row = store.job(conn, job)
-            if row is None:
-                return
+            if row is None or row["status"] != "queued":
+                return                              # already run, or stopped before it began
             runs = _known(json.loads(row["runs_json"]))
             store.start_job(conn, job)
             # The model client keeps usage in one module-level counter. Run one chain globally so
             # different projects cannot reset each other's token accounting.
             with _RUNNER_LOCK:
-                ids = run_now(conn, pid, runs)
+                ids = run_now(conn, pid, runs, job=job)
             if ids:
                 failed = conn.execute("SELECT error FROM run WHERE id=?", (ids[-1],)).fetchone()
                 error = (failed["error"] if failed else "") or ""

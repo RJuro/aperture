@@ -105,6 +105,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .run { margin: 20px var(--gutter) 0; padding: 13px 15px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .run-pulse { width: 8px; height: 8px; margin-top: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
 .run strong { display: block; font-size: 13px; }
+.run form { margin-left: auto; }
 .run small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
 @keyframes pulse { 60% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 8px transparent; } }
 .warn, .problem { max-width: 72ch; margin: 20px var(--gutter); padding: 11px 14px; border: 1px solid var(--border); border-left: 3px solid var(--danger); border-radius: var(--radius); background: var(--surface); }

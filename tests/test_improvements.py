@@ -152,3 +152,18 @@ def test_a_run_left_open_by_a_dead_process_is_closed_when_the_next_one_starts(co
     row = conn.execute("SELECT finished, error FROM run WHERE id=?", (rid,)).fetchone()
     assert row["finished"] and "restarted" in row["error"]
     assert not store.active_runs(conn, project)
+
+
+def test_stopping_a_project_ends_its_chain_after_the_step_in_flight(conn, project, grande, monkeypatch):
+    done = []
+    monkeypatch.setitem(jobs.STEPS, "frame", ("a", lambda c, p, r: (done.append("frame"), store.stop_jobs(c, p), None)[-1]))
+    monkeypatch.setitem(jobs.STEPS, "angles", ("b", lambda c, p, r: done.append("angles")))
+    runs = [{"kind": "frame", "material_id": grande}, {"kind": "angles", "material_id": grande}]
+    jid = store.enqueue_job(conn, project, runs)
+    store.start_job(conn, jid)
+    jobs.run_now(conn, project, runs, job=jid)
+    assert done == ["frame"]
+    store.finish_job(conn, jid, "")                        # the worker's finally must not undo the stop
+    assert store.job(conn, jid)["status"] == "stopped"
+    assert store.summary_state(conn, project)["error"] == "stopped by the researcher"
+    assert jobs.resume_pending(db.connect) == []           # and a restart does not bring it back

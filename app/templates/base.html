@@ -70,7 +70,7 @@
     <div class="run" role="status"><span class="run-pulse" aria-hidden="true"></span><div>
       <strong>{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}</strong>
       <small>Analysis continues in the background. You can leave this page.</small>
-    </div></div>
+    </div>{% if project %}<form method="post" action="/p/{{ project.id }}/stop"><button class="btn btn-small btn-secondary">Stop</button></form>{% endif %}</div>
     {% endif %}
     {% block main %}{% endblock %}
   </main>
