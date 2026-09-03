@@ -23,6 +23,11 @@ Two things learned deploying this the first time, both of which cost a rollout:
 - **The image must contain `curl`.** Coolify's rollout healthcheck shells out to `curl` (or
   `wget`) inside the new container. `python:3.12-slim` has neither, so a perfectly healthy start
   was judged unhealthy and rolled back. The Dockerfile installs it.
+- **Every push to `main` redeploys, and without the volume below every redeploy wipes the database.**
+  This is not hypothetical: on the first day, two pushes of a small change replaced the container
+  in the middle of a live walkthrough and erased its project, its user and its running analysis.
+  Until the volume is attached, either do not push, or turn off automatic deployment on the
+  application in the Coolify UI (the API does not expose the setting).
 - **Persistent storage could not be attached through the API** (every `type` value was rejected
   with a 422). Attach it in the Coolify UI: the application → *Persistent Storage* → add a volume
   mounted at `/data`. **Do this before anyone uploads real material.** Without it a redeploy starts
