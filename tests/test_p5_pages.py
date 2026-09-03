@@ -297,3 +297,21 @@ def test_a_quote_that_crosses_a_sentence_boundary_marks_the_quote_and_not_the_cu
     marked = " ".join(re.findall(r"<mark>(.*?)</mark>", html))
     assert marked == "missed it a lot. But I am"
     assert "GRANDE" not in marked and "My mother" not in marked
+
+
+def test_a_citation_whose_claim_is_gone_leaves_nothing_behind(client, conn, analysed):
+    """A comment on one material rewrites it, every claim of that material is superseded and
+    re-inserted under a new id, and nothing re-runs the corpus summary — which is left citing
+    ids that no longer exist. The page printed them as if they were words; the record left the
+    brackets standing empty."""
+    pid = analysed["pid"]
+    live = store.moments(conn, analysed["grande"])[0]
+    dead = "mo7c1d4af90b"
+    store.save_summary(conn, "project", pid, "reading",
+                       f"Work runs through it [{dead}] and the crossing too [{live['id']}].")
+    for url in (f"/p/{pid}", f"/p/{pid}/export.md"):
+        text = client.get(url).text
+        assert dead not in text, f"a raw id reached {url}"
+        assert "[]" not in text, f"empty brackets reached {url}"
+        assert "it and the crossing too" in text
+        assert live["sid"] in text, "the citation that still resolves stays"

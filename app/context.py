@@ -60,6 +60,27 @@ def txt(s) -> Markup:
 _CITE = re.compile(r"\bmo[0-9a-f]{6,}\b")
 
 
+def _live_cites(text: str, index: dict) -> str:
+    """Prose with every citation whose claim is no longer live taken out — brackets, separator
+    and all.
+
+    A rerun below the corpus level supersedes the moments the corpus summary cites, and nothing
+    re-runs the summary on that path, so its citations rot. The page was printing the raw ids as
+    if they were words and the record was leaving the brackets standing empty. A citation that
+    cannot be resolved is not a citation; it is nothing.
+    """
+    def group(m):
+        ids = _CITE.findall(m.group(0))
+        if not ids:                       # [sic], [laughs] — the model's other brackets stay
+            return m.group(0)
+        live = [i for i in ids if i in index]
+        head = m.group(0)[:m.group(0).index("[")]
+        return f'{head}[{", ".join(live)}]' if live else ""
+
+    text = re.sub(r"[ ]*\[[^\[\]]*\]", group, text or "")
+    return _CITE.sub(lambda m: m.group(0) if m.group(0) in index else "", text)
+
+
 def cite(text: str, index: dict, pid: str) -> Markup:
     """Model prose with each moment id it cites turned into a link into the material it rests on.
 
@@ -83,7 +104,7 @@ def cite(text: str, index: dict, pid: str) -> Markup:
     # The summary is three hundred words of argument, and the model breaks it into paragraphs
     # where the argument turns. Rendering it as one block throws that structure away and gives the
     # researcher a wall to read; a blank line in, a paragraph out.
-    paras = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
+    paras = [p.strip() for p in re.split(r"\n\s*\n", _live_cites(text, index)) if p.strip()]
     return Markup("".join(f"<p>{one(p)}</p>" for p in paras) or "")
 
 
@@ -444,8 +465,7 @@ def _export_resolve_ids(text: str, index: dict) -> str:
     """Model prose cites claims by internal id. On a page those become links; in a document they
     would sit there as opaque tokens — the first review's complaint about the record. Each becomes
     the sentence id a reader can find in the same document."""
-    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]" if m.group(0) in index else "",
-                     text or "")
+    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", _live_cites(text, index))
 
 
 def export(conn, pid: str) -> dict:
