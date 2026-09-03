@@ -315,3 +315,16 @@ def test_a_citation_whose_claim_is_gone_leaves_nothing_behind(client, conn, anal
         assert "[]" not in text, f"empty brackets reached {url}"
         assert "it and the crossing too" in text
         assert live["sid"] in text, "the citation that still resolves stays"
+
+
+def test_removing_material_is_never_one_click(client, analysed):
+    """Removal retires every claim, both summaries and any orphaned theme, starts paid work, and
+    nothing in the interface brings it back. It takes the shape re-framing already has: a fold
+    the researcher has to open before the button exists."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    for url in (f"/p/{pid}", f"/p/{pid}/m/{mid}"):
+        before = client.get(url).text.split(f'action="/p/{pid}/m/{mid}/remove"')[0]
+        assert before.count("<details") > before.count("</details"), \
+            f"the removal form is not folded away on {url}"
+        assert '<summary class="danger-text">Remove material</summary>' in before, \
+            f"nothing on {url} has to be opened before the button appears"

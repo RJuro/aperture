@@ -87,10 +87,12 @@
     </div>
     <details class="row-menu"><summary aria-label="Options for {{ m.display_title | txt }}">•••</summary>
       <div class="menu-sheet"><a href="/p/{{ project.id }}/m/{{ m.id }}">Open material</a>
-        <form method="post" action="/p/{{ project.id }}/m/{{ m.id }}/remove">
-          <p>This removes the material from the reading and rebuilds the project summary.</p>
-          <button class="danger">Remove material</button>
-        </form>
+        <details><summary class="danger-text">Remove material</summary>
+          <form method="post" action="/p/{{ project.id }}/m/{{ m.id }}/remove">
+            <p>This removes the material from the reading and rebuilds the project summary. Nothing brings it back.</p>
+            <button class="danger">Remove material</button>
+          </form>
+        </details>
       </div>
     </details>
       {% if m.out_of_date %}
