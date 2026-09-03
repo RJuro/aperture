@@ -211,6 +211,32 @@ def focus(request: Request, pid: str, focus: str = Form("")):
     return _back(request, f"/p/{pid}")
 
 
+@router.post("/p/{pid}/m/{mid}/rerun")
+def rerun_material(request: Request, pid: str, mid: str, step: str = Form("read", alias="from"),
+                   note: str = Form("")):
+    """"Run the analysis again", from wherever the researcher chose, over one material.
+
+    The one verb that may re-read. Feedback never does — a rerun driven by an opinion would code
+    the material under that opinion — but this is not feedback: it is the researcher saying do it
+    again, and saying where from. Everything after that point runs too, because a reading that
+    changed and a synthesis written over the old one is worse than either.
+
+    A note is stored once, as a comment on this material, and rides on every run in the chain, so
+    the steps that take the researcher's words verbatim are handed them and the record shows what
+    was asked for.
+    """
+    conn = connection()
+    _mine(request, conn, pid)
+    m = store.material(conn, mid)
+    step = rerun.PAGE_NAMES.get(step, step)
+    if m is None or m["project_id"] != pid or step not in rerun.CHAIN:
+        raise HTTPException(status_code=404, detail="not here")
+    fid = (store.add_feedback(conn, pid, "material_summary", mid, "note", note.strip())
+           if note.strip() else None)
+    jobs.start(db.connect, pid, rerun.from_step(mid, step, fid))
+    return RedirectResponse(f"/p/{pid}/m/{mid}", status_code=303)
+
+
 @router.post("/p/{pid}/m/{mid}/reframe")
 def reframe(request: Request, pid: str, mid: str, hint: str = Form("")):
     """"This is laid out wrong." Re-describes the material's shape and nothing else — no sentence
