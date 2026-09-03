@@ -191,3 +191,39 @@ def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, mode
     assert "The stall, not the land, is what fed this household." in html
     md = client.get(f'/p/{ready["pid"]}/export.md').text
     assert "The stall, not the land, is what fed this household." in md
+
+
+# ---- 3. what the reading found, theme by theme --------------------------------------------------
+
+def test_the_material_page_lists_every_theme_it_found_here(conn, analysed, client):
+    """The tab strip says which themes are here; it does not say what any of them found. Under the
+    summary, each one gets its name, how much it rests on, and its account."""
+    from app import context
+    pid, mid = analysed["pid"], analysed["grande"]
+    first, second = list(analysed["themes"].values())
+    store.save_summary(conn, "thread", f"{mid}:{first}", "reading",
+                       "Work is trade here, and the land is somewhere already left.")
+    absent = store.save_theme(conn, pid, tid=None, name="Never present here",
+                              gist="nothing in this material", code_ids=[])
+
+    cards = {c["id"]: c for c in context.material_page(conn, pid, mid)["cards"]}
+    assert set(cards) == {first, second}, "a theme with nothing here is not listed"
+    assert cards[first]["summary"]["text"].startswith("Work is trade here")
+    assert cards[second]["summary"] is None
+
+    html = client.get(f"/p/{pid}/m/{mid}").text
+    assert "Themes in this material" in html
+    assert f'?theme={second}"' in html, "each one is a way into its own line"
+    assert "Work is trade here, and the land is somewhere already left." in html
+    assert "the crossing and after" in html, "with no account yet, the definition stands in"
+    assert "3 claims" in html
+    assert "Never present here" not in html and absent not in html
+
+
+def test_the_record_says_how_much_each_theme_rests_on_in_each_material(conn, analysed, client):
+    pid, mid = analysed["pid"], analysed["grande"]
+    tid = list(analysed["themes"].values())[0]
+    store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", "Work is trade here.")
+    md = client.get(f"/p/{pid}/export.md").text
+    assert "#### Work and trade\n\n3 claims\n" in md
+    assert "Work is trade here." in md

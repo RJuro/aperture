@@ -49,6 +49,19 @@
   </details>
 </div></section>{% endif %}
 
+{% if cards %}<section class="found-themes"><div class="container">
+  <h2 class="found-head">Themes in this material</h2>
+  <ol class="found-list">
+  {% for c in cards %}
+    <li>
+      <a class="found-name" href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }}</a>
+      <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>
+      <p class="gist">{{ (c.summary.text if c.summary else c.gist) | txt }}</p>
+    </li>
+  {% endfor %}
+  </ol>
+</div></section>{% endif %}
+
 {% if cards %}<section class="themes-bar"><div class="container"><nav class="theme-tabs" aria-label="Themes in this material">
 {% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}">{{ c.name | txt }} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
 </nav></div></section>{% endif %}
