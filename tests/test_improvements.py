@@ -44,12 +44,12 @@ def test_removing_material_excludes_its_evidence_and_invalidates_the_project_sum
     assert store.get_summary(conn, "project", pid) is None
 
 
-def test_removal_rebuilds_every_remaining_material_then_the_corpus(monkeypatch):
+def test_removal_writes_the_corpus_again_and_reads_nothing_again(monkeypatch):
+    """What stayed was not read against what left, so nothing below the corpus needs redoing."""
     planned = []
     monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: planned.extend(runs) or "j")
-    jobs.removal_chain("p1", ["m1", "m2"])
-    assert [r["kind"] for r in planned] == ["themes", "doc", "doc", "accounts", "project"]
-    assert [r["material_id"] for r in planned if r["kind"] == "doc"] == ["m1", "m2"]
+    jobs.removal_chain("p1")
+    assert [r["kind"] for r in planned] == ["accounts", "project"]
 
 
 def test_project_prompt_requires_grounded_and_interpretive_synthesis():

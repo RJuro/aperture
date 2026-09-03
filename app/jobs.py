@@ -269,13 +269,13 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     ])
 
 
-def removal_chain(pid: str, material_ids: Iterable[str],
-                  conn_factory: Callable = db.connect) -> str:
-    """Rebuild the live corpus after one material leaves it."""
-    mids = list(material_ids)
-    return start(conn_factory, pid, [
-        {"kind": "themes"},
-        *({"kind": "doc", "material_id": mid} for mid in mids),
-        {"kind": "accounts"},
-        {"kind": "project"},
-    ])
+def removal_chain(pid: str, conn_factory: Callable = db.connect) -> str:
+    """Write the corpus-level account again after one material leaves it.
+
+    Only the corpus level. `store.remove_material` has already dropped the orphaned codes and
+    retired the themes left without any, and what stayed was read on its own terms, not against
+    what went — so no material's synthesis is now wrong. Where the themes did move under one,
+    `store.out_of_date` says so on its row and the researcher decides whether it is worth
+    rereading; this used to spend a call on every remaining material to answer that for them.
+    """
+    return start(conn_factory, pid, [{"kind": "accounts"}, {"kind": "project"}])

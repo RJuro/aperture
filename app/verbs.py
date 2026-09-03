@@ -111,9 +111,8 @@ def remove_material(request: Request, pid: str, mid: str):
     _mine(request, conn, pid)
     if not store.remove_material(conn, pid, mid):
         return _back(request, f"/p/{pid}")
-    remaining = [m["id"] for m in store.materials(conn, pid)]
-    if remaining:
-        jobs.removal_chain(pid, remaining)
+    if store.materials(conn, pid):
+        jobs.removal_chain(pid)
     else:
         store.clear_empty_project_analysis(conn, pid)
     return RedirectResponse(f"/p/{pid}", status_code=303)
