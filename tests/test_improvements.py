@@ -105,13 +105,15 @@ def test_removal_writes_the_corpus_again_and_reads_nothing_again(monkeypatch):
 
 def test_the_corpus_summary_says_when_it_is_behind_or_did_not_finish(conn, analysed):
     """It used to be shown as current while a chain was rewriting it, and to say nothing at all
-    when that chain had died."""
+    when that chain had died. And material that was never read counted as read since."""
     pid = analysed["pid"]
-    assert store.summary_state(conn, pid) == {"behind": 0, "working": False, "error": ""}
+    assert store.summary_state(conn, pid) == {"behind": 0, "unread": 0, "working": False,
+                                              "error": ""}
 
     late = store.add_material(conn, pid, "Late arrival", "One more piece. It has sentences.")
     store.save_sentences(conn, late, ingest.sentences("One more piece. It has sentences."))
-    assert store.summary_state(conn, pid)["behind"] == 1
+    state = store.summary_state(conn, pid)
+    assert (state["behind"], state["unread"]) == (0, 1), "queued is not read"
 
     jid = store.enqueue_job(conn, pid, [{"kind": "project"}])
     assert store.summary_state(conn, pid)["working"] is True
@@ -120,8 +122,12 @@ def test_the_corpus_summary_says_when_it_is_behind_or_did_not_finish(conn, analy
     assert state["working"] is False and state["error"] == "LLMError: the model said nothing"
 
     store.save_summary(conn, "material", late, "reading", "What the late piece showed.")
+    state = store.summary_state(conn, pid)
+    assert (state["behind"], state["unread"]) == (1, 0), "read after the summary was written"
+
     store.save_summary(conn, "project", pid, "reading", "Written again over all three.")
-    assert store.summary_state(conn, pid)["behind"] == 0
+    state = store.summary_state(conn, pid)
+    assert (state["behind"], state["unread"]) == (0, 0)
 
 
 def test_project_prompt_requires_grounded_and_interpretive_synthesis():

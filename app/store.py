@@ -548,7 +548,10 @@ def out_of_date(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 def summary_state(conn: sqlite3.Connection, pid: str) -> dict:
     """Whether the corpus summary on the page is the current one, and if not, what happened.
 
-    `behind` is how many materials were read after it was written — or not read yet at all.
+    `behind` is how many materials have been read *again* since it was written; `unread` is how
+    many have no reading at all. They used to be one number, which counted a material that
+    failed, was interrupted or is still queued as one the summary was behind — so the page said
+    it had been read, and the button it offered spent a dozen calls without changing the count.
     Counted by insertion order rather than by clock, for the reason `last_run` gives: a chain's
     steps land inside the same millisecond and their timestamps then say neither came first.
     `working` is a chain of this project's queued or running now; `error` is what stopped the
@@ -556,14 +559,15 @@ def summary_state(conn: sqlite3.Connection, pid: str) -> dict:
     """
     at = conn.execute("SELECT rowid FROM summary WHERE scope='project' AND ref_id=? "
                       "AND stage='reading' AND status='live'", (pid,)).fetchone()
-    behind = conn.execute(
-        "SELECT COUNT(*) FROM material m WHERE m.project_id=? AND m.removed_at IS NULL "
-        "AND NOT EXISTS (SELECT 1 FROM summary s WHERE s.scope='material' AND s.ref_id=m.id "
-        "AND s.stage='reading' AND s.status='live' AND s.rowid < ?)",
-        (pid, at["rowid"] if at else 0)).fetchone()[0]
+    at = at["rowid"] if at else 0
+    read = conn.execute(
+        "SELECT s.rowid AS seq FROM material m LEFT JOIN summary s ON s.scope='material' "
+        "AND s.ref_id=m.id AND s.stage='reading' AND s.status='live' "
+        "WHERE m.project_id=? AND m.removed_at IS NULL", (pid,)).fetchall()
     job = conn.execute("SELECT * FROM job WHERE project_id=? ORDER BY rowid DESC LIMIT 1",
                        (pid,)).fetchone()
-    return {"behind": behind,
+    return {"behind": sum(1 for r in read if r["seq"] is not None and r["seq"] > at),
+            "unread": sum(1 for r in read if r["seq"] is None),
             "working": bool(job and job["status"] in ("queued", "running")),
             "error": (job["error"] or "") if job and job["status"] in ("failed", "stopped") else ""}
 
