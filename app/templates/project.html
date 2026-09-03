@@ -21,9 +21,11 @@
       {% elif working %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
       {% else %}<p class="lead">Add material to begin a project-wide synthesis.</p>{% endif %}
       {% if summary or summary_state.error %}
+      {% set unread = summary_state.unread or 0 %}
       <p class="dim small">
       {%- if summary_state.error %}The last update did not finish: {{ summary_state.error | txt }}
       {%- elif summary_state.behind %}{{ summary_state.behind }} {{ 'material' | plural(summary_state.behind) }} {{ 'has' if summary_state.behind == 1 else 'have' }} been read since this was written{% if summary_state.working %} — being updated now{% endif %}.
+      {%- elif unread %}{{ unread }} {{ 'material' | plural(unread) }} {{ 'has' if unread == 1 else 'have' }} not been read yet{% if summary_state.working %} — being read now{% endif %}.
       {%- elif summary_state.working %}Being updated now.
       {%- else %}Written over all {{ materials | length }} {{ 'material' | plural(materials | length) }}.{% endif %}</p>
       {% if summary_state.error or (summary_state.behind and not summary_state.working) %}<form method="post" action="/p/{{ project.id }}/resynthesise">

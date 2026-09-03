@@ -360,3 +360,19 @@ def test_the_project_check_says_how_much_it_will_search(client, analysed):
     """One sentence typed here is a call per material, each carrying a full chunk, and the Stop
     button only appears once the first run row exists. The size belongs on the button."""
     assert "Check all 2 materials" in client.get(f"/p/{analysed['pid']}").text
+
+
+def test_material_that_was_never_read_is_told_apart_from_material_read_since(client, monkeypatch,
+                                                                             analysed):
+    """A material that failed, was interrupted or is still queued is not one the summary is
+    behind: writing the summary again cannot change it, so the line says something else and
+    offers no button."""
+    from app import context
+    monkeypatch.setattr(context.store, "summary_state",
+                        lambda conn, pid: {"behind": 0, "unread": 2, "working": False,
+                                           "error": ""})
+    html = client.get(f"/p/{analysed['pid']}").text
+    assert "2 materials have not been read yet." in html
+    assert "have been read since this was written" not in html
+    assert f'action="/p/{analysed["pid"]}/resynthesise"' not in html, \
+        "writing it again cannot read a material that was never read"
