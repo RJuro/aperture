@@ -1,6 +1,6 @@
 # ACCOUNT — as sent to the model
 
-_1409 words_
+_1414 words_
 
 ## SYSTEM
 
@@ -78,7 +78,7 @@ No keys other than these two. No text outside the JSON object.
 ```
 THE THEME you are writing about, as it stands now:
 
-"Belonging, identity, and return" — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
+"Belonging, identity, and return" — Identity and belonging are negotiated through name changes, discrepancies between official records and lived experience, the shifting political identity of one's birthplace, and civic acts that establish membership in a receiving country.
 It runs through 2 of the 2 materials in this project, 15 claims in all.
 
 WHAT THE RESEARCHER IS LOOKING FOR, in their words:

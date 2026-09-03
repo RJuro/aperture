@@ -1,6 +1,6 @@
 # THREAD — as sent to the model
 
-_6186 words_
+_6191 words_
 
 ## SYSTEM
 
@@ -48,7 +48,7 @@ Return JSON in exactly this shape and nothing else:
 THE THEME you are following. Its definition says what belongs to it; you decide where, in THIS
 material, it is present:
 
-t27e6355e83  Belonging, identity, and return — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
+t27e6355e83  Belonging, identity, and return — Identity and belonging are negotiated through name changes, discrepancies between official records and lived experience, the shifting political identity of one's birthplace, and civic acts that establish membership in a receiving country.
 
 WHERE THE READING ALREADY MARKED this theme's codes in this material, by passage id:
 

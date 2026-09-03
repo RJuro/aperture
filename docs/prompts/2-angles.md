@@ -1,6 +1,6 @@
 # ANGLES — as sent to the model
 
-_5644 words_
+_5627 words_
 
 ## SYSTEM
 
@@ -108,15 +108,15 @@ Did the bakery on Essex Street actually support nine children, or were there oth
 WHAT THIS PROJECT HAS GROUPED SO FAR — an angle that cuts across these is welcome, and so is one
 that goes nowhere near them
 
-- Belonging, identity, and return — Belonging is built through civic acts, return visits, and layered identities, but costs family, schooling, and certainty. Present in both materials, diverging between confident and fractured attachment.
-- Family chain migration — Fathers emigrate first, earn, and pull families after them through tickets and letters. Both materials share this structure; they differ in the trade that funded it and whether it cost the migrant's health.
-- Family enterprise as portable livelihood — A mother's baking skill is re-established as a bakery across London, the Lower East Side, and Rockaway Beach, organizing residence, children's labor, and kinship. Found in one of two materials.
-- Forces and constraints shaping departure — Household conflict and conscription drive departure; children are left behind and a spouse's prior flight conditions the other's. Found in one of two materials.
-- Language and schooling across borders — Schooling across borders is shaped by age at arrival, pre-migration education, and language barriers; present in both materials, dividing older migrants turned toward labor from younger ones placed by peer group.
-- Material conditions of relocation and settling — Possessions lost or diminished in transit, housing tied to employer or cramped tenement, and education costs falling on households — the material price of settling, traced across both oral histories.
-- Rural subsistence and barter economies — Subsistence farming, barter, and full household labor define rural livelihood; found in one of two materials, absent from Minnie Rodwin, pointing to divergent migration backgrounds.
-- Transit conditions and practices — Transit is shaped by ethnic segregation, personal networks securing kosher food, and parental authority over children's shipboard earnings; found in one of two materials, silent in the other.
-- Wage labour and its physical costs — Wage labour after migration costs the body — through mining, packing, or bakery delivery — whether sold to employers or organised within a family business; breakdown, downturn, and relocation shape how long each lasts.
+- Belonging, identity, and return — Identity and belonging are negotiated through name changes, discrepancies between official records and lived experience, the shifting political identity of one's birthplace, and civic acts that establish membership in a receiving country.
+- Family chain migration — Family relocation is set in motion by an earlier migrant who establishes a foothold and then sends tickets, letters, or earnings to enable the rest of the household to follow.
+- Family enterprise as portable livelihood — A trade skill carried across borders is re-established as a family business at successive migration stops, organizing where the household lives, how children contribute labor, how marriages form, and how kinship is sustained.
+- Forces and constraints shaping departure — Departure is driven by household conflict, military conscription, and caregiving concerns that determine who leaves, who stays behind, and whether a spouse will follow.
+- Language and schooling across borders — Schooling is shaped by the age at which a child enters, prior education begun abroad, and the gap between an official or colonial language and the language spoken at home.
+- Material conditions of relocation and settling — The material conditions of settling are marked by what is lost or diminished in transit, housing quality relative to neighbors, and household-borne costs of utilities, schooling, and basic amenities.
+- Rural subsistence and barter economies — Rural livelihood is defined by subsistence farming, barter exchange, and household labor that includes children and women as a matter of course.
+- Transit conditions and practices — Transit involves ethnic segregation on vessels, personal networks securing religious dietary needs, and parental authority over children's activities and earnings during the journey.
+- Wage labour and its physical costs — Wage labour after migration extracts a physical cost through injury, illness, or economic downturn that interrupts or ends the capacity to work.
 
 THE MATERIAL — the opening and the closing of the raw text, exactly as it is stored
 

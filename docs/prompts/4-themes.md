@@ -1,6 +1,6 @@
 # THEMES — as sent to the model
 
-_6670 words_
+_8251 words_
 
 ## SYSTEM
 
@@ -47,992 +47,619 @@ Return exactly this shape:
 THE MATERIAL JUST READ, with the codes marked in it. Revise the themes with this text in front
 of you; a theme is a pattern in what people said, not a grouping of labels.
 
-## Minnie Rodwin oral history interview (interview)
+## Ellis Island Oral History: Mary Grande (interview)
 
 CODES MARKED IN THIS MATERIAL, by passage:
-- Absent parent's letters and tickets as migration mechanism: S256, S281
-- Birth name superseded by everyday name: S021, S022, S025
-- Children left behind with grandparent due to care concerns: S181, S183, S185
-- Children's unpaid labor in family enterprise: S482, S484, S486
-- Conscription recall as emigration trigger: S238, S254, S271
-- Dual birth date as official versus lived identity: S037, S038, S053
-- Early school start abroad as pre-migration education: S457, S459, S463
-- Family business as weekly relative gathering point: S546, S547
-- Family business re-established at each migration stop: S158, S265, S514
-- Family business relocation driving residential move: S511, S514, S539
-- Horse-drawn delivery as business transport: S387, S389
-- Icebox as marker of relative household comfort: S070, S072, S075, S076
-- Jewish section on ship as ordinary travel arrangement: S285, S290
-- Kosher food sent by acquaintance during transit: S288, S326
-- Living above or adjacent to family business: S086, S435
-- Marriage through shared trade workplace: S490, S491, S495, S497
-- Mother as bakery skill source across borders: S397, S403, S406, S408
-- Mother-in-law conflict as migration cause: S147, S154, S155, S158
-- Nationality shifting under one's birthplace: S248, S251
-- Parent refusing children's earned money in transit: S308, S313, S315
-- Prior emigration of parent as precondition for family relocation: S261, S280, S281
-- School releasing children for family business labor: S446, S447
-- Spouse's presence as condition for migration willingness: S556
-- Spouse's trade skill converting partner's occupation: S393, S395, S401, S403
-- Tenement hall bathrooms and coin-fed gas meters: S422, S425, S428, S431
+- Absent parent's letters and tickets as migration mechanism: S254, S255
+- Age-based school placement despite language barrier: S341, S342, S343
+- Child participation in farm slaughter: S080, S084, S088
+- Clothing as portable wealth lost in transit: S241, S242, S243
+- Company housing tied to employment: S338
+- Depression-era underemployment straining household: S406, S407, S408
+- Farm-to-housework transition for immigrant women: S359, S360
+- Generational contrast in homeland attachment: S361, S381, S382
+- Livestock bartering as rural livelihood: S042, S170, S171
+- Mining work and health decline: S334, S377, S378
+- Nationality shifting under one's birthplace: S227, S228
+- Naturalisation as civic belonging: S427, S428, S429
+- Obligated refugee housing during wartime: S177, S178, S181
+- Official language versus home language: S210, S213
+- Packing house as decades-long livelihood: S411, S414, S415
+- Prior emigration of parent as precondition for family relocation: S041, S254
+- Regional chain migration settlement: S318, S401, S402
+- Relative as intermediary stop in migration route: S391, S392
+- Return visits confirming belonging in receiving country: S429, S430
+- School fees as immigrant household cost: S409, S410
+- Wartime food-for-clothing barter: S235, S236, S240
+- Women's farm labour as unremarkable: S136, S137
+- Work interruptions from medical surgery: S412
 
 THE MATERIAL:
-S000  EI-845RODWIN
-S001  MINNIE RODWIN
-S002  BIRTHDATE:  FEBRUARY 9, 1907
-S003  INTERVIEW DATE: FEBRUARY 12, 1997
-S004  AGE AT TIME OF INTERVIEW:  90
-S005  RUNNING TIME:  27:12
-S006  INTERVIEWER:  JANET LEVINE, PH.D.
-S007  RECORDING ENGINEER:  JANET LEVINE, PH.D.
-S008  INTERVIEW LOCATION:  SUNRISE, FLORIDA
-S009  TRANSCRIPT PREPARED BY: TAPESCRIBE
-S010  TRANSCRIPT REVIEWED BY: HELEN HENWOOD
-S011  ENGLAND, 1910
-S012  AGE:  3
-S013  SHIP:  PHILADELPHIA
-S014  PORT:
-S015  RESIDENCES:
-S016  ●  ENGLAND, LONDON, COMMERCIAL ROAD
-S017  ●  U.S, NEW YORK, LOWER EAST SIDE, 141 ESSEX STREET,
-S018  ROCKAWAY BEACH, SUNRISE FLORIDA.
+S000  DP-40
+S001  MARY YANKOVIK GRANDE
+S002  BIRTH DATE:  1910
+S003  INTERVIEW DATE:  AUGUST 28, 1989
+S004  RUNNING TIME:  50:00
+S005  INTERVIEWER:  ANDREW PHILLIPS
+S006  RECORDING ENGINEER:  SAME
+S007  INTERVIEW LOCATION:  DENVER, CO
+S008  TRANSCRIPT ORIGINALLY PREPARED BY:  NANCY VEGA, 1989
+S009  TRANSCRIPT RECONCEIVED BY:  CHICK LEMONICK, 2/1996
+S010  TRANSCRIPT NOT REVIEWED
+S011  YUGOSLAVIA, 1920
+S012  AGE 10
+S013  SHIP NAME NOT RECALLED
 
-S019  LEVINE:	Today—today is February the—the 12th and I’m here in Sunrise, Florida at the home of Minnie Rodwin.
-S020  Minnie came from England in 1910 when she was three and a half years of age.
+S014  PHILLIPS:	This Andrew Phillips.
+S015  It's Monday the 28th of August, 1989.
+S016  I'm with Mary Grande, spelled G-R-A-N-D-E.
+S017  This is Interview Number 414 [DP-40] of the Ellis Island Oral History Project.
+S018  Commencing this interview at a little bit before 12:30.
+S019  Mrs.
+S020  Grande, could you start by telling me what your name is and where you immigrated from.
 
-S021  RODWIN:	I—at that time I was Mary.
+S021  GRANDE:	What my maiden name was?
 
-S022  LEVINE:	You were Mary Floun .
-S023  Mary Floun, her—that was her maiden name.
+S022  PHILLIPS:	Uh, let me just get the microphone set up.
+S023  That's fine.
+S024  That's fine.
 
-S024  RODWIN:	Yeah.
+S025  GRANDE:	My maiden name was, uh, Marija Yankovik.
+S026  And we came, my mother and I came from Kandijaright over Novo Mesto, which is in Yugoslavia now.
+S027  Originally it was Austria/Hungary.
+S028  And we came here, we left there August 12, 1920 and we stayed a few days in Trieste, Italy.
+
+S029  PHILLIPS:	Can you spell that for me, please?
 
-S025  LEVINE:	And that was her name when she came to this country.
+S030  GRANDE:	T-R-I-E-S-T-E, Italy.
+S031  And then we got on the ship.
+S032  I believe the name of it was America.
+S033  And it was right after World War One, so they stopped it in a lot of places.
+S034  In London, and I suppose Paris, and all over.
+S035  But part of our clothes was stolen in Trieste, so a fellow that my mother knew, he went in, I believe, in London, to buy some clothes for us.
+S036  He could speak American.
+S037  He came back from the States and who he bought back I don't remember.
+S038  But, uh, he bought some clothes so we had something to change in to, to wear.
+
+S039  PHILLIPS:	Before you tell us about travelling from your home country to the United States, could you tell us a little bit about what your home was like.
+S040  For instance, start by telling us what your parents did for a living.
 
-S026  RODWIN:	Right.
+S041  GRANDE:	Well, my father was here in the States since 1911.
+S042  In 		fact, he was, during World War one here in the United States, and my mother was a farmer, and she raised some cattle and bartered with them.
+
+S043  PHILLIPS:	Tell me what your home was like.
+S044  What did it look like?
+
+S045  GRANDE:	It was an average peasant home.
+S046  It was three rooms, living room and kitchen in the middle and a small room on the side.
+S047  And then facing what would be, I guess, the east side was half, was a barn where the cattle were.
+
+S048  PHILLIPS:	So the cattle were actually, they were part of the 		house.
+S049  The barn was part of the house.
+
+S050  GRANDE:	Yes.
+
+S051  PHILLIPS:	Explain that to us, what was that like.
+
+S052  GRANDE:	Well, it was all one building and there were, later on they made that as all one room, but at that time we had a half a room was like for the barn, for the cows, or when my brother had horses it was there.
+S053  And then there was a manure pile just to the side of it.
+S054  And the majority of people had it similar like that.
+
+S055  PHILLIPS:	Why were the houses and the barns constructed together 		like that?
+
+S056  GRANDE:	It's been historical, as far as I know.
+S057  I don't know any different.
+S058  They don't do it now any more like that, but they used to.
+
+S059  PHILLIPS:	And what was it like for a little girl to be living so close to the animals?
+S060  Did you enjoy that, or were you--
+
+S061  GRANDE:	Oh, yes.
+S062  I enjoyed it because they were part of my life.
+S063  In fact, I had a pet cow that I loved very much.
+S064  And then the pigs were, the pig sty was just across from the kitchen door, just a little ways away.
+S065  So all the animals were right close to the house.
+S066  It was just a regular home life between the animals.
+S067  You wouldn't bring them in the house, but you had them outside.
+
+S068  PHILLIPS:	So you could, when you were sitting down to eat, for instance, you could look out the kitchen door and there were the pigs.
+
+S069  GRANDE:	Right.
+
+S070  PHILLIPS:	And you had names for the pigs?
+
+S071  GRANDE:	Sometimes.
+
+S072  PHILLIPS:	Did you like the pigs?
+
+S073  GRANDE:	Oh, yeah.
+S074  They used to slaughter them in winter and save some meat, cured it, for the summer.
+S075  And some of it was for right away.
+S076  Not too much fresh, but mostly cured.
+
+S077  PHILLIPS:	How did they cure it?
 
-S027  LEVINE:	Okay.
-S028  And let’s see.
-S029  At the time of this—of this interview you’re 90 years of age.
-S030  You just had a birthday.
+S078  GRANDE:	Uh, salt and water and pack it, put some rocks on it and 		let it stay like that and then they would smoke it.
 
-S031  RODWIN:	Right.
+S079  PHILLIPS:	Did you used to help do that?
 
-S032  LEVINE:	(chuckles)  Okay, so you’re 90 years old.
-S033  And this is Janet Levine for the National Park Service.
-S034  If you would state for the tape again your birth date and where you were born.
+S080  GRANDE:	I had to help with, when they killed the pigs I had to catch the blood.
+S081  I didn't like it, but that was part of my job.
 
-S035  RODWIN:	My—the regular [unclear]?
+S082  PHILLIPS:	Can you perhaps remember actually what you did?
+S083  Can you 		describe that for us?
 
-S036  LEVINE:	What you—whatever birth date.
-S037  You—you have two, right?
-S038  When you were born and when you were registered.
+S084  GRANDE:	Well, when my mother got the fellow to kill the pig, well, I had to hold the pan there and catch the blood, because they made the blood sausage out of that.
+S085  Of course, they worked with it to make it good, and then they made the blood sausage and usually they fried the liver right away, good and fresh.
+S086  That was really good.
+S087  Then later, out of the other leftover pieces of regular meat they'd make smoked sausage and they'd smoke them and have them for during the summer.
+S088  They had for special occasions, or when they had hired help.
+S089  They had different pieces for different times.
+
+S090  PHILLIPS:	So you got a lot of different, uh, meats.
+S091  You got your money's worth out of those little pigs across the way from the kitchen.
+
+S092  GRANDE:	Oh, yes.
+S093  Oh, yes.
+S094  Oh, yes.
+S095  And then, of course, we had 		the milk from the cows.
+S096  We didn't kill the cows at home.
+S097  It's very seldom we had beef but, uh, we chickens, so there was chicken meat and eggs and pigs and milk and cheese, whatever.
+S098  (Sound of door opening in the background.)
+S099  MITZI STACKHOUSE:  Hello.
+
+S100  GRANDE:	Hi.
+
+S101  PHILLIPS:	Just a small interruption there.
+S102  Clyde and Mitzi 		Stackhouse.
+S103  Mitzi is the daughter--
+
+S104  GRANDE:  Yeah.
+
+S105  PHILLIPS:	--of Mrs.
+S106  Grande.
+S107  Okay.
+S108  We were back, you were telling 		us a little bit about your life on your farm.
+S109  Can you tell us, perhaps, how you warmed the place in the wintertime.
+S110  What, was it cold for you?
+
+S111  GRANDE:	Well, we, uh, heated it with the wood.
+S112  There was times that my mother later on got some coal, but not very much.
+S113  It was mostly wood.
+S114  And the forest wasn't far from the house, so we used to get the wood there.
+S115  And, of course, she had quite a bit hauled in the fall, so we would have wood.
+
+S116  PHILLIPS:	You say hauled in the fall, she got the wood during the 		fall?
 
-S039  RODWIN:	December—December 25th.
+S117  GRANDE:	Yeah, so we'd have it all winter long.
+S118  But she would cut it up herself, saw and chop it and, of course, later on when I was bigger I tried to help, which I wasn't much good.
+S119  But I helped on the farm what little I could, and I had a mile or better to go to school.
 
-S040  LEVINE:	Was that when you were actually born?
+S120  PHILLIPS:	Before you tell us about going to school, can you tell 		me what your life was like for your mother.
+S121  She was, just one moment.
+S122  We need for you to be as quiet as possible (addressing daughter and son-in-law).
 
-S041  RODWIN:	Yeah, six o’clock in the morning.
-S042  My—my—my—my mother used to say the—the times [unclear].
+S123  GRANDE:	Well, originally she was a widow and she married her husband.
+S124  And then she bought this home.
+S125  And then when she met--  (Break in tape.)
+
+S126  PHILLIPS:	Okay, Mrs.
+S127  Grande, could you continue please?
+S128  I think we were just talking about how difficult it was for your mother.
+S129  You said she was a widow and married again.
+
+S130  GRANDE:	She was a widow, and she had two boys.
+S131  One died before, 		but two of them were living, so she was raising them.
+S132  And then I came along after she married with my husband, uh, my father.
+S133  And, uh, he came to the States, and there was another sister born after that.
+
+S134  PHILLIPS:	Could you tell me, I mean, is sounds like your mother must have been a tremendously strong and hardy woman to look after a farm and bring up these children and chop the wood.
+S135  Was that normal?
 
-S043  LEVINE:	Really?
-S044  And what else did your mother tell you about when you were born?
+S136  GRANDE:	Normal, normal.
+S137  Most all the women did similar work, 		worked on the farm and just took care of everything.
+S138  There was quite a few men that came to the States to make a livelihood and then probably come back, which a lot of them never did.
+S139  A lot of them took their family over here, but a lot of them, some did help.
+S140  But during the wartime they couldn't help back and forth at all.
+S141  So my mother used to kind of sell milk and eggs and whatever she could, products.
+S142  Not too much off the farm because that was our livelihood throughout the year.
+S143  And you had to keep some for the seeds for next year.
 
-S045  RODWIN:	Well, my mother was—business.
-S046  She’s—bakery business.
+S144  PHILLIPS:	Did you tell me how ,any were in your family?
+S145  Could you 		tell me that?
 
-S047  LEVINE:	In London?
+S146  GRANDE:	Well, there was, actually, uh, four, five, with my mother.
+S147  And then my sister died.
+S148  Oh, she was about a year old when she died, so there was four of us.
+S149  And, uh, we'd done the best we could, just like a lot of others.
 
-S048  RODWIN:	Yeah.
+S150  PHILLIPS:	Why did your sister die?
+S151  What did she die of?
 
-S049  LEVINE:	Uh-huh, uh-huh.
-S050  So you were really born on Christmas—
+S152  GRANDE:	Childhood problems.
 
-S051  RODWIN:	Morning.
+S153  PHILLIPS:	Was that very common in your village?
 
-S052  LEVINE:	—morning.
-S053  And—but you were registered and so your official birth date is February 9th, 1907.
+S154  GRANDE:	Well, there was quite a few children that did die.
+S155  I don't know exactly what the cause or what it was, but she died.
 
-S054  RODWIN:	That’s right.
+S156  PHILLIPS:	Now, could you tell me, please, about going to school.
+S157  You said you had to walk to school.
+S158  Tell me about your school days.
 
-S055  LEVINE:	Okay.
-S056  Now, you were only three and a half when you came to this country.
-S057  But what recollections do you have of England?
+S159  GRANDE:	Well, it was a good mile, or maybe further, past the cemetery, which I wasn't scared of.
+S160  I didn't mind it a bit.
+S161  And we crossed the track.
+S162  And, of course, one time I didn't pay attention, the weather as bad and I had my head down, the rails were down that the train was going to come,and I bumped in there, which wasn't very good.
+S163  But that woke me up to pay attention.
+S164  But, uh, we walked back and forth.
+S165  We didn't think nothing of it.
+S166  That was normal.
+S167  Nobody had cars or anything, and they didn't take them with the wagon because there was too much other work to be done.
+S168  And then when my brother got older, he was quite a bit older than me, well, uh, he went and stayed with my aunt for a while on a different part of the area.
+S169  And so my mother and I were alone for quite a while.
+S170  And then she bartered with the cattle, and sometimes I'd stay with the neighbors overnight when she'd go and barter to different places.
+S171  And all that she done, all of that walking.
+S172  She didn't have no other transportation.
+S173  So then after the war, when my dad started writing about coming to the States, naturally we were all enthused about it.
+S174  I don't know if my mother was enthused or not, but I was.
 
-S058  RODWIN:	Well, first of all, we—we—we—we—we had—they were building—the building they had built—and they were building houses.
-S059  So there was a lady right—right—right opposite us.
-S060  She was Irish.
-S061  And she used to call me “Mary, Mary.”  So I said, “What do you want?”  “I just want to tell you not to make so—so—noise.”  I [unclear] I was quiet.
+S175  PHILLIPS:	Tell me what it was like for you during the war.
+S176  Do you 		have any memories of that?
 
-S062  LEVINE:	Yeah, uh-huh.
+S177  GRANDE:	Well, we had to have refugees from the Italian side, and 		the extra room that we had that was like, it could have been a summer kitchen.
+S178  Well, we had to give that to the refugees and everybody had to share their home with the refugees.
+S179  And, of course, they spoke quite a bit Italian, but we managed to understand each other pretty good.
 
-S063  RODWIN:	But—
+S180  PHILLIPS:	Do you know, or do you remember, whether it was the government that forced you to take the refugees, or the people in the community just did it?
 
-S064  LEVINE:	Do you remember the house you lived in in London?
+S181  GRANDE:	It was more or less a government decision that everybody 		would take some refugees.
+S182  And we went down by the river which was about a good half-a-mile or further to wash clothes on the rocks.
+S183  I don't know if you ever heard of it or not, but that was, and then my mother would take them sometimes over to the hospital which was the other way.
+S184  It wasn't as far.
+S185  The only thing, she didn't like to go there because there was too much bloody stuff in there.
 
-S065  RODWIN:	I have the birth—birth certif—
+S186  PHILLIPS:	Why?
 
-S066  LEVINE:	Certificate.
-S067  Uh-huh, uh-huh.
-S068  But do you remember the house?
-S069  Do you remember anything in particular that you could describe?
+S187  GRANDE:	Uh, to wash clothes in shelter instead of outdoors.
 
-S070  RODWIN:	Well, I know we had—we had a—oh, what do you call it?
-S071  Where none—lo—lot of people didn’t have.
-S072  We had—outside, we had a—an icebox with ice.
-S073  And we used to keep our cold things in there.
+S188  PHILLIPS:	But you said there was some bloody stuff in there.
+S189  Why?
 
-S074  LEVINE:	Uh-huh, uh-huh.
-S075  And a lot of people didn’t have an icebox at that time.
+S190  GRANDE:	Well. it was a hospital, and they'd let women come there 		and wash clothes but naturally the hospital supplies were going through first.
 
-S076  RODWIN:	No.
+S191  PHILLIPS:	So the rubbish and the effluent from the hospital was 		thrown into the river.
 
-S077  LEVINE:	Uh-huh, uh-huh.
-S078  And is there anything else you can think of that you recall?
-S079  Do you recall your mo—where your mother had the bakery?
+S192  GRANDE:	Yeah.
 
-S080  RODWIN:	Yeah, in Commercial Road.
+S193  PHILLIPS:	And so you probably tried to wash upstream from the 		hospital.
 
-S081  LEVINE:	Wow!
-S082  Uh-huh.
-S083  Did you go to the bakery?
-S084  Could you say anything about—
+S194  GRANDE:	Oh, yes.
+S195  Oh, yes.
+S196  Definitely.
+S197  And there was two hospitals.
+S198  One on one side of the river was for men, and the one on the other side of the river was for women.
+S199  They didn't have them all combined together like they have over here now.
+S200  They have them like that now too over there.
+S201  But at that time there it was each separate.
+S202  And there was a castle right across the street from the hospital, which is now tuberculosis sanitarium.
+S203  They don't have no castles no more.
+S204  So there's quite a bit of changes any more, too.
 
-S085  RODWIN:	Yeah.
-S086  We lived—we lived up where—where the bakery was.
+S205  PHILLIPS:	But in those days who lived in that castle?
 
-S087  LEVINE:	I see.
-S088  And what was your mother’s name?
+S206  GRANDE:	The Austrian people.
+S207  They were the higher-ups from the Austrian, not government, but they were well-to-do and all that.
+S208  But--
 
-S089  RODWIN:	Sophie.
+S209  PHILLIPS:	What language did you speak?
 
-S090  LEVINE:	Sophie.
-S091  And her maiden name, do you know that?
+S210  GRANDE:	Actually Slovanian, and we had to take German.
 
-S092  RODWIN:	It’s a funny name.
-S093  Vivyeika.
-S094  That means, oh, a squirrel.
+S211  PHILLIPS:	Not Hungarian.
 
-S095  LEVINE:	Oh.  (chuckles)  Uh-huh.
-S096  And could you spell it?
+S212  GRANDE:	No, no.
+S213  German was our main language, like in office or 		different places, you almost had to learn how to speak German to get along with them.
 
-S097  RODWIN:	Vivyeika—V-I-V-Y-E-I-K-A.
+S214  PHILLIPS:	That was the official language.
 
-S098  LEVINE:	Was your mother born in England?
+S215  GRANDE:	Right.
 
-S099  RODWIN:	No.
+S216  PHILLIPS:	So how many languages were spoken, then, in your 		village?
 
-S100  LEVINE:	Where was she born?
+S217  GRANDE:	The two.
+S218  German and Slovanian.
 
-S101  RODWIN:	[unclear], Warsaw.
+S219  PHILLIPS:	Do you remember much, at that age, about any political 		structures or political problems, or--
 
-S102  LEVINE:	Oh, Warsaw.
-S103  Uh-huh.
-S104  So do you know when she came to England?
-S105  Do you know—had she been—
+S220  GRANDE:	All I kind of remember when, I guess it was about 1918 when they was going to overthrow Austria/Hungary altogether and change it to Yugoslavia.
 
-S106  RODWIN:	When we—when we were born.
+S221  PHILLIPS:	When who was?
 
-S107  LEVINE:	Well, I mean, had she been living—she had a bakery there so she must have been there for a while before you were born.
+S222  GRANDE:	Well, the government was a changing deal because the--
 
-S108  RODWIN:	No.
+S223  PHILLIPS:	I'm sorry, which government are you talking about?
 
-S109  LEVINE:	No?
+S224  GRANDE:	Part of Yugoslavia.
+S225  And the First World War started 		down in Sarajevo in what is now Yugoslavia.
+S226  It's down more or less in the Serbian section.
+S227  That's where Ferdinand got killed and World War One started.  and I kind of remember when they had the meetings around 1918 and '19, '20 and after all that, well, it became Yugoslavia.
+S228  So actually I was born in Austria/Hungary and came here from Yugoslavia.
 
-S110  RODWIN:	When—er--my father was married and he was in—what do you call it’s—
+S229  PHILLIPS:	Do you remember what your older relatives, or your mother, or people who came to your house, were talking about during those times?
+S230  Were they afraid?
+S231  Were they excited?
+S232  What was the atmosphere like?
 
-S111  LEVINE:	The military?
+S233  GRANDE:	Well, during the war they were excited and all that but, 		uh, not too much, because you just had to go along.
+S234  There were restrictions on certain things you couldn't buy.
+S235  And, uh, the people that lived in the city, which was across the river from us, they didn't have food, and we had more food because we were out in the country.
+S236  So for any small amount of food, either eggs, or chicken, or no matter what, or milk, they would share clothing because they had plenty of clothes, but they had a hard time getting food.
 
-S112  RODWIN:	No—yeah.
+S237  PHILLIPS:	And so that was, did that become a barter system that 		you, part of the barter system you were describing before, or not?
+S238  Or did they pay money for the food?
 
-S113  LEVINE:	In the—in the army.
+S239  GRANDE:	Oh, no.
+S240  It would be a bartering.
+S241  I had, I usually had real nice clothes and, uh, when we were coming here to the States I'd have had beautiful clothes if it wouldn't be stolen in Italy while we were waiting for the ship.
+S242  We had to stay there three days and they had us, they had my mother put the suitcases in the storage, and when she went to get them they were gone.
+S243  Not only hers, a lot of others too.
 
-S114  RODWIN:	Yeah.
+S244  PHILLIPS:	Meanwhile, back before that happened, how did the people 		cross that river?
+S245  Was there a boat, or a bridge, or--
 
-S115  LEVINE:	Uh-huh.
+S246  GRANDE:	Oh, further down there was a big ridge.
+S247  There was, uh, or they went with wagons and whatever needed to be.
+S248  Of course, you don't see the wagons now any more.
+S249  All you see is cars.
+S250  But at that time there was wagons.
 
-S116  RODWIN:	But he wasn’t [unclear].
-S117  He was in—see, I forget all this.
+S251  PHILLIPS:	When was it that you first learned that you were going 		to travel to America?
 
-S118  LEVINE:	That’s okay.
-S119  Whatever you remember you can say.
+S252  GRANDE:	Oh, it was, oh, I guess about, not the very first part, 		but about towards the second part of 1920.
 
-S120  RODWIN:	Ah—
+S253  PHILLIPS:	And tell me how you learned about that?
 
-S121  LEVINE:	Was—was he in Warsaw?
+S254  GRANDE:	Well, my mother was telling me about the letters she got 		from my father, and then he sent us the tickets.
+S255  And she had to go to different places to get it approved and all that.
+S256  But, uh, not too many.
+S257  Like some of them had to go through more than she did.
+S258  And I didn't have to go anywhere because I was a minor.
+S259  So, but on the passport, uh, her and my pictures were together, so everything went, whatever she got, it was for me, too.
 
-S122  RODWIN:	No.
+S260  PHILLIPS:	And how about the other children?
 
-S123  LEVINE:	No.
+S261  GRANDE:	Well, my oldest brother, he had to go in the army.
+S262  See, 		they have to serve three years all the time.
+S263  But, uh, he had to go in.
+S264  And then the other one, they was going to bring him here.
+S265  And in the spring, when he was supposed to go kind of like to report for the army, he was on the wagon and he fell or jumped or whatever, and he got killed.
+S266  So then this one got to come from the army earlier to take over the farm.
 
-S124  RODWIN:	In—I forget.
-S125  I—I knew all these things but the—
+S267  PHILLIPS:	Because his brother had been killed.
 
-S126  LEVINE:	Yeah.
-S127  Well, in other words, when he was in the army is when he met your mother.
+S268  GRANDE:	Yeah.
 
-S128  RODWIN:	No.
+S269  PHILLIPS:	And so did your brother accompany you to the United 		States?
 
-S129  LEVINE:	No.
+S270  GRANDE:	No.
+S271  He would have to come after it.
+S272  It was just my 		mother and I that came then.
 
-S130  RODWIN:	They lived togeth—they lived in the same town.
+S273  PHILLIPS:	All right.
+S274  Now, tell me what you actually had to, to do 		to get your papers.
 
-S131  LEVINE:	Oh, so he also came from Poland?
+S275  GRANDE:	Well, I wasn't with my mother too much, but she had to go through quite a bit of different courts and different offices and get approvals of, oh, different higher-ups that were in line with the travelling and all.
+S276  So she had to make quite a few different trips.
 
-S132  RODWIN:	Yeah.
+S277  PHILLIPS:	Do you know how long it took her to get the approval?
 
-S133  LEVINE:	Your father?
+S278  GRANDE:	Oh, it was about, the last month before we left it seemed like she was always coming or going to different places.
 
-S134  RODWIN:	Yeah.
+S279  PHILLIPS:	And meanwhile your father was in America?
 
-S135  LEVINE:	Now, his last name was Floun?
+S280  GRANDE:	Yeah.
 
-S136  RODWIN:	Right.
+S281  PHILLIPS:	So tell me about finally leaving.
+S282  How did you feel?
 
-S137  LEVINE:	Uh-huh.
-S138  So—so they had met in Poland.
+S283  GRANDE:	Oh, I was anxious just to get here to meet my dad.
 
-S139  RODWIN:	Right.
+S284  PHILLIPS:	Weren't you going to miss your friends?
 
-S140  LEVINE:	And they married and came to England?
+S285  GRANDE:	I didn't think about it then.
 
-S141  RODWIN:	Well, he went to—they sent him some—I forget the name.
-S142  Anyway, he was there sometime.
-S143  My mother was married and her husband died.
+S286  PHILLIPS:	How old were you when you were leaving?
 
-S144  LEVINE:	Oh.
+S287  GRANDE: 	Ten.
+S288  I was just anxious to meet my dad.
 
-S145  RODWIN:	So when he come back he married my mother.
+S289  PHILLIPS:	And how had your school life been?
+S290  Had you enjoyed 		school back in--
 
-S146  LEVINE:	I see.
+S291  GRANDE:	Well, I like school.
+S292  I had average grades.
+S293  I wouldn't say they were exceptional, but I had them average, and I had to take German for two years in third and fourth grade.
+S294  Of course, Later on when I came here there was no German people around, so I just kind of forgot it.
+S295  But, uh, it would be nice if I had remembered it.
 
-S147  RODWIN:	And he had a mother-in-law that was very—she wasn’t very nice.
-S148  So she—
+S296  PHILLIPS:	So how did you, you got to Trieste, think you described.
 
-S149  LEVINE:	This is your mother’s mother?
+S297  GRANDE:	We went by train.
+S298  We went by train, and then we got to 		where we had, where my mother checked in the suitcases and, uh, we just had like a barn place.
+S299  It wasn't a hotel or anything, where we stayed for, till 15th.
+S300  And then we went on the ship.
+S301  And, uh, my dad paid for first class but they put us down on the bottom and then this one fellow spoke up that was, uh, here before, and he seen my mother's card, and he said, "You don't belong down here.
+S302  You should go up higher.
+S303  And we had mostly fish and macaroni on the ship, which I didn't like very well, but you had to eat something.
 
-S150  RODWIN:	My mother’s mother—m—m—m—m—my mother’s mother-in-law.
+S304  PHILLIPS:	So did you manage to get up to first class?
 
-S151  LEVINE:	Oh, okay.
+S305  GRANDE:	Not first.
+S306  But we got up to second.
+S307  We got up to second class.
+S308  It was better, but nothing to brag about compared to what the ships are now.
 
-S152  RODWIN:	So she—she—she always used to talk about—she said that’s why her son died, because my mother was waiting for a—him to come back.
+S309  PHILLIPS:	Did you still have to eat fish and macaroni?
 
-S153  LEVINE:	Oh.
+S310  GRANDE:	Oh, yes.
+S311  I guess that was the basic, it was an Italian ship, so I guess that's what it was.
+S312  And they stopped it in London, they stopped it in different places until finally I guess they got a call from the United States where the people are that were supposed to be in by a certain time and they weren't, and so the ship started going real fast, and finally got to New York.
 
-S154  RODWIN:	Anyway, they got married but she was always after her.
-S155  So she—she got a [unclear] so crazy that she went to L—London.
+S313  PHILLIPS:	Do you remember that?
 
-S156  LEVINE:	Oh, uh-huh.
-S157  I see.
+S314  GRANDE:	Well, I do some, not too much.
+S315  I suppose I was too excited about getting to my dad's place.
+S316  I know there was quite a few that had eye disease and they had them there for a few days, and then a lot of them were sent back from where they were coming from, either Italy, Germany or Yugoslavia.
+S317  And then uh, well, we were there, and they vaccinated us again and checked us through and all, and finally we got to go and I think we changed trains in Chicago, from New York to Chicago, and then changed trains.
+S318  And there were some people that went here to Denver that were from more or less the same area as we were.
+S319  But, uh, we got on a different train in Chicago.
+S320  The train they got was different than the one we had.
+S321  And that's the first time I got to see bananas, on the train.
+S322  And, of course, there was a fellow that, he went over there to get his two children, and he didn't buy them very much.
+S323  Whatever, the rest of them, like my mother and this other lady bought, we shared with his kids.
+S324  They didn't like it very much, but what can you do.
+S325  So we all went, there was a lady with her two daughters, and this man with his two children, and my mother and me, we all went to the same town in Utah.
+S326  We got off in Price, and we, of course, that's where my dad met us, and then we had to take the bus twenty-eight miles to Sunnyside.
 
-S158  RODWIN:	She went to London and then they opened up another bakery.
+S327  PHILLIPS:	Why was it that you decided to move up to, you were on 		your way to Denver, I take it?
 
-S159  LEVINE:	Uh-huh.
+S328  GRANDE:	No, no.
+S329  We were on the way to Utah to begin with.
+S330  That's where my dad lived.
 
-S160  RODWIN:	That’s all.
+S331  PHILLIPS:	Why had he chosen to live in Utah?
 
-S161  LEVINE:	Uh-huh.
-S162  Now, did you have brothers and sisters?
+S332  GRANDE:	Well, he was working in coal mines.
+S333  He worked in different mines in Utah, around.
+S334  He worked part-time years before that in  Aspen, Colorado, but he went back to Utah around Tooele.
+S335  And at that time he was in Sunnyside, and so we lived there about six and a half years, and then his health went bad, and so we came to Colorado.
 
-S163  RODWIN:	Yeah, we were nine.
+S336  PHILLIPS:	I see.
+S337  Can you tell me how you felt when you arrived in 		the United States and how eventually you must have started school, what was that like for you?
 
-S164  LEVINE:	In England?
+S338  GRANDE:	Well, we lived, my dad rented a company four room house that was a double, and the other family was similar in nationality as we were.
+S339  And so, uh, the kids could talk broken Slovanian, so we kind of got started getting along, and I'd pick up words from them little by little.
+S340  And we came on a Thursday, and the following Monday I went to school.
+S341  And being that these were going to the same grades, so they put me in the fourth grade instead of the first.
+S342  And I struggle along pretty good because as far as figures you didn't have to talk.
+S343  You could just write, and it was good.
+S344  And, uh, so I was in a county contest the first and second year for arithmetic to where we went from Sunnyside to Price, we stayed overnight.
+S345  And it was good.
+S346  And then I skipped the sixth grade and in seventh grade I was in a running contest.
+S347  I wouldn't go now, but I did go then.
 
-S165  RODWIN:	No—yeah.
-S166  We had two sisters in Poland—
+S348  PHILLIPS:	Okay.
+S349  Let me just turn my tape over.
+S350  END OF SIDE ONE
+S351  BEGINNING OF SIDE TWO
 
-S167  LEVINE:	Oh, that were born in Poland.
+S352  PHILLIPS:	This is side two, Interview Number 414 [DP-40], with Mary Grande.
+S353  Um, so, uh, you did fairly well at school?
 
-S168  RODWIN:	—[unclear]—were born there.
-S169  My grandmother—that’s [unclear].
+S354  GRANDE:	Yeah, I done, I'd say I wasn't the best, but I was with 		the top ones.
 
-S170  LEVINE:	Wow.
+S355  PHILLIPS:	Now, tell me what life was like now for your mother.
+S356  She no longer had all of those animals to look after.
+S357  It must have been very different.
+S358  What did she do?
 
-S171  RODWIN:	My [unclear] grandmother.
-S172  She—she—she—no, no.
-S173  She was very good.
+S359  GRANDE:	All we could do was housework and laundry, cleaning and cooking, and that.
+S360  So she got adjusted pretty well.
+S361  She always hoped to go back, but she never did because they started talking about the war and she didn't want to be in another war over there, which they had it worse right in our area in the second one than they did in the first.
+S362  And my brother, half-brother, of course, he lived there until the '70s when he died.
+S363  She gave the property over to him.
+S364  And they had pretty rough deals there during the second war.
+S365  In fact, one of his daughters got deaf and dumb on account of the noise of the cannons that they were shooting on their farm.
+S366  We were right close to where they had the battles and everything, my brother was, so.
+S367  But, uh, I got pretty well with the kids in school.
+S368  Of course, I couldn't speak, but I started learning very fast the best way I could and I enjoyed the school.
 
-S174  LEVINE:	You remember her?
+S369  PHILLIPS:	And where were you living at this point?
 
-S175  RODWIN:	No, just from—
+S370  GRANDE:	In Sunnyside, Utah.
 
-S176  LEVINE:	No.
+S371  PHILLIPS:	When did you, well, before I ask you that question, uh, can you tell me a little bit about the Depression years for your family.
+S372  What was that like?
 
-S177  RODWIN:	Just from pictures.
+S373  GRANDE:	Well, the Depression really hit us after I came here to Colorado.
+S374  Right after I got married, that's when we had the worst Depression.
+S375  But, uh, dad was kind of, his health was going down great, so he couldn't, uh, work and he figured, well, between my mother and him, they figured maybe he could do some outside work over here, and we had, my mother's sister lived up on northeast of Greeley on what they call the dry land, so we were there for a week, and then we came to Denver.
+S376  So he got a job finally over at the smelter, and he worked there for a while, but couldn't work too long.
+S377  And then little by little he tried to work, he went finally back into the mine, and he couldn't work too long there.
+S378  Finally the doctor said he couldn't work no more.
 
-S178  LEVINE:	Right, uh-huh.
-S179  Uh-huh.
+S379  PHILLIPS:	What was, uh, how did you feel, at this point, or how did your family feel about being so far away from home?
+S380  Did they miss--
 
-S180  RODWIN:	She was in London but I was too—I wasn’t even born.
-S181  So—er--anyway, we had two sisters in Poland we left there—
+S381  GRANDE:	My mother missed it a lot.
+S382  But, uh, I'm sorry to say, I 		didn't		.
 
-S182  LEVINE:	Oh.
+S383  PHILLIPS:	So you got married.
+S384  When did you get married?
 
-S183  RODWIN:	—because my mother was afraid she wouldn’t be—be able to take care of them.
+S385  GRANDE:	In 1927, here in Denver.
+S386  And I've been here ever since.
 
-S184  LEVINE:	So the two sisters were left with your grandmother?
+S387  PHILLIPS:	And, uh, you moved to Denver when, from Sunnyside?
+S388  GRANDE;	In 1926, in October.
+S389  We drove a Model T.
+S390  In fact, I drove it most of the way, and we stopped in Aspen.
+S391  I had an uncle, my mother's brother, there.
+S392  We stopped there for a month, and then we came on to Colorado.
+S393  And, uh, after a while we both got jobs, and it worked out.
+S394  And I met my husband on New Year's and married him in May.
+S395  He was from the same area as I was, and years later we went back there.
+S396  He liked the area where I was raised much better than where he was because it was close to the city.
+S397  And him and I went back there three times, one by car and twice with the plane.
+S398  And, of course, I've been there since a few times.
 
-S185  RODWIN:	Yeah, just till one was seven years old.
+S399  PHILLIPS:	Why was it that there were so many people from your, 		from that area that you came from in Europe, living in this area around Denver?
+S400  Do you know?
 
-S186  LEVINE:	So then who went to London?
-S187  Your mother—
+S401  GRANDE:	Well, it's a settlement.
+S402  When a group gets settled and then somebody else tries to come in, and they just like to integrate together.
 
-S188  RODWIN:	My father.
+S403  PHILLIPS:	Okay.
+S404  Is there anything else that you'd like to, think 		we might be interested to hear about?
 
-S189  LEVINE:	—and your father.
-S190  Just the two of them?
+S405  GRANDE:	Well, I worked later on.
+S406  During the Depression it was kind of rough.
+S407  My husband wasn't making much.
+S408  Worked every other week and the girls were getting to the point, being in school, we sent them to parochial school.
+S409  And naturally we had to pay.
+S410  It wasn't like now that somebody else pays for them a lot.
+S411  And then, uh, U finally got a job in a packing house, which I worked close to thirty years in it.
+S412  And in between every so often I had to have different surgeries and I'd be home.
 
-S191  RODWIN:	Yeah.
+S413  PHILLIPS:	What kind of work, excuse me, what kind of work 		particularly were you doing?
 
-S192  LEVINE:	And then you were born in London.
-S193  And were other children born in London too?
+S414  GRANDE:	Cutting up meat, pork and beef.
+S415  Cut it for scraps for 		sausage and stuff.
+S416  And then later on she came into the packing house and she worked with me for a while, and then she went down in the smokehouse where they have to smoke bacon and ham, and she worked there until she had to give up medically on account of it.
 
-S194  RODWIN:	Yeah, all—all the rest of them.
+S417  PHILLIPS:	Let me explain for identification who she is.
 
-S195  LEVINE:	I see.
-S196  So you must have been among the youngest.
+S418  GRANDE:	My daughter, Mitzi.
 
-S197  RODWIN:	Yeah, next to the youngest.
+S419  PHILLIPS:	M-I-T-Z-I.
+S420  Mitzi Stackhouse.
 
-S198  LEVINE:	Do you have any idea of when your mother came to London?
-S199  When she left Poland and went to London?
+S421  GRANDE:	Yeah.
+S422  I have another daughter, Jenny Musk.
+S423  She's a 		nurse.
+S424  She lives way up in Northglen.
 
-S200  RODWIN:	When my—my—I have two brothers that were twins.
-S201  And—er--wh—she was pregnant with them when she went to London.
+S425  PHILLIPS:	Okay.
+S426  Unless there's something else you think you'd 		like to us all.
 
-S202  LEVINE:	I see.
-S203  And then after the two twins—the two twin brothers, who comes next in the—in the line of children?
+S427  GRANDE:	Well, we became, my husband and I became American citizens in 1932 and we tried to vote every time ever since.
+S428  Maybe not right, but we try our best.
+S429  And every time I go back to Europe I'm happy to come back.
+S430  This is my country.
 
-S204  RODWIN:	It’s a—a—a—a daughter.
-
-S205  LEVINE:	Okay.
-
-S206  RODWIN:	Esther.
-
-S207  LEVINE:	Esther.
-S208  And then who?
-
-S209  RODWIN:	Esther—Jackie.
-
-S210  LEVINE:	Jackie’s a girl or boy?
-
-S211  RODWIN:	No, boy.
-
-S212  LEVINE:	A boy, uh-huh.
-S213  Jackie, and then?
-
-S214  RODWIN:	Annie.
-
-S215  LEVINE:	Annie.
-
-S216  RODWIN:	Me.
-
-S217  LEVINE:	Okay, Mary.
-
-S218  RODWIN:	And then kid sister, Yettie.
-
-S219  LEVINE:	Yettie.
-
-S220  RODWIN:	She died.
-
-S221  LEVINE:	Uh-hmm.
-
-S222  RODWIN:	She was two years younger than me.
-S223  That’s all.
-
-S224  LEVINE:	So was Yettie born—Yettie was born in London and Yettie came to the United States—
-
-S225  RODWIN:	With us.
-
-S226  LEVINE:	With you.
-S227  Uh-huh, okay.
-S228  So what—let’s see.
-S229  What was your father’s first name?
-
-S230  RODWIN:	Morris.
-
-S231  LEVINE:	Morris, okay.
-S232  And so your mother had the bakery business.
-S233  And did your fath—was your father part of that bakery business in London?
-
-S234  RODWIN:	Oh, he was—yeah.
-
-S235  LEVINE:	That was his business, uh-huh.
-S236  I see.
-S237  Did—did anybody ever tell you why your mother and father decided to come to the United States?
-
-S238  RODWIN:	Well, my father was called in—into—back to the army when the boys were just—just thirteen, the twins.
-
-S239  LEVINE:	The Polish Army?
-
-S240  RODWIN:	No—yeah.
-S241  No.
-
-S242  LEVINE:	In England?
-S243  In—in—
-
-S244  RODWIN:	It wasn’t England.
-S245  It was—I forget the name of it.
-
-S246  LEVINE:	Maybe it was the Russian Army.
-
-S247  RODWIN:	Yeah.
-
-S248  LEVINE:	Because those borders changed a lot.
-
-S249  RODWIN:	Yeah.
-
-S250  LEVINE:	Uh-huh, uh-huh.
-
-S251  RODWIN:	This is the Russian Army.
-S252  It was underground.
-S253  I don’t know what the—and anyway, that’s where—
-
-S254  LEVINE:	He was called back into the army.
-S255  And so, instead, the family moved to the United States.
-
-S256  RODWIN:	So my father got tickets, went to the United States.
-S257  He had some rel—relatives in the—in New--New York.
-
-S258  LEVINE:	So he went first.
-
-S259  RODWIN:	Yeah.
-
-S260  LEVINE:	And then—
-
-S261  RODWIN:	The year before.
-
-S262  LEVINE:	The year before.
-S263  And what did he do when he got to the United States for work?
-S264  Do you know?
-
-S265  RODWIN:	He opened up a bakery.
-
-S266  LEVINE:	A bakery.
-S267  I see. (telephone rings)
-
-S268  RODWIN:	All right.
-S269  I get it.
-
-S270  LEVINE:	Okay, we’ll just turn this off.  [tape off/on]  Resume here after a telephone call from Minnie’s daughter.
-S271  Okay, why don’t we say—so the reason was to avoid going back in the army.
-S272  That was the reason that your father left first.
-
-S273  RODWIN:	That’s right.
-
-S274  LEVINE:	And he opened a bakery in New York?
-S275  Was it in New York?
-
-S276  RODWIN:	Downtown.
-
-S277  LEVINE:	Downtown in Manhattan?
-
-S278  RODWIN:	Yeah.
-
-S279  LEVINE:	Uh-hmm.
-S280  And then in a year or so he sent for the children.
-
-S281  RODWIN:	He had the tickets, yeah.
-
-S282  LEVINE:	He—okay.
-S283  And when you left, you left with your mother and all of your brothers and sisters.
-S284  Do you remember anything about the journey?
-
-S285  RODWIN:	We—we had—we were in—in—in—in a Jewish—
-
-S286  LEVINE:	Section of London?
-S287  Uh-huh.
-
-S288  RODWIN:	And the—er--the—er-- chef knew us from London.
-
-S289  LEVINE:	Oh.
-S290  You were in the Jewish section on the ship?
-
-S291  RODWIN:	On the ship, yeah.
-
-S292  LEVINE:	Wow, I never h—have heard that before.
-
-S293  RODWIN:	Yeah.
-S294  So they had, um--like, you know—
-
-S295  LEVINE:	Bunk beds?
-
-S296  RODWIN:	Bunk beds.
-S297  And I was on the top [unclear].
-S298  Anyway, I—I wanted to go to the bathroom so I just went in—I went into the—into the water.
-S299  And th—the—the lady took me—took me and took—took all my things off.
-S300  And she changed me.
-S301  And then she gave me something and put me back [unclear].
-
-S302  LEVINE:	Now, were you in steerage?
-S303  Were you in the bottom of the ship with a lot of people all around?
-
-S304  RODWIN:	Oh, we were in the bottom.
-S305  And we used to dance and—
-
-S306  LEVINE:	Used to dance?
-
-S307  RODWIN:	Oh, yes.
-S308  We used to dance and sing and they used to throw money down.
-
-S309  LEVINE:	Really?
-
-S310  RODWIN:	But we couldn’t put—we couldn’t put—put—put it up.
-S311  My mother wouldn’t let—let us.
-
-S312  LEVINE:	Oh.
-S313  You mean—you mean your sisters and brothers—you would dance and sing and people would throw money, but your mother wouldn’t let you take it.
-S314  Uh-huh.
-
-S315  RODWIN:	No.
-
-S316  LEVINE:	And this was in steerage—
-
-S317  RODWIN:	Yeah.
-
-S318  LEVINE:	—that you did that.
-S319  Uh-huh.
-
-S320  RODWIN:	Yeah.
-
-S321  LEVINE:	And you said that the name of the ship—
-
-S322  RODWIN:	The Philadelphia.
-
-S323  LEVINE:	The Philadelphia.
-S324  And do you remember anything else about the voyage?
-
-S325  RODWIN:	They were very nice.
-S326  This--er--this chef used to send us up all kind of kosher things we could eat, like pickle herring or the—the—the—the things that we—we could eat.
-
-S327  LEVINE:	Well, now, did the chef send these things—did you go up to a dining area where there were tables?
-S328  Do you remember that?
-
-S329  RODWIN:	I can’t remember.
-
-S330  LEVINE:	Uh-huh.
-S331  But anyway, your mother kept a kosher house?
-S332  So on the ship—
-
-S333  RODWIN:	Oh, yeah.
-S334  Still—
-
-S335  LEVINE:	You still do, uh-huh.
-
-S336  RODWIN:	It’s still ko—kosher.
-
-S337  LEVINE:	Do you remember when the ship came into the New York harbor?
-
-S338  RODWIN:	September.
-
-S339  LEVINE:	Do you remember, maybe, seeing the Statue of Liberty?
-
-S340  RODWIN:	Oh, yes.
-S341  We all ran to see the Statue of Liberty.
-
-S342  LEVINE:	Of course, you probably didn’t know what it was—
-
-S343  RODWIN:	Yeah.
-
-S344  LEVINE:	—because you were so young.
-S345  And how about—do you remember your father meeting the family?
-
-S346  RODWIN:	The other father?
-
-S347  LEVINE:	Your father.
-S348  Do you remember when you got to America?
-
-S349  RODWIN:	Oh, we had lots of—lots of rel—la—
-
-S350  LEVINE:	Relatives.
-
-S351  RODWIN:	Relatives.
-
-S352  LEVINE:	Uh-huh.
-S353  And—and where were your relatives?
-S354  Were they all in New York?
-
-S355  RODWIN:	One was on Forty second Street.
-S356  One was in the Bronx.
-S357  They were all over.
-
-S358  LEVINE:	Now, were these brothers and sisters of your mother and father, these relatives?
-
-S359  RODWIN:	Yeah.
-
-S360  LEVINE:	Uh-huh.
-S361  So do you remember seeing your father?
-S362  Because you probably didn’t even remember him.
-
-S363  RODWIN:	Oh, I did.
-
-S364  LEVINE:	Oh, you did remember him?
-S365  Uh-huh.
-
-S366  RODWIN:	Daddy [unclear].
-S367  At that time, they used to call your father Papa.
-S368  We called him Daddy because in London it was Daddy.
-S369  So that’s—that’s all.
-
-S370  LEVINE:	Uh-hmm.
-S371  Do you remember where the family went when they left—when they got off the boat?
-
-S372  RODWIN:	We went to the Lower East Side.
-
-S373  LEVINE:	Uh-huh.
-S374  And before that, do you remember Ellis Island at all?
-
-S375  RODWIN:	No.
-
-S376  LEVINE:	Okay.
-S377  And [unclear]—
-
-S378  RODWIN:	All—all the people.
-
-S379  LEVINE:	Uh-hmm.
-S380  And the Lower East Side.
-S381  Do you remember any impressions you have from what—you know, when you were there for the first time?
-
-S382  RODWIN:	We—we had horses—horses used to ride around.
-S383  We had [unclear].
-
-S384  LEVINE:	Like a horse and wagon, you mean?
-
-S385  RODWIN:	Yeah.
-
-S386  LEVINE:	Uh-huh.
-
-S387  RODWIN:	We had the—couple wagons because we had to del—deliver.
-
-S388  LEVINE:	You had to deliver the bakery goods.
-
-S389  RODWIN:	Yeah.
-
-S390  LEVINE:	Uh-huh.
-S391  Now, it tur—it’s—your father must have been a baker.
-S392  Was he a baker in Poland?
-
-S393  RODWIN:	My father was not—my father was not a baker.
-
-S394  LEVINE:	Oh.
-
-S395  RODWIN:	He was a—a—a tailor.
-
-S396  LEVINE:	Oh, your father was a tailor?
-
-S397  RODWIN:	My mother was the b—the baker.
-
-S398  LEVINE:	Okay.
-
-S399  RODWIN:	Through my mother, they—they became—yeah, my father became a what do you call it?
-
-S400  LEVINE:	A tailor?
-
-S401  RODWIN:	No, a baker.
-
-S402  LEVINE:	Oh, he became a baker from your mother?
-
-S403  RODWIN:	Yeah.
-
-S404  LEVINE:	I see.
-S405  Now, had your mother been a baker in Poland before she ever got to—
-
-S406  RODWIN:	Yeah.
-
-S407  LEVINE:	—London?
-
-S408  RODWIN:	Yeah.
-
-S409  LEVINE:	So they opened a bakery in the Lower East Side?
-S410  Uh-huh.
-S411  And do you remember where you lived in the Lower East Side?
-
-S412  RODWIN:	We lived—141 Essex Street.
-
-S413  LEVINE:	Oh, uh-huh.
-S414  You remember the building?
-
-S415  RODWIN:	It’s a four—four-story—
-
-S416  LEVINE:	A walkup.
-
-S417  RODWIN:	—walkup.
-
-S418  LEVINE:	Like a tenement?
-
-S419  RODWIN:	Yeah.
-
-S420  LEVINE:	Uh-huh.
-S421  Did you have a—a bathroom inside?
-
-S422  RODWIN:	Three—three—three—
-
-S423  LEVINE:	Between apartments?
-
-S424  RODWIN:	Yeah.
-
-S425  LEVINE:	They were in the hall.
-
-S426  RODWIN:	Yeah.
-
-S427  LEVINE:	Uh-huh, yeah.
-S428  And how about—do—did you have the gas meters in the apartment—
-
-S429  RODWIN:	Yeah.
-
-S430  LEVINE:	—that you had to put a quarter in?
-
-S431  RODWIN:	Yeah.
-
-S432  LEVINE:	Uh-huh.
-S433  Do you remember anything else about that place?
-S434  Essex Street, where you lived?
-
-S435  RODWIN:	Well, the bakery was across the street.
-S436  We could—we could—we—we [unclear] bakery there.
-
-S437  LEVINE:	Uh-hmm.
-
-S438  RODWIN:	We had a nice time.
-
-S439  LEVINE:	Hmm.
-S440  And so some of your—some of your brothers and sisters must have started school then right away?
-
-S441  RODWIN:	Yeah—no.
-S442  My brothers were fourteen years old.
-
-S443  LEVINE:	Oh, so they didn’t go back to—they didn’t go to school?
-
-S444  RODWIN:	They went—they—yeah.
-
-S445  LEVINE:	Oh, they did?
-
-S446  RODWIN:	They went but the—they didn’t take them because we had—my mother came with all her kids.
-S447  And they says, “Let them stay home and help you.”
-
-S448  LEVINE:	Oh, okay.
-S449  So none of you had to go to school then?
-
-S450  RODWIN:	Oh, we all went.
-
-S451  LEVINE:	Oh, you all went.
-S452  Do you remember starting school?
-
-S453  RODWIN:	Yeah, I started in the [unclear].
-
-S454  LEVINE:	Uh-hmm.
-S455  And was—how was school for you?
-
-S456  RODWIN:	All right.
-S457  I was [unclear]—of course, in—in London, they—they started you at school at three—three o’clock—three—
-
-S458  LEVINE:	Three years old?
-
-S459  RODWIN:	Three years old.
-
-S460  LEVINE:	Uh-huh.
-S461  I see.
-S462  So you had already been to school.
-
-S463  RODWIN:	Yeah.
-
-S464  LEVINE:	I see.
-S465  Uh-huh.
-S466  So you knew a lot of things—
-
-S467  RODWIN:	Yeah.
-
-S468  LEVINE:	—before you started.
-
-S469  RODWIN:	Yeah.
-
-S470  LEVINE:	I see, uh-huh.
-S471  Okay.
-S472  Can you—can you talk a little bit about the Lower East Side in those days?
-
-S473  RODWIN:	Well—
-
-S474  LEVINE:	What it was like?
-
-S475  RODWIN:	I have to eat.
-
-S476  LEVINE:	Oh, you have to eat?  (chuckles) Okay.
-S477  Okay.
-S478  Let me just ask you a few last questions.
-S479  Okay?
-S480  What did you do then?
-S481  Did you do some kind of work in your life or did you—
-
-S482  RODWIN:	I helped my mother—
-
-S483  LEVINE:	Uh-huh.
-
-S484  RODWIN:	—my father in the bakery.
-
-S485  LEVINE:	In the bakery  I see.
-
-S486  RODWIN:	Came to holidays, we used to you put almonds and cherries on the macaroons.
-S487  Yeah, we—we helped out.
-
-S488  LEVINE:	Uh-huh.
-S489  And then how did you meet your husband?
-
-S490  RODWIN:	He was a—he used to drive a—a—a—a what do you call it?
-S491  He worked in a bakery too.
-S492  He drove a—a—a—you know, it’s hard for me to—
-
-S493  LEVINE:	Uh-hmm.
-S494  Was it a delivery—
-
-S495  RODWIN:	Yeah.
-
-S496  LEVINE:	—truck?
-
-S497  RODWIN:	Yeah.
-
-S498  LEVINE:	Uh-huh.
-S499  So then how many children did you have?
-
-S500  RODWIN:	Me?
-
-S501  LEVINE:	Yeah.
-
-S502  RODWIN:	I had six.
-
-S503  LEVINE:	You had six children and your—and what was your husband’s name?
-
-S504  RODWIN:	Mom—Mor—Jack.
-
-S505  LEVINE:	Jack, uh-huh.
-S506  And when you look back on it now, how you and your brothers and sisters and mother and father came and settled in the Lower East Side and everything, do you think that made a big difference in your life, the kind of person you were and—
-
-S507  RODWIN:	Well, we were al—we were always together.
-S508  Always together.
-S509  So, you know, it—it was a nice—
-
-S510  LEVINE:	Did you stay in the Lower East Side or did the family move on to someplace else?
-
-S511  RODWIN:	We moved to—oh, we—we were in Rockaway Beach.
-
-S512  LEVINE:	Oh, uh-huh.
-S513  And did you have a bakery there too?
-
-S514  RODWIN:	Yeah, we had—we had a bakery there.
-
-S515  LEVINE:	Wow.
-S516  You don’t, by any chance, remember the name of the bakery that you had in the Lower—
-
-S517  RODWIN:	Floun’s.
-S518  Oh, Floun’s.
-
-S519  LEVINE:	—Lower East Side.
-
-S520  RODWIN:	Floun’s.
-
-S521  LEVINE:	So that—that was your maiden name.
-S522  Floun’s Bakery—
-
-S523  RODWIN:	Yeah.
-
-S524  LEVINE:	—it was called.
-S525  And the bakery was also on Essex Street?
-
-S526  RODWIN:	Yeah.
-
-S527  LEVINE:	Across the street from where you lived?
-S528  Uh-huh.
-S529  Do you remember the years, roughly, that—that—that you had the bakery there?
-
-S530  RODWIN:	Well, I must have been about four or five.
-
-S531  LEVINE:	So, say, 1911?
-
-S532  RODWIN:	Yeah.
-
-S533  LEVINE:	And did you keep it for many years or—
-
-S534  RODWIN:	No, not many years.
-
-S535  LEVINE:	Uh-huh.
-
-S536  RODWIN:	Oh, we were—we were on the East Side about fifteen years.
-
-S537  LEVINE:	Fifteen?
-S538  Oh, uh-huh.
-
-S539  RODWIN:	Then we moved to Rockaway Beach.
-
-S540  LEVINE:	Rockaway Beach, uh-huh.
-S541  Uh-huh.
-
-S542  RODWIN:	Well, that’s—
-
-S543  LEVINE:	Okay, is there anything else you can think of that you might want to add about coming to this country or what it’s meant to you to be in this country or anything?
-
-S544  RODWIN:	It was nice.
-S545  Relatives were very nice.
-S546  Oh, they used to come [unclear]—Friday, they’d come to my—my father’s bakery.
-S547  And they’d—they’d take—they would have the [unclear] they were going to take.
-S548  They were all right.
-
-S549  LEVINE:	Uh-huh.
-S550  So—so did you have get-togethers then with your relatives—
-
-S551  RODWIN:	Yeah.
-
-S552  LEVINE:	—once you got to this country?
-
-S553  RODWIN:	Oh, they were al—always my house.
-
-S554  LEVINE:	Uh-huh.
-S555  How did your mother feel about coming to this country?
-
-S556  RODWIN:	She didn’t mind as long—as long as my father went, she wanted to come too.
-
-S557  LEVINE:	She wanted to be with him, uh-huh.
-S558  And was he happy in this country, your fath—
-
-S559  RODWIN:	Oh, yes.
-
-S560  LEVINE:	Uh-huh.
-S561  Okay.
-S562  And then did you visit Ellis Island?
-
-S563  RODWIN:	I think I was there when I—
-
-S564  LEVINE:	Uh-huh.
-
-S565  RODWIN:	Can’t remember.
-
-S566  LEVINE:	Okay.
-S567  And how are things for you now?
-S568  Now that you’re ninety years old and you’re—
-
-S569  RODWIN:	It’s all right.
-
-S570  LEVINE:	Okay?
-S571  Uh-huh.
-S572  I see you have a daughter nearby.
-
-S573  RODWIN:	Oh, I have—oh, my—I have a daughter near L.A. and a daughter in Atlanta.
-S574  I have grandchildren.
-S575  Here, I’ll show you.
-
-S576  LEVINE:	Okay.
-S577  Well, let me turn this off first.
-S578  I want to thank you.
-S579  I’m going to take your microphone off.
-S580  I’ve been speaking with Minnie Rodman, who came from England in 1910 when she was three and a half years old.
-
-S581  RODWIN:	Yeah, September.
-
-S582  LEVINE:	And the family had originally come from the Poland, Russian border—
-
-S583  RODWIN:	Yeah.
-
-S584  LEVINE:	—and settled in the Lower East Side.
-S585  And this is Janet Levine for the National Park Service signing off.
-S586  [END OF INTERVIEW]
+S431  PHILLIPS:	Okay.
+S432  That finishes Interview Number 414 [DP-40] with 		Mary Grande,  It's five after one.
 
 THE THEMES THAT ARE LIVE NOW
 
