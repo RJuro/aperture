@@ -207,6 +207,10 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .material-head { padding-top: clamp(34px, 5vw, 72px); padding-bottom: 28px; }
 .head-meta { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--muted); font-size: 12px; }
 .head-meta > span + span::before { content: '·'; margin-right: 14px; color: var(--border); }
+/* Folded inside the head, the people list needs none of the section rule a quiet fold carries
+   where it ends a page, and twenty ruled rows is a page of its own. */
+.head-people { margin-top: 12px; padding-top: 0; border-top: 0; }
+.head-people .mats li { padding: 3px 0; border-bottom: 0; }
 .material-receipt { margin-top: 17px; }
 .wide-menu { width: min(360px, calc(100vw - 36px)); }
 .wide-menu > details > summary { min-height: 42px; display: flex; align-items: center; padding: 8px 10px; border-radius: 6px; list-style: none; font-size: 13px; }
