@@ -138,8 +138,13 @@ def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):
 def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, analysed):
     pid = analysed["pid"]
     assert "Written over all 2 materials" in client.get(f"/p/{pid}").text
+    # A material read again after the summary counts as read since, added or not.
+    store.save_summary(conn, "material", analysed["grande"], "reading", "read once more")
+    html = client.get(f"/p/{pid}").text
+    assert "1 material has been read since this was written" in html
+    assert f'action="/p/{pid}/resynthesise"' in html
     jid = store.enqueue_job(conn, pid, [{"kind": "project"}])
-    assert "Being updated now" in client.get(f"/p/{pid}").text
+    assert "being updated now" in client.get(f"/p/{pid}").text.lower()   # behind and working
     store.finish_job(conn, jid, "LLMError: the model said nothing")
     html = client.get(f"/p/{pid}").text
     assert "The last update did not finish: LLMError: the model said nothing" in html
