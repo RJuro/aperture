@@ -80,3 +80,24 @@ def test_theme_feedback_reaches_the_prompt_verbatim(conn, project, model):
     model.queue({"themes": []})
     themes.run(conn, project, feedback="Work and money are not the same thing.")
     assert "Work and money are not the same thing." in model.shown()
+
+
+def test_a_name_the_prompt_asked_for_is_stored_exactly_as_it_was_written(conn, project, model):
+    """The prompt asks for at most eight words; the guard sits at twelve, so a name that obeys is
+    never touched. A blind reader met the heading "… and as discipline to" and read the
+    instrument rather than the theme."""
+    eight = "Cultural heritage as enrichment and as discipline too"
+    assert len(eight.split()) == 8
+    model.queue({"themes": [{"new": True, "name": eight, "gist": "g", "code_names": []}]})
+    themes.run(conn, project)
+    assert [t["name"] for t in store.live_themes(conn, project)] == [eight]
+
+
+def test_a_name_past_the_guard_is_cut_at_a_word_and_says_so(conn, project, model):
+    long = "One two three four five six seven eight nine ten eleven twelve thirteen fourteen"
+    model.queue({"themes": [{"new": True, "name": long, "gist": "g", "code_names": []}]})
+    themes.run(conn, project)
+    got = store.live_themes(conn, project)[0]["name"]
+    assert got == "One two three four five six seven eight nine ten eleven twelve …"
+    assert got.endswith(" …") and "thirteen" not in got
+    assert all(w in long.split() for w in got.split()[:-1]), "no word was cut in half"

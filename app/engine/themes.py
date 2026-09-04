@@ -17,6 +17,19 @@ from .. import llm, store
 
 MAX_THEMES = 12
 
+# The prompt asks for a name of at most eight words. This is the guard, and it sits above what is
+# asked so an obedient answer is never touched: a blind reader of a real record met the heading
+# "Cultural heritage as enrichment and as discipline to" and read the instrument, not the theme.
+# A name that does run past the guard is cut at a word and says it was cut, the same way a quote
+# is clipped for a set-aside note — a word cut in half reads as damage to the record.
+NAME_WORDS = 12
+
+
+def name_of(value) -> str:
+    """A theme's name, whitespace normalised and never cut mid-word."""
+    said = str(value or "").split()
+    return " ".join(said) if len(said) <= NAME_WORDS else " ".join(said[:NAME_WORDS]) + " …"
+
 
 def ceiling(conn: sqlite3.Connection, pid: str) -> int:
     """How many themes this project may carry, from how much material it has.
@@ -115,7 +128,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
 
     saved: list[str] = []
     for t in [t for t in payload if not t.get("merge_into")]:
-        name = str(t.get("name") or "").strip()
+        name = name_of(t.get("name"))
         if not name:
             continue
         tid = t.get("id")
