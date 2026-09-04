@@ -12,15 +12,22 @@ to which material. The stage name still goes in `kind`, for the code; `line` is 
 **Stopping.** An error records itself on its own run row and stops that chain. It does not kill the
 process, it does not take the next chain with it, and it leaves the material's state saying so.
 
+**What runs beside what.** A chain is a list of STAGES, not a flat list of steps. What one
+material does to itself — framing it, working out what to look for, writing up what stands out —
+runs beside what another material is doing to itself; everything that touches what the PROJECT
+shares runs on its own. `_stages` says which is which and `PARALLEL` says how many at once.
+
 `app/engine/*` is imported lazily, inside the step, so this module and `rerun.py` import cleanly
 while those modules are still being built.
 """
 from __future__ import annotations
 
+import contextvars
+import json
 import sqlite3
 import threading
-import json
 from collections.abc import Callable, Iterable
+from concurrent.futures import ThreadPoolExecutor
 
 from . import db, llm, rerun, store
 
@@ -213,32 +220,69 @@ def _another_chain(conn: sqlite3.Connection, pid: str, job: str | None, kind: st
         "AND id<>?", (pid, job or "")) for r in json.loads(row["runs_json"]))
 
 
-def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
-            job: str | None = None) -> list[str]:
-    """Run a chain to completion on this connection and return the run ids. `start` is this, in a
-    thread; call it directly when you want the chain to have landed before you look."""
-    runs = _known(list(runs))
-    ids, touched, failed = [], [], None
-    for i, run in enumerate(runs):
-        if job and store.job(conn, job)["status"] != "running":
-            break                                   # stopped by the researcher between steps
-        kind, mid = run["kind"], run.get("material_id")
-        base = line(conn, run)
-        rid = store.start_run(conn, pid, kind, mid, base, job)
-        run["run_id"] = rid
-        ids.append(rid)
-        if mid:
-            touched.append(mid)
-            store.set_state(conn, mid, kind)
-        # ponytail: llm.usage is one module-level dict, so two chains at once would share a
-        # counter. One chain at a time is the whole of this instrument; give the run its own
-        # counter if chains ever overlap.
-        llm.usage.update(tokens_in=0, tokens_out=0)
+# How many materials a chain works on at once. Four: the provider rate-limits, so more calls in
+# flight than that is more 429s, not more throughput.
+PARALLEL = 4
+
+# The kinds a material may run while another material is running them, in the groups they may
+# form. Each of these is shown only its own material and writes only its own material's rows.
+#
+# THEMES is absent by law: it revises one set shared by the whole project, so it runs strictly one
+# material at a time, and every material is read before any of them moves the set.
+SIDE_BY_SIDE = ({"frame", "angles", "read"}, {"doc"})
+
+# ...and inside such a stage, these still take their turn, in the order the chain planned them.
+# READ is SHOWN the project codebook and `store.save_codes` reuses a code by name: two readings at
+# once would each be shown a codebook without the other's codes, and would coin two rows for one
+# name. So the framing and the ideation of the next material overlap a reading, and the readings
+# themselves queue behind each other exactly as they always have.
+IN_TURN = {"read"}
+
+
+def _stages(runs: list[dict]) -> list[list[list[dict]]]:
+    """The planned chain, grouped into stages. A stage is a list of sequences that run side by
+    side; a sequence is one material's runs in the order they were planned. Anything that is not a
+    block of per-material steps over more than one material becomes a stage of one sequence of one
+    run — which is what every step of this chain used to be.
+
+    Grouping, not planning: `ingest_chain` still decides what runs and in what order, and this
+    only says which of those may happen at the same time.
+    """
+    stages: list[list[list[dict]]] = []
+    i = 0
+    while i < len(runs):
+        kinds = next((g for g in SIDE_BY_SIDE if runs[i]["kind"] in g), set())
+        by_material: dict[str, list[dict]] = {}
+        j = i
+        while j < len(runs) and runs[j]["kind"] in kinds and runs[j].get("material_id"):
+            by_material.setdefault(runs[j]["material_id"], []).append(runs[j])
+            j += 1
+        if len(by_material) > 1:
+            stages.append(list(by_material.values()))
+            i = j
+        else:
+            stages.append([[runs[i]]])
+            i += 1
+    return stages
+
+
+def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
+          last_feedback: dict) -> tuple[str, str]:
+    """One planned step: its own run row, its own token counter, its own progress line, its own
+    error. Returns (run id, error)."""
+    kind, mid = run["kind"], run.get("material_id")
+    base = line(conn, run)
+    rid = store.start_run(conn, pid, kind, mid, base, job)
+    run["run_id"] = rid
+    if mid:
+        store.set_state(conn, mid, kind)
+    # This step's tokens, in this thread's context and no other (see llm.new_usage).
+    llm.new_usage()
+    error, notes = None, None
+    try:
         # Where the step has got to, on the row the page is already reading. Only for the length
         # of the step: nothing outside one has a row to write on.
-        llm.report = lambda msg: store.set_run_line(conn, rid, f"{base} — {msg}")
-        error, notes = None, None
-        try:
+        with llm.reporting(lambda msg: store.set_run_line(conn, rid, f"{base} — {msg}")):
             # On the line, not in the notes: the notes are what a reading threw away, and the
             # page prints them under "Excluded from the analysis", where this read as a claim
             # that had been dropped.
@@ -246,27 +290,110 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
                 store.set_run_line(conn, rid, LEFT_TO_THE_LAST)
             else:
                 notes = STEPS[kind][1](conn, pid, run)
-        except Exception as e:                          # the chain stops; the process does not
-            error = f"{type(e).__name__}: {e}"
-            failed = mid
-        finally:
-            llm.report = lambda msg: None
-        store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
-                         tokens_out=llm.usage.get("tokens_out", 0),
-                         notes=[str(n) for n in (notes or [])])
-        # Honoured by the LAST run that was shown it, not the first. One note can ride a whole
-        # chain — and consumed at the first step, it would be gone from the open comments the
-        # synthesis at the end of that same chain is written from.
-        if not error and run.get("feedback_id") and not any(
-                r.get("feedback_id") == run["feedback_id"] for r in runs[i + 1:]):
-            store.consume_feedback(conn, run["feedback_id"], rid)
-        if not error and kind == "doc" and mid:
-            # A rewrite answers every comment it was shown, not only the one that planned it.
-            store.consume_material_feedback(conn, pid, mid, rid, run.get("theme_id"))
+    except Exception as e:                              # the sequence stops; the process does not
+        error = f"{type(e).__name__}: {e}"
+    store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
+                     tokens_out=llm.usage.get("tokens_out", 0),
+                     notes=[str(n) for n in (notes or [])])
+    # Honoured by the LAST run that was shown it, not the first. One note can ride a whole
+    # chain — and consumed at the first step, it would be gone from the open comments the
+    # synthesis at the end of that same chain is written from.
+    if not error and run.get("feedback_id") and last_feedback.get(run["feedback_id"]) == id(run):
+        store.consume_feedback(conn, run["feedback_id"], rid)
+    if not error and kind == "doc" and mid:
+        # A rewrite answers every comment it was shown, not only the one that planned it.
+        store.consume_material_feedback(conn, pid, mid, rid, run.get("theme_id"))
+    return rid, error or ""
+
+
+def _sequence(conn: sqlite3.Connection, pid: str, seq: list[dict], job: str | None,
+              last_feedback: dict, turn: tuple = (None, None)) -> tuple:
+    """One material's steps, in order, on this connection. Returns (run ids, materials touched,
+    the material it failed on, why). A failure stops THIS sequence and no other."""
+    before, after = turn
+    ids, touched, failed, error = [], [], None, ""
+    for run in seq:
+        if job and store.job(conn, job)["status"] != "running":
+            break                                   # stopped by the researcher between steps
+        if run["kind"] in IN_TURN and before is not None:
+            before.wait()
+        rid, error = _step(conn, pid, run, job=job, last_feedback=last_feedback)
+        if run["kind"] in IN_TURN and after is not None:
+            after.set()
+        ids.append(rid)
+        if run.get("material_id"):
+            touched.append(run["material_id"])
         if error:
+            failed = run.get("material_id")
+            break
+    return ids, touched, failed, error
+
+
+def _together(pid: str, stage: list[list[dict]], job: str | None, last_feedback: dict) -> list:
+    """Every material in this stage at once: one thread each, capped at PARALLEL.
+
+    Each thread opens its OWN connection — one sqlite connection must not be shared across
+    threads — and runs in its own copy of this context, so `llm.usage` and `llm.report` are the
+    thread's own and one material's tokens cannot land on another material's row.
+    """
+    done = [threading.Event() for _ in stage]
+
+    def one(k: int, seq: list[dict]):
+        conn = db.connect()
+        try:
+            return _sequence(conn, pid, seq, job, last_feedback,
+                             turn=(done[k - 1] if k else None, done[k]))
+        finally:
+            done[k].set()          # a material that failed must not leave the next one waiting
+            conn.close()
+
+    with ThreadPoolExecutor(max_workers=min(PARALLEL, len(stage))) as pool:
+        futures = [pool.submit(contextvars.copy_context().run, one, k, seq)
+                   for k, seq in enumerate(stage)]
+        return [f.result() for f in futures]
+
+
+def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
+            job: str | None = None) -> list[str]:
+    """Run a chain to completion on this connection and return the run ids. `start` is this, in a
+    thread; call it directly when you want the chain to have landed before you look.
+
+    The chain is a list of stages: what one material does to itself runs beside what another
+    material is doing to itself, and everything that touches what the project shares — THEMES, the
+    accounts, the corpus summary — runs on its own, as it always did.
+    """
+    runs = _known(list(runs))
+    # Which planned run is the last that carries each note. Decided here because the runs no
+    # longer finish in one order, and the rule is unchanged: the last run that was shown a note
+    # consumes it.
+    last_feedback = {r["feedback_id"]: id(r) for r in runs if r.get("feedback_id")}
+    ids, touched, failed, reason = [], [], [], ""
+    for stage in _stages(runs):
+        if job and store.job(conn, job)["status"] != "running":
+            break
+        results = (_together(pid, stage, job, last_feedback) if len(stage) > 1
+                   else [_sequence(conn, pid, stage[0], job, last_feedback)])
+        for seq_ids, seq_touched, seq_failed, seq_error in results:
+            ids += seq_ids
+            touched += seq_touched
+            if seq_error:
+                failed.append(seq_failed)
+                reason = reason or seq_error
+        if reason:
+            # One material's failure does not stop the others in its stage, and it does stop the
+            # chain: THEMES over a half-read corpus is worse than a chain the researcher can start
+            # again. The step that will not run carries the reason, so the page says why it
+            # stopped rather than simply ending.
+            if len(stage) > 1 and (nxt := next((r for r in runs if "run_id" not in r), None)):
+                rid = store.start_run(conn, pid, nxt["kind"], nxt.get("material_id"),
+                                      line(conn, nxt), job)
+                ids.append(rid)
+                names = ", ".join(_name(conn, m) for m in dict.fromkeys(failed) if m)
+                store.finish_run(conn, rid, error=f"not run — {names or 'an earlier step'} did "
+                                                  f"not finish: {reason}")
             break
     for mid in dict.fromkeys(touched):                  # in order, without repeats
-        store.set_state(conn, mid, "failed" if mid == failed else "ready")
+        store.set_state(conn, mid, "failed" if mid in failed else "ready")
     return ids
 
 
@@ -284,8 +411,9 @@ def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) 
                 return                              # already run, or stopped before it began
             runs = _known(json.loads(row["runs_json"]))
             store.start_job(conn, job)
-            # The model client keeps usage in one module-level counter. Run one chain globally so
-            # different projects cannot reset each other's token accounting.
+            # One chain at a time in this process. The parallelism is INSIDE a chain (see
+            # `_stages`); two chains at once would be two projects' worth of calls in flight
+            # against a provider that rate-limits, and two writers on shared theme rows.
             with _RUNNER_LOCK:
                 ids = run_now(conn, pid, runs, job=job)
             if ids:
@@ -361,9 +489,13 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     One upload is one chain, whatever it carried. Five files used to start five chains, and each
     of them found themes again and rewrote the corpus summary with four of the five still unread.
 
-    ponytail: a step that fails stops the whole chain, so a file later in the same upload is left
-    queued and unread rather than read on its own. Give the researcher a way to run the rest if a
-    failure mid-upload turns out to be common.
+    The runner stages this (see `_stages`): the per-material steps run side by side, THEMES one
+    material at a time, then each material's synthesis side by side again, then the tail.
+
+    ponytail: a step that fails stops its own material and then the chain — the other files in
+    the stage finish, but nothing after it runs, so a file later in the same upload can be left
+    queued and unread. Give the researcher a way to run the rest if a failure mid-upload turns
+    out to be common.
 
     Ingest itself is Python and already done by the time this is called — text became sentences
     when the material was added, synchronously, because ids are the spine everything else cites.
