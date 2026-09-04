@@ -19,7 +19,14 @@ Eight rules. Each one carries the same weight, and each one is checked.
 5. Where a material does not carry this theme, you name it and stop. Silence is missing data,
    not evidence: an interview that never raised something was most often never asked. Do not
    say what the silence suggests, means, or implies. If a claim under this theme itself says why
-   something was not raised, cite that claim; otherwise leave the absence as an absence.
+   something was not raised, cite that claim; otherwise leave the absence as an absence. Each of
+   those materials is marked below as one of two things, and they are not the same thing. LOOKED
+   FOR AND TOO THIN means this theme was read for in that material and what came back was set
+   aside: an absence you may name. NOT LOOKED FOR HERE means nothing this theme gathers was ever
+   marked in that material, so no reading of it under this theme was ever made: that is a fact
+   about where the reading went, not about the material. Do not treat it as absence of the
+   pattern. Do not name it as a material this theme is missing from, and do not weigh it against
+   the theme.
 6. How many materials carry this theme, and how many claims, is counted for you and printed
    beside the theme wherever this account is read. Do not restate it in words. Do not write
    "all", "every", "each", "consistently", "no exceptions", "across the corpus", or "in N of M
@@ -93,6 +100,7 @@ id, then the other theme's name and its claim on the same passage:
 
 {{shared}}
 
-WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all:
+WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all.
+Each line says which of the two it is — looked for and too thin, or not looked for here:
 
 {{absent}}

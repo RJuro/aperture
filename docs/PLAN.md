@@ -119,6 +119,18 @@ the text before it is used. Same law as anchors, applied to structure.
    the claim. Applies to moments and to frame segments alike. (`anchor.py`, ported unchanged.)
 2. **Absence.** A negative claim is a verb the researcher runs, never a sentence the model writes.
    CHECK searches; Python rules.
+
+   *Three states, not two.* Where a theme has no claim in a material, one of three things
+   happened: a line holds and this is not that case; the theme was **looked for** and what came
+   back was set aside as too thin; or it was **not looked for**, because none of the codes the
+   theme gathers marked that material at all. The third is not absence. It is a fact about where
+   the reading went, and reading it as absence is how a corpus comes to say that eleven themes run
+   through every one of four interviews. So DOC follows a theme through a material only where that
+   material marked something the theme gathers, writes down which of the three it was (`follow`,
+   keyed by theme id so a rename cannot break it), and every level that states an absence — the
+   theme page, the record, the account prompt — states which kind it is. A researcher who asks for
+   a line anyway gets it: `only_theme` is a person asking, and the answer to a person is not
+   silence.
 3. **Slot.** The scaffold is Python and frozen; the model fills named, bounded, validated slots. A
    slot with no real-output check is a slot you do not have — each phase ends with one.
 4. **Derivation.** Every number on a page is printed as its derivation over rows the page links to:

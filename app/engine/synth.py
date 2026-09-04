@@ -257,6 +257,22 @@ def _theme_codes_block(conn, mid: str, tid: str) -> str:
     return "\n".join(lines) or "None of this theme's codes were marked here. Follow the definition."
 
 
+def _marked_here(conn, mid: str, tid: str) -> bool:
+    """Whether the reading of THIS material marked anything this theme gathers.
+
+    A theme whose codes never fired here has nothing in this material for a line to rest on, and
+    sending a reader to look for it anyway is how a reading finds what it was sent to find: on the
+    last benchmark twelve theme-and-material pairs had no code hit at all, and nine of them still
+    came back with four to nine claims — a quarter of everything the record claimed.
+
+    A theme that gathers no codes at all is followed. Its codes say nothing about this material
+    one way or the other, so there is no evidence to skip on; the silence is in the codebook, not
+    in the material, and a theme named by a researcher before any code was grouped under it would
+    otherwise never be looked for anywhere.
+    """
+    return not store.theme_codes(conn, tid) or bool(store.theme_codes(conn, tid, mid))
+
+
 def _claimed_block(conn, mid: str, tid: str) -> str:
     """Passages in this material another live theme has already claimed, with its claim.
 
@@ -386,18 +402,28 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         if only_theme not in live:
             return {"summary": "", "threads": [], "anchors": dict.fromkeys(("bound", "rebound", "unfound"), 0),
                     "dropped": [f"theme {only_theme} is no longer live — its line was not rewritten"]}
+        # No skipping here, whatever the codes say: a person asked for this line again, either by
+        # rerunning it or by reacting to it, and the answer to a person is not silence.
         kept, dropped, st = _thread(conn, mid, only_theme, run_id=run_id)
         tally(st)
         if kept:
             dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
             kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
+        store.save_follow(conn, mid, only_theme, "line" if kept else "thin", run_id)
         stored = store.get_summary(conn, "material", mid, "reading")
         return {"summary": stored["text"] if stored else "",
                 "threads": [{"theme_id": only_theme, "moments": kept}] if kept else [],
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped = [], []
-    order = list(live)               # live_themes order, so the waves compose the same way twice
+    # Only where the reading of this material actually marked something the theme gathers. Every
+    # live theme used to be followed through every material after the first, whether its codes had
+    # fired there or not, and a line asked for where there is no evidence comes back with claims
+    # anyway (PLAN.md §3, law 2). What is skipped here is written down, not inferred later.
+    skipped = {tid for tid in live if not _marked_here(conn, mid, tid)}
+    # live_themes order, so the waves compose the same way twice.
+    order = [tid for tid in live if tid not in skipped]
+    tail = f" · {len(skipped)} not looked for" if skipped else ""
     # In waves, because this is the dominant cost of the whole chain — nine to ten calls at 60–80
     # s each, 1351 s for one nine-theme material — and the calls are not independent. The guard the
     # sequence existed for is kept whole: every line is shown what the waves BEFORE it claimed in
@@ -424,7 +450,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 dropped += d
                 if kept:
                     threads.append({"theme_id": tid, "moments": kept})
-            llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written")
+            llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written{tail}")
 
     # Before the summary, never after: a summary written over a claim the passage does not carry
     # introduces that claim by name, and the claim is gone by the time anyone reads it.
@@ -432,6 +458,14 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     threads = [t for t in ({"theme_id": t["theme_id"],
                             "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
                            for t in threads) if t["moments"]]
+
+    # Written after the check, so 'line' means a line that survived it. Every live theme, including
+    # the ones that were never looked for: this is the only place the three outcomes are said.
+    held = {t["theme_id"] for t in threads}
+    for tid in live:
+        store.save_follow(conn, mid, tid,
+                          "skipped" if tid in skipped else "line" if tid in held else "thin",
+                          run_id)
 
     shown = []
     for t in threads:

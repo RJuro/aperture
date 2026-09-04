@@ -40,16 +40,32 @@ you send feedback below.</p>
 </div></section>
 
 {% if absent %}
-<section class="section"><div class="container"><h2>Materials where this theme does not appear</h2>
-<p class="dim">No claims in these materials support this theme. Before reading that as absence,
-check what was excluded below — a set of claims too thin to keep is dropped whole and would look
-the same as absence here.</p>
+{% set searched = absent | selectattr('looked_for') | list %}
+{% set unsearched = absent | rejectattr('looked_for') | list %}
+<section class="section"><div class="container"><h2>Materials with no claims under this theme</h2>
+{% if searched %}
+<h3>Looked for and found too thin</h3>
+<p class="dim">This theme was read for in these materials and no claims under it held. Before
+reading that as absence, check what was excluded below — a set of claims too thin to keep is
+dropped whole and would look the same as absence here.</p>
 <ul class="mats">
-{% for m in absent %}
+{% for m in searched %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
 {% endfor %}
 </ul>
+{% endif %}
+{% if unsearched %}
+<h3>Not looked for here — none of this theme's codes marked these</h3>
+<p class="dim">Nothing this theme gathers was marked in these materials, so the reading never went
+looking for it in them. This says where the reading went, not what these materials do not say.</p>
+<ul class="mats">
+{% for m in unsearched %}
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
+      <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
+{% endfor %}
+</ul>
+{% endif %}
 {% if set_aside %}
 <details class="aside"><summary>Excluded from the analysis ({{ set_aside | length }})</summary>
 <ul class="mats">

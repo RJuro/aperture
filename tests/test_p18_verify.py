@@ -273,7 +273,7 @@ def test_a_database_made_before_the_check_gains_the_two_columns(tmp_path):
                                                conn.execute("PRAGMA table_info(moment)")}
         row = conn.execute("SELECT support, support_note FROM moment WHERE id='mo1'").fetchone()
         assert tuple(row) == ("", "")
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 12
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 13
     finally:
         conn.close()
 

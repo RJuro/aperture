@@ -105,15 +105,15 @@ def test_a_theme_has_a_page_of_its_own(client, conn, analysed):
 
 def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, conn, analysed):
     """Absence at corpus level is a finding. An empty cell in a grid says nothing; a named
-    material under "materials where this theme does not appear" says the reading looked and
-    claimed nothing."""
+    material under "looked for and found too thin" says the reading looked and claimed nothing."""
     pid = analysed["pid"]
     tid = list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
     html = client.get(f"/p/{pid}/t/{tid}").text
-    assert "Materials where this theme does not appear" in html
+    assert "Materials with no claims under this theme" in html
+    assert "Looked for and found too thin" in html
     row = store.material(conn, analysed["rodwin"])
     assert (row["title"] or row["name"]) in html
 
@@ -281,7 +281,7 @@ def test_what_a_reading_set_aside_is_shown_and_not_swallowed(client, conn, analy
                  (analysed["rodwin"], tid))
     conn.commit()
     theme = client.get(f"/p/{pid}/t/{tid}").text
-    assert "Materials where this theme does not appear" in theme
+    assert "Materials with no claims under this theme" in theme
     assert "Excluded from the analysis" in theme, \
         "an absence must not be asserted without the drops beside it"
 
