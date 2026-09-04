@@ -162,3 +162,42 @@ compound theme definitions ("binds two things") and a claim filed under a theme 
 does not cover; one episode-level tension across themes on different passage ids, unmarked; a
 theme name cut off by the word cap ("… and as discipline to"); mixed quote marks; a
 self-contradicting count in a summary; exclusion notes cut mid-word (fixed in 524a076).
+
+### Pass 2 — 2026-09-04, same corpus and model, v2 vs v3
+
+v3 = prompts v3 (THEMES: one pattern per gist, names ≤ 8 words, "if two patterns are present,
+return two themes"; THREAD: claim inside the definition, hedges stay hedges; VERIFY: sharpened
+`partly`; DOC: no facts beyond the claims) plus VERIFY-SUMMARY. Bookkeeping, v2 → v3: claims
+225 → 209; cited passages 208 → 191; shared-passage share 0.077 → 0.084; VERIFY set aside 2 → 1;
+summary sentences flagged or removed 0 → 8; theme rewrites in the history 2 → 4. Wall 25 min.
+
+Two blind judges (A = v3, B = v2), scores 1–5:
+
+| dimension | judge 3 v3 / v2 | judge 4 v3 / v2 |
+|---|---|---|
+| theme inflation | 3 / 3 | 3 / 4 |
+| concept drift | 2 / 4 | 2 / 4 |
+| recycled passages | 4 / 3 | 3 / 3 |
+| pattern hunger | 2 / 3 | 3 / 4 |
+| valence contradictions | 5 / 5 | 5 / 5 |
+| overreading absence | 2 / 3 | 4 / 4 |
+| housekeeping | 2 / 3 | 2 / 3 |
+
+Both judges: "which reads better: B" (v2). **v3 is a regression on drift**, and the mechanism is
+visible in the record: four theme definitions were rewritten, all widenings ("anti-Jewish violence
+and war" → "violence, restriction, or erasure", which then files a complaint about Austrian rules
+beside a pogrom), and one bureaucratic axis was split into two counted themes — the THEMES rule
+"if two patterns are genuinely present, return two themes" invited exactly that. v3's corpus
+summary also stated one material's position backwards. What the judges kept from v3: the summary
+self-audit (six sentences caught going past the claims, where v2 lets "Russia and Japan", "Ivy
+League college", "the 1980 fire" into summaries no claim carries); distinct second readings of a
+shared passage rather than restatements. Costs both judges name: v3's additions are causes and
+motives where v2's are evaluations; the more careful record reads more mechanically.
+
+Decisions: v3.1 THEMES installed (9127683) — one pattern per gist without the split clause; a
+theme keeps its words unless a gathered code contradicts them, with the forbidden widening named.
+THREAD/VERIFY/DOC/VERIFY-SUMMARY v3 kept. Live stays on v2 until v3.1 is judged. Open: an
+entailment check of the PROJECT summary against the accounts (the inverted sentence); VERIFY at
+`medium` still passes hardened hedges in both versions. Caveat that stands over every pass: one
+run per version — some of each difference is run-to-run variation, which is why every pass has
+two judges and why no prompt change is kept on one pass alone.
