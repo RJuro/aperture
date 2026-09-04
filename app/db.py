@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -71,9 +71,22 @@ CREATE TABLE IF NOT EXISTS code_hit (
     code_id TEXT NOT NULL, material_id TEXT NOT NULL, sid TEXT NOT NULL,
     PRIMARY KEY (code_id, material_id, sid));
 
+-- `hold` is who the theme belongs to now: a 'candidate' is a pattern seen in one material and
+-- is the analyst's to promote (or Python's, by recurrence); an 'open' theme is the project's and
+-- THEMES may still reword it; a 'frozen' one the researcher has declared final, and its words are
+-- fixed here rather than by asking the model nicely. `status` stays live | merged.
 CREATE TABLE IF NOT EXISTS theme (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'live', merged_into TEXT);
+    status TEXT NOT NULL DEFAULT 'live', merged_into TEXT,
+    hold TEXT NOT NULL DEFAULT 'open',
+    stable_passes INTEGER NOT NULL DEFAULT 0, pass_fingerprint TEXT NOT NULL DEFAULT '');
+
+-- What pulled against a frozen theme's definition in one material, in at most 25 words. It is
+-- shown to the researcher beside the theme and never written into the gist: new material is
+-- applied to a frozen theme, and what does not fit is the case for unfreezing it, not a rewrite.
+CREATE TABLE IF NOT EXISTS theme_note (
+    id TEXT PRIMARY KEY, theme_id TEXT NOT NULL, material_id TEXT, run_id TEXT,
+    text TEXT NOT NULL, created_at TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS theme_history (
     theme_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '', codes TEXT DEFAULT '',
@@ -199,6 +212,21 @@ def migrate(conn: sqlite3.Connection) -> None:
         # existed, which is exactly right — those claims were never checked.
         conn.execute("ALTER TABLE moment ADD COLUMN support TEXT DEFAULT ''")
         conn.execute("ALTER TABLE moment ADD COLUMN support_note TEXT DEFAULT ''")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(theme)")}
+    if "hold" not in have:
+        conn.execute("ALTER TABLE theme ADD COLUMN hold TEXT NOT NULL DEFAULT 'open'")
+        conn.execute("ALTER TABLE theme ADD COLUMN stable_passes INTEGER NOT NULL DEFAULT 0")
+        conn.execute("ALTER TABLE theme ADD COLUMN pass_fingerprint TEXT NOT NULL DEFAULT ''")
+        # Every theme in an older database was a project theme, because that was the only kind.
+        # The ones that would not be one under the new rule — a pattern carried by fewer than two
+        # materials — go back to being candidates, which is where the four-interview record with
+        # eleven themes "in 4 of 4" would have put half of its set.
+        conn.execute(
+            "UPDATE theme SET hold='candidate' WHERE status='live' AND id IN ("
+            "  SELECT t.id FROM theme t"
+            "  LEFT JOIN moment mo ON mo.theme_id = t.id AND mo.status='live'"
+            "  LEFT JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL"
+            "  GROUP BY t.id HAVING COUNT(DISTINCT m.id) < 2)")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell

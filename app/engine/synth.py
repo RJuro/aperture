@@ -23,12 +23,15 @@ from __future__ import annotations
 
 import os
 import contextvars
+import logging
 import re
 import textwrap
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 
 from .. import anchor, llm, store
+
+log = logging.getLogger("aperture")
 
 MIN_MOMENTS, MAX_MOMENTS = 4, 14
 SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 300, 120, 30, 40
@@ -388,6 +391,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     pid = row["project_id"]
     proj = store.project(conn, pid)
     live = {t["id"]: t for t in store.live_themes(conn, pid)}
+    # The project's themes, and then every live candidate of the project — a candidate is followed
+    # into a new material to see whether this one carries it too, which is the only way it ever
+    # becomes a project theme (PLAN.md §12).
+    cands = {t["id"]: t for t in store.candidates(conn, pid)}
+    live.update(cands)
     totals = anchor.new_stats()
 
     def tally(st):
@@ -424,6 +432,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     # pass 3). A researcher who wants that trade sets APERTURE_FOLLOW=marked.
     skipped = ({tid for tid in live if not _marked_here(conn, mid, tid)}
                if os.environ.get("APERTURE_FOLLOW") == "marked" else set())
+    # A candidate is gated whatever that setting says. It is a pattern seen in one material, and
+    # what promotes it is a second material's coding carrying it — so confirmation has to come
+    # from the codes, not from a reader sent to find it here.
+    skipped |= {tid for tid in cands if not _marked_here(conn, mid, tid)}
     # live_themes order, so the waves compose the same way twice.
     order = [tid for tid in live if tid not in skipped]
     tail = f" · {len(skipped)} not looked for" if skipped else ""
@@ -469,6 +481,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         store.save_follow(conn, mid, tid,
                           "skipped" if tid in skipped else "line" if tid in held else "thin",
                           run_id)
+
+    # A candidate a second material now holds a line under is a project theme, and Python says so
+    # rather than the model: recurrence is a fact about the corpus, not a judgement.
+    for tid in store.promote_by_recurrence(conn, pid):
+        log.info("theme id=%s promoted", tid)
 
     shown = []
     for t in threads:

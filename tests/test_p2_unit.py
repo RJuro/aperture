@@ -92,13 +92,17 @@ def test_an_unknown_code_name_is_ignored_and_a_known_one_is_gathered(conn, proje
     assert [c["name"] for c in store.theme_codes(conn, out["themes"][0])] == ["Work"]
 
 
-def test_no_more_than_twelve_themes_stay_live(conn, project, model):
+def test_a_pass_cannot_coin_a_project_theme_however_many_it_returns(conn, project, model):
+    """The cap used to be enforced against what came back, because what came back could be a
+    project theme. Nothing the model returns is one now (PLAN.md §12): a pattern seen in one
+    material is a candidate, a second material promotes it, and `MAX_NEW` is what bounds a pass."""
     for i in range(8):                       # eight materials lift the ceiling to the hard cap
         store.add_material(conn, project, f"M{i}", "text")
     model.queue({"themes": [{"new": True, "name": f"T{i}", "gist": "g", "code_names": []}
                             for i in range(20)]})
     themes.run(conn, project)
-    assert len(store.live_themes(conn, project)) == themes.MAX_THEMES
+    assert store.live_themes(conn, project) == []
+    assert len(store.candidates(conn, project)) == themes.MAX_NEW
 
 
 def test_the_ceiling_is_set_by_how_much_material_the_project_has(conn, project, model):
@@ -107,22 +111,23 @@ def test_the_ceiling_is_set_by_how_much_material_the_project_has(conn, project, 
 
     One a material, not two: at two a material a four-interview project stood at the hard cap the
     day its fourth interview was read, and a real record came back with twelve themes, eleven of
-    them claimed in all four. Four materials may carry eight; twelve waits for eight materials."""
+    them claimed in all four. Four materials may carry eight; twelve waits for eight materials.
+
+    It counts open and frozen themes only, and it is now a number in the prompt rather than a
+    guillotine in Python: candidates never count against it, and a project already over it is
+    asked to merge down (`ceiling_text`) — Python cannot fold themes without choosing which."""
     store.add_material(conn, project, "One", "text")
     assert themes.ceiling(conn, project) == 5
-    model.queue({"themes": [{"new": True, "name": f"T{i}", "gist": "g", "code_names": []}
-                            for i in range(20)]})
+    for i in range(5):
+        store.save_theme(conn, project, tid=None, name=f"T{i}", gist="g", code_ids=[])
+    model.queue({"themes": []})
     themes.run(conn, project)
-    assert len(store.live_themes(conn, project)) == 5
-    assert "at most 5 themes" in model.shown("themes")
+    assert "at most 5 project themes" in model.shown("themes")
+    assert "5 project themes are live." in model.shown("themes")
 
     for name in ("Two", "Three", "Four"):
         store.add_material(conn, project, name, "text")
     assert themes.ceiling(conn, project) == 8
-    model.queue({"themes": [{"new": True, "name": f"U{i}", "gist": "g", "code_names": []}
-                            for i in range(20)]})
-    themes.run(conn, project)
-    assert len(store.live_themes(conn, project)) == 8
 
     for name in ("Five", "Six", "Seven", "Eight"):
         store.add_material(conn, project, name, "text")
@@ -163,5 +168,7 @@ def test_a_full_theme_set_can_turn_over(conn, project, model):
                             {"new": True, "name": "Brand new", "gist": "g", "code_names": []}]})
     themes.run(conn, project)
     live = {t["name"] for t in store.live_themes(conn, project)}
-    assert "Brand new" in live and "T0" not in live
-    assert len(live) == themes.MAX_THEMES
+    assert "T0" not in live and len(live) == themes.MAX_THEMES - 1
+    # The new one arrives where a new one arrives now: as a candidate on the material it was
+    # read in. The merge still happens in the same pass, which is what this test is about.
+    assert "Brand new" in {t["name"] for t in store.candidates(conn, project)}

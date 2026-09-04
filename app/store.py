@@ -236,8 +236,75 @@ def hits(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
 # ---- themes -----------------------------------------------------------------------------------
 
 def live_themes(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT * FROM theme WHERE project_id=? AND status='live' ORDER BY name",
-                        (pid,)).fetchall()
+    """The project's themes — open and frozen. A candidate is a pattern seen in one material so
+    far, and everything that means "the theme set of this project" (the ceiling, the accounts, the
+    corpus summary, the nav count) means these. Candidates are asked for by name."""
+    return conn.execute("SELECT * FROM theme WHERE project_id=? AND status='live' "
+                        "AND hold IN ('open','frozen') ORDER BY name", (pid,)).fetchall()
+
+
+def candidates(conn: sqlite3.Connection, pid: str,
+               mid: str | None = None) -> list[sqlite3.Row]:
+    """Live candidates. With `mid`, only those that hold a live moment in that material — which
+    is what "this material's candidates" means on a material page."""
+    sql = "SELECT * FROM theme WHERE project_id=? AND status='live' AND hold='candidate'"
+    args: list = [pid]
+    if mid:
+        sql += (" AND id IN (SELECT theme_id FROM moment WHERE material_id=? AND status='live')")
+        args.append(mid)
+    return conn.execute(sql + " ORDER BY name", args).fetchall()
+
+
+def themes_for_material(conn: sqlite3.Connection, pid: str, mid: str) -> list[sqlite3.Row]:
+    """What one material is read under: the project's themes, then its own candidates. One list,
+    in the order a page shows them; each row carries `hold`, so a reader can tell them apart."""
+    return live_themes(conn, pid) + candidates(conn, pid, mid)
+
+
+HOLDS = ("candidate", "open", "frozen")
+
+
+def set_hold(conn: sqlite3.Connection, tid: str, hold: str) -> None:
+    """Promote, freeze or unfreeze. The researcher declares a theme final; the instrument only
+    counts (`theme.stable_passes`), so this is the one place a hold changes by hand."""
+    if hold not in HOLDS:
+        raise ValueError(f"unknown hold {hold!r}")
+    conn.execute("UPDATE theme SET hold=? WHERE id=?", (hold, tid))
+    conn.commit()
+
+
+def add_theme_note(conn: sqlite3.Connection, tid: str, mid: str | None, run_id: str | None,
+                   text: str) -> str:
+    """A tension: what one material pulled against a frozen theme's definition. Kept beside the
+    theme, never folded into the gist — it is the case for unfreezing, not a rewrite."""
+    nid = db.new_id("tn")
+    conn.execute("INSERT INTO theme_note (id, theme_id, material_id, run_id, text, created_at) "
+                 "VALUES (?,?,?,?,?,?)", (nid, tid, mid, run_id, text, now()))
+    conn.commit()
+    return nid
+
+
+def theme_notes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM theme_note WHERE theme_id=? ORDER BY created_at DESC, "
+                        "rowid DESC", (tid,)).fetchall()
+
+
+def promote_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
+    """Candidates a second material has now put a line under, promoted to open. Returns their ids.
+
+    Recurrence is Python's judgement, not the model's: a pattern is a candidate until the corpus
+    itself carries it twice. The researcher may promote earlier by hand (`set_hold`).
+    """
+    ids = [r["id"] for r in conn.execute(
+        "SELECT t.id AS id FROM theme t "
+        "JOIN moment mo ON mo.theme_id = t.id AND mo.status='live' "
+        "JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL "
+        "WHERE t.project_id=? AND t.status='live' AND t.hold='candidate' "
+        "GROUP BY t.id HAVING COUNT(DISTINCT mo.material_id) >= 2", (pid,))]
+    for tid in ids:
+        conn.execute("UPDATE theme SET hold='open' WHERE id=?", (tid,))
+    conn.commit()
+    return ids
 
 
 def save_theme(conn: sqlite3.Connection, pid: str, *, tid: str | None, name: str, gist: str,

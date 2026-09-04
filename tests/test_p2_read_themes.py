@@ -90,14 +90,14 @@ def test_a_name_the_prompt_asked_for_is_stored_exactly_as_it_was_written(conn, p
     assert len(eight.split()) == 8
     model.queue({"themes": [{"new": True, "name": eight, "gist": "g", "code_names": []}]})
     themes.run(conn, project)
-    assert [t["name"] for t in store.live_themes(conn, project)] == [eight]
+    assert [t["name"] for t in store.candidates(conn, project)] == [eight]
 
 
 def test_a_name_past_the_guard_is_cut_at_a_word_and_says_so(conn, project, model):
     long = "One two three four five six seven eight nine ten eleven twelve thirteen fourteen"
     model.queue({"themes": [{"new": True, "name": long, "gist": "g", "code_names": []}]})
     themes.run(conn, project)
-    got = store.live_themes(conn, project)[0]["name"]
+    got = store.candidates(conn, project)[0]["name"]
     assert got == "One two three four five six seven eight nine ten eleven twelve …"
     assert got.endswith(" …") and "thirteen" not in got
     assert all(w in long.split() for w in got.split()[:-1]), "no word was cut in half"
