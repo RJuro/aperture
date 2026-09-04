@@ -93,7 +93,7 @@ def test_an_unknown_code_name_is_ignored_and_a_known_one_is_gathered(conn, proje
 
 
 def test_no_more_than_twelve_themes_stay_live(conn, project, model):
-    for i in range(4):                       # four materials lift the ceiling to the hard cap
+    for i in range(8):                       # eight materials lift the ceiling to the hard cap
         store.add_material(conn, project, f"M{i}", "text")
     model.queue({"themes": [{"new": True, "name": f"T{i}", "gist": "g", "code_names": []}
                             for i in range(20)]})
@@ -103,22 +103,30 @@ def test_no_more_than_twelve_themes_stay_live(conn, project, model):
 
 def test_the_ceiling_is_set_by_how_much_material_the_project_has(conn, project, model):
     """Twelve themes over three interviews, five of them resting on one material each, is what a
-    flat cap bought. The ceiling now grows with the corpus and is stated to the model as a number."""
+    flat cap bought. The ceiling now grows with the corpus and is stated to the model as a number.
+
+    One a material, not two: at two a material a four-interview project stood at the hard cap the
+    day its fourth interview was read, and a real record came back with twelve themes, eleven of
+    them claimed in all four. Four materials may carry eight; twelve waits for eight materials."""
     store.add_material(conn, project, "One", "text")
-    assert themes.ceiling(conn, project) == 6
+    assert themes.ceiling(conn, project) == 5
     model.queue({"themes": [{"new": True, "name": f"T{i}", "gist": "g", "code_names": []}
                             for i in range(20)]})
     themes.run(conn, project)
-    assert len(store.live_themes(conn, project)) == 6
-    assert "at most 6 themes" in model.shown("themes")
+    assert len(store.live_themes(conn, project)) == 5
+    assert "at most 5 themes" in model.shown("themes")
 
-    for name in ("Two", "Three"):
+    for name in ("Two", "Three", "Four"):
         store.add_material(conn, project, name, "text")
-    assert themes.ceiling(conn, project) == 10
+    assert themes.ceiling(conn, project) == 8
     model.queue({"themes": [{"new": True, "name": f"U{i}", "gist": "g", "code_names": []}
                             for i in range(20)]})
     themes.run(conn, project)
-    assert len(store.live_themes(conn, project)) == 10
+    assert len(store.live_themes(conn, project)) == 8
+
+    for name in ("Five", "Six", "Seven", "Eight"):
+        store.add_material(conn, project, name, "text")
+    assert themes.ceiling(conn, project) == themes.MAX_THEMES == 12
 
 
 def test_a_merge_into_a_theme_that_is_not_live_is_refused(conn, project, model):
@@ -146,7 +154,7 @@ def test_a_full_theme_set_can_turn_over(conn, project, model):
     """At the cap, 'merge A into B and add C' used to drop C because the cap was checked before
     A had gone. The set could only shrink, and 'split this theme' did nothing, silently."""
     from app.engine import themes
-    for i in range(4):                       # four materials lift the ceiling to the hard cap
+    for i in range(8):                       # eight materials lift the ceiling to the hard cap
         store.add_material(conn, project, f"M{i}", "text")
     ids = [store.save_theme(conn, project, tid=None, name=f"T{i}", gist="g", code_ids=[])
            for i in range(themes.MAX_THEMES)]

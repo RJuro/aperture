@@ -35,11 +35,17 @@ def ceiling(conn: sqlite3.Connection, pid: str) -> int:
     """How many themes this project may carry, from how much material it has.
 
     Twelve themes over three interviews is what a flat cap bought: five of them resting on one
-    material each, which is a coding scheme rather than a set of themes. Four, and two more for
+    material each, which is a coding scheme rather than a set of themes. Four, and one more for
     every material, keeps the ceiling below what the corpus can populate — and it is a ceiling,
     never a target, so `MAX_THEMES` still holds at the top.
+
+    It used to rise by two a material, which put a four-interview project at the hard cap on the
+    day its fourth interview was read: a record came back with twelve themes, eleven of them
+    claimed in every one of the four materials. Rising by one, the same project may carry eight
+    and the cap is not reached until eight materials — which is roughly where twelve themes stop
+    being a coding scheme.
     """
-    return min(MAX_THEMES, 4 + 2 * len(store.materials(conn, pid)))
+    return min(MAX_THEMES, 4 + len(store.materials(conn, pid)))
 
 
 def _verbatim(text: str, empty: str) -> str:

@@ -372,6 +372,36 @@ def set_aside_by_check(conn: sqlite3.Connection, mid: str) -> int:
                and (r["theme_id"], r["run_id"]) in standing)
 
 
+def save_follow(conn: sqlite3.Connection, mid: str, theme_id: str, outcome: str,
+                run_id: str | None = None) -> None:
+    """Record what became of one theme in one material: 'line', 'thin', or 'skipped'.
+
+    The three are what a researcher has to be able to tell apart, and nothing else in the database
+    tells them apart: a line set aside for being too thin and a line never written both leave the
+    same nothing. Keyed by theme id rather than by name, because a note in the run's own words —
+    the only place this used to be said at all — stops naming the theme the moment it is renamed.
+    """
+    conn.execute("UPDATE follow SET status='superseded' WHERE material_id=? AND theme_id=? "
+                 "AND status='live'", (mid, theme_id))
+    conn.execute("INSERT INTO follow (id, material_id, theme_id, outcome, run_id, status) "
+                 "VALUES (?,?,?,?,?,'live')",
+                 (db.new_id("fo"), mid, theme_id, outcome, run_id))
+    conn.commit()
+
+
+def followed(conn: sqlite3.Connection, pid: str) -> dict[tuple[str, str], str]:
+    """(theme id, material id) -> what became of that theme in that material, for one project.
+
+    One query, because the pages that want this want a row per theme and a column per material.
+    A pair with no row was read before any of this was recorded; every caller reads a missing pair
+    as looked-for, which is what the pages already said about every absence.
+    """
+    return {(r["theme_id"], r["material_id"]): r["outcome"] for r in conn.execute(
+        "SELECT f.theme_id AS theme_id, f.material_id AS material_id, f.outcome AS outcome "
+        "FROM follow f JOIN material m ON m.id = f.material_id "
+        "WHERE m.project_id=? AND m.removed_at IS NULL AND f.status='live'", (pid,))}
+
+
 def thread(conn: sqlite3.Connection, mid: str, theme_id: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM moment WHERE material_id=? AND theme_id=? AND status='live'"
                         " ORDER BY position", (mid, theme_id)).fetchall()

@@ -24,7 +24,9 @@ Two laws hold this module, and both of them are `synth.project`'s:
 The absence is half of what this level is for. A theme that does not appear in nine of fifty
 materials has said something about those nine, so they are named in the prompt and the model is
 asked what their silence means. Python cannot search for what is not there (PLAN.md §3.2) — but
-it can say exactly where it did not look, which is what `coverage` returns.
+it can say exactly where it did not look, which is what `coverage` and `store.followed` return
+between them: the first says which materials carry no claim, the second says which of those were
+read for this theme and which were never read for it at all. Only the first kind is a silence.
 
 CLAIMS_SHOWN is what keeps this prompt flat. The budget is divided evenly over the materials that
 carry the theme, so the prompt stops growing where the corpus does not: at two materials every
@@ -156,6 +158,27 @@ def _shared_block(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
     return "\n".join(out) or "None."
 
 
+def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: list[dict]) -> str:
+    """The materials with no claim under this theme, each saying WHICH kind of nothing it is.
+
+    Two of them, and only one is a silence about the pattern. Where the theme was looked for, a
+    reading of that material under it was made and set aside — thin, or its quotes did not survive
+    the check. Where it was not looked for, nothing this theme gathers was ever marked there and no
+    reading under it exists; that is a fact about where the reading went, and a model that cannot
+    tell the two apart writes the second one up as absence (PLAN.md §3, law 2).
+    """
+    outcomes = store.followed(conn, pid)
+    out = []
+    for m in absent:
+        why = ("NOT LOOKED FOR HERE — none of this theme's codes marked this material, so no "
+               "reading of it under this theme was ever made"
+               if outcomes.get((theme_id, m["material_id"])) == "skipped" else
+               "LOOKED FOR AND TOO THIN — a reading of this material under this theme was made "
+               "and set aside")
+        out.append(f'{m["title"] or m["name"]} — {m["kind"] or "kind not worked out"} — {why}')
+    return "\n".join(out) or "None. Every material in this project carries this theme somewhere."
+
+
 def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         run_id: str | None = None) -> dict:
     """What this theme amounts to across the corpus. Returns {text, dropped, coverage}.
@@ -193,9 +216,7 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
         materials=materials,
         shared=_shared_block(conn, pid, theme_id),
-        absent="\n".join(f'{m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}'
-                         for m in absent)
-        or "None. Every material in this project carries this theme somewhere.",
+        absent=_absent_block(conn, pid, theme_id, absent),
     )
     data = llm.chat_json(system, user, label="account")
 

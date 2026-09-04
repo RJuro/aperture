@@ -534,6 +534,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
     if p is None or t is None:
         return {}
     cover = account.coverage(conn, pid, tid)
+    outcomes = store.followed(conn, pid)
     carrying, absent = [], []
     for m in cover["per_material"]:
         row = dict(m)
@@ -542,6 +543,11 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], tid)]
             carrying.append(row)
         else:
+            # Which kind of nothing this is: the line was looked for and set aside, or none of the
+            # theme's codes marked this material and it was never looked for. A material read
+            # before this was recorded has no row and reads as looked-for, which is what the page
+            # said about every absence before the two were told apart.
+            row["looked_for"] = outcomes.get((tid, m["material_id"])) != "skipped"
             absent.append(row)
     summary = _row(store.get_summary(conn, "theme", tid))
     return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
@@ -695,6 +701,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
 
     out = []
     evidence = store.theme_evidence(conn, pid)
+    outcomes = store.followed(conn, pid)
     for t in store.live_themes(conn, pid):
         cover = account.coverage(conn, pid, t["id"])
         carrying, absent = [], []
@@ -705,6 +712,9 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], t["id"])]
                 carrying.append(row)
             else:
+                # As on the theme page: True where the line was looked for and set aside, False
+                # where none of the theme's codes marked this material and it was never looked for.
+                row["looked_for"] = outcomes.get((t["id"], m["material_id"])) != "skipped"
                 absent.append(row)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,

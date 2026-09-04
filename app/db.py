@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -87,6 +87,18 @@ CREATE TABLE IF NOT EXISTS moment (
     position INTEGER NOT NULL, claim TEXT NOT NULL, anchor TEXT NOT NULL,
     run_id TEXT, status TEXT NOT NULL DEFAULT 'live',
     support TEXT DEFAULT '', support_note TEXT DEFAULT '');
+
+-- What became of one theme in one material: 'line' where a line holds, 'thin' where it was
+-- looked for and what came back was set aside, 'skipped' where none of the codes the theme
+-- gathers marked this material and it was therefore never looked for. Written by DOC and
+-- superseded per run the way a moment is. It exists because the three cannot be told apart from
+-- anything else in the database — a line set aside and a line never written both leave no live
+-- moment — and because a note in the run's own words would say the wrong thing the moment a
+-- researcher renamed the theme.
+CREATE TABLE IF NOT EXISTS follow (
+    id TEXT PRIMARY KEY, material_id TEXT NOT NULL, theme_id TEXT NOT NULL,
+    outcome TEXT NOT NULL CHECK (outcome IN ('line','thin','skipped')),
+    run_id TEXT, status TEXT NOT NULL DEFAULT 'live');
 
 CREATE TABLE IF NOT EXISTS summary (
     id TEXT PRIMARY KEY, scope TEXT NOT NULL, ref_id TEXT NOT NULL, stage TEXT NOT NULL,
