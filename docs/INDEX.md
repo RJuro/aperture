@@ -22,3 +22,4 @@ Long-form condensations, by area, are in `docs/research/`.
 | `engine/seed_data/` (Grande, Rodwin) | The two public transcripts | **carried** into `seed/` |
 
 The predecessor repository and its Coolify app can be removed once this one is deployed.
+- [EVAL.md](EVAL.md) — the evaluation loop: run the chain on a fixed corpus, count what it produced (bookkeeping only), judge two records blind against the seven-point rubric in `scripts/eval_rubric.md`
