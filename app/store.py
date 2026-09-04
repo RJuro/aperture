@@ -108,7 +108,7 @@ def clear_empty_project_analysis(conn: sqlite3.Connection, pid: str) -> None:
 
 
 def project(conn: sqlite3.Connection, pid: str) -> sqlite3.Row | None:
-    return conn.execute("SELECT * FROM project WHERE id=?", (pid,)).fetchone()
+    return conn.execute("SELECT * FROM project WHERE id=? AND removed_at IS NULL", (pid,)).fetchone()
 
 
 # ---- sentences --------------------------------------------------------------------------------
@@ -814,15 +814,29 @@ def projects_for(conn: sqlite3.Connection, user_row: sqlite3.Row | None) -> list
     """
     if user_row is None:
         return conn.execute("SELECT *, 'owner' AS role, '' AS owner_name FROM project "
-                            "ORDER BY created_at DESC").fetchall()
+                            "WHERE removed_at IS NULL ORDER BY created_at DESC").fetchall()
     return conn.execute(
         "SELECT p.*, CASE WHEN p.owner_id = :u THEN 'owner' ELSE m.role END AS role, "
         "COALESCE(u.name, '') AS owner_name "
         "FROM project p "
         "LEFT JOIN member m ON m.project_id = p.id AND m.user_id = :u "
         "LEFT JOIN user u ON u.id = p.owner_id "
-        "WHERE p.owner_id = :u OR m.user_id IS NOT NULL "
+        "WHERE p.removed_at IS NULL AND (p.owner_id = :u OR m.user_id IS NOT NULL) "
         "ORDER BY p.created_at DESC", {"u": user_row["id"]}).fetchall()
+
+
+def rename_project(conn: sqlite3.Connection, pid: str, name: str) -> None:
+    conn.execute("UPDATE project SET name=? WHERE id=?", (name, pid))
+    conn.commit()
+
+
+def remove_project(conn: sqlite3.Connection, pid: str) -> None:
+    """Out of sight, not out of the database: the rows stay, `project()` stops returning it, and
+    everything that asks who may open it gets the answer a stranger gets. Whatever was running for
+    it is stopped first — a chain writing into a project nobody can open is money on fire."""
+    stop_jobs(conn, pid)
+    conn.execute("UPDATE project SET removed_at=? WHERE id=?", (now(), pid))
+    conn.commit()
 
 
 # ---- who may open a project ---------------------------------------------------------------------

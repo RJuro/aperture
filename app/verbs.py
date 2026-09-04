@@ -282,3 +282,23 @@ def share_remove(request: Request, pid: str, user_id: str = Form(...)):
     pages_mine(request, conn, pid, need="owner")
     store.remove_member(conn, pid, user_id)
     return RedirectResponse(f"/p/{pid}/share", status_code=303)
+
+
+# ---- the project itself ---------------------------------------------------------------------------
+
+@router.post("/p/{pid}/rename")
+def rename(request: Request, pid: str, name: str = Form(...)):
+    conn = connection()
+    pages_mine(request, conn, pid, need="owner")
+    if name.strip():
+        store.rename_project(conn, pid, name.strip())
+    return RedirectResponse(f"/p/{pid}", status_code=303)
+
+
+@router.post("/p/{pid}/remove")
+def remove_project(request: Request, pid: str):
+    """Owner only, and never one click: the form sits behind a fold that says what it does."""
+    conn = connection()
+    pages_mine(request, conn, pid, need="owner")
+    store.remove_project(conn, pid)
+    return RedirectResponse("/", status_code=303)

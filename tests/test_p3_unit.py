@@ -199,18 +199,19 @@ def test_a_material_written_in_cyrillic_keeps_its_cyrillic(conn, project, model)
     assert tid
 
 
-def test_a_quote_past_the_twelve_word_cap_is_named_in_the_exclusions(ready, conn, model, quote):
-    """'3 quote(s) ran past the cap and were kept' told a researcher something had been let
-    through without telling them which claim to go and look at."""
+def test_a_quote_past_the_twelve_word_cap_is_kept_and_nothing_is_said(ready, conn, model, quote):
+    """A quote of thirteen words that is in the text, word for word, is evidence like any other.
+    The record listed each one under "Excluded from the analysis" — as excluded, while it stood
+    on the page — which told a researcher the wrong thing about their own evidence. The cap stays
+    in the prompt; the note is gone."""
     long_sid, long_text = next((sid, t) for sid, t in store.sentences(conn, ready["mid"])
                                if len(t.split()) > 14)
     answer = _thread(quote, ready["mid"], ready["a"])
     answer["moments"][0] = {"claim": "a long one", "anchor": long_text, "sid": long_sid}
     _full_doc(model, conn, ready["pid"], {ready["a"]: answer})
     out = synth.doc(conn, ready["mid"])
-    said = [d for d in out["dropped"] if "12-word cap" in d]
-    assert said, out["dropped"]
-    assert synth.clip(long_text) in said[0] and "(Work)" in said[0]
+    assert not [d for d in out["dropped"] if "word cap" in d], out["dropped"]
+    assert any(m["anchor"] == long_text for m in store.thread(conn, ready["mid"], ready["a"]))
 
 
 def test_a_note_cuts_a_quote_at_a_word_not_in_the_middle_of_one():

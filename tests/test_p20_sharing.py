@@ -185,3 +185,31 @@ def test_a_next_that_leaves_this_site_is_ignored(client, people):
         assert r.headers["location"] == "/", away
         client.post("/logout")
     assert login(client, "ann", "battery staple", next="/account").headers["location"] == "/account"
+
+
+# ---- the project itself: renamed and removed by its owner, and by nobody else -----------------------
+
+def test_the_owner_renames_the_project_and_a_collaborator_cannot(client, conn, people, anns):
+    login(client, "ann", "battery staple")
+    assert client.post(f"/p/{anns}/rename", data={"name": "Ann's field study"}).status_code == 303
+    assert "Ann's field study" in client.get(f"/p/{anns}").text
+    assert "Ann's field study" in client.get("/").text
+    token = link(client, anns, "edit")
+    bob = second_browser()
+    login(bob, "bob", "purple monkey")
+    assert bob.get(f"/join/{token}").status_code == 303
+    assert bob.post(f"/p/{anns}/rename", data={"name": "Bob's now"}).status_code == 404
+    assert bob.post(f"/p/{anns}/remove").status_code == 404
+    assert "Ann's field study" in client.get(f"/p/{anns}").text
+
+
+def test_a_removed_project_is_gone_from_every_page_but_not_from_the_database(client, conn, people,
+                                                                            anns):
+    login(client, "ann", "battery staple")
+    assert client.post(f"/p/{anns}/remove").status_code == 303
+    assert client.get(f"/p/{anns}").status_code == 404
+    assert "Ann's study" not in client.get("/").text
+    assert conn.execute("SELECT removed_at FROM project WHERE id=?", (anns,)).fetchone()[0]
+    ada = second_browser()
+    login(ada, "ada", "correct horse")
+    assert "Ann's study" not in ada.get("/admin").text, "administration lists what exists"

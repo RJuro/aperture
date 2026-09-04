@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS member (
 
 CREATE TABLE IF NOT EXISTS project (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, focus TEXT DEFAULT '',
-    brief TEXT DEFAULT '', created_at TEXT NOT NULL);
+    brief TEXT DEFAULT '', created_at TEXT NOT NULL, removed_at TEXT);
 
 CREATE TABLE IF NOT EXISTS material (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL,
@@ -181,6 +181,8 @@ def migrate(conn: sqlite3.Connection) -> None:
     have = {r[1] for r in conn.execute("PRAGMA table_info(project)")}
     if "owner_id" not in have:
         conn.execute("ALTER TABLE project ADD COLUMN owner_id TEXT")
+    if "removed_at" not in have:
+        conn.execute("ALTER TABLE project ADD COLUMN removed_at TEXT")
     have = {r[1] for r in conn.execute("PRAGMA table_info(material)")}
     if "removed_at" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN removed_at TEXT")

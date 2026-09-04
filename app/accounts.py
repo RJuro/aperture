@@ -131,7 +131,7 @@ def admin_page(request: Request, problem: str = "") -> str:
         "people": [dict(u) for u in store.users(conn)],
         "projects": [dict(p) for p in conn.execute(
             "SELECT p.*, u.name AS owner FROM project p LEFT JOIN user u ON u.id = p.owner_id "
-            "ORDER BY p.created_at DESC")]})
+            "WHERE p.removed_at IS NULL ORDER BY p.created_at DESC")]})
 
 
 @router.post("/admin/users")

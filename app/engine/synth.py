@@ -345,11 +345,6 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
     if len(kept) > MAX_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
         kept = kept[:MAX_MOMENTS]
-    # Named, one by one. "3 quote(s) ran past the cap and were kept" told a researcher that
-    # something had been let through without telling them which claim to go and look at.
-    dropped += [f'a quote ran past the {anchor.ANCHOR_WORD_CAP}-word cap and was kept — '
-                f'"{clip(m["anchor"])}" ({theme["name"]})'
-                for m in kept if anchor.word_count(m["anchor"]) > anchor.ANCHOR_WORD_CAP]
     if len(kept) < MIN_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'
                        f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '

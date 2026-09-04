@@ -9,8 +9,26 @@
       </div>
       <p class="lead">{{ reading.done }} of {{ materials | length }} {{ 'material' | plural(materials | length) }} fully read{% if reading.active %} · {{ reading.active }} being read{% endif %}{% if reading.failed %} · {{ reading.failed }} stopped{% endif %}{% if reading.waiting %} · {{ reading.waiting }} not read yet{% endif %}.</p>
       {% else %}<p class="lead">No material added yet.</p>{% endif %}</div>
+      <div class="head-actions">
       <a class="btn btn-secondary" href="/p/{{ project.id }}/record">Reading record</a>
-      {% if role == 'owner' %}<a class="btn btn-secondary" href="/p/{{ project.id }}/share">Share</a>{% endif %}
+      {% if role == 'owner' %}<a class="btn btn-secondary" href="/p/{{ project.id }}/share">Share</a>
+        <details class="head-menu"><summary aria-label="More project options">•••</summary>
+          <div class="menu-sheet wide-menu">
+            <details><summary>Rename project</summary>
+              <form method="post" action="/p/{{ project.id }}/rename" class="form-stack compact">
+                <label>Project name <input name="name" value="{{ project.name | txt }}" required></label>
+                <button class="btn btn-secondary">Rename</button>
+              </form>
+            </details>
+            <details><summary class="danger-text">Remove project</summary>
+              <form method="post" action="/p/{{ project.id }}/remove" class="form-stack compact">
+                <p>This takes the project, its materials and everything read in them out of sight for everyone. Stop anything running first; nothing brings it back from the page.</p>
+                <button class="btn danger">Remove project</button>
+              </form>
+            </details>
+          </div>
+        </details>{% endif %}
+      </div>
     </div>
   </div>
 </section>
