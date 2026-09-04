@@ -129,3 +129,36 @@ be measured against v2 the same way.
 | `scripts/eval_metrics.py` | count a finished reading — from its database, or from its record |
 | `scripts/eval_rubric.md` | what the blind judges are given |
 | `tests/test_eval_metrics.py` | the counting, and that the runner runs the application's chain |
+
+## Results
+
+### Pass 1 — 2026-09-04, three Ellis Island interviews, GLM-5.2 on Mistral, same focus
+
+v1 = the record the outside reader critiqued (old prompts). v2 = prompts v2 (ACCOUNT no longer
+rewrites gists; no inference from silence; no count-words; `claimed`/`shared` slots; theme ceiling
+4 + 2n) plus the VERIFY step. Bookkeeping, v1 → v2: themes 12 → 10; single-material themes 4 → 0;
+shared-passage share 0.12 → 0.077; "all" 20 → 5, "every" 13 → 1, "no exceptions" 1 → 0; non-Latin
+characters 2 → 0; doubled ids 2 → 0; VERIFY set aside 2 claims. Wall 50 min.
+
+Two blind Opus judges, records shuffled (A = v2, B = v1), scores 1–5 (5 = clean):
+
+| dimension | judge 1 v2 / v1 | judge 2 v2 / v1 |
+|---|---|---|
+| theme inflation | 5 / 2 | 4 / 2 |
+| concept drift | 4 / 2 | 4 / 2 |
+| recycled passages | 5 / 2 | 5 / 2 |
+| pattern hunger | 4 / 2 | 4 / 2 |
+| valence contradictions | 5 / 2 | 4 / 2 |
+| overreading absence | 5 / 1 | 5 / 1 |
+| housekeeping | 4 / 1 | 4 / 2 |
+
+Both judges: "which reads better: A" (v2). Full reports: `bench/judge-1.md`, `bench/judge-2.md`
+(the `bench/` folder is local, not in git).
+
+What the judges still hold against v2 — the v3 list: claims that add an evaluative shade or
+harden a hedge into a fact (3/5 and 2/5 sampled) and one added motive — VERIFY passed them;
+material summaries adding details the claims do not carry (the DOC summary is not verified);
+compound theme definitions ("binds two things") and a claim filed under a theme its definition
+does not cover; one episode-level tension across themes on different passage ids, unmarked; a
+theme name cut off by the word cap ("… and as discipline to"); mixed quote marks; a
+self-contradicting count in a summary; exclusion notes cut mid-word (fixed in 524a076).
