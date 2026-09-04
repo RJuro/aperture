@@ -2,8 +2,9 @@
 `thread.md`, `doc.md`, `project.md`, `check.md`.
 
     synth.doc(conn, mid, *, only_theme=None) -> {"summary","threads","anchors","dropped"}
-        one `thread` call per live theme (in live_themes order), then one `doc` call for the
-        summary — unless only_theme, which is one `thread` call and nothing else
+        one `thread` call per live theme (in live_themes order, in waves of `synth.WAVE` side
+        by side), then one `doc` call for the summary — unless only_theme, which is one `thread`
+        call and nothing else
     synth.project(conn, pid) -> {"summary","interpretation","dropped"}   one `project` call over
         the accounts, stored as two rows: what the corpus shows, and what it may mean
     check.run(conn, pid, scope, ref_id, question) -> {"check_id","verdict","anchors","searched_n"}
@@ -102,21 +103,97 @@ def test_each_line_is_its_own_call_and_the_summary_comes_after_the_lines(ready, 
     assert "claim 0" in shown_to_summary, "the summary must see the lines it introduces"
 
 
+def claimed_block(user: str) -> str:
+    """The `{{claimed}}` slot out of a thread prompt — what that line was told other themes have
+    already claimed in this material."""
+    head = "the other theme's name, and its claim:\n\n"
+    rest = user.split(head, 1)[1]
+    return rest.split("\n\nWHAT THE RESEARCHER", 1)[0].strip()
+
+
 def test_a_line_is_shown_what_another_theme_has_already_claimed_here(ready, conn, project, model,
                                                                      quote):
     """The same passages came back under three and four themes, twice with opposite valence. A
-    line that cannot see the other reading cannot tell it is repeating one under a second name."""
-    t2 = store.save_theme(conn, project, tid=None, name="Leaving", gist="the crossing",
-                          code_ids=[])
-    by_theme = {ready["tid"]: _moments(quote, ready["mid"], 5),
-                t2: _moments(quote, ready["mid"], 4, at=120)}
+    line that cannot see the other reading cannot tell it is repeating one under a second name.
+
+    Lines are written in waves of `synth.WAVE` now, so the rule is per wave: a wave sees every
+    earlier wave's claims and not its own. Four themes, three in the first wave and one in the
+    second — the first three are shown nothing, the fourth is shown all three.
+    """
+    for name, gist in (("Arriving", "the other end"), ("Crossing", "the water"),
+                       ("Leaving", "the crossing")):
+        store.save_theme(conn, project, tid=None, name=name, gist=gist, code_ids=[])
+    order = [t["id"] for t in store.live_themes(conn, ready["pid"])]   # by name: Work is last
+    assert len(order) == synth.WAVE + 1
+    by_theme = {tid: _moments(quote, ready["mid"], 5, at=40 + i * 60)
+                for i, tid in enumerate(order)}
     queue_doc(model, conn, ready["pid"], by_theme)
     synth.doc(conn, ready["mid"])
-    order = [t for t in store.live_themes(conn, ready["pid"])]
-    first, second = [c["user"] for c in model.calls if c["label"] == "thread"]
-    assert "None yet." in first, "nothing had been claimed when the first line was written"
-    was_first = by_theme[order[0]["id"]][0]
-    assert f'{was_first["sid"]} — {order[0]["name"]} — {was_first["claim"]}' in second
+
+    shown = [claimed_block(c["user"]) for c in model.calls if c["label"] == "thread"]
+    assert shown[:synth.WAVE] == ["None yet."] * synth.WAVE, "the first wave had nothing to see"
+    # The whole of the first wave, whichever answer each of its lines happened to be given.
+    for t in store.live_themes(conn, ready["pid"])[:synth.WAVE]:
+        assert f'— {t["name"]} —' in shown[-1]
+    for m in [m for tid in order[:synth.WAVE] for m in by_theme[tid]]:
+        assert m["sid"] in shown[-1] and m["claim"] in shown[-1]
+
+
+def test_three_lines_are_written_at_once_and_the_reading_is_the_one_a_sequence_writes(
+        ready, conn, project, quote, monkeypatch):
+    """Six themes, two waves. The barrier is the assertion that three calls are genuinely in
+    flight together: it releases only when three lines are inside it at the same moment, and it
+    is met twice. The distinct `claimed` blocks are the other half — two of them, one per wave."""
+    import threading
+    import time
+    for name in ("Arriving", "Crossing", "Leaving", "Money", "Returning"):
+        store.save_theme(conn, project, tid=None, name=name, gist=f"about {name}", code_ids=[])
+    order = [t["id"] for t in store.live_themes(conn, ready["pid"])]
+    assert len(order) == 6
+    answers = {tid: _moments(quote, ready["mid"], 5, at=40 + i * 55)
+               for i, tid in enumerate(order)}
+
+    spans, seen, lock = [], [], threading.Lock()
+    at_once = threading.Barrier(synth.WAVE, timeout=5)
+
+    def fake(system, user, *, label="", timeout=None):
+        """Answers from the theme in front of it, so a wave and a sequence are shown the same
+        material and answer it the same way whatever order the calls arrive in."""
+        if label != "thread":
+            return ({"verdicts": []} if label.startswith("verify")
+                    else {"summary": "what the reading found", "questions": "q", "people": []})
+        tid = next(t for t in order if f"{t}  " in user)
+        started = time.monotonic()
+        if at_once is not None:
+            at_once.wait()
+        with lock:
+            seen.append(claimed_block(user))
+            spans.append((started, time.monotonic()))
+        return {"moments": answers[tid]}
+
+    monkeypatch.setattr(synth.llm, "chat_json", fake)
+    synth.doc(conn, ready["mid"])
+    in_waves = _reading(conn, ready["mid"])
+
+    assert len(seen) == 6
+    assert len(set(seen)) == 2, "one claimed block per wave, not one per line"
+    assert seen.count("None yet.") == synth.WAVE
+    overlap = max(sum(1 for b in spans if b[0] < a[1] and a[0] < b[1]) for a in spans)
+    assert overlap == synth.WAVE, f"{overlap} calls overlapped, expected {synth.WAVE}"
+
+    # The same answers, one line at a time: the chain gets faster and the reading does not move.
+    at_once, seen[:] = None, []
+    monkeypatch.setattr(synth, "WAVE", 1)
+    synth.doc(conn, ready["mid"])
+    assert len(seen) == 6 and len(set(seen)) == 6, "a sequence really is one line at a time"
+    assert _reading(conn, ready["mid"]) == in_waves
+
+
+def _reading(conn, mid: str) -> list[tuple]:
+    """Every live moment in this material, by theme name — what two runs must agree on."""
+    return sorted((r["name"], r["sid"], r["position"], r["claim"], r["anchor"]) for r in
+                  conn.execute("SELECT m.*, t.name FROM moment m JOIN theme t ON t.id=m.theme_id "
+                               "WHERE m.material_id=? AND m.status='live'", (mid,)))
 
 
 def test_the_orientation_and_the_feedback_are_both_shown_verbatim(ready, conn, model, quote):

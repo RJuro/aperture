@@ -91,14 +91,22 @@ def _live_cites(text: str, index: dict) -> str:
     re-runs the summary on that path, so its citations rot. The page was printing the raw ids as
     if they were words and the record was leaving the brackets standing empty. A citation that
     cannot be resolved is not a citation; it is nothing.
+
+    And one passage is one citation: two claims can rest on the same passage, and both renderers
+    below turn a claim into the passage it rests on — a link on the page, a sentence id in the
+    record. `[S223, S223]` reached a blind judge of the record, who read it as two sources
+    agreeing. The first claim on a passage keeps the citation and the rest go, separator and all.
     """
     def group(m):
         ids = _CITE.findall(m.group(0))
         if not ids:                       # [sic], [laughs] — the model's other brackets stay
             return m.group(0)
-        live = [i for i in ids if i in index]
+        live: dict[tuple, str] = {}
+        for i in ids:                     # by PASSAGE, not by id: same sid in two materials is
+            if i in index:                # two passages, and both are still worth citing
+                live.setdefault((index[i]["material_id"], index[i]["sid"]), i)
         head = m.group(0)[:m.group(0).index("[")]
-        return f'{head}[{", ".join(live)}]' if live else ""
+        return f'{head}[{", ".join(live.values())}]' if live else ""
 
     text = re.sub(r"[ ]*\[[^\[\]]*\]", group, text or "")
     return _CITE.sub(lambda m: m.group(0) if m.group(0) in index else "", text)

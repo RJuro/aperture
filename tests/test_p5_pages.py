@@ -345,6 +345,26 @@ def test_a_citation_whose_claim_is_gone_leaves_nothing_behind(client, conn, anal
         assert live["sid"] in text, "the citation that still resolves stays"
 
 
+def test_two_claims_resting_on_one_passage_are_cited_once(client, conn, analysed):
+    """A theme account cited two claims that rest on the SAME passage. The page linked the
+    passage twice and the record resolved both to one sentence id — `[S223, S223]`, which a
+    blind judge of the record read as two sources agreeing. One passage, one citation."""
+    pid = analysed["pid"]
+    a, b = store.moments(conn, analysed["grande"])[:2]
+    conn.execute("UPDATE moment SET sid=? WHERE id=?", (a["sid"], b["id"]))
+    conn.commit()
+    store.save_summary(conn, "project", pid, "reading",
+                       f"Work and the crossing are one story [{a['id']}, {b['id']}].")
+
+    page = client.get(f"/p/{pid}").text
+    summary = page.split('class="summary-copy"', 1)[1].split("</div>", 1)[0]
+    assert summary.count(f'#{a["sid"]}"') == 1, "one passage was linked twice"
+    assert b["id"] not in page, "a raw id was left where its citation was dropped"
+    text = client.get(f"/p/{pid}/export.md").text
+    assert f'one story [{a["sid"]}].' in text
+    assert f'{a["sid"]}, {a["sid"]}' not in text, "the record cited one passage as two"
+
+
 def test_removing_material_is_never_one_click(client, analysed):
     """Removal retires every claim, both summaries and any orphaned theme, starts paid work, and
     nothing in the interface brings it back. It takes the shape re-framing already has: a fold
