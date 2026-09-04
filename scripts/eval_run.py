@@ -93,7 +93,11 @@ def main(argv: list[str] | None = None) -> int:
     # own APERTURE_DATA_DIR would otherwise decide where this reading lands.
     os.environ["APERTURE_DATA_DIR"] = str(a.data)
 
-    from app import context, db, ingest, intake, jobs, pages, store
+    from app import context, db, ingest, intake, jobs, llm, pages, store
+
+    # Said before the first call: a developer's .env may point at the cheap testing provider, and a
+    # record made on a different model than its predecessor compares models, not prompts.
+    print(f"provider {llm.provider()} · model {llm.model()} — set APERTURE_PROVIDER to change it", flush=True)
 
     files = sorted(p for p in a.materials.iterdir()
                    if p.suffix.lower() in intake.KINDS and not p.name.startswith("."))

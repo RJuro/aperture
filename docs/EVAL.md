@@ -15,6 +15,8 @@ for one. Twelve themes over three materials is a number. Whether that is inflati
 
 ---
 
+**Pin the provider.** The local `.env` defaults to `minimax` for cheap testing; the live instance and the v1 record used GLM on Mistral. A comparison across models measures the model, not the prompts, so every eval run sets it explicitly: `APERTURE_PROVIDER=mistral python scripts/eval_run.py …`. The runner prints provider and model before its first call.
+
 ## The corpus is fixed
 
 Three interviews, one focus, unchanged between versions. The researcher supplies the three files;
