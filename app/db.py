@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -25,6 +25,20 @@ CREATE TABLE IF NOT EXISTS user (
 
 CREATE TABLE IF NOT EXISTS session (
     token TEXT PRIMARY KEY, user_id TEXT NOT NULL, created_at TEXT NOT NULL);
+
+-- A standing invitation to one project, until it is revoked. The token is the whole secret,
+-- so it is long and random; the row exists so that revoking one link does not disturb the other.
+CREATE TABLE IF NOT EXISTS invite (
+    token TEXT PRIMARY KEY, project_id TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('edit','read')),
+    created_by TEXT, created_at TEXT NOT NULL, revoked_at TEXT);
+
+-- Who, other than the owner, may open a project. Membership outlives the link that made it:
+-- revoking a link closes the door, it does not put anyone already through it back outside.
+CREATE TABLE IF NOT EXISTS member (
+    project_id TEXT NOT NULL, user_id TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('edit','read')),
+    joined_at TEXT NOT NULL, PRIMARY KEY (project_id, user_id));
 
 CREATE TABLE IF NOT EXISTS project (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, focus TEXT DEFAULT '',

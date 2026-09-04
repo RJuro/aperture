@@ -19,7 +19,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
 from . import db, ingest, intake, jobs, rerun, store
-from .pages import connection
+from .pages import _mine as pages_mine, connection
 
 router = APIRouter()
 
@@ -31,12 +31,13 @@ def _back(request: Request, fallback: str) -> RedirectResponse:
 
 
 def _mine(request: Request, conn, pid: str) -> None:
-    """POSTs observe the same ownership boundary as project pages."""
-    user = getattr(request.state, "user", None)
-    project = store.project(conn, pid)
-    if project is None or (user is not None and not user["is_admin"]
-                           and project["owner_id"] != user["id"]):
-        raise HTTPException(status_code=404, detail="not here")
+    """Every verb here changes the project, so it takes owning it or being invited to edit it.
+
+    The same function the pages use, one notch higher: there is one answer in this app to who may
+    reach a project, and this asks it for a change rather than a look. A member invited to read
+    gets the 404 a stranger gets — the project is, for the purpose of changing it, not there.
+    """
+    pages_mine(request, conn, pid, need="edit")
 
 
 def _go(conn, pid: str, feedback_id: str) -> None:
@@ -246,3 +247,38 @@ def reframe(request: Request, pid: str, mid: str, hint: str = Form("")):
     fid = store.add_feedback(conn, pid, "frame", mid, "note", hint.strip())
     _go(conn, pid, fid)
     return _back(request, f"/p/{pid}/m/{mid}")
+
+
+# ---- sharing ------------------------------------------------------------------------------------
+# Not one of the researcher's verbs — nothing here spends a model call or moves a word of the
+# analysis. It is here because this is where the POSTs live, and because it takes the same
+# `_mine`, asked at the top notch: giving other people a way in is the owner's alone.
+
+@router.post("/p/{pid}/share/link")
+def share_link(request: Request, pid: str, role: str = Form("read")):
+    """A new link of one kind. Two kinds exist and the role is checked here rather than trusted
+    from the form — the table would refuse a third, but with a 500 rather than an answer."""
+    conn = connection()
+    user = pages_mine(request, conn, pid, need="owner")
+    if role not in ("edit", "read"):
+        raise HTTPException(status_code=404, detail="not here")
+    store.add_invite(conn, pid, role, user["id"] if user else None)
+    return RedirectResponse(f"/p/{pid}/share", status_code=303)
+
+
+@router.post("/p/{pid}/share/revoke")
+def share_revoke(request: Request, pid: str, token: str = Form(...)):
+    """Shut one link. Whoever already came through it stays a member until they are removed."""
+    conn = connection()
+    pages_mine(request, conn, pid, need="owner")
+    store.revoke_invite(conn, pid, token)
+    return RedirectResponse(f"/p/{pid}/share", status_code=303)
+
+
+@router.post("/p/{pid}/share/remove")
+def share_remove(request: Request, pid: str, user_id: str = Form(...)):
+    """Take somebody out of the project. The next page they ask for is a 404, like anyone else's."""
+    conn = connection()
+    pages_mine(request, conn, pid, need="owner")
+    store.remove_member(conn, pid, user_id)
+    return RedirectResponse(f"/p/{pid}/share", status_code=303)

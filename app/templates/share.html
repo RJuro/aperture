@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block main %}
+{% if not project %}
+{# The same template answers a link that has been revoked or was never real. It says the one thing
+   there is to say and no more: which project it was for is not the visitor's to learn. #}
+<section class="section narrow-section">
+  <div class="container">
+    <p class="eyebrow">Invitation</p>
+    <h1>{{ problem }}</h1>
+    <p class="lead">Ask whoever sent it for a new one.</p>
+    <p><a class="btn btn-secondary" href="/">Your projects</a></p>
+  </div>
+</section>
+{% else %}
+<section class="section narrow-section">
+  <div class="container">
+    <p class="eyebrow">Sharing</p>
+    <h1>Who can open {{ project.name | txt }}</h1>
+    <p class="lead">A link is a standing invitation. Anyone signed in who opens it joins this
+      project with the role the link carries, until you revoke it.</p>
+    {% if problem %}<p class="problem">{{ problem }}</p>{% endif %}
+
+    <div class="section-heading share-head"><div><p class="eyebrow">People</p><h2>Members</h2></div>
+      {% if members %}<span class="meta">{{ members | length }} besides you</span>{% endif %}</div>
+    <ul class="mats">
+    {% for m in members %}
+      <li class="row-between">
+        <span>{{ m.name | txt }}
+          <span class="meta">· {{ 'can edit' if m.role == 'edit' else 'read only' }}
+            · joined {{ m.joined_at | when }}</span></span>
+        <form method="post" action="/p/{{ project.id }}/share/remove">
+          <input type="hidden" name="user_id" value="{{ m.user_id }}">
+          <button class="btn btn-small danger">Remove</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="dim">Nobody else. Only you can open this project.</li>
+    {% endfor %}
+    </ul>
+
+    <div class="section-heading share-head"><div><p class="eyebrow">Invitations</p><h2>Links</h2></div></div>
+    <ul class="mats">
+    {% for i in invites %}
+      <li>
+        <div class="row-between">
+          <span class="meta">{% if i.role == 'edit' %}Collaborate — read the project and work on
+            it{% else %}Read only — read the project and its record{% endif %}
+            · made {{ i.created_at | when }}</span>
+          <form method="post" action="/p/{{ project.id }}/share/revoke">
+            <input type="hidden" name="token" value="{{ i.token }}">
+            <button class="btn btn-small danger">Revoke</button>
+          </form>
+        </div>
+        <input class="share-url" readonly aria-label="Invitation link"
+               value="{{ base }}/join/{{ i.token }}">
+      </li>
+    {% else %}
+      <li class="dim">No links yet. Make one below and send it to whoever should read this.</li>
+    {% endfor %}
+    </ul>
+    <div class="share-new">
+      <form method="post" action="/p/{{ project.id }}/share/link">
+        <input type="hidden" name="role" value="edit">
+        <button class="btn btn-secondary">New collaborate link</button>
+      </form>
+      <form method="post" action="/p/{{ project.id }}/share/link">
+        <input type="hidden" name="role" value="read">
+        <button class="btn btn-secondary">New read-only link</button>
+      </form>
+    </div>
+    <details class="quiet-details"><summary>What a link gives away</summary>
+      <p>Anyone holding the link can open this project, so send it the way you would send the
+      material itself. Revoking a link shuts it for anyone who has not used it yet; someone who
+      already joined stays a member until you remove them above.</p></details>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
