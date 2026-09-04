@@ -36,9 +36,10 @@ def _thread(quote, mid, tid, n=None, at=40):
                          "sid": synth.sid_num(quote(mid, at=at + i * 9)[0])} for i in range(n)]}
 
 
-def _full_doc(model, conn, pid, by_tid, summary="s", questions="q"):
+def _full_doc(model, conn, pid, by_tid, summary="s", questions="q", verdicts=None):
     for t in store.live_themes(conn, pid):
         model.queue(by_tid.get(t["id"], {"moments": []}))
+    model.queue({"verdicts": verdicts or []})
     model.queue({"summary": summary, "questions": questions, "people": []})
 
 
@@ -72,7 +73,8 @@ def test_one_theme_rerun_touches_that_thread_and_nothing_else(ready, conn, model
     synth.doc(conn, ready["mid"])
     before = [m["claim"] for m in store.thread(conn, ready["mid"], ready["b"])]
 
-    model.queue(_thread(quote, ready["mid"], ready["a"], synth.MIN_MOMENTS, at=150))
+    model.queue(_thread(quote, ready["mid"], ready["a"], synth.MIN_MOMENTS, at=150),
+                {"verdicts": []})
     synth.doc(conn, ready["mid"], only_theme=ready["a"])
 
     assert len(store.thread(conn, ready["mid"], ready["a"])) == synth.MIN_MOMENTS
@@ -87,7 +89,7 @@ def test_feedback_on_another_thread_stays_out_of_a_one_theme_rerun(ready, conn, 
                        "Work is really about the stall.")
     store.add_feedback(conn, ready["pid"], "thread", f'{ready["mid"]}:{ready["b"]}', "note",
                        "Leaving is a different story.")
-    model.queue(_thread(quote, ready["mid"], ready["a"]))
+    model.queue(_thread(quote, ready["mid"], ready["a"]), {"verdicts": []})
     synth.doc(conn, ready["mid"], only_theme=ready["a"])
     shown = model.shown()
     assert "Work is really about the stall." in shown
@@ -186,6 +188,7 @@ def test_a_material_written_in_cyrillic_keeps_its_cyrillic(conn, project, model)
     sents = store.sentences(conn, mid)
     model.queue({"moments": [{"claim": f"claim {i}", "anchor": sents[i][1], "sid": sents[i][0]}
                              for i in range(4)]})
+    model.queue({"verdicts": []})
     model.queue({"summary": "Работа держит семью вместе.", "questions": "q", "people": []})
     out = synth.doc(conn, mid)
     assert store.get_summary(conn, "material", mid, "reading")["text"] \

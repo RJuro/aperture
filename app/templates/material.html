@@ -102,6 +102,7 @@
       <li>
         <span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
         <p class="claim">{{ x.claim | txt }}</p>
+        {% if x.support == 'partly' %}<p class="dim small">The passage carries part of this: {{ x.support_note | txt }}</p>{% endif %}
         <a class="quote-link quote" title="Open this passage in the material" href="#{{ x.sid }}">{{ x.anchor | txt }}</a>
         {% for f in x.reactions %}
         <p class="dim small">{{ f.kind }}{% if f.text %} <q>{{ f.text | txt }}</q>{% endif %}</p>

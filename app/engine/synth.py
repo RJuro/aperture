@@ -320,6 +320,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     they are. Otherwise every live theme gets its own call, and the summary call sees the lines
     that actually exist rather than being asked to write them and introduce them in one breath.
     """
+    from . import verify              # it reads this module; imported here so neither waits on the other
     row = store.material(conn, mid)
     if row is None:
         raise ValueError(f"no material {mid!r}")
@@ -338,6 +339,9 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                     "dropped": [f"theme {only_theme} is no longer live — its line was not rewritten"]}
         kept, dropped, st = _thread(conn, mid, only_theme, run_id=run_id)
         tally(st)
+        if kept:
+            dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
+            kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
         stored = store.get_summary(conn, "material", mid, "reading")
         return {"summary": stored["text"] if stored else "",
                 "threads": [{"theme_id": only_theme, "moments": kept}] if kept else [],
@@ -351,6 +355,13 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         dropped += d
         if kept:
             threads.append({"theme_id": tid, "moments": kept})
+
+    # Before the summary, never after: a summary written over a claim the passage does not carry
+    # introduces that claim by name, and the claim is gone by the time anyone reads it.
+    dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
+    threads = [t for t in ({"theme_id": t["theme_id"],
+                            "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
+                           for t in threads) if t["moments"]]
 
     shown = []
     for t in threads:

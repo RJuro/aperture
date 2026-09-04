@@ -248,8 +248,10 @@ def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) ->
 
 def derivation(conn, mid: str) -> str:
     """Law 4: a number is printed as the derivation it came from, never as a bare figure."""
-    return (f"claims rest on {len(store.cited_sids(conn, mid))} "
+    said = (f"claims rest on {len(store.cited_sids(conn, mid))} "
             f"of {len(store.sentences(conn, mid))} passages")
+    aside = store.set_aside_by_check(conn, mid)
+    return said + (f", {aside} set aside as not carried by their passages" if aside else "")
 
 
 def _row(r) -> dict | None:

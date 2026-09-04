@@ -85,6 +85,7 @@
   {% for x in m.moments %}
     <li><span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
       <p class="claim">{{ x.claim | txt }}</p>
+      {% if x.support == 'partly' %}<p class="dim small">The passage carries part of this: {{ x.support_note | txt }}</p>{% endif %}
       <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ t.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
       <span class="num">{{ x.sid }}</span>
     </div></li>

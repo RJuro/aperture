@@ -37,10 +37,12 @@ def _moments(quote, mid, n=5, at=40):
 
 def queue_doc(model, conn, pid, moments_by_theme, summary="what the reading found",
               questions="what remains open?", people=None):
-    """The answers a full DOC needs, in the order it asks: one thread per live theme, then the
-    summary. A test that forgets the order gets 'unexpected model call', which is the point."""
+    """The answers a full DOC needs, in the order it asks: one thread per live theme, the check
+    of every claim against its passage, then the summary. A test that forgets the order gets
+    'unexpected model call', which is the point."""
     for t in store.live_themes(conn, pid):
         model.queue({"moments": moments_by_theme.get(t["id"], [])})
+    model.queue({"verdicts": []})
     model.queue({"summary": summary, "questions": questions, "people": people or []})
 
 
@@ -94,7 +96,7 @@ def test_each_line_is_its_own_call_and_the_summary_comes_after_the_lines(ready, 
                                           t2: _moments(quote, ready["mid"], 4, at=120)})
     synth.doc(conn, ready["mid"])
     labels = [c["label"] for c in model.calls]
-    assert labels == ["thread", "thread", "doc"]
+    assert labels == ["thread", "thread", "verify", "doc"]
     shown_to_summary = model.calls[-1]["user"]
     assert "claim 0" in shown_to_summary, "the summary must see the lines it introduces"
 
@@ -152,9 +154,9 @@ def test_a_one_line_rerun_makes_one_call_and_leaves_the_summary_alone(ready, con
     queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])},
               summary="the whole reading", questions="q1")
     synth.doc(conn, ready["mid"])
-    model.queue({"moments": _moments(quote, ready["mid"], 5, at=150)})
+    model.queue({"moments": _moments(quote, ready["mid"], 5, at=150)}, {"verdicts": []})
     out = synth.doc(conn, ready["mid"], only_theme=ready["tid"])
-    assert [c["label"] for c in model.calls][-1:] == ["thread"]
+    assert [c["label"] for c in model.calls][-2:] == ["thread", "verify"]
     assert len(out["threads"]) == 1
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] == "the whole reading"
     assert store.project(conn, ready["pid"])["brief"] == "q1"

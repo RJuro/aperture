@@ -47,7 +47,8 @@ IDLE_TIMEOUT = 180.0
 # same shape of cost — one call per theme at the end of every chain — over claims already checked
 # against the material. Every other call — READ, THEMES, DOC, PROJECT, CHECK — keeps the
 # provider's default.
-EFFORT = {"frame": "", "angles": "low", "thread": "medium", "account": "medium"}
+EFFORT = {"frame": "", "angles": "low", "thread": "medium", "account": "medium",
+          "verify": "medium"}
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
