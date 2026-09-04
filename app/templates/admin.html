@@ -19,20 +19,28 @@
   <button class="btn btn-secondary">Set password</button>
 </form>
 <h2>Projects</h2>
+{# Names and owners, and nothing of what is in them — administering an instance is making
+   accounts, not reading the work. The names are not links: an administrator cannot open a
+   project that is not theirs, and a link that answers 404 is a door painted on a wall. #}
 <ul class="mats">
 {% for p in projects %}
-  <li><a href="/p/{{ p.id }}">{{ p.name | txt }}</a>
+  <li>{{ p.name | txt }}
       <span class="dim">Owner {{ p.owner | txt if p.owner else 'not set' }} · Created {{ p.created_at | when }}</span></li>
 {% else %}
   <li class="dim">Nothing here yet.</li>
 {% endfor %}
 </ul>
-{% if projects and people %}
+{% set orphans = projects | rejectattr('owner') | list %}
+{% if orphans and people %}
+{# Only projects nobody owns. Handing over an owned project would be the way an administrator
+   could read anyone's work: give it to yourself, open it. Sharing is the owner's to do. #}
 <form method="post" action="/admin/owner" class="form-stack">
-  <label>Give <select name="project_id">{% for p in projects %}<option value="{{ p.id }}">{{ p.name | txt }}</option>{% endfor %}</select></label>
+  <label>Give <select name="project_id">{% for p in orphans %}<option value="{{ p.id }}">{{ p.name | txt }}</option>{% endfor %}</select></label>
   <label>to <select name="user_id">{% for u in people %}<option value="{{ u.id }}">{{ u.name | txt }}</option>{% endfor %}</select></label>
   <button class="btn btn-secondary">Set owner</button>
 </form>
+<p class="dim">Only a project whose owner account is gone can be handed over. Everything else is
+its owner's to share, from the project's own Share page.</p>
 {% endif %}
 </section>
 {% endblock %}

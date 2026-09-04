@@ -10,7 +10,7 @@
     <div class="section-heading"><div><p class="eyebrow">Your work</p><h2>Projects</h2></div><span class="meta">{{ projects | length }} total</span></div>
     <ul class="project-list">
     {% for p in projects %}
-      <li><a href="/p/{{ p.id }}"><span>{{ p.name | txt }}</span><small>Created {{ p.created_at | when }} <b aria-hidden="true">↗</b></small></a></li>
+      <li><a href="/p/{{ p.id }}"><span>{{ p.name | txt }}</span><small>Created {{ p.created_at | when }} <b aria-hidden="true">↗</b></small>{% if p.role and p.role != 'owner' %}<small>Shared by {{ p.owner_name | txt }} · {{ 'can edit' if p.role == 'edit' else 'read only' }}</small>{% endif %}</a></li>
     {% else %}
       <li class="empty-state">No projects yet. Begin with a research question.</li>
     {% endfor %}

@@ -4,6 +4,7 @@
   <h1>{{ app_name }}</h1>
   <p class="dim">A reading companion for qualitative material.</p>
   <form method="post" action="/login">
+    <input type="hidden" name="next" value="{{ next | default('/', true) }}">
     <label>Account name<input name="name" autofocus required autocomplete="username"></label>
     <label>Password<input name="password" type="password" required autocomplete="current-password"></label>
     <button class="btn btn-primary">Sign in</button>

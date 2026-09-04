@@ -400,3 +400,13 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
   .topnav, .project-rail, form, .research-actions, .head-actions, .pagefoot { display: none !important; }
   .app-shell { display: block; }
 }
+
+/* Sharing */
+.share-url { width: 100%; margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--muted); font: 12px/1.4 var(--font-mono); }
+.share-new { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.share-head { margin-top: 34px; }
+/* Share sits beside Reading record. `.head-row` is two columns, so a third child would drop to a
+   row of its own and stretch across it — above the width where that row stacks anyway. */
+@media (min-width: 621px) {
+  .project-head .head-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+}

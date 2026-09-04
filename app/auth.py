@@ -10,6 +10,8 @@ that moment on.
 """
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
 
@@ -28,4 +30,8 @@ class Accounts(BaseHTTPMiddleware):
         request.state.user = user = accounts.current_user(request, conn)
         if user or path == "/login" or not accounts.anyone(conn):
             return await call_next(request)
-        return RedirectResponse("/login", status_code=303)
+        # Where they were going, so an invitation link works from cold: click it signed out, sign
+        # in, and land on the project rather than on a home page that does not yet list it.
+        where = path + (f"?{request.url.query}" if request.url.query else "")
+        return RedirectResponse(f"/login?next={quote(where, safe='')}" if path != "/"
+                                else "/login", status_code=303)

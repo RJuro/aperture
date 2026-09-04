@@ -10,6 +10,7 @@
       <p class="lead">{{ reading.done }} of {{ materials | length }} {{ 'material' | plural(materials | length) }} fully read{% if reading.active %} · {{ reading.active }} being read{% endif %}{% if reading.failed %} · {{ reading.failed }} stopped{% endif %}{% if reading.waiting %} · {{ reading.waiting }} not read yet{% endif %}.</p>
       {% else %}<p class="lead">No material added yet.</p>{% endif %}</div>
       <a class="btn btn-secondary" href="/p/{{ project.id }}/record">Reading record</a>
+      {% if role == 'owner' %}<a class="btn btn-secondary" href="/p/{{ project.id }}/share">Share</a>{% endif %}
     </div>
   </div>
 </section>

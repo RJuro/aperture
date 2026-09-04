@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 
 from . import context, db, store, word
@@ -82,16 +82,23 @@ def _render(template: str, ctx: dict, user=None) -> str:
     return _env.get_template(template).render(user=user, **ctx)
 
 
-def _mine(request: Request, conn, pid: str):
-    """The account reading this, having established the project is theirs to read.
+# What each role may do, as a ladder. `read` opens pages, `edit` also runs the verbs that change
+# the project, `owner` also gives it away.
+RANK = {"read": 0, "edit": 1, "owner": 2}
 
-    A project that is not yours is 404 and not 403: telling someone a project exists but is
-    closed to them is still telling them it exists. `user` is None on a database with no
-    accounts in it, and then every project is open."""
+
+def _mine(request: Request, conn, pid: str, need: str = "read"):
+    """The account reading this, having established the project is open to it at `need` or above.
+
+    Every GET and every POST in the app comes through here, so `store.access` is the single
+    answer to who may see what. A project that is not yours is 404 and not 403: telling someone a
+    project exists but is closed to them is still telling them it exists — and a reader who posts
+    to a verb gets the same 404, because a member who may only read is, for that verb, exactly
+    someone the project is not there for.
+    """
     user = getattr(request.state, "user", None)
-    p = store.project(conn, pid)
-    if p is None or (user is not None and not user["is_admin"]
-                     and p["owner_id"] != user["id"]):
+    role = store.access(conn, pid, user)
+    if role is None or RANK[role] < RANK[need]:
         raise HTTPException(status_code=404, detail="not here")
     return user
 
@@ -107,7 +114,42 @@ def project(request: Request, pid: str, problem: str = "") -> str:
     conn = connection()
     user = _mine(request, conn, pid)
     ctx = context.project_page(conn, pid)
-    return _render("project.html", ctx and {**ctx, "problem": problem}, user)
+    # `role` only so the page can leave out the Share button for someone who cannot share. The
+    # boundary is the routes below, not this.
+    return _render("project.html", ctx and {**ctx, "problem": problem,
+                                            "role": store.access(conn, pid, user)}, user)
+
+
+@router.get("/p/{pid}/share", response_class=HTMLResponse)
+def share(request: Request, pid: str, problem: str = "") -> str:
+    """Who else may open this project, and the links that let them in. The owner's page: a
+    collaborator reads the work, they do not hand it on."""
+    conn = connection()
+    user = _mine(request, conn, pid, need="owner")
+    return _render("share.html", {
+        **context._shell(conn, pid), "project": dict(store.project(conn, pid)),
+        "problem": problem, "members": [dict(m) for m in store.members(conn, pid)],
+        "invites": [dict(i) for i in store.invites(conn, pid)],
+        # The link is going to be pasted into a mail, so it has to carry the host. `base_url` is
+        # what this request arrived on, which is the address the owner is already looking at.
+        "base": str(request.base_url).rstrip("/")}, user)
+
+
+@router.get("/join/{token}", response_class=HTMLResponse)
+def join(request: Request, token: str):
+    """Take up an invitation. Signed out, the middleware has already sent them to /login with
+    this path to come back to, so a link works from cold."""
+    user = getattr(request.state, "user", None)
+    conn = connection()
+    if user is None:
+        # No accounts at all: there is nobody for a membership to belong to, and everything is
+        # open anyway.
+        return RedirectResponse("/", status_code=303)
+    if pid := store.join(conn, token, user["id"]):
+        return RedirectResponse(f"/p/{pid}", status_code=303)
+    return HTMLResponse(_render("share.html", {
+        "app_name": context.APP_NAME, "css_v": context._css_version(),
+        "problem": "That invitation is no longer open."}, user), status_code=404)
 
 
 @router.get("/p/{pid}/runs")

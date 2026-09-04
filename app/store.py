@@ -775,12 +775,103 @@ def users(conn: sqlite3.Connection) -> list[sqlite3.Row]:
 
 
 def projects_for(conn: sqlite3.Connection, user_row: sqlite3.Row | None) -> list[sqlite3.Row]:
-    """Theirs, newest first — every project for an admin, and for a database with no accounts in
-    it at all, which is how this runs on a laptop."""
-    if user_row is None or user_row["is_admin"]:
-        return conn.execute("SELECT * FROM project ORDER BY created_at DESC").fetchall()
-    return conn.execute("SELECT * FROM project WHERE owner_id=? ORDER BY created_at DESC",
-                        (user_row["id"],)).fetchall()
+    """Theirs and what they were invited to, newest first, each with the `role` it is held under
+    and the `owner_name` to say who shared it.
+
+    An administrator is not on this list twice over: administering the instance is making
+    accounts, not reading the work done in them. A database with no accounts in it at all is a
+    laptop, and there every project is open — see `access`.
+    """
+    if user_row is None:
+        return conn.execute("SELECT *, 'owner' AS role, '' AS owner_name FROM project "
+                            "ORDER BY created_at DESC").fetchall()
+    return conn.execute(
+        "SELECT p.*, CASE WHEN p.owner_id = :u THEN 'owner' ELSE m.role END AS role, "
+        "COALESCE(u.name, '') AS owner_name "
+        "FROM project p "
+        "LEFT JOIN member m ON m.project_id = p.id AND m.user_id = :u "
+        "LEFT JOIN user u ON u.id = p.owner_id "
+        "WHERE p.owner_id = :u OR m.user_id IS NOT NULL "
+        "ORDER BY p.created_at DESC", {"u": user_row["id"]}).fetchall()
+
+
+# ---- who may open a project ---------------------------------------------------------------------
+
+def access(conn: sqlite3.Connection, pid: str, user_row: sqlite3.Row | None) -> str | None:
+    """What this account may do with this project: 'owner', 'edit', 'read', or None for nothing.
+
+    The one place that answers the question, for every page and every verb. An administrator is
+    deliberately not special here: they make accounts and hand out passwords, which is not a
+    reason to read somebody's interviews. Work is reached by owning it or by being invited to it,
+    and that is the whole rule.
+
+    `user_row` is None only on a database with no accounts in it, where the middleware lets
+    everything through — a lone researcher on a laptop owns everything on it.
+    """
+    p = project(conn, pid)
+    if p is None:
+        return None
+    if user_row is None or p["owner_id"] == user_row["id"]:
+        return "owner"
+    row = conn.execute("SELECT role FROM member WHERE project_id=? AND user_id=?",
+                       (pid, user_row["id"])).fetchone()
+    return row["role"] if row else None
+
+
+def add_invite(conn: sqlite3.Connection, pid: str, role: str, by: str | None) -> str:
+    """A link that stands open until it is revoked. 24 random bytes: the token is the only thing
+    between a stranger and the material, so it is not a guessable id."""
+    token = secrets.token_urlsafe(24)
+    conn.execute("INSERT INTO invite (token, project_id, role, created_by, created_at) "
+                 "VALUES (?,?,?,?,?)", (token, pid, role, by, now()))
+    conn.commit()
+    return token
+
+
+def invites(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
+    """The links still open on this project."""
+    return conn.execute("SELECT * FROM invite WHERE project_id=? AND revoked_at IS NULL "
+                        "ORDER BY created_at", (pid,)).fetchall()
+
+
+def revoke_invite(conn: sqlite3.Connection, pid: str, token: str) -> None:
+    """Scoped by project, so a token from elsewhere cannot be revoked from this project's page.
+    Whoever already came through the link keeps their membership; this only shuts the door."""
+    conn.execute("UPDATE invite SET revoked_at=? WHERE token=? AND project_id=?",
+                 (now(), token, pid))
+    conn.commit()
+
+
+def join(conn: sqlite3.Connection, token: str, uid: str) -> str | None:
+    """Take up an invitation. The project it was for, or None if the link is unknown or revoked.
+
+    A link is a standing invitation and is opened more than once — from the mail it arrived in,
+    then from a bookmark. Opening an 'edit' link raises someone who was only reading; opening a
+    'read' link never quietly takes editing away from someone who has it, because a second link
+    is not a demotion anyone asked for. The owner's own link does nothing to the owner.
+    """
+    inv = conn.execute("SELECT * FROM invite WHERE token=? AND revoked_at IS NULL",
+                       (token,)).fetchone()
+    if inv is None or (p := project(conn, inv["project_id"])) is None:
+        return None
+    if p["owner_id"] != uid:
+        held = conn.execute("SELECT role FROM member WHERE project_id=? AND user_id=?",
+                            (p["id"], uid)).fetchone()
+        if held is None or (held["role"] == "read" and inv["role"] == "edit"):
+            conn.execute("INSERT OR REPLACE INTO member (project_id, user_id, role, joined_at) "
+                         "VALUES (?,?,?,?)", (p["id"], uid, inv["role"], now()))
+            conn.commit()
+    return p["id"]
+
+
+def members(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
+    return conn.execute("SELECT m.*, u.name AS name FROM member m JOIN user u ON u.id = m.user_id "
+                        "WHERE m.project_id=? ORDER BY u.name", (pid,)).fetchall()
+
+
+def remove_member(conn: sqlite3.Connection, pid: str, uid: str) -> None:
+    conn.execute("DELETE FROM member WHERE project_id=? AND user_id=?", (pid, uid))
+    conn.commit()
 
 
 def set_password(conn: sqlite3.Connection, uid: str, password: str) -> None:
@@ -818,11 +909,22 @@ def sign_out_others(conn: sqlite3.Connection, uid: str, keep: str = "") -> int:
     return n
 
 
-def set_owner(conn: sqlite3.Connection, pid: str, uid: str) -> None:
-    """Hand a project over. One made before accounts existed has no owner and is invisible to
-    every researcher for ever; the admin page said "Owner not set" and offered nothing."""
-    conn.execute("UPDATE project SET owner_id=? WHERE id=?", (uid, pid))
+def set_owner(conn: sqlite3.Connection, pid: str, uid: str) -> bool:
+    """Hand over a project that nobody can open, and only such a project.
+
+    One made before accounts existed has no owner, and one whose owner account is gone has an
+    owner_id pointing at nothing; either is invisible to every researcher for ever, and an
+    administrator is the only one who can put it back in someone's hands.
+
+    A project with a living owner is refused, in the UPDATE itself so there is no window between
+    the check and the write. Reassignment was otherwise the hole in the whole arrangement: an
+    administrator who cannot read your work could simply give it to themselves and then read it.
+    Sharing is the owner's to do, through a link, and an administrator is not a party to it.
+    """
+    n = conn.execute("UPDATE project SET owner_id=? WHERE id=? AND (owner_id IS NULL OR owner_id "
+                     "NOT IN (SELECT id FROM user))", (uid, pid)).rowcount
     conn.commit()
+    return bool(n)
 
 
 # ---- added for the display fixes

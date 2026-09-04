@@ -211,7 +211,7 @@ stable** — a re-frame never re-ingests, so codes and moments survive it.
 
 ## 7. Pages
 
-**Home `/`** — the signed-in user's projects; new project. Sign-in with an account an admin made; `/admin` creates users and lists every project.
+**Home `/`** — the signed-in user's projects and the ones shared with them; new project. Sign-in with an account an admin made; `/admin` creates users and lists every project by name and owner, and nothing of what is in them: administering the instance is not a way into anyone's material, so an administrator opens only what they own or were invited to, and can hand over only a project whose owner account is gone. A project is shared by its owner from `/p/{pid}/share`, as a standing link (`/join/{token}`, collaborate or read only) that anyone signed in can take up until it is revoked.
 
 **Project `/p/{pid}`** — the project summary (moment citations link into materials). The brief, one
 line. Focus with history and a form. **Themes as rows**: name, gist, one column per material

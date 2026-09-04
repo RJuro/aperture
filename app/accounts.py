@@ -11,6 +11,7 @@ those features is a surface that has to be right.
 from __future__ import annotations
 
 import os
+import re
 import secrets
 import sqlite3
 
@@ -75,23 +76,38 @@ def _admin(request: Request) -> sqlite3.Row:
 
 # ---- routes -------------------------------------------------------------------------------------
 
+LOCAL = re.compile(r"/[A-Za-z0-9/_.~%!$&'()*+,;=:@-]*")
+
+
+def _local(where: str) -> str:
+    """Where to go after signing in, and only somewhere on this site.
+
+    Anything else is an open redirect: a link to our own sign-in page that lands the researcher,
+    freshly signed in, on somebody else's. A path, then, and not '//host' — which a browser reads
+    as another site — and nothing that could break out of the header.
+    """
+    return where if where.startswith("/") and not where.startswith("//") \
+        and LOCAL.fullmatch(where) else "/"
+
+
 @router.get("/login", response_class=HTMLResponse)
-def login_page() -> str:
-    return _render("login.html", {"problem": ""})
+def login_page(next: str = "") -> str:
+    return _render("login.html", {"problem": "", "next": _local(next)})
 
 
 @router.post("/login")
-def sign_in(name: str = Form(...), password: str = Form("")):
+def sign_in(name: str = Form(...), password: str = Form(""), next: str = Form("/")):
     conn = connection()
     user = store.verify_user(conn, name.strip(), password)
     if user is None:
         return HTMLResponse(_render("login.html", {"problem": "That name and password do not "
-                                                              "go together."}), status_code=401)
+                                                              "go together.",
+                                                   "next": _local(next)}), status_code=401)
     token = secrets.token_urlsafe(32)
     conn.execute("INSERT INTO session (token, user_id, created_at) VALUES (?,?,?)",
                  (token, user["id"], store.now()))
     conn.commit()
-    r = RedirectResponse("/", status_code=303)
+    r = RedirectResponse(_local(next), status_code=303)
     r.set_cookie(COOKIE, token, httponly=True, samesite="lax", max_age=YEAR)
     return r
 
@@ -139,8 +155,17 @@ def reset_password(request: Request, user_id: str = Form(...), password: str = F
 
 @router.post("/admin/owner")
 def set_owner(request: Request, project_id: str = Form(...), user_id: str = Form(...)):
+    """Put a project nobody owns back into somebody's hands — and nothing else.
+
+    An administrator cannot open other people's projects, and reassignment must not be the way
+    round that: giving yourself a project you cannot read is reading it. `store.set_owner`
+    refuses any project whose owner still exists, so this is only ever the rescue it was added
+    for — one made before accounts existed, or one whose owner account is gone.
+    """
     _admin(request)
-    store.set_owner(connection(), project_id, user_id)
+    if not store.set_owner(connection(), project_id, user_id):
+        return RedirectResponse("/admin?problem=That+project+already+has+an+owner.+Only+its+"
+                                "owner+can+share+it.", status_code=303)
     return RedirectResponse("/admin?problem=That+project+has+a+new+owner.", status_code=303)
 
 
