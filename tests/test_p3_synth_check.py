@@ -99,6 +99,23 @@ def test_each_line_is_its_own_call_and_the_summary_comes_after_the_lines(ready, 
     assert "claim 0" in shown_to_summary, "the summary must see the lines it introduces"
 
 
+def test_a_line_is_shown_what_another_theme_has_already_claimed_here(ready, conn, project, model,
+                                                                     quote):
+    """The same passages came back under three and four themes, twice with opposite valence. A
+    line that cannot see the other reading cannot tell it is repeating one under a second name."""
+    t2 = store.save_theme(conn, project, tid=None, name="Leaving", gist="the crossing",
+                          code_ids=[])
+    by_theme = {ready["tid"]: _moments(quote, ready["mid"], 5),
+                t2: _moments(quote, ready["mid"], 4, at=120)}
+    queue_doc(model, conn, ready["pid"], by_theme)
+    synth.doc(conn, ready["mid"])
+    order = [t for t in store.live_themes(conn, ready["pid"])]
+    first, second = [c["user"] for c in model.calls if c["label"] == "thread"]
+    assert "None yet." in first, "nothing had been claimed when the first line was written"
+    was_first = by_theme[order[0]["id"]][0]
+    assert f'{was_first["sid"]} — {order[0]["name"]} — {was_first["claim"]}' in second
+
+
 def test_the_orientation_and_the_feedback_are_both_shown_verbatim(ready, conn, model, quote):
     store.add_feedback(conn, ready["pid"], "material_summary", ready["mid"], "note",
                        "He never says why they chose Trieste.")

@@ -183,6 +183,23 @@ def _theme_codes_block(conn, mid: str, tid: str) -> str:
     return "\n".join(lines) or "None of this theme's codes were marked here. Follow the definition."
 
 
+def _claimed_block(conn, mid: str, tid: str) -> str:
+    """Passages in this material another live theme has already claimed, with its claim.
+
+    A real run recycled the same passages under three and four themes, twice with opposite
+    valence. A line that cannot see what another theme has already read in a passage cannot tell
+    whether it is adding a reading or repeating one under a second name.
+    """
+    rows = conn.execute(
+        "SELECT mo.sid AS sid, mo.claim AS claim, t.name AS theme FROM moment mo "
+        "JOIN theme t ON t.id = mo.theme_id "
+        "WHERE mo.material_id=? AND mo.theme_id<>? AND mo.status='live' AND t.status='live'",
+        (mid, tid)).fetchall()
+    pos = store.sid_position(conn, mid)
+    ordered = sorted(rows, key=lambda r: (pos.get(r["sid"], 10**9), r["theme"]))
+    return "\n".join(f'{r["sid"]} — {r["theme"]} — {r["claim"]}' for r in ordered) or "None yet."
+
+
 def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
     """One theme's line through one material — one call, full attention.
 
@@ -202,6 +219,7 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         "thread",
         theme=f'{theme["id"]}  {theme["name"]} — {theme["gist"]}',
         codes=_theme_codes_block(conn, mid, tid),
+        claimed=_claimed_block(conn, mid, tid),
         focus=proj["focus"] or "Nothing in particular. Follow the theme on its own terms.",
         frame=frame_block(conn, mid),
         feedback=feedback_block(conn, pid, mid, tid),
