@@ -64,6 +64,10 @@ _env.filters["when"] = _when
 _env.filters["plural"] = _plural
 # The record page shows model prose, and a claim id in it is a link into the material it rests on.
 _env.filters["cite"] = context.cite
+# The anchor a Markdown renderer gives a heading: lowercase, punctuation dropped, spaces to
+# hyphens. "Esther Horwitz — interview, 1991" becomes #esther-horwitz--interview-1991; a link
+# built by lowercasing alone kept the dash and the comma and pointed at nothing.
+_env.filters["slug"] = lambda s: re.sub(r"[^a-z0-9 -]", "", (s or "").lower()).replace(" ", "-")
 
 _conn = None
 

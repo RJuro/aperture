@@ -138,7 +138,8 @@ def test_each_claim_is_printed_once_and_no_step_name_stands_in_for_a_state(clien
     here = mats.split(f"### {title}\n", 1)[1].split("\n### ", 1)[0]
     assert here.count(first["claim"]) == 1 and first["anchor"] in here
     assert first["claim"] not in themes, "printed under its material and again under its theme"
-    assert f"](#{title.lower().replace(' ', '-')})" in themes, \
+    slug = re.sub(r"[^a-z0-9 -]", "", title.lower()).replace(" ", "-")
+    assert f"](#{slug})" in themes, \
         "a theme must point at the material where its claims are printed"
     assert f" · {store.material(conn, rich['grande'])['state']} ·" not in md
 

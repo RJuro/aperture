@@ -50,7 +50,7 @@
 {% if m.summary %}
 {{ m.summary.text }}
 {% endif %}
-[{{ m.claims }} {{ 'claim' | plural(m.claims) }} · printed in full under {{ m.display_title }} below](#{{ m.display_title | lower | replace(' ', '-') }})
+[{{ m.claims }} {{ 'claim' | plural(m.claims) }} · printed in full under {{ m.display_title }} below](#{{ m.display_title | slug }})
 
 {% else %}No material contains claims for this theme yet.
 {% endfor %}{% if t.absent %}{% for head, mats in
