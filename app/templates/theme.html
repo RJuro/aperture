@@ -1,7 +1,27 @@
 {% extends "base.html" %}
 {% block main %}
 <section class="section project-head"><div class="container">
-<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }}</p></div></section>
+<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }}</p>
+{# Where the researcher has taken this theme, and the one control that moves it. Freezing is not
+   analysis and spends nothing: it fixes the name and the gist so new material is applied to the
+   theme rather than allowed to rewrite it. #}
+<div class="theme-hold">
+  <span class="meta">
+  {%- if theme.hold == 'candidate' %}Candidate — found in one material so far
+  {%- elif theme.hold == 'frozen' %}Frozen
+  {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · stable for {{ theme.stable_passes }} materials{% endif %}
+  {%- endif %}</span>
+  {% if role in ('edit', 'owner') %}
+  {% if theme.hold == 'candidate' %}
+  <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
+  {% else %}
+  <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/hold">
+    <input type="hidden" name="hold" value="{{ 'open' if theme.hold == 'frozen' else 'frozen' }}">
+    <button class="btn btn-small btn-secondary">{{ 'Unfreeze' if theme.hold == 'frozen' else 'Freeze' }}</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div></div></section>
 
 <section class="section"><div class="container narrow-section">
 {% if summary %}<p class="eyebrow">Interpretive account</p><div class="summary-copy">{{ summary_html }}</div>
@@ -9,6 +29,15 @@
 <p class="provisional">No summary yet. One is written after a material is analysed, or after
 you send feedback below.</p>
 <p class="summary">{{ theme.gist | prose }}</p>
+{% endif %}
+
+{% if theme.hold == 'frozen' and notes %}
+{# The case for unfreezing, in the readings' own words. Never folded into the gist: a frozen
+   theme's definition is the researcher's, and what pulls against it is evidence, not an edit. #}
+<p class="eyebrow">What has pulled against this definition</p>
+<ul class="mats tensions">
+{% for n in notes %}<li class="gist">{{ n.text | prose }} <span class="dim">{{ n.display_title | txt }} · {{ n.created_at | when }}</span></li>{% endfor %}
+</ul>
 {% endif %}
 
 <form method="post" action="/p/{{ project.id }}/react" class="inline-response">

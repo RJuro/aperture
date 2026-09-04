@@ -249,6 +249,44 @@ def reframe(request: Request, pid: str, mid: str, hint: str = Form("")):
     return _back(request, f"/p/{pid}/m/{mid}")
 
 
+# ---- the hold on a theme --------------------------------------------------------------------------
+# Not analysis: the researcher saying where a theme has got to. Freezing spends no model call — it
+# changes what the next THEMES pass is allowed to do to the theme, which is why it is one click and
+# why unfreezing is one click back.
+
+def _theme(conn, pid: str, tid: str):
+    """This project's theme, or a 404. The id arrives in the URL, so a member who may edit one
+    project must not reach a theme in another through it."""
+    row = conn.execute("SELECT id FROM theme WHERE id=? AND project_id=?", (tid, pid)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="not here")
+    return row
+
+
+@router.post("/p/{pid}/t/{tid}/hold")
+def hold(request: Request, pid: str, tid: str, hold: str = Form(...)):
+    """Freeze a theme, or unfreeze it. A frozen theme's name and gist are fixed: new material is
+    applied to it and what pulls against it comes back as a note, never as a rewrite."""
+    conn = connection()
+    _mine(request, conn, pid)
+    _theme(conn, pid, tid)
+    if hold not in ("open", "frozen"):
+        raise HTTPException(status_code=404, detail="not here")
+    store.set_hold(conn, tid, hold)
+    return _back(request, f"/p/{pid}/t/{tid}")
+
+
+@router.post("/p/{pid}/t/{tid}/promote")
+def promote(request: Request, pid: str, tid: str):
+    """A candidate the researcher says is a theme already, without waiting for a second material
+    to hold a line under it. The other way in is recurrence, and Python does that one."""
+    conn = connection()
+    _mine(request, conn, pid)
+    _theme(conn, pid, tid)
+    store.set_hold(conn, tid, "open")
+    return _back(request, f"/p/{pid}/t/{tid}")
+
+
 # ---- sharing ------------------------------------------------------------------------------------
 # Not one of the researcher's verbs — nothing here spends a model call or moves a word of the
 # analysis. It is here because this is where the POSTs live, and because it takes the same

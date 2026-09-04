@@ -464,3 +464,9 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .runs thead th { color: var(--muted); font: 10px/1.35 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
 .runs td.num { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; }
 .runs .failed { display: inline-block; max-width: 52ch; color: var(--danger); white-space: normal; }
+
+/* Theme holds */
+/* The hold and its one control sit on a line together: the control is the sentence's verb, and
+   under it the head reads as two unrelated facts. */
+.theme-hold { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
+.tensions li { max-width: 76ch; }

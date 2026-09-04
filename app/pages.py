@@ -169,7 +169,10 @@ def active_runs(request: Request, pid: str) -> list[dict]:
 def theme(request: Request, pid: str, tid: str) -> str:
     conn = connection()
     user = _mine(request, conn, pid)
-    return _render("theme.html", context.theme_page(conn, pid, tid), user)
+    ctx = context.theme_page(conn, pid, tid)
+    # `role` as on the project page, and for the same reason: the Freeze and Promote controls are
+    # the owner's and an invited editor's. The boundary is the verb, not this.
+    return _render("theme.html", ctx and {**ctx, "role": store.access(conn, pid, user)}, user)
 
 
 def _attachment(name: str, ext: str) -> dict:

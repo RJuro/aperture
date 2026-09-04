@@ -288,6 +288,20 @@ def _material_title(row) -> str:
     return titles.standardize(row["title"] or row["name"])
 
 
+def _tension_notes(conn, tid: str) -> list[dict]:
+    """What has pulled against a frozen theme's definition, each with the material it came from.
+
+    A note reads as an objection to the theme, so the material it was raised in is half of it: at
+    twenty materials a note nobody can trace back to a reading cannot be followed up, and the notes
+    are the whole case for unfreezing.
+    """
+    out = []
+    for n in store.theme_notes(conn, tid):
+        m = store.material(conn, n["material_id"])
+        out.append({**dict(n), "display_title": _material_title(m) if m else ""})
+    return out
+
+
 def _analysis_steps(conn, row) -> list[dict]:
     """A compact receipt of which material-level analyses have actually landed."""
     mid = row["id"]
@@ -438,7 +452,9 @@ def project_page(conn, pid: str) -> dict:
         counts[(r["theme_id"], r["material_id"])] = r["n"]
     evidence = store.theme_evidence(conn, pid)
     themes = []
-    for t in store.live_themes(conn, pid):
+    # Candidates are project themes' juniors, not a separate page: they belong under the same
+    # headings, at the bottom, with the control that makes one a theme.
+    for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         row = dict(t)
         row["columns"] = [{"material_id": m["id"], "material": m,
                            "moments": [None] * counts.get((t["id"], m["id"]), 0)}
@@ -457,7 +473,10 @@ def project_page(conn, pid: str) -> dict:
         themes.append(row)
     # `live_themes` orders by name, which other pages depend on. Alphabetical here made a theme
     # every material carries with twenty claims look like one a single reading mentioned twice.
-    themes.sort(key=lambda r: (-r["reach"], -r["claims"], r["name"]))
+    # Frozen first: a theme the researcher has declared final is what the rest is now read
+    # against, whatever its reach, and candidates come last because they are not yet themes.
+    themes.sort(key=lambda r: (r["hold"] == "candidate", r["hold"] != "frozen",
+                               -r["reach"], -r["claims"], r["name"]))
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
     summary = _row(store.get_summary(conn, "project", pid))
@@ -482,7 +501,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     mat["display_title"] = _material_title(m)
     mat["analysis"] = _analysis_steps(conn, m)
     cards = []
-    live = [dict(t) for t in store.live_themes(conn, pid)]
+    live = [dict(t) for t in store.themes_for_material(conn, pid, mid)]
     for t in live:
         ms = [dict(x) for x in store.thread(conn, mid, t["id"])]
         if not ms:
@@ -557,6 +576,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
                            f' · {_evidence(store.theme_evidence(conn, pid).get(tid))}'),
             "codes": [dict(c) for c in store.theme_codes(conn, tid)],
+            "notes": _tension_notes(conn, tid),
             "set_aside": store.set_aside(conn, pid)}
 
 
@@ -591,7 +611,8 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     if p is None:
         return {}
     aside = _export_set_aside(conn, pid)
-    themes = {t["id"]: dict(t) for t in store.live_themes(conn, pid)}
+    themes = {t["id"]: dict(t) for t in
+              list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid))}
     mats = []
     for m in store.materials(conn, pid):
         d = dict(m)
@@ -707,7 +728,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
     out = []
     evidence = store.theme_evidence(conn, pid)
     outcomes = store.followed(conn, pid)
-    for t in store.live_themes(conn, pid):
+    for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         cover = account.coverage(conn, pid, t["id"])
         carrying, absent = [], []
         for m in cover["per_material"]:
@@ -724,6 +745,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 absent.append(row)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
+                    "notes": _tension_notes(conn, t["id"]),
                     "single": cover["materials_with"] < 2,
                     "derivation": (f'in {cover["materials_with"]} of {cover["materials_total"]} '
                                    f'materials · {_evidence(evidence.get(t["id"]))}'),
