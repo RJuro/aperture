@@ -109,3 +109,30 @@ def test_a_claim_whose_passage_another_theme_reads_says_which(client, one_materi
     html = client.get(f'/p/{d["pid"]}/m/{d["mid"]}?theme={d["first"]}').text
     assert html.count("Also read under") == 1, "only the shared passage carries the line"
     assert f'href="?theme={d["second"]}">Money at home</a>' in html
+
+
+def test_a_feedback_entry_names_what_it_was_about(client, conn, analysed):
+    """`note on m4f1c…` is unreadable a month later, and a material that was later removed
+    printed as its id in the record of what the researcher said."""
+    pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
+    title = context._material_title(store.material(conn, analysed["grande"]))
+    store.add_feedback(conn, pid, "material_summary", analysed["grande"], "note",
+                       "the crossing is underplayed")
+    store.add_feedback(conn, pid, "theme", tid, "note", "this reads as two themes")
+    store.add_feedback(conn, pid, "project_summary", pid, "note", "too tidy")
+
+    def said(text: str) -> str:
+        if "## Researcher feedback" in text:
+            return text.split("## Researcher feedback", 1)[1].split("## Processing", 1)[0]
+        return text.split('id="feedback"', 1)[1].split('id="history"', 1)[0]
+
+    for removed in (False, True):
+        for url in (f"/p/{pid}/record", f"/p/{pid}/export.md"):
+            sect = said(client.get(url).text)
+            assert f"note on {title}: " in sect and "the crossing is underplayed" in sect
+            assert "note on Work and trade: " in sect and "this reads as two themes" in sect
+            assert "note on the project: " in sect and "too tidy" in sect
+            assert "open" in sect, "and whether a rewrite has answered it"
+            assert analysed["grande"] not in sect and tid not in sect, "an id is not a reference"
+        if not removed:
+            store.remove_material(conn, pid, analysed["grande"])

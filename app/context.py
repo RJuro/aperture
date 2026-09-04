@@ -622,8 +622,14 @@ def _export_step(kind: str) -> str:
 
 
 def _export_names(conn, pid: str) -> dict[str, str]:
-    """Material id → what a person calls it. An id in a document is not a reference."""
-    return {m["id"]: _material_title(m) for m in store.materials(conn, pid)}
+    """Material id → what a person calls it. An id in a document is not a reference.
+
+    Every material the project has ever held, not only the live ones: a note about a material
+    that was later removed still has to name it, and `store.materials` would leave it printing
+    as `m4f1c…` in the record of what the researcher said.
+    """
+    return {m["id"]: _material_title(m) for m in
+            conn.execute("SELECT * FROM material WHERE project_id=?", (pid,))}
 
 
 def _export_set_aside(conn, pid: str) -> list[dict]:
@@ -698,7 +704,7 @@ def _export_comments(conn, pid: str) -> list[dict]:
     def about(f) -> str:
         kind, ref = f["target_kind"], f["target_id"]
         if kind in ("project_summary", "focus"):
-            return "the corpus"
+            return "the project"
         if kind == "theme":
             return themes.get(ref, ref)
         if kind == "thread":
