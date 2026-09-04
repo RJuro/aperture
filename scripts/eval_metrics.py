@@ -206,12 +206,16 @@ def from_record(path: Path | str) -> dict:
 
     passages: dict[str, set] = {}
     accounts: list[str] = []
-    for name, body in _sections(top.get("Themes", ""), "###"):
+    themes_md = top.get("Themes", "")
+    # Two record shapes: the older one lists themes at ### with #### sub-sections; since the
+    # corpus/single-material split, ### is the group heading, #### the theme, ##### the sub-section.
+    theme_level, sub_level = ("####", "#####") if re.search(r"^##### ", themes_md, re.M) else ("###", "####")
+    for name, body in _sections(themes_md, theme_level):
         name = name.strip()
-        appears = _sections(body, "####")
+        appears = _sections(body, sub_level)
         here = next((b for h, b in appears if h.startswith("Materials where this theme appears")),
                     "")
-        accounts.append(body.split("####")[0])
+        accounts.append(body.split(sub_level)[0])
         blocks = list(_THEME_CLAIMS.finditer(here))
         out["claims_per_theme"][name] = sum(int(m["claims"]) for m in blocks)
         out["materials_per_theme"][name] = len(blocks)
