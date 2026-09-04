@@ -81,6 +81,8 @@ def foreign(text: str, allowed: str) -> tuple[str, list[str]]:
     what the text in front of the reading is written in, never a list of scripts this instrument
     approves of, so material in Cyrillic keeps its Cyrillic and this does nothing at all.
     """
+    if not scripts(text):
+        return text, []                 # the ordinary case: nothing to weigh the material against
     ok = scripts(allowed)
     kept, dropped = [], []
     for token in (text or "").split():
@@ -93,7 +95,12 @@ def script_notes(dropped: list[str]) -> list[str]:
 
 
 def allowed_text(conn, pid: str, mid: str | None = None) -> str:
-    """What a reading of this material — or of this corpus — may be written in."""
+    """What a reading of this material — or of this corpus — may be written in.
+
+    ponytail: without `mid` this reads every material's text. At fifty materials that is a few
+    megabytes per call, next to a model call that takes a minute; pass the scripts down from the
+    step above if it ever shows up in a profile.
+    """
     proj = store.project(conn, pid)
     rows = [store.material(conn, mid)] if mid else store.materials(conn, pid)
     return " ".join([(proj["focus"] if proj else "") or ""]
