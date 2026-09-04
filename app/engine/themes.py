@@ -5,9 +5,9 @@ how often each code was hit in each material — which is how it can see what sp
 what belongs to one interview only — the researcher's focus, and any feedback on the themes in
 the researcher's own words.
 
-Python rules on what comes back: a code name that is not in the codebook is ignored, no more than
-`MAX_THEMES` themes stay live, and a theme the model wants folded into another is *merged*, never
-deleted — a moment that cited it must still resolve to something.
+Python rules on what comes back: a code name that is not in the codebook is ignored, no more
+themes stay live than the corpus can populate (`ceiling`), and a theme the model wants folded into
+another is *merged*, never deleted — a moment that cited it must still resolve to something.
 """
 from __future__ import annotations
 
@@ -16,6 +16,17 @@ import sqlite3
 from .. import llm, store
 
 MAX_THEMES = 12
+
+
+def ceiling(conn: sqlite3.Connection, pid: str) -> int:
+    """How many themes this project may carry, from how much material it has.
+
+    Twelve themes over three interviews is what a flat cap bought: five of them resting on one
+    material each, which is a coding scheme rather than a set of themes. Four, and two more for
+    every material, keeps the ceiling below what the corpus can populate — and it is a ceiling,
+    never a target, so `MAX_THEMES` still holds at the top.
+    """
+    return min(MAX_THEMES, 4 + 2 * len(store.materials(conn, pid)))
 
 
 def _verbatim(text: str, empty: str) -> str:
@@ -75,6 +86,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
     """Revise the theme set in the light of one newly read material. Returns
     {themes: [tid], merged: [tid]}."""
     proj = store.project(conn, pid)
+    cap = ceiling(conn, pid)
     system, user = llm.prompt(
         "themes",
         material=_material_block(conn, material_id),
@@ -83,7 +95,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
                                        "Group the codes on their own terms."),
         feedback=_verbatim(feedback, "The researcher has said nothing about the themes."),
-        max_themes=MAX_THEMES)
+        max_themes=cap)
     out = llm.chat_json(system, user, label="themes")
 
     by_name = {r["name"]: r["id"] for r in store.codebook(conn, pid)}
@@ -111,7 +123,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
             continue                       # merged away this pass; not re-created
         if t.get("new") or tid not in live:
             tid = None
-        if tid is None and len(live) >= MAX_THEMES:
+        if tid is None and len(live) >= cap:
             continue
         names = t.get("code_names") or []
         tid = store.save_theme(conn, pid, tid=tid, name=name, run_id=run_id,
