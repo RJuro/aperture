@@ -266,3 +266,28 @@ def test_a_database_made_before_the_check_gains_the_two_columns(tmp_path):
         assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 11
     finally:
         conn.close()
+
+
+def test_a_set_aside_claim_reaches_the_exclusions_the_page_prints(ready, conn, quote,
+                                                                  monkeypatch):
+    """The chain's run row carries it, so the researcher reads what was taken out and why in the
+    same place as every other exclusion."""
+    from app import jobs, llm
+    said: list[str] = []
+
+    def fake(system, user, *, label="", timeout=None):
+        if label == "thread":
+            return {"moments": _moments(quote, ready["mid"], 5)}
+        if label == "verify":
+            gone = [m for m in claims(conn, ready) if m["claim"] == "claim 2"][0]
+            return {"verdicts": [{"id": gone["id"], "verdict": "not",
+                                  "why": "the passage says the opposite"}]}
+        return {"summary": "s", "questions": "", "people": []}
+
+    monkeypatch.setattr(llm, "chat_json", fake)
+    monkeypatch.setattr(llm, "report", said.append, raising=False)
+    jobs.run_now(conn, ready["pid"], [{"kind": "doc", "material_id": ready["mid"]}])
+
+    notes = store.set_aside(conn, ready["pid"], ready["mid"])
+    assert any(n.startswith("a claim was set aside — its passage does not carry it:")
+               and "the passage says the opposite" in n for n in notes), notes
