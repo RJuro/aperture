@@ -41,7 +41,6 @@ from .. import llm, store
 from . import synth
 
 ACCOUNT_WORDS_MIN, ACCOUNT_WORDS = 250, 350
-GIST_WORDS = 40
 CLAIMS_SHOWN = 150
 
 # One pass over every material in the project, with this theme's live claims counted against it.
@@ -55,6 +54,19 @@ SELECT m.id AS material_id, m.name AS name, m.title AS title, m.kind AS kind,
  WHERE m.project_id = ? AND m.removed_at IS NULL
  GROUP BY m.id
  ORDER BY m.created_at, m.id
+"""
+
+# Every live claim in the project under a live theme, so this level can see which of its own
+# passages another theme is also reading. Merged themes are excluded: their claims still resolve,
+# but a reading nobody can open is not a second reading of the passage.
+_LIVE_CLAIMS = """
+SELECT mo.id AS id, mo.material_id AS material_id, mo.sid AS sid, mo.claim AS claim,
+       mo.theme_id AS theme_id, t.name AS theme
+  FROM moment mo
+  JOIN material m ON m.id = mo.material_id
+  JOIN theme t ON t.id = mo.theme_id
+ WHERE m.project_id = ? AND m.removed_at IS NULL AND mo.status = 'live' AND t.status = 'live'
+ ORDER BY m.created_at, m.id, mo.position
 """
 
 _CLAIMS = """
@@ -126,21 +138,39 @@ def _blocks(rows: list, carrying: list[dict]) -> tuple[str, int]:
     return "\n\n".join(out), held_back
 
 
+def _shared_block(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
+    """This theme's passages that another live theme also reads, with the other reading beside it.
+
+    A real run came back with the same passages under three and four themes, each account
+    presenting its own reading as the only one and two of them pulling in opposite directions. A
+    model that is not shown the other reading cannot say what its own adds, so it is shown.
+    """
+    rows = [dict(r) for r in conn.execute(_LIVE_CLAIMS, (pid,))]
+    others: dict[tuple[str, str], list[dict]] = {}
+    for r in rows:
+        if r["theme_id"] != theme_id:
+            others.setdefault((r["material_id"], r["sid"]), []).append(r)
+    out = [f'[{r["id"]}] {r["claim"]} — also under {o["theme"]}: {o["claim"]}'
+           for r in rows if r["theme_id"] == theme_id
+           for o in others.get((r["material_id"], r["sid"]), [])]
+    return "\n".join(out) or "None."
+
+
 def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         run_id: str | None = None) -> dict:
-    """What this theme amounts to across the corpus, and a gist rewritten to match.
+    """What this theme amounts to across the corpus. Returns {text, dropped, coverage}.
 
-    Returns {text, gist, dropped, coverage}. The prose is stored against the theme, and the gist
-    goes through `store.set_theme_gist` — `save_theme` also rewrites which codes a theme gathers,
-    and this level has never been told which codes belong where, so writing a gist through it
-    would quietly empty the theme.
+    It does not touch the theme's definition. It used to rewrite the gist with what it had just
+    concluded, and THEMES reads the gists as its live theme set — so a conclusion flowed forward
+    into the next grouping and the definition widened until it admitted whatever had turned up.
+    A gist defines and an account concludes (PLAN.md §3, law 5); only THEMES writes the first.
     """
     cover = coverage(conn, pid, theme_id)
     live_themes = {t["id"]: t for t in store.live_themes(conn, pid)}
     if theme_id not in live_themes:
         # Merged away between the run being queued and the run happening. Say so; do not spend a
         # call writing about a theme the project no longer has.
-        return {"text": "", "gist": "", "coverage": cover,
+        return {"text": "", "coverage": cover,
                 "dropped": [f"theme {theme_id} is not live in this project — "
                             "no account was written"]}
 
@@ -148,24 +178,21 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
     carrying = [m for m in cover["per_material"] if m["claims"]]
     absent = [m for m in cover["per_material"] if not m["claims"]]
     if not carrying:
-        return {"text": "", "gist": "", "coverage": cover,
+        return {"text": "", "coverage": cover,
                 "dropped": [f'no claim in this project rests on "{theme["name"]}" yet — '
                             "there is nothing to write an account from"]}
 
     rows = [dict(r) for r in conn.execute(_CLAIMS, (pid, theme_id))]
     materials, held_back = _blocks(rows, carrying)
 
-    reach = (f'It runs through {cover["materials_with"]} of the '
-             f'{cover["materials_total"]} materials in this project, '
-             f'{cover["claims"]} claims in all')
-    reach += f", of which {cover['claims'] - held_back} are shown below." if held_back else "."
     proj = store.project(conn, pid)
 
     system, user = llm.prompt(
         "account",
-        theme=f'"{theme["name"]}" — {theme["gist"] or "no gist yet"}\n{reach}',
+        theme=f'"{theme["name"]}" — {theme["gist"] or "no gist yet"}',
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
         materials=materials,
+        shared=_shared_block(conn, pid, theme_id),
         absent="\n".join(f'{m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}'
                          for m in absent)
         or "None. Every material in this project carries this theme somewhere.",
@@ -191,13 +218,8 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         dropped.append(f"the account came back at {len(text.split())} words, under the "
                        f"{ACCOUNT_WORDS_MIN} asked for")
 
-    # The gist first: it is part of what the next chain compares against, so an account stored
-    # with a fingerprint taken before it was rewritten would be rewritten again for nothing.
-    gist = synth.words(data.get("gist"), GIST_WORDS)
-    if gist:
-        store.set_theme_gist(conn, theme_id, gist)
     if text:
         store.save_summary(conn, "theme", theme_id, "reading", text, run_id,
                            fingerprint=fingerprint(conn, pid, theme_id))
 
-    return {"text": text, "gist": gist, "dropped": dropped, "coverage": cover}
+    return {"text": text, "dropped": dropped, "coverage": cover}
