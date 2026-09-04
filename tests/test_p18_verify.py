@@ -377,3 +377,11 @@ def test_the_check_is_shown_the_numbered_sentences_the_claims_and_the_frame(read
     for m in claims(conn, ready):
         assert f'[{m["id"]}] {m["claim"]} — "{m["anchor"]}" [{m["sid"]}]' in shown
     assert "kind: interview" in shown, "the frame"
+
+
+def test_the_paragraph_the_summary_was_written_in_survives_the_check(ready, conn, model, quote):
+    """A summary a researcher reads first is also one they read the shape of."""
+    doc_with(model, conn, ready, quote,
+             [{"n": 2, "verdict": "not", "why": "no claim names a port"}],
+             summary="One holds. Two does not.\n\nThree stands alone.")
+    assert stored(conn, ready) == "One holds.\n\nThree stands alone."
