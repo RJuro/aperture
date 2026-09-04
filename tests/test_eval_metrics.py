@@ -72,21 +72,20 @@ def test_stray_script_is_not_reported_when_the_material_is_not_latin(conn, proje
     assert eval_metrics.from_db(conn, project)["non_latin"]["checked"] is False
 
 
-def test_what_a_verify_step_set_aside_is_absent_rather_than_zero(conn, analysed):
-    """The verify step is still being built. A column that is not there yet reports as not
-    measured — reported as 0 it would look like a step that ran and found nothing."""
+def test_what_a_verify_step_set_aside_is_zero_when_it_ran_and_kept_everything(conn, analysed):
+    """The column exists (schema 11), so the count is measured: nothing set aside reads as 0, and
+    the run notes are counted from their own source."""
     pid = analysed["pid"]
     rid = store.start_run(conn, pid, "doc", analysed["grande"], "x")
     store.finish_run(conn, rid, notes=['the quote does not carry it: "we sailed in March"',
                                        "1 quote(s) ran past the 12-word cap and were kept"])
     aside = eval_metrics.from_db(conn, pid)["set_aside"]
-    assert aside["verify_superseded_claims"] is None, "no support_note column in this schema"
+    assert aside["verify_superseded_claims"] == 0
     assert aside["runs_saying_does_not_carry_it"] == 1
     assert aside["notes_total"] == 2
 
 
-def test_the_verify_column_is_counted_once_it_exists(conn, analysed):
-    conn.execute("ALTER TABLE moment ADD COLUMN support_note TEXT DEFAULT ''")
+def test_a_claim_the_verify_step_set_aside_is_counted(conn, analysed):
     live = store.moments(conn, analysed["grande"])[0]
     conn.execute("UPDATE moment SET status='superseded', support_note='the quote does not carry "
                  "it' WHERE id=?", (live["id"],))
