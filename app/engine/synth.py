@@ -355,6 +355,14 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped = [], []
+    # ponytail: one theme at a time, and this is the dominant cost of the whole chain — 1351 s
+    # for a nine-theme material. The calls are NOT independent, which is why they are still a
+    # loop: `_claimed_block` shows each line what the lines before it have already claimed in
+    # this material, and that is what stops one passage coming back under three themes (pinned
+    # by test_p3_synth_check's "a line is shown what another theme has already claimed here").
+    # Side by side — the model calls in threads, the writes here in theme order — is worth about
+    # four minutes a material, and costs that guard within a pass. Trade it deliberately or not
+    # at all.
     for i, tid in enumerate(live, 1):
         llm.report(f"theme {i} of {len(live)}: {live[tid]['name']}")
         kept, d, st = _thread(conn, mid, tid, run_id=run_id)
