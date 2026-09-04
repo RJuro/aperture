@@ -135,6 +135,13 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .head-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: start; }
 .head-actions { display: flex; gap: 7px; }
 .head-stat { margin-top: 18px; }
+/* The head counted materials; how far the reading had got was four rows below, in four receipts.
+   One segment per material, each filled by how many of its own four steps have landed. */
+.reading-bar { max-width: 300px; margin-top: 20px; display: flex; gap: 5px; }
+.reading-bar .seg { position: relative; height: 3px; flex: 1; background: var(--border); }
+.reading-bar .seg::after { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(var(--f) * 25%); background: var(--fg); }
+.reading-bar .seg.active::after { background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
+.reading-bar .seg.failed::after { background: var(--danger); }
 .overview-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .55fr); gap: clamp(42px, 7vw, 90px); align-items: start; }
 .summary-copy { max-width: 78ch; font: 18px/1.68 var(--font-display); }
 .summary-copy p { margin: 0 0 1em; }
@@ -164,11 +171,30 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .themes th.gist > a { font: 600 17px var(--font-display); }
 .themes th.gist > span { display: block; max-width: 42ch; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 400; }
 .themes td { text-align: center; }
-.themes td a { min-width: 34px; display: inline-block; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font: 11px var(--font-mono); }
-.themes td a:hover { border-color: var(--accent); color: var(--accent); }
+/* Pills made a count read as a control. A number with a hairline under it is still plainly a
+   link, and eight of them across a row no longer outweigh the theme they belong to. */
+.themes td a { min-width: 34px; display: inline-block; padding: 5px 7px; border-bottom: 1px solid var(--border); color: var(--muted); font: 12px var(--font-mono); font-variant-numeric: tabular-nums; transition: color .18s cubic-bezier(.2, .7, .2, 1); }
+.themes td a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+/* Ordered by reach, the table can also be sized by it: three steps, so a theme every material
+   carries is read before one a single reading mentioned twice. One ink, no scale. */
+.themes tr.tier-1 th.gist > a { font-size: 20px; }
+.themes tr.tier-3 th.gist > a { color: var(--muted); font-size: 15px; font-weight: 500; }
+.themes tr.tier-3 th.gist > span { color: var(--faint); }
+/* Claims against the largest theme on the page — the line above the table says so. */
+.themes th.gist::after { content: ''; display: block; width: calc(var(--w) * 240px); height: 2px; margin-top: 11px; background: var(--faint); transition: background .18s cubic-bezier(.2, .7, .2, 1); }
+.themes tbody tr:hover th.gist > a { color: var(--fg); }
+.themes tbody tr:hover th.gist::after { background: var(--fg); }
 /* A theme resting on one material is a motif in that material, and side by side with the rest it
    read as if it had the same reach. The label is what separates them. */
 .theme-group { margin: 26px 0 10px; color: var(--muted); font: 700 10px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
+/* Nine one-material motifs took most of the section and told the reader least, so past three the
+   group folds. The heading is the summary, or the group loses its name when it is closed. */
+.theme-fold > summary { display: flex; align-items: baseline; gap: 12px; list-style: none; }
+.theme-fold > summary::-webkit-details-marker { display: none; }
+.theme-fold > summary::after { content: 'Show'; color: var(--muted); font: 10px var(--font-mono); }
+.theme-fold[open] > summary::after { content: 'Fold'; }
+.theme-fold.folds[open] > .scroller { animation: reveal .18s cubic-bezier(.2, .7, .2, 1); }
+@keyframes reveal { from { opacity: 0; transform: translateY(-5px); } }
 
 /* Material list and its analysis receipt */
 .material-list { border-top: 1px solid var(--border); }
@@ -176,15 +202,18 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .material-main { min-width: 0; }
 .material-name { display: block; overflow: hidden; font: 600 18px var(--font-display); text-overflow: ellipsis; white-space: nowrap; }
 .material-main .meta { display: block; margin-top: 4px; }
-.analysis-receipt { display: flex; flex-wrap: wrap; gap: 6px; }
-.analysis-step { min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font: 9px var(--font-mono); letter-spacing: .03em; text-transform: uppercase; }
-.analysis-step i { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
-.analysis-step.done { color: var(--fg); }
-.analysis-step.done i { background: var(--accent); }
-.analysis-step.active { color: var(--accent); border-color: color-mix(in oklch, var(--accent) 28%, var(--border)); background: var(--accent-soft); }
-.analysis-step.active i { background: var(--accent); animation: pulse 1.7s infinite; }
+/* Four bordered pills of 9px uppercase read as four controls next to a material's name. A receipt
+   is a receipt: a dot and a word. The dot carries the state by shape as well as by ink — hollow
+   waiting, filled done, square failed — so the four are told apart without colour. */
+.analysis-receipt { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.analysis-step { min-height: 24px; display: inline-flex; align-items: center; gap: 6px; color: var(--faint); font: 10px var(--font-mono); letter-spacing: .02em; }
+.analysis-step i { width: 6px; height: 6px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--faint); }
+.analysis-step.done { color: var(--muted); }
+.analysis-step.done i { background: var(--fg); box-shadow: none; }
+.analysis-step.active { color: var(--accent); }
+.analysis-step.active i { background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
 .analysis-step.failed { color: var(--danger); }
-.analysis-step.failed i { background: var(--danger); }
+.analysis-step.failed i { border-radius: 2px; background: var(--danger); box-shadow: none; }
 .analysis-receipt > .small { flex-basis: 100%; color: var(--danger); font-size: 12px; }
 .row-menu, .head-menu { position: relative; }
 .row-menu > summary, .head-menu > summary { min-width: 44px; min-height: 44px; display: grid; place-items: center; border-radius: var(--radius); list-style: none; font-weight: 700; letter-spacing: .08em; }

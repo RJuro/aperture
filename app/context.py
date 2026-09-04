@@ -409,6 +409,13 @@ def project_page(conn, pid: str) -> dict:
         m["out_of_date"] = m["id"] in stale
         m["analysis"] = _analysis_steps(conn, m)
         m["analysis_done"] = sum(s["state"] == "done" for s in m["analysis"])
+        # One word for where this material has got to, so the head can say how far the reading
+        # has come without the reader counting four receipts across four rows.
+        states = {s["state"] for s in m["analysis"]}
+        m["reading"] = ("failed" if "failed" in states else "active" if "active" in states
+                        else "done" if m["analysis_done"] == 4 else "waiting")
+    reading = {k: sum(1 for m in mats if m["reading"] == k)
+               for k in ("done", "active", "failed", "waiting")}
     # One query for the whole grid rather than themes x materials calls to `thread`: at twelve
     # themes and fifty materials that loop was six hundred queries to render a table of counts.
     counts: dict[tuple[str, str], int] = {}
@@ -428,16 +435,23 @@ def project_page(conn, pid: str) -> dict:
         # listed beside the others it reads as if it had the same reach. `single` is what the
         # page groups by.
         row["single"] = carried < 2
+        row["reach"], row["claims"] = carried, sum(len(c["moments"]) for c in row["columns"])
+        # Three steps, so the table can set the strongest themes larger: carried by every
+        # material, by several, or by one.
+        row["tier"] = 3 if row["single"] else 1 if carried == len(mats) else 2
         row["derivation"] = (f'{carried} of {len(mats)} materials · '
                              f'{_evidence(evidence.get(t["id"]))}')
         themes.append(row)
+    # `live_themes` orders by name, which other pages depend on. Alphabetical here made a theme
+    # every material carries with twenty claims look like one a single reading mentioned twice.
+    themes.sort(key=lambda r: (-r["reach"], -r["claims"], r["name"]))
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
     summary = _row(store.get_summary(conn, "project", pid))
     # What it may mean, kept apart from what it shows: one is cited, the other argued with.
     reading_of = _row(store.get_summary(conn, "project", pid, "interpretation"))
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
-            "page_section": "overview",
+            "page_section": "overview", "reading": reading,
             "summary": summary,
             "summary_html": cite(summary["text"], index, pid) if summary else "",
             "interpretation": reading_of,

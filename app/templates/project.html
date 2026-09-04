@@ -2,9 +2,13 @@
 {% block main %}
 <section class="section project-head" id="overview">
   <div class="container">
-    <p class="eyebrow">Project overview</p>
     <div class="head-row"><div><h1>{{ project.name | txt }}</h1>
-      <p class="lead">{{ materials | length }} {{ 'material' | plural(materials | length) }} in the current reading.</p></div>
+      {% if materials %}
+      <div class="reading-bar" role="img" aria-label="One segment per material, each filled by how many of its four analysis steps are done">
+        {% for m in materials %}<span class="seg {{ m.reading }}" style="--f: {{ m.analysis_done }}"></span>{% endfor %}
+      </div>
+      <p class="lead">{{ reading.done }} of {{ materials | length }} {{ 'material' | plural(materials | length) }} fully read{% if reading.active %} · {{ reading.active }} being read{% endif %}{% if reading.failed %} · {{ reading.failed }} stopped{% endif %}{% if reading.waiting %} · {{ reading.waiting }} not read yet{% endif %}.</p>
+      {% else %}<p class="lead">No material added yet.</p>{% endif %}</div>
       <a class="btn btn-secondary" href="/p/{{ project.id }}/record">Reading record</a>
     </div>
   </div>
@@ -49,19 +53,24 @@
 
 <section class="section" id="themes">
 <div class="container">
-<div class="section-heading"><div><p class="eyebrow">Across the corpus</p><h2>Themes</h2></div><span class="meta">Select a count to inspect its supporting claims</span></div>
+<div class="section-heading"><h2>Themes</h2></div>
 {% if themes %}
-<p class="dim small">Numbers are claims per theme and material; select one to read them. A dash means none.</p>
+{% set most = themes | map(attribute='claims') | max or 1 %}{# themes are named before any claim is read #}
+<p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. A dash means none.</p>
 {% if materials | length == 1 %}<p class="dim small">With one material, a theme cannot yet run across materials.</p>{% endif %}
 {% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}
 {% if rows %}
-<h3 class="theme-group">{{ group }}</h3>
+{# Nine themes each resting on one material took most of the page and told the reader least.
+   Folded they are one line, still open to anyone who wants them, and still in the page's text. #}
+{% set fold = rows[0].single and rows | length > 3 %}
+<details class="theme-fold{% if fold %} folds{% endif %}"{% if not fold %} open{% endif %}>
+<summary><h3 class="theme-group">{{ group }} · {{ rows | length }} {{ 'theme' | plural(rows | length) }}</h3></summary>
 <div class="scroller">
 <table class="themes">
   <thead><tr><th>Theme</th>{% for m in materials %}<th class="material">{{ m.display_title | txt }}</th>{% endfor %}</tr></thead>
   <tbody>
 {% for t in rows %}
-  <tr>
+  <tr class="tier-{{ t.tier }}" style="--w: {{ (t.claims / most) | round(3) }}">
     <th class="gist"><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a>
         <br><span>{{ t.gist | prose }}</span>
         <br><span class="dim">{{ t.derivation }}</span></th>
@@ -73,6 +82,7 @@
   </tbody>
 </table>
 </div>
+</details>
 {% endif %}
 {% endfor %}
 {% else %}
@@ -83,7 +93,7 @@
 
 <section class="section" id="materials">
 <div class="container">
-<div class="section-heading"><div><p class="eyebrow">Source material</p><h2>Materials</h2></div><span class="meta">Each row shows what has been completed</span></div>
+<div class="section-heading"><h2>Materials</h2></div>
 <ul class="material-list">
 {% for m in materials %}
   <li>
@@ -117,7 +127,7 @@
 </ul>
 {% if problem %}<p class="problem">{{ problem | txt }}</p>{% endif %}
 <details class="add-drawer"{% if not materials or problem %} open{% endif %}>
-  <summary><span><strong>Add material</strong><small>Upload files or paste source text. Analysis starts in the background.</small></span></summary>
+  <summary><span><strong>Add material</strong><small>Analysis starts in the background.</small></span></summary>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
     <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"><small>.txt, .md, .docx, .pdf, or .csv · each file becomes one material</small></label>
     <div class="paste-fields"><label>Or paste text — material name <input name="name" placeholder="Material name"></label>
@@ -131,7 +141,7 @@
 <section class="section research-actions">
 <div class="container">
 <details class="action-drawer">
-  <summary><span><strong>Research actions</strong><br><small>Respond to the synthesis or check a claim against all material.</small></span></summary>
+  <summary><span><strong>Research actions</strong></span></summary>
   <div class="action-grid">
     <form method="post" action="/p/{{ project.id }}/react" class="action-card">
       <h3>Respond to the project synthesis</h3><p>Your words guide the next corpus-level revision.</p>
