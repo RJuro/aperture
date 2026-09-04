@@ -25,6 +25,7 @@ import hashlib
 import json
 import os
 import re
+import threading
 import time
 from collections.abc import Callable, MutableMapping
 from pathlib import Path
@@ -101,6 +102,10 @@ class _Usage(MutableMapping):
 
 
 usage = _Usage()
+
+# A wave of THREAD calls shares one counter (the dict its context inherited), and `+=` on a dict is
+# read-then-write. Without this two calls that finish together bill one of them to nobody.
+_TOKENS = threading.Lock()
 
 
 def new_usage() -> None:
@@ -332,8 +337,9 @@ def _send(body: dict, timeout: float | None) -> str:
                 for choice in ev.get("choices") or []:
                     chunks.append(_content((choice.get("delta") or {}).get("content")))
                 if u := ev.get("usage"):
-                    usage["tokens_in"] += u.get("prompt_tokens", 0) or 0
-                    usage["tokens_out"] += u.get("completion_tokens", 0) or 0
+                    with _TOKENS:
+                        usage["tokens_in"] += u.get("prompt_tokens", 0) or 0
+                        usage["tokens_out"] += u.get("completion_tokens", 0) or 0
 
     return "".join(chunks)
 

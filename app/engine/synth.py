@@ -21,9 +21,11 @@ enters another prompt — everything else the model writes is shown to a researc
 """
 from __future__ import annotations
 
+import contextvars
 import re
 import textwrap
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 
 from .. import anchor, llm, store
 
@@ -35,6 +37,10 @@ INTERPRETATION_WORDS = 150
 # What one theme amounts to in one material. Short, because the claims below it are the finding
 # and this only says how they hang together.
 THREAD_WORDS = 90
+
+# How many of a material's lines are written at once (see `doc`). Three, not all of them: a line is
+# shown what the waves before it claimed here, and a wave of ten would show the tenth line nothing.
+WAVE = 3
 
 _CITE = re.compile(r"\s*\[([^\[\]]+)\]")
 
@@ -268,22 +274,18 @@ def _claimed_block(conn, mid: str, tid: str) -> str:
     return "\n".join(f'{r["sid"]} — {r["theme"]} — {r["claim"]}' for r in ordered) or "None yet."
 
 
-def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
-    """One theme's line through one material — one call, full attention.
+def _thread_prompt(conn, mid: str, tid: str) -> tuple[tuple[str, str], list, dict, str]:
+    """What one line's call needs, read on THIS connection: the prompt, the passages its answer
+    will be bound against, the theme, the project.
 
-    It used to be one call for every theme at once, plus the summary, plus the brief, plus the
-    people. Six lines of four to fourteen claims each from a single answer is how lines come out
-    thin: the model is rationing its attention across them. Now each line is its own call and the
-    summary is written afterwards, over lines that exist.
+    Split out of `_thread` so a wave of lines can be prepared here, in theme order — each shown
+    what the waves before it claimed — and the calls themselves made off in threads.
     """
     row = store.material(conn, mid)
     pid = row["project_id"]
     proj = store.project(conn, pid)
     theme = conn.execute("SELECT * FROM theme WHERE id=?", (tid,)).fetchone()
-    sents = store.sentences(conn, mid)
-    nums = numbers(sents)
-
-    system, user = llm.prompt(
+    prompt = llm.prompt(
         "thread",
         theme=f'{theme["id"]}  {theme["name"]} — {theme["gist"]}',
         codes=_theme_codes_block(conn, mid, tid),
@@ -294,8 +296,17 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         material=layout(conn, mid),
         min_moments=MIN_MOMENTS, max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
     )
-    data = llm.chat_json(system, user, label="thread")
+    return prompt, store.sentences(conn, mid), theme, pid
 
+
+def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: str, *,
+                 run_id: str | None) -> tuple[list[dict], list[str], dict]:
+    """One answer → this line's moments, bound against the material, capped and written.
+
+    On the caller's connection, always: the calls of a wave run side by side, the writes that
+    follow them do not.
+    """
+    nums = numbers(sents)
     stats, dropped, kept = anchor.new_stats(), [], []
     # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw away
     # untested moments and could then leave the line under the floor.
@@ -337,12 +348,26 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
     return kept, dropped, stats
 
 
+def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
+    """One theme's line through one material — one call, full attention.
+
+    It used to be one call for every theme at once, plus the summary, plus the brief, plus the
+    people. Six lines of four to fourteen claims each from a single answer is how lines come out
+    thin: the model is rationing its attention across them. Now each line is its own call and the
+    summary is written afterwards, over lines that exist.
+    """
+    prompt, sents, theme, pid = _thread_prompt(conn, mid, tid)
+    data = llm.chat_json(*prompt, label="thread")
+    return _thread_kept(conn, mid, tid, data, sents, theme, pid, run_id=run_id)
+
+
 def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = None) -> dict:
     """Write this material's lines, then its summary over them.
 
     `only_theme` re-makes one line and leaves the summary, the questions and the people exactly as
-    they are. Otherwise every live theme gets its own call, and the summary call sees the lines
-    that actually exist rather than being asked to write them and introduce them in one breath.
+    they are. Otherwise every live theme gets its own call — in waves of `WAVE`, side by side —
+    and the summary call sees the lines that actually exist rather than being asked to write them
+    and introduce them in one breath.
     """
     from . import verify, verify_summary   # they read this module; imported here so neither waits on the other
     row = store.material(conn, mid)
@@ -372,21 +397,34 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped = [], []
-    # ponytail: one theme at a time, and this is the dominant cost of the whole chain — 1351 s
-    # for a nine-theme material. The calls are NOT independent, which is why they are still a
-    # loop: `_claimed_block` shows each line what the lines before it have already claimed in
-    # this material, and that is what stops one passage coming back under three themes (pinned
-    # by test_p3_synth_check's "a line is shown what another theme has already claimed here").
-    # Side by side — the model calls in threads, the writes here in theme order — is worth about
-    # four minutes a material, and costs that guard within a pass. Trade it deliberately or not
-    # at all.
-    for i, tid in enumerate(live, 1):
-        llm.report(f"theme {i} of {len(live)}: {live[tid]['name']}")
-        kept, d, st = _thread(conn, mid, tid, run_id=run_id)
-        tally(st)
-        dropped += d
-        if kept:
-            threads.append({"theme_id": tid, "moments": kept})
+    order = list(live)               # live_themes order, so the waves compose the same way twice
+    # In waves, because this is the dominant cost of the whole chain — nine to ten calls at 60–80
+    # s each, 1351 s for one nine-theme material — and the calls are not independent. The guard the
+    # sequence existed for is kept whole: every line is shown what the waves BEFORE it claimed in
+    # this material (`_claimed_block`, built here in theme order just before the wave goes out),
+    # which is what stops one passage coming back under three themes. What a line no longer sees is
+    # its own wave-mates, claiming at the same moment as it.
+    #
+    # Up to `jobs.PARALLEL` × WAVE calls are therefore in flight when DOC steps run side by side.
+    # No semaphore: the provider answers over its rate limit with a 429 and `llm._ask` waits that
+    # out, which is the same answer a semaphore would give more slowly.
+    with ThreadPoolExecutor(max_workers=WAVE) as pool:
+        for at in range(0, len(order), WAVE):
+            wave = order[at:at + WAVE]
+            prepared = [_thread_prompt(conn, mid, tid) for tid in wave]
+            # Each in its OWN copy of this context, so `llm.usage` and `llm.report` are still this
+            # step's — the tokens land on this run row (see llm.new_usage).
+            answers = [f.result() for f in [
+                pool.submit(contextvars.copy_context().run, llm.chat_json, *prompt,
+                            label="thread") for prompt, *_ in prepared]]
+            for tid, (_, sents, theme, tpid), data in zip(wave, prepared, answers):
+                kept, d, st = _thread_kept(conn, mid, tid, data, sents, theme, tpid,
+                                           run_id=run_id)
+                tally(st)
+                dropped += d
+                if kept:
+                    threads.append({"theme_id": tid, "moments": kept})
+            llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written")
 
     # Before the summary, never after: a summary written over a claim the passage does not carry
     # introduces that claim by name, and the claim is gone by the time anyone reads it.
