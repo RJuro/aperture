@@ -158,14 +158,19 @@ def test_the_runner_runs_exactly_the_chain_the_application_runs(corpus, tmp_path
     assert eval_run.main(["--materials", str(corpus), "--focus", "why people left",
                           "--data", str(tmp_path / "v2data"), "--out", str(out)]) == 0
 
-    assert ran == ["frame", "angles", "read", "frame", "angles", "read",
-                   "themes", "themes", "doc", "doc", "accounts", "project"], \
-        "the same chain as jobs.ingest_chain, in the same order"
+    printed = capsys.readouterr().out
+    assert ("12 steps: frame → angles → read → frame → angles → read → themes → themes → "
+            "doc → doc → accounts → project") in printed, \
+        "the same chain as jobs.ingest_chain, planned in the same order"
+    # What it RUNS is that plan in stages: the two materials side by side, THEMES one at a time,
+    # the corpus level last (`jobs._stages`). So the tail is fixed and the rest is a multiset.
+    assert sorted(ran) == sorted(["frame", "angles", "read"] * 2 +
+                                 ["themes", "themes", "doc", "doc", "accounts", "project"])
+    assert ran[6:8] == ["themes", "themes"] and ran[-2:] == ["accounts", "project"]
     assert out.exists() and out.with_suffix(".metrics.json").exists()
     metrics = json.loads(out.with_suffix(".metrics.json").read_text())
     assert metrics["materials"] == 2, "the .rtf and the dotfile were not material"
     assert metrics["source"] == "db"
-    printed = capsys.readouterr().out
     assert "Reading one.txt" in printed and "Finding themes" in printed
     assert "0 in / 0 out" in printed, "every step prints what it spent"
 

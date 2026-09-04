@@ -19,12 +19,14 @@ phase once against M3, commit the recordings, and the suite replays them offline
 """
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import hashlib
 import json
 import os
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, MutableMapping
 from pathlib import Path
 
 import httpx
@@ -57,11 +59,70 @@ _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
 BUSY_WAITS = (15, 30, 60, 120, 240)
 _sleep = time.sleep
 
-# Set by jobs.py around a run so usage lands on the right run row.
-usage: dict = {"tokens_in": 0, "tokens_out": 0}
+# The token counter and the progress hook are PER CONTEXT, not per process. A chain runs several
+# materials side by side (`jobs.PARALLEL`), and one module-level dict billed one material's tokens
+# to another material's run row — which is why nothing could run in parallel before. A thread
+# started with `contextvars.copy_context().run` inherits both, and `jobs` replaces both around
+# every step, so each step's tokens and each step's progress line land on its own row.
+_usage: contextvars.ContextVar[dict] = contextvars.ContextVar("usage")
+_report: contextvars.ContextVar[Callable[[str], None]] = contextvars.ContextVar(
+    "report", default=lambda msg: None)
 
-# Set by jobs.py around a step, so a wait says so on the page instead of looking like a hang.
-report: Callable[[str], None] = lambda msg: None
+
+class _Usage(MutableMapping):
+    """`llm.usage`, one counter per context. A mapping rather than a function so no caller
+    changed: `usage["tokens_in"] += n`, `usage.get(...)`, `usage.update(...)` and `dict(usage)`
+    all still mean what they meant when this was a module-level dict."""
+
+    def _d(self) -> dict:
+        d = _usage.get(None)
+        if d is None:
+            d = {"tokens_in": 0, "tokens_out": 0}
+            _usage.set(d)
+        return d
+
+    def __getitem__(self, k):
+        return self._d()[k]
+
+    def __setitem__(self, k, v):
+        self._d()[k] = v
+
+    def __delitem__(self, k):
+        del self._d()[k]
+
+    def __iter__(self):
+        return iter(self._d())
+
+    def __len__(self):
+        return len(self._d())
+
+    def __repr__(self):
+        return repr(self._d())
+
+
+usage = _Usage()
+
+
+def new_usage() -> None:
+    """Start this context's counter at zero, as a NEW dict — a context that inherited another
+    step's counter must not go on adding to it."""
+    _usage.set({"tokens_in": 0, "tokens_out": 0})
+
+
+def report(msg: str) -> None:
+    """Where the step has got to, on the row the page is already reading. Outside a step nobody
+    is listening; while several steps run at once each one writes on its own row."""
+    _report.get()(msg)
+
+
+@contextlib.contextmanager
+def reporting(hook: Callable[[str], None]):
+    """`report` writes here for the length of this step, in this context and no other."""
+    token = _report.set(hook)
+    try:
+        yield
+    finally:
+        _report.reset(token)
 
 
 class LLMError(RuntimeError):

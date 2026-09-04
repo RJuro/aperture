@@ -33,14 +33,24 @@ def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, gr
 def test_one_upload_of_several_files_is_one_chain_with_one_tail(conn, project, grande, rodwin,
                                                                 monkeypatch):
     """Five files used to mean five chains, each re-finding themes and rewriting the corpus
-    summary behind the four still waiting behind it."""
+    summary behind the four still waiting behind it.
+
+    Two materials are framed, ideated, read and written up beside each other now (`jobs._stages`),
+    so what holds is each material's own order, THEMES one at a time in the planned order, and one
+    tail for the upload — not one flat list of twelve.
+    """
     ran = _stub(monkeypatch)
     assert jobs.wait(jobs.ingest_chain(project, [grande, rodwin], conn_factory=db.connect), 10)
-    assert ran == ["frame", "angles", "read", "frame", "angles", "read",
-                   "themes", "themes", "doc", "doc", "accounts", "project"]
+    assert sorted(ran) == sorted(["frame", "angles", "read"] * 2 +
+                                 ["themes", "themes", "doc", "doc", "accounts", "project"])
+    assert ran[6:8] == ["themes", "themes"], "after every material has been read"
+    assert ran[-2:] == ["accounts", "project"], "and the corpus level once, at the end"
     rows = store.runs(conn, project)
+    for mid in (grande, rodwin):
+        assert [r["kind"] for r in rows if r["material_id"] == mid] == \
+            ["frame", "angles", "read", "themes", "doc"], "one material's own order is kept"
     assert [r["material_id"] for r in rows if r["kind"] == "themes"] == [grande, rodwin]
-    assert [r["material_id"] for r in rows if r["kind"] == "doc"] == [grande, rodwin]
+    assert {r["material_id"] for r in rows if r["kind"] == "doc"} == {grande, rodwin}
 
 
 def test_every_run_row_carries_a_sentence_a_researcher_can_read(conn, project, grande, monkeypatch):
