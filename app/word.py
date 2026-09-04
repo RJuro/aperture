@@ -41,9 +41,10 @@ def document(markdown: str, title: str, when: str) -> bytes:
             continue
         if s.startswith("#"):
             hashes = len(s) - len(s.lstrip("#"))
-            # Four levels, because the record has four: a theme's name and "materials where this
-            # theme appears" flattened onto one level make Word's navigation pane useless.
-            _write(doc.add_heading("", min(hashes, 4)), s[hashes:].strip())
+            # Five levels, because the record has five: the two groups of themes, a theme's name
+            # and "materials where this theme appears" flattened onto one level make Word's
+            # navigation pane useless.
+            _write(doc.add_heading("", min(hashes, 5)), s[hashes:].strip())
         elif s.startswith("- "):
             _write(doc.add_paragraph(style="List Bullet"), s[2:])
         elif s.startswith("> "):

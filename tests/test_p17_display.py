@@ -1,0 +1,86 @@
+"""P17 — what the reader is left to work out for themselves.
+
+A review of a real three-material reading found four places where the display made the researcher
+do the analysis: twelve themes side by side with a tag saying how many materials each rested on,
+so the corpus themes and the single-material motifs had to be told apart by eye; a claim count
+that counted one passage once per theme that read it; feedback entries printed as ids; and one
+flat list of everything every reading dropped, with the material's name repeated on each line.
+"""
+from __future__ import annotations
+
+import pytest
+
+from app import context, store
+
+
+@pytest.fixture
+def client(conn, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main, pages
+    monkeypatch.setattr(pages, "connection", lambda: conn, raising=False)
+    return TestClient(main.app)
+
+
+def _themes(text: str) -> str:
+    """The themes section of a page or of the document, and nothing else — a theme's name is in
+    the record's contents list long before the section that groups them."""
+    if "\n## Themes\n" in text:
+        return text.split("\n## Themes\n", 1)[1].split("\n## Materials\n", 1)[0]
+    return text.split('id="themes"', 1)[1].split('id="materials"', 1)[0]
+
+
+@pytest.fixture
+def one_material(conn, project, grande):
+    """One material, two themes over it, one passage read under both.
+
+    Three passages: the first theme rests on A and B, the second on B and twice on C. So the
+    second has three claims and two passages, and B is shared.
+    """
+    picked = []
+    for sid, text in store.sentences(conn, grande):
+        if 5 <= len(text.split()) <= 12:
+            picked.append((sid, " ".join(text.split()[:8])))
+        if len(picked) == 3:
+            break
+    (a, qa), (b, qb), (c, qc) = picked
+    first = store.save_theme(conn, project, tid=None, name="Crossing the river",
+                             gist="the water and what it cost", code_ids=[])
+    second = store.save_theme(conn, project, tid=None, name="Money at home",
+                              gist="what was sent back", code_ids=[])
+    store.save_moments(conn, grande, first, [{"claim": "The river was the price", "anchor": qa,
+                                              "sid": a},
+                                             {"claim": "He paid to cross", "anchor": qb, "sid": b}])
+    store.save_moments(conn, grande, second, [{"claim": "The crossing was paid for", "anchor": qb,
+                                               "sid": b},
+                                              {"claim": "Wages went home", "anchor": qc, "sid": c},
+                                              {"claim": "And went home again", "anchor": qc,
+                                               "sid": c}])
+    return {"pid": project, "mid": grande, "first": first, "second": second, "shared": b}
+
+
+def test_themes_across_materials_are_listed_apart_from_single_material_ones(client, conn,
+                                                                            analysed):
+    """Five of twelve themes rested on one interview each. Listed beside the ones that ran
+    through the whole corpus, with only a tag to tell them apart, the reader did the filtering."""
+    pid = analysed["pid"]
+    solo = store.save_theme(conn, pid, tid=None, name="Only here", gist="a single material",
+                            code_ids=[])
+    sid = store.moments(conn, analysed["grande"])[0]["sid"]
+    store.save_moments(conn, analysed["grande"], solo,
+                       [{"claim": "said once", "anchor": "x", "sid": sid}])
+    for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md"):
+        sect = _themes(client.get(url).text)
+        across, single = sect.index("Across materials"), sect.index("In one material so far")
+        assert across < single, f"the corpus themes come first on {url}"
+        assert single < sect.index("Only here"), f"a one-material theme is in the second group ({url})"
+        for name in analysed["themes"]:
+            assert across < sect.index(name) < single, f"{name} is in the first group ({url})"
+
+
+def test_a_project_with_one_material_shows_only_the_second_group(client, one_material):
+    pid = one_material["pid"]
+    for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md"):
+        sect = _themes(client.get(url).text)
+        assert "Across materials" not in sect, f"nothing can span one material ({url})"
+        assert "In one material so far" in sect
+        assert "With one material, a theme cannot yet run across materials." in sect

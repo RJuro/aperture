@@ -32,7 +32,11 @@
 {% endif %}
 ## Themes
 
-{% for t in themes %}### {{ t.name }}
+{% if materials | length == 1 %}With one material, a theme cannot yet run across materials.
+
+{% endif %}{% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}{% if rows %}### {{ group }}
+
+{% endif %}{% for t in rows %}#### {{ t.name }}
 
 {{ t.gist }}
 
@@ -40,7 +44,7 @@
 {% if t.account %}
 {{ t.account.text }}
 {% endif %}
-#### Materials where this theme appears
+##### Materials where this theme appears
 
 {% for m in t.carrying %}**{{ m.display_title }}** — {{ (m.kind or "material") | replace("_", " ") }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
 
@@ -49,7 +53,7 @@
 {% endfor %}
 {% else %}No material contains claims for this theme yet.
 {% endfor %}
-#### Materials where this theme does not appear
+##### Materials where this theme does not appear
 {% if t.absent %}
 No claims in these materials support this theme:
 
@@ -63,9 +67,9 @@ is dropped whole and would look the same as absence here:
 {% else %}
 Every material contains claims for this theme.
 {% endif %}
-{% else %}No themes yet.
+{% endfor %}{% endfor %}{% if not themes %}No themes yet.
 
-{% endfor %}
+{% endif %}
 ## Materials
 
 {% for m in materials %}### {{ m.display_title }}

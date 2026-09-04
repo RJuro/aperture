@@ -395,6 +395,10 @@ def project_page(conn, pid: str) -> dict:
                            "moments": [None] * counts.get((t["id"], m["id"]), 0)}
                           for m in mats]
         carried = sum(1 for c in row["columns"] if c["moments"])
+        # A theme resting on one material is a motif in that material, not a corpus theme, and
+        # listed beside the others it reads as if it had the same reach. `single` is what the
+        # page groups by.
+        row["single"] = carried < 2
         row["derivation"] = (f'{carried} of {len(mats)} materials · '
                              f'{sum(len(c["moments"]) for c in row["columns"])} claims')
         themes.append(row)
@@ -631,6 +635,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 absent.append(row)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
+                    "single": cover["materials_with"] < 2,
                     "derivation": (f'in {cover["materials_with"]} of {cover["materials_total"]} '
                                    f'materials · {cover["claims"]} claims'),
                     "set_aside": [n for n in aside if t["name"] and t["name"] in n["note"]]})
