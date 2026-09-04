@@ -1,6 +1,8 @@
 """P0: the pieces every later phase stands on. These pass before any agent starts."""
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from app import anchor, db, ingest, llm, store, turns
@@ -252,6 +254,60 @@ def test_a_loaded_provider_is_told_apart_from_one_that_is_refusing(monkeypatch):
     assert isinstance(raised[429], llm._Busy) and raised[429].after == "7"
     assert isinstance(raised[503], llm._Busy)
     assert not isinstance(raised[401], llm._Busy), "a refusal is not something to wait out"
+
+
+def _mock_httpx(monkeypatch, answer):
+    """Every client `_send` opens, answered by `answer` over httpx's own MockTransport — no
+    socket is opened, and the clients and responses are kept so a test can ask whether they were
+    closed."""
+    import contextlib
+    real = llm.httpx.Client
+    clients, responses = [], []
+
+    class Client(real):
+        def __init__(self, **kw):
+            super().__init__(transport=llm.httpx.MockTransport(answer), **kw)
+            clients.append(self)
+
+        @contextlib.contextmanager
+        def stream(self, *a, **k):
+            with real.stream(self, *a, **k) as r:
+                responses.append(r)
+                yield r
+
+    monkeypatch.setattr(llm.httpx, "Client", Client)
+    return clients, responses
+
+
+def test_nothing_is_left_open_by_a_call_that_ends_early_or_badly(monkeypatch):
+    """A run of about sixty calls was seen holding sixty-one established sockets. `_send` opens a
+    client per call inside a `with` and streams inside a nested one, so all three ways out have to
+    leave both closed: the stream that ends, the stream this BREAKS out of at `[DONE]` with bytes
+    still unread, and a 429 whose body is read and then raised over."""
+    tail = b'data: {"choices":[{"delta":{"content":"NEVER READ"}}]}\n\n'
+
+    def answer(request):
+        body = json.loads(request.content)
+        if body["model"] == "busy":
+            return llm.httpx.Response(429, content=b"slow down", headers={"retry-after": "7"})
+        sse = [b'data: {"choices":[{"delta":{"content":"{\\"ok\\": 1}"}}],'
+               b'"usage":{"prompt_tokens":3,"completion_tokens":4}}\n\n']
+        if body["model"] == "done":
+            sse += [b"data: [DONE]\n\n", tail]
+        return llm.httpx.Response(200, content=iter(sse),
+                                  headers={"content-type": "text/event-stream"})
+
+    clients, responses = _mock_httpx(monkeypatch, answer)
+    llm.new_usage()
+    assert llm._send({"model": "plain"}, None) == '{"ok": 1}', "a stream that simply ends"
+    assert llm._send({"model": "done"}, None) == '{"ok": 1}', "and one broken out of at [DONE]"
+    with pytest.raises(llm._Busy):
+        llm._send({"model": "busy"}, None)
+
+    assert len(clients) == len(responses) == 3
+    assert [c.is_closed for c in clients] == [True] * 3, "a client was left open"
+    assert [r.is_closed for r in responses] == [True] * 3, "a response was left unread and open"
+    assert dict(llm.usage) == {"tokens_in": 6, "tokens_out": 8}, "and both calls were counted"
 
 
 def test_switching_provider_cannot_inherit_the_other_ones_endpoint(monkeypatch):
