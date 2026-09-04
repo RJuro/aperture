@@ -128,6 +128,11 @@ def connect(path: str | Path | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    # A chain reads several materials at once, each on its own connection, so two writers meet.
+    # WAL lets them read through each other and this makes the second one WAIT for the write lock
+    # rather than raise "database is locked". Five seconds is also Python's own default; it is
+    # said out loud because the parallel stages depend on it.
+    conn.execute("PRAGMA busy_timeout=5000")
     migrate(conn)
     return conn
 
