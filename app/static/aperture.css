@@ -18,6 +18,8 @@
   --gutter: clamp(18px, 2.4vw, 36px);
   --radius: 8px;
   --radius-lg: 12px;
+  --motion: .18s;
+  --ease: cubic-bezier(.2, .7, .2, 1);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -27,6 +29,12 @@ a { color: inherit; text-decoration: none; }
 a:hover { color: var(--fg); }
 button, input, textarea, select { font: inherit; }
 button, summary { cursor: pointer; }
+/* Motion is interactional only: a fold the reader opens reveals its content rather than popping
+   it. Named rather than every `details`, because a fold that can already be open when the page
+   arrives — the upload drawer, the summary fold — would replay the reveal on every navigation of
+   this multi-page app, which reads as jumpiness. */
+[open] > .menu-sheet, .quiet-details[open] > *:not(summary), .aside[open] > *:not(summary) { animation: reveal var(--motion) var(--ease); }
+@keyframes reveal { from { opacity: 0; translate: 0 -3px; } }
 p { text-wrap: pretty; }
 h1, h2, h3 { text-wrap: balance; }
 :focus-visible { outline: 3px solid color-mix(in oklch, var(--accent) 42%, transparent); outline-offset: 3px; }
@@ -34,7 +42,7 @@ h1, h2, h3 { text-wrap: balance; }
 .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
 .section { padding-block: clamp(32px, 4.5vw, 64px); }
 .section + .section { border-top: 1px solid var(--border); }
-.standalone { width: min(1180px, calc(100% - 2 * var(--gutter))); min-height: calc(100vh - 120px); margin: 0 auto; padding-block: clamp(40px, 6vw, 80px); }
+.standalone { width: min(1180px, calc(100% - 2 * var(--gutter))); min-height: calc(100vh - 59px); margin: 0 auto; padding-block: clamp(40px, 6vw, 80px); }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .dim, .meta { color: var(--muted); }
 .small { font-size: 13px; }
@@ -71,20 +79,24 @@ h3 { margin: 0; font: 600 19px/1.3 var(--font-display); }
 .rail-sticky { position: sticky; top: 88px; }
 .rail-title { font-size: 18px; }
 .rail-list { margin: 28px 0; padding: 0; display: grid; gap: 3px; list-style: none; }
-.rail-list a { min-height: 44px; margin-inline: -10px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: var(--radius); color: var(--muted); font-size: 14px; }
+.rail-list a { min-height: 44px; margin-inline: -10px; padding: 8px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: var(--radius); color: var(--muted); font-size: 14px; transition: background, color; transition-duration: var(--motion); transition-timing-function: var(--ease); }
 .rail-list a:hover { background: var(--fg-soft); color: var(--fg); }
 .rail-list a[aria-current='page'] { background: var(--surface); color: var(--fg); box-shadow: inset 3px 0 0 var(--fg); }
 .rail-count { color: var(--muted); font: 11px var(--font-mono); }
 .rail-materials { padding-top: 22px; border-top: 1px solid var(--border); }
 .material-link { display: block; margin-top: 8px; padding: 10px 0; }
-.material-link strong { display: block; font-size: 13px; font-weight: 600; }
+.material-link strong { display: flex; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 600; transition: color var(--motion) var(--ease); }
+.material-link .mark { width: 6px; height: 6px; flex: 0 0 auto; border: 1px solid var(--faint); border-radius: 50%; }
+.material-link .mark.done { border-color: var(--accent); background: var(--accent); }
+.material-link .mark.active { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
+.material-link .mark.failed { border-color: var(--danger); background: var(--danger); }
 .material-link span { display: block; margin-top: 3px; color: var(--muted); font: 10px var(--font-mono); text-transform: capitalize; }
 .material-link:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 .material-link[aria-current='page'] strong { color: var(--accent); }
 .workspace { min-width: 0; }
 
 /* Controls */
-.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg); font-size: 13px; font-weight: 650; transition: transform .06s ease, background .15s ease, border-color .15s ease; }
+.btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg); font-size: 13px; font-weight: 650; transition: transform, background, border-color; transition-duration: var(--motion); transition-timing-function: var(--ease); }
 .btn:active { transform: translateY(1px); }
 .btn-primary { border-color: var(--fg); background: var(--fg); color: var(--surface); }
 .btn-primary:hover { background: color-mix(in oklch, var(--fg) 86%, var(--surface)); color: var(--surface); }
@@ -104,10 +116,10 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .form-stack.compact { gap: 10px; padding: 6px 10px 12px; }
 
 /* Background work and notices */
-.run { margin: 20px var(--gutter) 0; padding: 13px 15px; display: flex; align-items: flex-start; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.run { padding: 12px var(--gutter); display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
 .run-pulse { width: 8px; height: 8px; margin-top: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
-.run strong { display: block; font-size: 13px; }
-.run form { margin-left: auto; }
+.run strong { display: block; min-height: 20px; font-size: 13px; font-weight: 600; white-space: pre-line; }
+.run form { margin-left: auto; align-self: center; }
 .run small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
 @keyframes pulse { 60% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 8px transparent; } }
 .warn, .problem { max-width: 72ch; margin: 20px var(--gutter); padding: 11px 14px; border: 1px solid var(--border); border-left: 3px solid var(--danger); border-radius: var(--radius); background: var(--surface); }
@@ -308,12 +320,12 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .admin h1 { font-size: clamp(32px, 4vw, 44px); }
 .admin h2 { margin-top: 48px; }
 .admin .form-stack { max-width: 360px; margin: 28px 0 8px; }
+/* Two administrative acts, not one long form: unruled, creating an account and resetting a password read as one. */
+.admin .form-stack + .form-stack { margin-top: 40px; padding-top: 30px; border-top: 1px solid var(--border); }
 .people, .projects { padding: 0; list-style: none; }
 .people li, .projects li { padding: 12px 0; display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--border); }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .who { display: flex; gap: 10px; }
-
-.pagefoot { padding-block: 30px; border-top: 1px solid var(--border); color: var(--muted); font-size: 11px; }
 
 @media (max-width: 1080px) {
   .app-shell { grid-template-columns: 210px minmax(0, 1fr); }
@@ -368,6 +380,6 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
 @media print {
-  .topnav, .project-rail, form, .research-actions, .head-actions, .pagefoot { display: none !important; }
+  .topnav, .project-rail, form, .research-actions, .head-actions { display: none !important; }
   .app-shell { display: block; }
 }

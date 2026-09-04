@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-<section class="section project-head"><div class="container"><p class="eyebrow">Theme across the corpus</p>
+<section class="section project-head"><div class="container">
 <h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }}</p></div></section>
 
 <section class="section"><div class="container narrow-section">
@@ -18,7 +18,7 @@ you send feedback below.</p>
 </form>
 </div></section>
 
-<section class="section"><div class="container"><div class="section-heading"><div><p class="eyebrow">Evidence</p><h2>Materials where this theme appears</h2></div></div>
+<section class="section"><div class="container"><div class="section-heading"><div><h2>Materials where this theme appears</h2></div></div>
 {% for m in carrying %}
 <section class="carries">
   <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}">{{ m.display_title | txt }}</a>

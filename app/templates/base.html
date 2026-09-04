@@ -17,7 +17,7 @@
       <a href="/p/{{ project.id }}">{{ project.name | txt }}</a>
       {% if material %}<i aria-hidden="true">/</i><span>{{ material.display_title | txt }}</span>{% endif %}
       {% if theme %}<i aria-hidden="true">/</i><span>{{ theme.name | txt }}</span>{% endif %}
-      {% else %}<span>Qualitative reading workspace</span>{% endif %}
+      {% endif %}
     </nav>
     {% if user %}
     <details class="account-menu">
@@ -52,7 +52,7 @@
         <p class="eyebrow">Open material</p>
         {% for m in nav_materials %}
         <a class="material-link" href="/p/{{ project.id }}/m/{{ m.id }}"{% if material and material.id == m.id %} aria-current="page"{% endif %}>
-          <strong>{{ m.display_title | txt }}</strong><span>{{ (m.kind or 'Material') | replace('_', ' ') }}{% if m.year %} · {{ m.year }}{% endif %}</span>
+          <strong><i class="mark {{ m.reading_state }}" title="{{ m.reading_said }}"></i>{{ m.display_title | txt }}</strong><span>{{ (m.kind or 'Material') | replace('_', ' ') }}{% if m.year %} · {{ m.year }}{% endif %}</span>
         </a>
         {% endfor %}
       </div>
@@ -68,17 +68,14 @@
     {% endif %}
     {% if working %}
     <div class="run" role="status"><span class="run-pulse" aria-hidden="true"></span><div>
-      <strong>{% if runs %}{% for r in runs %}{{ r.line | txt }}{% if not loop.last %} · {% endif %}{% endfor %}{% else %}Waiting for other work to finish.{% endif %}</strong>
-      <small>Analysis continues in the background. You can leave this page.</small>
+      <strong>{% if runs %}{% for r in runs %}{{ r.line | txt }}{{ "\n" if not loop.last }}{% endfor %}{% else %}Waiting for other work to finish.{% endif %}</strong>
+      <small>You can leave this page.</small>
     </div>{% if project %}<form method="post" action="/p/{{ project.id }}/stop"><button class="btn btn-small btn-secondary">Stop</button></form>{% endif %}</div>
     {% endif %}
     {% block main %}{% endblock %}
   </main>
 {% if project %}</div>{% endif %}
 
-<footer class="pagefoot">
-  <div class="container row-between"><span>Aperture · reading companion for qualitative material</span><span class="meta">Source and interpretation remain distinct</span></div>
-</footer>
 {% if working and project %}
 <!-- The one place this app uses JavaScript. The meta refresh it replaces reloaded the whole page
      every fifteen seconds and put the reader back at the top of it; this replaces the line where
@@ -90,7 +87,7 @@ const poll = setInterval(async () => {
   if (!r.ok) return;
   const lines = (await r.json()).map(x => x.line);
   const el = document.querySelector(".run strong");
-  if (lines.length) { if (el) el.textContent = lines.join(" · "); return; }
+  if (lines.length) { if (el) el.textContent = lines.join("\n"); return; }
   const held = [...document.querySelectorAll("textarea")].some(x => x.value.trim())
             || [...document.querySelectorAll("input[type=file]")].some(x => x.files.length);
   if (!held) return location.reload();
