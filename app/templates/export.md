@@ -55,9 +55,7 @@
 {% else %}No material contains claims for this theme yet.
 {% endfor %}{% if t.absent %}{% for head, mats in
    ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
-     ("Not looked for here", t.absent | rejectattr("looked_for") | list)]
-    if t.absent[0].looked_for is defined
-    else [("Materials where this theme does not appear", t.absent)]) %}{% if mats %}##### {{ head }}
+     ("Not looked for here", t.absent | rejectattr("looked_for") | list)]) %}{% if mats %}##### {{ head }}
 
 {% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
 {% endfor %}

@@ -205,3 +205,59 @@ entailment check of the PROJECT summary against the accounts (the inverted sente
 `medium` still passes hardened hedges in both versions. Caveat that stands over every pass: one
 run per version — some of each difference is run-to-run variation, which is why every pass has
 two judges and why no prompt change is kept on one pass alone.
+
+### Pass 3 — 2026-09-04, the code-hit gate, judged from existing lines (no model run)
+
+**Question.** After the first material every live theme is followed through every later material,
+whether or not its codes fired there. On the v3 run 12 of 30 theme×material cells had no code hit
+for the theme and 9 still came back with lines of 4–9 claims — 27% of all claims. Are those lines
+found, or made? If made, skipping THREAD where no code fired (the "gate") cuts about a third of
+DOC's cost and removes bad lines at once.
+
+**Method.** No chain was re-run. From the finished DOC steps in `v3data` (three interviews) and
+the Horwitz step of the killed v3.1 run, every line with ≥4 live claims was collected with its
+code-hit count. The 12 zero-hit lines were each paired with a code-hit line from the same interview
+and run, nearest in claim count; the 24 were shuffled, the key sealed (`bench/gate-test/KEY.json`),
+and two Opus judges rated each line blind — `found` 1–5, `carries` yes/borderline/no, one sentence
+naming the deciding claim — with the transcripts open (`bench/gate-test/INSTRUCTIONS.md`,
+`judge-A.md`, `judge-B.md`, `unseal.py`).
+
+**Result.** The judges agreed on every line (|Δfound| mean 0.42; within one point on 24 of 24).
+
+| | zero-hit lines (gate would skip) | code-hit lines |
+|---|---|---|
+| found, mean (A / B) | 3.00 / 2.75 | 4.08 / 4.00 |
+| carries: yes / borderline / no (A) | 6 / 2 / 4 | 9 / 1 / 2 |
+| carries: yes / borderline / no (B) | 4 / 3 / 5 | 9 / 0 / 3 |
+| rated *no* by either judge | 5 of 12 | 3 of 12 |
+
+So the code-hit signal is real: the unmarked lines are weaker as a group. It is also blunt in both
+directions. Four of the twelve zero-hit lines were rated found by both judges (L03 4/4, L09 5/5,
+L12 4/4, L24 3/4 — L09 was among the six strongest of all 24), and three code-hit lines were rated
+made by both (L11, L20 — one judge's weakest — and L01). The gate would have deleted a third of the
+good lines among the unmarked ones and kept every bad line among the marked ones.
+
+**What both judges said distinguishes a made line**, independently and in the same words: the
+definition names a *mechanism*, the material has no instance of it, and the claims supply it by
+relabelling adjacent content — a shared word used in two senses ("restriction" as persecution
+against "too many rules" in 1995), a passage enlisted against its own content (a shtetl's poverty
+as evidence of an American welcome), or a claim that contradicts the theme it is filed under
+(night school as refusal of formal institutions). That is a check on the *line against the
+definition*, which nothing in the chain performs: VERIFY checks each claim against its passage,
+and THREAD rule 7 asks the writer to police itself.
+
+**Decision.** The gate is built and tested (`synth._marked_here`, the `follow` table with
+`line | thin | skipped`, the three-state wording on the theme page, in the record and in the
+account prompt — PLAN §3 law 2) but **off by default**; `APERTURE_FOLLOW=marked` turns it on for a
+researcher who wants the cost cut and accepts the loss. The ceiling drops to `4 + n` (8 themes at
+four materials, 12 at eight) on the evidence of the 12-theme four-interview record and the judges'
+inflation findings. The record now prints each claim once under its material, in reading order,
+with the theme sections as cross-cuts.
+
+**Proposed next step, not built:** a line-fit check after THREAD — one call per material, the
+theme definitions with each surviving line's claims and quotes, verdict per line
+`found | thin | made` on exactly the criterion above — setting a `made` line aside as *looked for
+and not found*. It attacks pattern hunger and inflation on both sides of the code-hit split, keeps
+absence a verified claim, and costs a few thousand tokens per material against THREAD's hundreds
+of thousands. To be judged the same way: the 24 dossiers are the test set, and the check's
+verdicts can be scored against the judges' before it ever runs in a chain.

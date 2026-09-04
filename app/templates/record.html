@@ -90,9 +90,7 @@
   {% if t.absent %}
   {% for head, mats in
      ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
-       ("Not looked for here", t.absent | rejectattr("looked_for") | list)]
-      if t.absent[0].looked_for is defined
-      else [("Materials where this theme does not appear", t.absent)]) %}
+       ("Not looked for here", t.absent | rejectattr("looked_for") | list)]) %}
   {% if mats %}
   <h4>{{ head }}</h4>
   <ul class="mats">

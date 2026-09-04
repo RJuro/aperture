@@ -25,6 +25,13 @@ synth = pytest.importorskip("app.engine.synth")
 account = pytest.importorskip("app.engine.account")
 
 
+@pytest.fixture(autouse=True)
+def _gate_on(monkeypatch):
+    """The skip is opt-in (docs/EVAL.md pass 3): these tests are about what it does when it is on.
+    The one test of the default turns it back off itself."""
+    monkeypatch.setenv("APERTURE_FOLLOW", "marked")
+
+
 @pytest.fixture
 def client(conn, monkeypatch):
     from fastapi.testclient import TestClient
@@ -200,3 +207,26 @@ def test_a_theme_renamed_after_the_skip_still_reads_as_not_looked_for(split, con
     store.save_theme(conn, split["pid"], tid=split["elsewhere"], name="Something else entirely",
                      gist="a living", code_ids=[])
     assert store.followed(conn, split["pid"])[(split["elsewhere"], split["grande"])] == "skipped"
+
+
+def test_by_default_every_live_theme_is_followed_whatever_its_codes_did(split, conn, model,
+                                                                        quote, monkeypatch):
+    """The skip is opt-in. Twenty-four lines judged blind (docs/EVAL.md pass 3) found the unmarked
+    ones weaker as a group and four of twelve among the best in the set; a default that deletes a
+    third of the good lines is not a default. Unset, both themes are asked about."""
+    monkeypatch.delenv("APERTURE_FOLLOW", raising=False)
+    model.queue({"moments": _moments(quote, split["grande"], 5)})
+    model.queue({"moments": _moments(quote, split["grande"], 5, at=120)})
+    model.queue({"verdicts": []})
+    model.queue({"summary": "what the reading found", "questions": "what remains?", "people": []})
+    model.queue({"verdicts": []})
+
+    said: list[str] = []
+    with llm.reporting(said.append):
+        synth.doc(conn, split["grande"])
+
+    assert len([c for c in model.calls if c["label"] == "thread"]) == 2
+    outcomes = store.followed(conn, split["pid"])
+    assert "skipped" not in outcomes.values()
+    assert outcomes[(split["elsewhere"], split["grande"])] in ("line", "thin")
+    assert not any("not looked for" in s for s in said)

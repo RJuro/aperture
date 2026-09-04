@@ -114,30 +114,19 @@ def test_a_claim_whose_passage_another_theme_reads_says_which(client, one_materi
 @pytest.mark.parametrize("looked_for, head", [(True, "Looked for and found too thin"),
                                               (False, "Not looked for here")])
 def test_a_material_a_theme_never_reached_says_whether_it_was_looked_through(
-        client, conn, analysed, monkeypatch, looked_for, head):
+        client, conn, analysed, looked_for, head):
     """Absence is two different findings — the theme was followed here and the line was too thin
     to keep, or none of its codes marked this material at all — and one list cannot say which.
-    Where the reading has not said yet, the record keeps printing the one list it always did."""
+    The record reads which from what DOC wrote down (`follow`), not from a guess."""
     pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
-    for url in (f"/p/{pid}/record", f"/p/{pid}/export.md"):
-        assert "Materials where this theme does not appear" in _themes(client.get(url).text), url
-
-    plain = context.export
-
-    def told(c, p, resolve=True):
-        ctx = plain(c, p, resolve)
-        for t in ctx["themes"]:
-            for m in t["absent"]:
-                m["looked_for"] = looked_for
-        return ctx
-
-    monkeypatch.setattr(context, "export", told)
+    store.save_follow(conn, analysed["rodwin"], tid, "thin" if looked_for else "skipped", None)
+    other = "Not looked for here" if looked_for else "Looked for and found too thin"
     for url in (f"/p/{pid}/record", f"/p/{pid}/export.md"):
         sect = _themes(client.get(url).text)
-        assert head in sect, url
+        assert head in sect and other not in sect, url
         assert "Materials where this theme does not appear" not in sect, url
 
 

@@ -21,6 +21,7 @@ enters another prompt — everything else the model writes is shown to a researc
 """
 from __future__ import annotations
 
+import os
 import contextvars
 import re
 import textwrap
@@ -420,7 +421,14 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     # live theme used to be followed through every material after the first, whether its codes had
     # fired there or not, and a line asked for where there is no evidence comes back with claims
     # anyway (PLAN.md §3, law 2). What is skipped here is written down, not inferred later.
-    skipped = {tid for tid in live if not _marked_here(conn, mid, tid)}
+    # Off unless asked for. Twenty-four lines were judged blind, twelve written where no code had
+    # fired against twelve where one had: the unmarked lines were weaker (found 2.9 against 4.0,
+    # five of twelve rated made against three) — and four of the twelve were among the best
+    # lines in the set, one of them the strongest of all. Skipping them buys a third of DOC's
+    # cost with a third of the good lines it would have found (bench/gate-test, docs/EVAL.md
+    # pass 3). A researcher who wants that trade sets APERTURE_FOLLOW=marked.
+    skipped = ({tid for tid in live if not _marked_here(conn, mid, tid)}
+               if os.environ.get("APERTURE_FOLLOW") == "marked" else set())
     # live_themes order, so the waves compose the same way twice.
     order = [tid for tid in live if tid not in skipped]
     tail = f" · {len(skipped)} not looked for" if skipped else ""
