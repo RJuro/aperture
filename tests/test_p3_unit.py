@@ -136,3 +136,18 @@ def test_an_over_long_text_is_cut_back_to_a_whole_sentence():
 def test_a_text_with_no_sentence_break_still_gets_cut_rather_than_kept_whole():
     out = synth.words("word " * 50, 10)
     assert out.endswith("…") and len(out.split()) == 11
+
+
+def test_an_id_repeated_inside_one_bracket_is_kept_once():
+    """`[mo1, mo1]` reads as two claims agreeing until the researcher opens them. One bracket,
+    one mention of each claim; the first wins, so the order the model wrote survives."""
+    text, gone = synth._strip_dangling(
+        "Trade recurs [mo1, mo2, mo1] and pays [mo2, mo2].", {"mo1": 1, "mo2": 1})
+    assert text == "Trade recurs [mo1, mo2] and pays [mo2]."
+    assert gone == []
+
+
+def test_a_repeat_and_a_dangling_id_in_one_bracket_are_both_dealt_with():
+    text, gone = synth._strip_dangling("It holds [mo1, mo1, mo-gone].", {"mo1": 1})
+    assert text == "It holds [mo1]."
+    assert gone == ["mo-gone"]

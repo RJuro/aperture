@@ -393,13 +393,15 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
 
 
 def _strip_dangling(text: str, live: dict) -> tuple[str, list[str]]:
-    """Remove `[moment id]` citations that point at nothing. A dangling citation is D15 wearing a
-    different hat: a claim the researcher cannot open is a claim they must take on trust."""
+    """Remove `[moment id]` citations that point at nothing, and an id repeated inside one
+    bracket. A dangling citation is D15 wearing a different hat: a claim the researcher cannot
+    open is a claim they must take on trust. A doubled one is thinner support dressed as two —
+    `[mo1, mo1]` reads as two claims agreeing until you open them."""
     gone: list[str] = []
 
     def repl(m):
         ids = [i for i in re.split(r"[,;\s]+", m.group(1)) if i]
-        keep = [i for i in ids if i in live]
+        keep = list(dict.fromkeys(i for i in ids if i in live))     # first occurrence wins
         gone.extend(i for i in ids if i not in live)
         return f" [{', '.join(keep)}]" if keep else ""
 
