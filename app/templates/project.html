@@ -52,11 +52,15 @@
 <div class="section-heading"><div><p class="eyebrow">Across the corpus</p><h2>Themes</h2></div><span class="meta">Select a count to inspect its supporting claims</span></div>
 {% if themes %}
 <p class="dim small">Numbers are claims per theme and material; select one to read them. A dash means none.</p>
+{% if materials | length == 1 %}<p class="dim small">With one material, a theme cannot yet run across materials.</p>{% endif %}
+{% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}
+{% if rows %}
+<h3 class="theme-group">{{ group }}</h3>
 <div class="scroller">
 <table class="themes">
   <thead><tr><th>Theme</th>{% for m in materials %}<th class="material">{{ m.display_title | txt }}</th>{% endfor %}</tr></thead>
   <tbody>
-{% for t in themes %}
+{% for t in rows %}
   <tr>
     <th class="gist"><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a>
         <br><span>{{ t.gist | prose }}</span>
@@ -69,6 +73,8 @@
   </tbody>
 </table>
 </div>
+{% endif %}
+{% endfor %}
 {% else %}
 <p class="empty-state">Themes will gather here as material is read.</p>
 {% endif %}

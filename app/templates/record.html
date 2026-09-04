@@ -73,7 +73,10 @@
 
 <section class="section" id="themes"><div class="container">
 <div class="section-heading"><div><p class="eyebrow">Each theme in full</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its theme</span></div>
-{% for t in themes %}
+{% if materials | length == 1 %}<p class="dim">With one material, a theme cannot yet run across materials.</p>{% endif %}
+{% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}
+{% if rows %}<h3 class="theme-group">{{ group }}</h3>{% endif %}
+{% for t in rows %}
 <section class="record-entry" id="t-{{ t.id }}">
   <h3><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a></h3>
   <p class="gist">{{ t.gist | prose }}</p>
@@ -104,9 +107,9 @@
   {% for n in t.set_aside %}<p class="dim small">{{ n.note | txt }}{% if n.material %} — {{ n.material | txt }}{% endif %}</p>{% endfor %}
   {% endif %}
 </section>
-{% else %}
-<p class="empty-state">Themes will gather here as material is read.</p>
 {% endfor %}
+{% endfor %}
+{% if not themes %}<p class="empty-state">Themes will gather here as material is read.</p>{% endif %}
 </div></section>
 
 <section class="section" id="materials"><div class="container">
@@ -147,11 +150,12 @@
 
 <section class="section" id="excluded"><div class="container">
 <div class="section-heading"><div><p class="eyebrow">What the reading dropped</p><h2>Excluded from the analysis</h2></div></div>
-<ul class="mats">
-{% for n in set_aside %}<li>{{ n.note | txt }}{% if n.material %} <span class="dim">— {{ n.material | txt }}</span>{% endif %}</li>
-{% else %}<li class="dim">Nothing was excluded from the analysis.</li>
+{% for name, notes in set_aside | groupby("material") %}
+<h3>{{ (name or "The project") | txt }}</h3>
+<ul class="mats">{% for n in notes %}<li>{{ n.note | txt }}</li>{% endfor %}</ul>
+{% else %}
+<ul class="mats"><li class="dim">Nothing was excluded from the analysis.</li></ul>
 {% endfor %}
-</ul>
 </div></section>
 
 <section class="section" id="feedback"><div class="container">

@@ -166,6 +166,9 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .themes td { text-align: center; }
 .themes td a { min-width: 34px; display: inline-block; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font: 11px var(--font-mono); }
 .themes td a:hover { border-color: var(--accent); color: var(--accent); }
+/* A theme resting on one material is a motif in that material, and side by side with the rest it
+   read as if it had the same reach. The label is what separates them. */
+.theme-group { margin: 26px 0 10px; color: var(--muted); font: 700 10px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
 
 /* Material list and its analysis receipt */
 .material-list { border-top: 1px solid var(--border); }

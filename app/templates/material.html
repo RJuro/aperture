@@ -103,6 +103,7 @@
         <span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
         <p class="claim">{{ x.claim | txt }}</p>
         <a class="quote-link quote" title="Open this passage in the material" href="#{{ x.sid }}">{{ x.anchor | txt }}</a>
+        {% if x.also_under %}<p class="dim small">Also read under {% for o in x.also_under %}<a href="?theme={{ o.id }}">{{ o.name | txt }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
         {% for f in x.reactions %}
         <p class="dim small">{{ f.kind }}{% if f.text %} <q>{{ f.text | txt }}</q>{% endif %}</p>
         {% endfor %}

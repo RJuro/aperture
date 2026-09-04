@@ -791,3 +791,34 @@ def set_owner(conn: sqlite3.Connection, pid: str, uid: str) -> None:
     every researcher for ever; the admin page said "Owner not set" and offered nothing."""
     conn.execute("UPDATE project SET owner_id=? WHERE id=?", (uid, pid))
     conn.commit()
+
+
+# ---- added for the display fixes
+
+def theme_evidence(conn: sqlite3.Connection, pid: str) -> dict[str, dict]:
+    """Per live theme: `claims`, the `passages` those claims actually rest on, and how many of
+    those passages another live theme also reads (`shared`).
+
+    Claims are not evidence; passages are. The same passage read under four themes was counted
+    four times over, so a corpus reported eighty-one passages behind a reading that in truth
+    rests on far fewer. One query for the whole project — a page has twelve themes and cannot
+    afford a query each.
+    """
+    rows = conn.execute(
+        "SELECT mo.theme_id AS theme_id, mo.material_id AS material_id, mo.sid AS sid, "
+        "COUNT(*) AS n FROM moment mo "
+        "JOIN material m ON m.id = mo.material_id "
+        "JOIN theme t ON t.id = mo.theme_id AND t.status='live' "
+        "WHERE m.project_id=? AND m.removed_at IS NULL AND mo.status='live' "
+        "GROUP BY mo.theme_id, mo.material_id, mo.sid", (pid,)).fetchall()
+    themes_here: dict[tuple[str, str], set[str]] = {}
+    for r in rows:
+        themes_here.setdefault((r["material_id"], r["sid"]), set()).add(r["theme_id"])
+    out: dict[str, dict] = {}
+    for r in rows:
+        d = out.setdefault(r["theme_id"], {"claims": 0, "passages": 0, "shared": 0})
+        d["claims"] += r["n"]
+        d["passages"] += 1
+        if len(themes_here[(r["material_id"], r["sid"])]) > 1:
+            d["shared"] += 1
+    return out

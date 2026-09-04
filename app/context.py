@@ -252,6 +252,24 @@ def derivation(conn, mid: str) -> str:
             f"of {len(store.sentences(conn, mid))} passages")
 
 
+def _n(n: int, noun: str) -> str:
+    return f'{n} {noun}{"" if n == 1 else "s"}'
+
+
+def _evidence(row: dict | None) -> str:
+    """A theme's count in claims AND in the passages those claims rest on.
+
+    Two claims on one passage are one piece of evidence read twice, and a passage another theme
+    reads as well is evidence two themes are dividing between them. Counting claims alone made
+    both look like more material than the reading has.
+    """
+    r = row or {"claims": 0, "passages": 0, "shared": 0}
+    out = f'{_n(r["claims"], "claim")} on {_n(r["passages"], "passage")}'
+    if r["shared"]:
+        out += f' · {_n(r["shared"], "passage")} shared with other themes'
+    return out
+
+
 def _row(r) -> dict | None:
     return dict(r) if r is not None else None
 
@@ -388,6 +406,7 @@ def project_page(conn, pid: str) -> dict:
             "SELECT theme_id, material_id, COUNT(*) AS n FROM moment "
             "WHERE status='live' GROUP BY theme_id, material_id"):
         counts[(r["theme_id"], r["material_id"])] = r["n"]
+    evidence = store.theme_evidence(conn, pid)
     themes = []
     for t in store.live_themes(conn, pid):
         row = dict(t)
@@ -395,8 +414,12 @@ def project_page(conn, pid: str) -> dict:
                            "moments": [None] * counts.get((t["id"], m["id"]), 0)}
                           for m in mats]
         carried = sum(1 for c in row["columns"] if c["moments"])
+        # A theme resting on one material is a motif in that material, not a corpus theme, and
+        # listed beside the others it reads as if it had the same reach. `single` is what the
+        # page groups by.
+        row["single"] = carried < 2
         row["derivation"] = (f'{carried} of {len(mats)} materials · '
-                             f'{sum(len(c["moments"]) for c in row["columns"])} claims')
+                             f'{_evidence(evidence.get(t["id"]))}')
         themes.append(row)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
@@ -422,7 +445,8 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     mat["display_title"] = _material_title(m)
     mat["analysis"] = _analysis_steps(conn, m)
     cards = []
-    for t in store.live_themes(conn, pid):
+    live = [dict(t) for t in store.live_themes(conn, pid)]
+    for t in live:
         ms = [dict(x) for x in store.thread(conn, mid, t["id"])]
         if not ms:
             continue
@@ -433,9 +457,18 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
                                                         "reading")),
                       "codes": [dict(c) for c in store.theme_codes(conn, t["id"], mid)]})
     selected = next((c for c in cards if c["id"] == theme_id), None) or (cards[0] if cards else None)
+    # Which other themes read the same passage. One query over this material's live claims: the
+    # reader was seeing a claim as if the passage under it belonged to the theme they are in.
+    names = {t["id"]: t["name"] for t in live}
+    also: dict[str, list[str]] = {}
+    for x in store.moments(conn, mid):
+        also.setdefault(x["sid"], []).append(x["theme_id"])
     quotes: dict[str, list[str]] = {}
     for x in (selected["moments"] if selected else []):
         quotes.setdefault(x["sid"], []).append(x["anchor"])
+        x["also_under"] = [{"id": t, "name": names[t]}
+                           for t in dict.fromkeys(also.get(x["sid"], []))
+                           if t != selected["id"] and t in names]
     summary = _row(store.get_summary(conn, "material", mid))
     return {**_shell(conn, pid), "project": dict(p), "material": mat, "cards": cards,
             "page_section": "materials",
@@ -479,7 +512,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "coverage": cover, "carrying": carrying, "absent": absent, "summary": summary,
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
             "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
-                           f' · {cover["claims"]} claims'),
+                           f' · {_evidence(store.theme_evidence(conn, pid).get(tid))}'),
             "codes": [dict(c) for c in store.theme_codes(conn, tid)],
             "set_aside": store.set_aside(conn, pid)}
 
@@ -589,8 +622,14 @@ def _export_step(kind: str) -> str:
 
 
 def _export_names(conn, pid: str) -> dict[str, str]:
-    """Material id → what a person calls it. An id in a document is not a reference."""
-    return {m["id"]: _material_title(m) for m in store.materials(conn, pid)}
+    """Material id → what a person calls it. An id in a document is not a reference.
+
+    Every material the project has ever held, not only the live ones: a note about a material
+    that was later removed still has to name it, and `store.materials` would leave it printing
+    as `m4f1c…` in the record of what the researcher said.
+    """
+    return {m["id"]: _material_title(m) for m in
+            conn.execute("SELECT * FROM material WHERE project_id=?", (pid,))}
 
 
 def _export_set_aside(conn, pid: str) -> list[dict]:
@@ -618,6 +657,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
     from .engine import account
 
     out = []
+    evidence = store.theme_evidence(conn, pid)
     for t in store.live_themes(conn, pid):
         cover = account.coverage(conn, pid, t["id"])
         carrying, absent = [], []
@@ -631,8 +671,9 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 absent.append(row)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
+                    "single": cover["materials_with"] < 2,
                     "derivation": (f'in {cover["materials_with"]} of {cover["materials_total"]} '
-                                   f'materials · {cover["claims"]} claims'),
+                                   f'materials · {_evidence(evidence.get(t["id"]))}'),
                     "set_aside": [n for n in aside if t["name"] and t["name"] in n["note"]]})
     return out
 
@@ -663,7 +704,7 @@ def _export_comments(conn, pid: str) -> list[dict]:
     def about(f) -> str:
         kind, ref = f["target_kind"], f["target_id"]
         if kind in ("project_summary", "focus"):
-            return "the corpus"
+            return "the project"
         if kind == "theme":
             return themes.get(ref, ref)
         if kind == "thread":
