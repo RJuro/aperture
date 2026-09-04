@@ -134,6 +134,19 @@ def admin_page(request: Request, problem: str = "") -> str:
             "WHERE p.removed_at IS NULL ORDER BY p.created_at DESC")]})
 
 
+@router.get("/admin/runs", response_class=HTMLResponse)
+def admin_runs_page(request: Request) -> str:
+    """What the instrument has been doing, across every project — the `run` table has held it all
+    along and only each project's owner could see it. Counts, ids and times: this page is how an
+    administrator sees that a model call has been hanging for an hour, not what it was reading."""
+    user = _admin(request)
+    conn = connection()
+    return _render("admin_runs.html", {
+        "user": user,
+        "days": [dict(d) for d in store.runs_by_day(conn)],
+        "runs": [dict(r) for r in store.recent_runs(conn)]})
+
+
 @router.post("/admin/users")
 def add_user(request: Request, name: str = Form(...), password: str = Form(...)):
     _admin(request)

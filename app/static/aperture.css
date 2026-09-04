@@ -454,3 +454,13 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 @media (min-width: 621px) {
   .project-head .head-row { grid-template-columns: minmax(0, 1fr) auto auto; }
 }
+
+/* Admin runs */
+/* Wider than the rest of administration: nine columns of counts, and `.scroller` takes the
+   overflow on a narrow screen rather than the page taking it. */
+.runs-page { max-width: none; }
+.runs { width: 100%; border-collapse: collapse; font-size: 13px; }
+.runs th, .runs td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; white-space: nowrap; }
+.runs thead th { color: var(--muted); font: 10px/1.35 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.runs td.num { font: 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+.runs .failed { display: inline-block; max-width: 52ch; color: var(--danger); white-space: normal; }

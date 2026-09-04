@@ -24,12 +24,17 @@ from __future__ import annotations
 
 import contextvars
 import json
+import logging
 import sqlite3
 import threading
+import time
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 
 from . import db, llm, rerun, store
+
+# What the host's log says a chain did. Ids only — a material's title is usually a person's name.
+log = logging.getLogger("aperture")
 
 
 # ---- the steps ----------------------------------------------------------------------------------
@@ -274,6 +279,8 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
     base = line(conn, run)
     rid = store.start_run(conn, pid, kind, mid, base, job)
     run["run_id"] = rid
+    log.info("step kind=%s project=%s material=%s started", kind, pid, mid or "-")
+    t0 = time.monotonic()
     if mid:
         store.set_state(conn, mid, kind)
     # This step's tokens, in this thread's context and no other (see llm.new_usage).
@@ -295,6 +302,16 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
     store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
                      tokens_out=llm.usage.get("tokens_out", 0),
                      notes=[str(n) for n in (notes or [])])
+    if error:
+        # Eighty characters, not the whole reason: the one message here that runs longer quotes
+        # the model's answer back (`no JSON object in model output: ...`), and the material is
+        # nobody's business but its owner's — who reads the reason in full on the run row.
+        log.error("step kind=%s project=%s material=%s failed: %.80s", kind, pid, mid or "-",
+                  error)
+    else:
+        log.info("step kind=%s project=%s material=%s finished s=%.1f in=%d out=%d", kind, pid,
+                 mid or "-", time.monotonic() - t0, llm.usage.get("tokens_in", 0),
+                 llm.usage.get("tokens_out", 0))
     # Honoured by the LAST run that was shown it, not the first. One note can ride a whole
     # chain — and consumed at the first step, it would be gone from the open comments the
     # synthesis at the end of that same chain is written from.
@@ -404,13 +421,15 @@ _RUNNER_LOCK = threading.Lock()
 def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) -> None:
     def work() -> None:
         conn = conn_factory()
-        error = ""
+        error, t0 = "", 0.0
         try:
             row = store.job(conn, job)
             if row is None or row["status"] != "queued":
                 return                              # already run, or stopped before it began
             runs = _known(json.loads(row["runs_json"]))
             store.start_job(conn, job)
+            t0 = time.monotonic()
+            log.info("job id=%s project=%s started steps=%d", job, pid, len(runs))
             # One chain at a time in this process. The parallelism is INSIDE a chain (see
             # `_stages`); two chains at once would be two projects' worth of calls in flight
             # against a provider that rate-limits, and two writers on shared theme rows.
@@ -423,6 +442,12 @@ def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) 
             error = f"{type(exc).__name__}: {exc}"
         finally:
             try:
+                if t0:                              # a job that never started says nothing
+                    state = store.job(conn, job)
+                    said = "failed" if error else (
+                        "stopped" if state and state["status"] == "stopped" else "finished")
+                    (log.error if error else log.info)("job id=%s project=%s %s s=%.1f",
+                                                       job, pid, said, time.monotonic() - t0)
                 store.finish_job(conn, job, error)
             finally:
                 conn.close()

@@ -6,6 +6,7 @@ actions). Both are attached here so that neither imports the other.
 """
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -13,6 +14,13 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from . import auth, jobs
+
+# One line per model call and per step on stdout, which is what the host collects (docs/DEPLOY.md
+# → Monitoring). uvicorn's own loggers carry their own handlers and do not propagate, so this
+# configures the root logger and nothing is printed twice.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+# httpx logs a line of its own for every request, which would print each model call twice.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @asynccontextmanager

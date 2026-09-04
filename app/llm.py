@@ -23,6 +23,7 @@ import contextlib
 import contextvars
 import hashlib
 import json
+import logging
 import os
 import re
 import threading
@@ -31,6 +32,10 @@ from collections.abc import Callable, MutableMapping
 from pathlib import Path
 
 import httpx
+
+# One line per model call on stdout, where the host collects it (docs/DEPLOY.md → Monitoring).
+# Ids, counts and seconds only: the prompt, the material and the model's answer never go in here.
+log = logging.getLogger("aperture")
 
 # base url · key variable · default model · default reasoning effort
 # M3 reasons by default and takes no effort parameter. GLM on Mistral reasons only when asked:
@@ -138,9 +143,9 @@ class _Busy(LLMError):
     """A provider that is loaded, not one that is refusing: 429, or anything 5xx. Waiting is the
     answer, so this is retried where a plain LLMError is not. `after` is its Retry-After header."""
 
-    def __init__(self, message: str, after: str = ""):
+    def __init__(self, message: str, after: str = "", status: int = 0):
         super().__init__(message)
-        self.after = after
+        self.after, self.status = after, status
 
 
 def provider() -> str:
@@ -274,7 +279,7 @@ def _repair(text: str) -> str:
     return "".join(out)
 
 
-def parse(raw: str) -> dict:
+def parse(raw: str, label: str = "") -> dict:
     """Model text → dict. Strips thinking and code fences, then finds the outermost JSON object.
     A slice that still will not parse gets one repair pass (see `_repair`) before it is given up
     on, so the one-more-try in `chat_json` is spent on real failures rather than a stray quote."""
@@ -289,10 +294,12 @@ def parse(raw: str) -> dict:
         try:
             return json.loads(sliced)
         except json.JSONDecodeError:
-            return json.loads(_repair(sliced))          # still bad → raises, as it did before
+            out = json.loads(_repair(sliced))           # still bad → raises, as it did before
+            log.info("llm label=%s json=repaired", label)
+            return out
 
 
-def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str:
+def _ask(system: str, user: str, timeout: float | None, effort: str = "", label: str = "") -> str:
     """One streamed call; the model's text, thinking and all, as it arrived."""
     body = {"model": model(), "stream": True, "stream_options": {"include_usage": True},
             "messages": [{"role": "system", "content": system},
@@ -314,6 +321,8 @@ def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str
             pause = int(busy) if busy.strip().isdigit() else wait
             report(f"{'The model is busy' if isinstance(e, _Busy) else 'The model went quiet'}; "
                    f"trying again in {pause} s (attempt {i} of {len(BUSY_WAITS)})")
+            log.info("llm label=%s busy=%s wait=%ss try=%d/%d", label,
+                     getattr(e, "status", 0) or type(e).__name__, pause, i, len(BUSY_WAITS))
             _sleep(pause)
     return _send(body, timeout)         # the sixth try, and its error is the one that stands
 
@@ -328,7 +337,7 @@ def _send(body: dict, timeout: float | None) -> str:
             if r.status_code >= 400:
                 detail = f"{r.status_code} from {base}: {r.read()[:300]!r}"
                 if r.status_code == 429 or r.status_code >= 500:
-                    raise _Busy(detail, r.headers.get("retry-after", ""))
+                    raise _Busy(detail, r.headers.get("retry-after", ""), r.status_code)
                 raise LLMError(detail)
             for line in r.iter_lines():
                 if not line.startswith("data: "):
@@ -363,14 +372,29 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
     # A model that reasons well still drops an unescaped quote into a long string now and then,
     # and a project summary is two long strings. The second answer nearly always parses; after
     # two the failure is real and lands on the run row as before.
+    t0 = time.monotonic()
+    spent = usage.get("tokens_in", 0), usage.get("tokens_out", 0)     # this context's, so far
     for attempt in (1, 2):
-        raw = _ask(system, user, timeout, reasoning(label))
         try:
-            out = parse(raw)
+            raw = _ask(system, user, timeout, reasoning(label), label)
+        except Exception as e:
+            # The provider's own error, hard-truncated. What the model was SHOWN is never in it.
+            log.error("llm label=%s failed=%s: %.120s", label, type(e).__name__, e)
+            raise
+        try:
+            out = parse(raw, label)
             break
         except (json.JSONDecodeError, LLMError) as e:
             if attempt == 2:
+                # That it would not parse, never the answer itself: the answer is the material
+                # talked back, and this line leaves the researcher's machine.
+                log.error("llm label=%s failed=LLMError: the model's answer was not JSON, twice",
+                          label)
                 raise LLMError(f"the model's answer was not JSON, twice: {e}") from e
+            log.info("llm label=%s json=retry", label)
+    log.info("llm label=%s provider=%s model=%s in=%d out=%d s=%.1f", label, provider(), model(),
+             usage.get("tokens_in", 0) - spent[0], usage.get("tokens_out", 0) - spent[1],
+             time.monotonic() - t0)
     if record := os.environ.get("APERTURE_RECORD"):
         d = Path(record)
         d.mkdir(parents=True, exist_ok=True)

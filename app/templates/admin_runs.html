@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block main %}
+{# The project's name, the material's id. A material's title is standardly a person's name, so it
+   is the one thing on this page an administrator does not get: what ran, not what it read. #}
+{% set STEP = {'frame': 'Structure', 'angles': 'Angles', 'read': 'Coding', 'doc': 'Synthesis',
+               'diarize': 'Speakers'} %}
+<section class="admin runs-page">
+<h1>Recent runs</h1>
+<p class="dim">Every project on this instance. Times are UTC, and a step still running has no
+seconds yet.</p>
+
+<h2>The last 14 days</h2>
+<div class="scroller">
+<table class="runs">
+  <thead><tr><th>Day</th><th>Runs</th><th>Failed</th><th>Tokens in</th><th>Tokens out</th>
+             <th>Minutes</th><th>Set aside</th></tr></thead>
+  <tbody>
+  {% for d in days %}
+  <tr><td class="num">{{ d.day }}</td><td class="num">{{ d.runs }}</td>
+      <td class="num">{{ d.failed or 0 }}</td>
+      <td class="num">{{ '{:,}'.format(d.tokens_in or 0) }}</td>
+      <td class="num">{{ '{:,}'.format(d.tokens_out or 0) }}</td>
+      <td class="num">{{ '%.1f' | format(d.minutes or 0) }}</td>
+      <td class="num">{{ d.set_aside or 0 }}</td></tr>
+  {% else %}
+  <tr><td class="dim" colspan="7">Nothing yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>The last {{ runs | length }} {{ 'run' | plural(runs | length) }}</h2>
+<div class="scroller">
+<table class="runs">
+  <thead><tr><th>Started</th><th>Project</th><th>Step</th><th>Material</th><th>Model</th>
+             <th>In</th><th>Out</th><th>Seconds</th><th>What happened</th></tr></thead>
+  <tbody>
+  {% for r in runs %}
+  <tr>
+    <td class="num">{{ r.started | when }} {{ (r.started or '')[11:16] }}</td>
+    <td>{{ r.project | txt if r.project else '—' }}</td>
+    <td>{{ STEP.get(r.kind, r.kind) }}</td>
+    <td class="num">{{ r.material_id or '—' }}</td>
+    <td class="num">{{ r.provider | txt }}/{{ r.model | txt }}</td>
+    <td class="num">{{ r.tokens_in or 0 }}</td>
+    <td class="num">{{ r.tokens_out or 0 }}</td>
+    <td class="num">{{ '%.1f' | format(r.seconds or 0) if r.finished else '' }}</td>
+    <td>{% if r.error %}<span class="failed">{{ r.error | txt }}</span>
+        {%- elif r.finished %}ok{% else %}running{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td class="dim" colspan="9">Nothing yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</section>
+{% endblock %}

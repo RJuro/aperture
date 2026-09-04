@@ -700,6 +700,33 @@ def runs(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM run WHERE project_id=? ORDER BY started", (pid,)).fetchall()
 
 
+def recent_runs(conn: sqlite3.Connection, limit: int = 200) -> list[sqlite3.Row]:
+    """The last runs on this instance, across every project, newest first — for the one page an
+    administrator has. The project's NAME, because administration already lists names, and the
+    material's ID and never its title: a title is usually somebody's name."""
+    return conn.execute(
+        "SELECT r.*, p.name AS project, "
+        "(julianday(r.finished) - julianday(r.started)) * 86400 AS seconds "
+        "FROM run r LEFT JOIN project p ON p.id = r.project_id "
+        # rowid breaks the tie: `now()` is milliseconds and three steps of one chain can
+        # start inside one, which left the newest of them in the middle of the page.
+        "ORDER BY r.started DESC, r.rowid DESC LIMIT ?", (limit,)).fetchall()
+
+
+def runs_by_day(conn: sqlite3.Connection, days: int = 14) -> list[sqlite3.Row]:
+    """What the instrument did each day and what it cost, over every project. A row that is still
+    running counts as a run and contributes no minutes — `julianday(NULL)` is NULL and SUM skips
+    it — which is the honest answer while a call is in flight."""
+    return conn.execute(
+        "SELECT substr(started, 1, 10) AS day, COUNT(*) AS runs, "
+        "SUM(error IS NOT NULL) AS failed, "
+        "SUM(tokens_in) AS tokens_in, SUM(tokens_out) AS tokens_out, "
+        "SUM((julianday(finished) - julianday(started)) * 1440) AS minutes, "
+        "SUM(COALESCE(notes, '') NOT IN ('', '[]')) AS set_aside "
+        "FROM run WHERE started >= date('now', ?) GROUP BY day ORDER BY day DESC",
+        (f"-{days - 1} days",)).fetchall()
+
+
 # ---- durable background jobs -----------------------------------------------------------------
 
 def enqueue_job(conn: sqlite3.Connection, pid: str, runs: list[dict]) -> str:

@@ -71,7 +71,7 @@ def test_a_repaired_answer_costs_no_second_call(monkeypatch, real_chat_json):
     """The point of the whole thing: chat_json returns the dict off the FIRST answer."""
     calls = []
 
-    def ask(system, user, timeout, effort=""):
+    def ask(system, user, timeout, effort="", label=""):
         calls.append(1)
         return '{"summary": "she called it "the shop" and left", "interpretation": "a living"}'
 
