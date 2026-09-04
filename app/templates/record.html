@@ -70,7 +70,7 @@
 </div></section>
 
 <section class="section" id="themes"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">Each theme in full</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its theme</span></div>
+<div class="section-heading"><div><p class="eyebrow">Each theme across the corpus</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its material</span></div>
 {% if materials | length == 1 %}<p class="dim">With one material, a theme cannot yet run across materials.</p>{% endif %}
 {% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}
 {% if rows %}<h3 class="theme-group">{{ group }}</h3>{% endif %}
@@ -81,29 +81,30 @@
   <p class="meta">{{ t.derivation }}</p>
   {% if t.account %}<div class="summary-copy">{{ t.account.text | cite(cites, project.id) }}</div>{% endif %}
   {% for m in t.carrying %}
-  <h4>{{ m.display_title | txt }} <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}</span></h4>
-  <ol class="claims">
-  {% for x in m.moments %}
-    <li><span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
-      <p class="claim">{{ x.claim | txt }}</p>
-      {% if x.support == 'partly' %}<p class="dim small">The passage carries part of this: {{ x.support_note | txt }}</p>{% endif %}
-      <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ t.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
-      <span class="num">{{ x.sid }}</span>
-    </div></li>
-  {% endfor %}
-  </ol>
+  <h4>{{ m.display_title | txt }} <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }}</span></h4>
+  {% if m.summary %}<div class="summary-copy">{{ m.summary.text | cite(cites, project.id) }}</div>{% endif %}
+  <p class="dim small"><a href="#m-{{ m.material_id }}-t-{{ t.id }}">{{ m.claims }} {{ 'claim' | plural(m.claims) }} · printed in full under {{ m.display_title | txt }} below</a></p>
   {% else %}
   <p class="dim">No material contains claims for this theme yet.</p>
   {% endfor %}
   {% if t.absent %}
-  <h4>Materials where this theme does not appear</h4>
-  <p class="dim">No claims in these materials support this theme.{% if t.set_aside %} Before reading
-  that as absence, see what was excluded — a set of claims too thin to keep is dropped whole and
-  would look the same as absence here.{% endif %}</p>
+  {% for head, mats in
+     ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
+       ("Not looked for here", t.absent | rejectattr("looked_for") | list)]
+      if t.absent[0].looked_for is defined
+      else [("Materials where this theme does not appear", t.absent)]) %}
+  {% if mats %}
+  <h4>{{ head }}</h4>
   <ul class="mats">
-  {% for m in t.absent %}<li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a> <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }}</span></li>{% endfor %}
+  {% for m in mats %}<li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a> <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }}</span></li>{% endfor %}
   </ul>
+  {% endif %}
+  {% endfor %}
+  {% if t.set_aside %}
+  <p class="dim">Before reading that as absence, see what was excluded — a set of claims too thin
+  to keep is dropped whole and would look the same as absence here.</p>
   {% for n in t.set_aside %}<p class="dim small">{{ n.note | txt }}{% if n.material %} — {{ n.material | txt }}{% endif %}</p>{% endfor %}
+  {% endif %}
   {% endif %}
 </section>
 {% endfor %}
@@ -123,9 +124,18 @@
   {% if m.reading %}<p class="eyebrow">After reading</p><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
   {% for th in m.threads %}
-  <h4>{{ th.theme.name | txt }} <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
+  <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
   {% if th.summary %}<div class="summary-copy">{{ th.summary.text | cite(cites, project.id) }}</div>{% endif %}
-  <p class="dim small">Printed in full under <a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> above.</p>
+  <ol class="claims">
+  {% for x in th.moments %}
+    <li><span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
+      <p class="claim">{{ x.claim | txt }}</p>
+      {% if x.support == 'partly' %}<p class="dim small">The passage carries part of this: {{ x.support_note | txt }}</p>{% endif %}
+      <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.id }}?theme={{ th.theme.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
+      <span class="num">{{ x.sid }}</span>
+    </div></li>
+  {% endfor %}
+  </ol>
   {% else %}
   <p class="dim">No analysis yet.</p>
   {% endfor %}

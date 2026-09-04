@@ -690,7 +690,12 @@ def _export_set_aside(conn, pid: str) -> list[dict]:
 def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
     """Each live theme across the corpus: where it runs, where it does not, and — beside the
     absence — any note that named it on the way out, so a silence is never asserted over a line
-    that was found and dropped."""
+    that was found and dropped.
+
+    A carrying material arrives as its one-line summary for this theme, not as its claims. The
+    claims are printed under the material they were read in, because that is the order the
+    analysis was made in; here the theme is the cross-cut, short enough to read as an account.
+    """
     from .engine import account
 
     out = []
@@ -702,7 +707,8 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
             row = dict(m)
             row["display_title"] = _material_title(m)
             if m["claims"]:
-                row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], t["id"])]
+                row["summary"] = _row(store.get_summary(
+                    conn, "thread", f'{m["material_id"]}:{t["id"]}', "reading"))
                 carrying.append(row)
             else:
                 absent.append(row)

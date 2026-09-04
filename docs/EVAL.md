@@ -35,6 +35,10 @@ marked. It has no database beside it any more, so its counts come from the recor
 python scripts/eval_metrics.py --record "path/to/Ellis Island.md" > eval/v1.metrics.json
 ```
 
+`--record` reads either shape of record: the current one, which prints every claim under the
+material it was read in, and the one v1 was written in, which printed them under their theme.
+The counts mean the same thing in both, so v1 stays comparable.
+
 For any corpus without a v1 record, produce one with the runner exactly as v2 is produced below,
 before the change is made.
 

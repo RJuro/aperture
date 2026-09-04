@@ -46,26 +46,28 @@
 {% endif %}
 ##### Materials where this theme appears
 
-{% for m in t.carrying %}**{{ m.display_title }}** — {{ (m.kind or "material") | replace("_", " ") }} · {{ m.claims }} {{ 'claim' | plural(m.claims) }}
+{% for m in t.carrying %}**{{ m.display_title }}** — {{ (m.kind or "material") | replace("_", " ") }}
+{% if m.summary %}
+{{ m.summary.text }}
+{% endif %}
+[{{ m.claims }} {{ 'claim' | plural(m.claims) }} · printed in full under {{ m.display_title }} below](#{{ m.display_title | lower | replace(' ', '-') }})
 
-{% for x in m.moments %}{{ loop.index }}. {{ x.claim }}
-   > {{ x.anchor }}  [{{ x.sid }}]
-{% endfor %}
 {% else %}No material contains claims for this theme yet.
-{% endfor %}
-##### Materials where this theme does not appear
-{% if t.absent %}
-No claims in these materials support this theme:
+{% endfor %}{% if t.absent %}{% for head, mats in
+   ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
+     ("Not looked for here", t.absent | rejectattr("looked_for") | list)]
+    if t.absent[0].looked_for is defined
+    else [("Materials where this theme does not appear", t.absent)]) %}{% if mats %}##### {{ head }}
 
-{% for m in t.absent %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
-{% endfor %}{% if t.set_aside %}
+{% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
+{% endfor %}
+{% endif %}{% endfor %}{% if t.set_aside %}
 Before reading that as absence, check what was excluded below — a set of claims too thin to keep
 is dropped whole and would look the same as absence here:
 
 {% for n in t.set_aside %}- {{ n.note }}{% if n.material %} — {{ n.material }}{% endif %}
 {% endfor %}{% endif %}
-{% else %}
-Every material contains claims for this theme.
+{% else %}Every material contains claims for this theme.
 {% endif %}
 {% endfor %}{% endfor %}{% if not themes %}No themes yet.
 
@@ -98,8 +100,10 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {% if th.summary %}
 {{ th.summary.text }}
 {% endif %}
-Printed in full under [{{ th.theme.name }}](#{{ th.theme.name | lower | replace(' ', '-') }}) above.
-
+{% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
+{% if x.support == 'partly' %}   The passage carries part of this: {{ x.support_note }}
+{% endif %}   > {{ x.anchor }}  [{{ x.sid }}]
+{% endfor %}
 {% else %}No analysis yet.
 
 {% endfor %}{% else %}No materials yet.

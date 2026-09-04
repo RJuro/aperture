@@ -13,7 +13,7 @@ import re
 
 import pytest
 
-from app import store
+from app import context, store
 
 
 @pytest.fixture
@@ -125,7 +125,8 @@ def test_the_document_never_shows_an_internal_claim_id(client, conn, rich):
 
 def test_each_claim_is_printed_once_and_no_step_name_stands_in_for_a_state(client, conn, rich):
     """At fifty materials and twelve themes the record was 1.31 MB and 12,000 quoted claim lines
-    for 6,000 claims — every claim once under its theme and once again under its material. And
+    for 6,000 claims — every claim once under its theme and once again under its material. The
+    one printing is under the material, where the reading found it; the theme points at it. And
     the material header read "interview · doc · ...": `doc` is the engine's word for a step, not
     a sentence about a material."""
     pid = rich["pid"]
@@ -133,11 +134,12 @@ def test_each_claim_is_printed_once_and_no_step_name_stands_in_for_a_state(clien
     first = store.moments(conn, rich["grande"])[0]
     themes = md.split("\n## Themes\n", 1)[1].split("\n## Materials\n", 1)[0]
     mats = md.split("\n## Materials\n", 1)[1]
-    assert first["claim"] in themes and first["anchor"] in themes
-    assert first["claim"] not in mats, "printed under its theme and again under its material"
-    name = list(rich["themes"])[0]
-    assert f"](#{name.lower().replace(' ', '-')})" in mats, \
-        "a material must point at where its claims are printed"
+    title = context._material_title(store.material(conn, rich["grande"]))
+    here = mats.split(f"### {title}\n", 1)[1].split("\n### ", 1)[0]
+    assert here.count(first["claim"]) == 1 and first["anchor"] in here
+    assert first["claim"] not in themes, "printed under its material and again under its theme"
+    assert f"](#{title.lower().replace(' ', '-')})" in themes, \
+        "a theme must point at the material where its claims are printed"
     assert f" · {store.material(conn, rich['grande'])['state']} ·" not in md
 
 

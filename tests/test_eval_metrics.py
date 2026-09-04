@@ -124,6 +124,87 @@ def test_a_record_gives_back_the_counts_the_database_gave(conn, analysed, tmp_pa
     assert b["total_passages"] is None, "a record does not say what was never cited"
 
 
+_BEFORE_THE_FLIP = """# A reading
+
+## Themes
+
+### Across materials
+
+#### Work and trade
+
+how a living is made
+
+in 2 of 2 materials · 4 claims on 4 passages
+
+Every material carries this, across the corpus.
+
+##### Materials where this theme appears
+
+**Grande, M.** — interview · 2 claims
+
+1. He worked the boats
+   > we worked the boats in March  [S010]
+2. And was paid by the day
+   > paid by the day, never the week  [S011]
+
+**Rodwin** — interview · 2 claims
+
+1. The trade was learned at home
+   > my father taught me the trade  [S020]
+2. And kept after the crossing
+   > I kept at it here too  [S021]
+
+##### Materials where this theme does not appear
+
+Every material contains claims for this theme.
+
+## Materials
+
+### Grande, M.
+
+interview · claims rest on 2 of 400 passages
+
+#### Before reading
+
+An oral-history interview about migration.
+
+#### Work and trade
+
+2 claims
+
+Printed in full under [Work and trade](#work-and-trade) above.
+
+### Rodwin
+
+interview · claims rest on 2 of 500 passages
+
+#### Work and trade
+
+2 claims
+
+Printed in full under [Work and trade](#work-and-trade) above.
+
+## Excluded from the analysis
+
+Nothing was excluded from the analysis.
+"""
+
+
+def test_a_record_written_before_the_claims_moved_under_their_material_still_counts(tmp_path):
+    """v1 of the Ellis Island record printed every claim under its theme, and the material
+    sections only pointed back at it. It exists as a markdown file and nothing else, and every
+    later version is compared against it, so that shape has to keep counting the same."""
+    record = tmp_path / "v1.md"
+    record.write_text(_BEFORE_THE_FLIP, encoding="utf-8")
+    m = eval_metrics.from_record(record)
+    assert m["materials"] == 2 and m["themes_live"] == 1
+    assert m["claims_per_theme"] == {"Work and trade": 4}
+    assert m["materials_per_theme"] == {"Work and trade": 2}
+    assert m["passages_per_theme"] == {"Work and trade": 4}
+    assert m["themes_in_two_or_more"] == 1 and m["themes_in_one_material"] == 0
+    assert m["hedge_words"]["every"] == 1 and m["hedge_words"]["across the corpus"] == 1
+
+
 def test_two_readings_side_by_side(tmp_path):
     a = {"themes_live": 12, "hedge_words": {"all": 9}, "doubled_ids": ["[S1, S1]"]}
     b = {"themes_live": 7, "hedge_words": {"all": 2}, "doubled_ids": []}

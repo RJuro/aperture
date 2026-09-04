@@ -186,15 +186,48 @@ def _non_latin_report(prose: list[str], material_text: str) -> dict:
 # ---- from a record, where there is no database -----------------------------------------------------
 
 _THEME_CLAIMS = re.compile(r"^\*\*(?P<title>.+?)\*\* — .*? · (?P<claims>\d+) claims?\s*$", re.M)
+_CLAIMS_LINE = re.compile(r"^(?P<claims>\d+) claims?\s*$", re.M)
 _QUOTE = re.compile(r"^\s+> .*?\[(?P<sid>S\d+)\]\s*$", re.M)
 _TOKENS = re.compile(r"^- \*\*(?P<step>.+?)\*\* — (?P<runs>\d+) runs? · (?P<in>\d+) input "
                      r"tokens? · (?P<out>\d+) output tokens?", re.M)
+
+# A material's own sections, which sit at the same heading level as the themes read in it.
+_NOT_A_THEME = ("Before reading", "After reading", "What to look for")
 
 
 def _sections(md: str, level: str) -> list[tuple[str, str]]:
     """[(heading, body)] for one heading level, in order."""
     parts = re.split(rf"^{level} (.+)$", md, flags=re.M)[1:]
     return list(zip(parts[0::2], parts[1::2]))
+
+
+def _under_the_materials(mats_md: str) -> dict[str, list[tuple[str, int, set]]]:
+    """Theme name → one (material, claims, passages) block per material carrying it.
+
+    The record prints each claim under the material it was read in, so a theme's claims are
+    gathered back up from the material sections — the same direction the analysis runs in.
+    """
+    out: dict[str, list[tuple[str, int, set]]] = {}
+    for title, body in _sections(mats_md, "###"):
+        for name, block in _sections(body, "####"):
+            if name.strip() in _NOT_A_THEME:
+                continue
+            n = _CLAIMS_LINE.search(block)
+            out.setdefault(name.strip(), []).append(
+                (title.strip(), int(n["claims"]) if n else 0,
+                 {q["sid"] for q in _QUOTE.finditer(block)}))
+    return out
+
+
+def _under_the_theme(body: str, sub_level: str) -> list[tuple[str, int, set]]:
+    """The same blocks off a record written before the claims moved under their material."""
+    here = next((b for h, b in _sections(body, sub_level)
+                 if h.startswith("Materials where this theme appears")), "")
+    found = list(_THEME_CLAIMS.finditer(here))
+    cut = [m.start() for m in found] + [len(here)]
+    return [(m["title"], int(m["claims"]),
+             {q["sid"] for q in _QUOTE.finditer(here[cut[i]:cut[i + 1]])})
+            for i, m in enumerate(found)]
 
 
 def from_record(path: Path | str) -> dict:
@@ -206,23 +239,20 @@ def from_record(path: Path | str) -> dict:
 
     passages: dict[str, set] = {}
     accounts: list[str] = []
-    themes_md = top.get("Themes", "")
+    themes_md, mats_md = top.get("Themes", ""), top.get("Materials", "")
     # Two record shapes: the older one lists themes at ### with #### sub-sections; since the
     # corpus/single-material split, ### is the group heading, #### the theme, ##### the sub-section.
     theme_level, sub_level = ("####", "#####") if re.search(r"^##### ", themes_md, re.M) else ("###", "####")
+    # And two places the claims can be: under their material since the record was flipped, under
+    # their theme before it. A quoted passage in the material sections is what tells them apart.
+    gathered = _under_the_materials(mats_md) if _QUOTE.search(mats_md) else {}
     for name, body in _sections(themes_md, theme_level):
         name = name.strip()
-        appears = _sections(body, sub_level)
-        here = next((b for h, b in appears if h.startswith("Materials where this theme appears")),
-                    "")
         accounts.append(body.split(sub_level)[0])
-        blocks = list(_THEME_CLAIMS.finditer(here))
-        out["claims_per_theme"][name] = sum(int(m["claims"]) for m in blocks)
+        blocks = gathered.get(name) or _under_the_theme(body, sub_level)
+        out["claims_per_theme"][name] = sum(c for _, c, _ in blocks)
         out["materials_per_theme"][name] = len(blocks)
-        cut = [m.start() for m in blocks] + [len(here)]
-        passages[name] = {(m["title"], q["sid"])
-                          for i, m in enumerate(blocks)
-                          for q in _QUOTE.finditer(here[cut[i]:cut[i + 1]])}
+        passages[name] = {(title, sid) for title, _, sids in blocks for sid in sids}
         out["passages_per_theme"][name] = len(passages[name])
         if len(blocks) == 1:
             out["themes_in_one_material"] += 1
@@ -230,7 +260,7 @@ def from_record(path: Path | str) -> dict:
             out["themes_in_two_or_more"] += 1
 
     out["themes_live"] = len(passages)
-    out["materials"] = len(_sections(top.get("Materials", ""), "###"))
+    out["materials"] = len(_sections(mats_md, "###"))
     out["themes_per_material"] = (round(out["themes_live"] / out["materials"], 2)
                                   if out["materials"] else None)
     out["claims_total"] = sum(out["claims_per_theme"].values())
