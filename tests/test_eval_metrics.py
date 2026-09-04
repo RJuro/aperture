@@ -1,0 +1,198 @@
+"""The evaluation loop: the runner that produces a record, and the bookkeeping over one.
+
+Nothing here judges a reading — that is `scripts/eval_rubric.md` and two blind readers. These
+tests only pin the counting, and the one thing the runner must get right: that the chain it runs
+is the chain the application runs, so v2 is comparable with v1.
+
+No model is called. The runner is exercised with every engine step stubbed, exactly as
+`test_p4_unit.py` exercises `jobs.py` — this file is about the harness, not about what it runs.
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+import eval_metrics  # noqa: E402
+import eval_run  # noqa: E402
+
+from app import context, jobs, pages, store  # noqa: E402
+
+
+# ---- counting a reading -------------------------------------------------------------------------
+
+def test_the_counts_over_a_finished_reading(conn, analysed):
+    m = eval_metrics.from_db(conn, analysed["pid"])
+    assert m["materials"] == 2
+    assert m["themes_live"] == 2
+    assert m["themes_per_material"] == 1.0
+    assert m["claims_total"] == 12, "two themes × two materials × three claims"
+    assert m["claims_per_theme"] == {"Work and trade": 6, "Leaving and arriving": 6}
+    assert m["materials_per_theme"] == {"Work and trade": 2, "Leaving and arriving": 2}
+    assert m["themes_in_one_material"] == 0 and m["themes_in_two_or_more"] == 2
+    assert 0 < m["cited_passages"] <= m["total_passages"]
+    assert m["cited_share"] == round(m["cited_passages"] / m["total_passages"], 3)
+
+
+def test_a_passage_two_themes_both_cite_is_reported_as_shared(conn, analysed, quote):
+    """Recycling, as a count: the same words carrying a claim under one theme and another."""
+    before = eval_metrics.from_db(conn, analysed["pid"])["shared_passage_share"]
+    assert before == 0.0
+    work, leaving = analysed["themes"]["Work and trade"], analysed["themes"]["Leaving and arriving"]
+    shared = store.thread(conn, analysed["grande"], work)[0]
+    store.save_moments(conn, analysed["grande"], leaving,
+                       [{"claim": "the same words, read again", "anchor": shared["anchor"],
+                         "sid": shared["sid"]}])
+    m = eval_metrics.from_db(conn, analysed["pid"])
+    assert m["passages_per_theme"] == {"Work and trade": 6, "Leaving and arriving": 4}
+    assert m["shared_passage_share_per_theme"] == {"Work and trade": round(1 / 6, 3),
+                                                   "Leaving and arriving": 0.25}
+    assert m["shared_passage_share"] == round(1 / 9, 3), "one of nine passages carries two themes"
+
+
+def test_totalising_words_doubled_ids_and_stray_script_are_counted(conn, analysed):
+    pid = analysed["pid"]
+    store.save_summary(conn, "project", pid, "reading",
+                       "All three, every one, with no exceptions [S001, S004, S001] 数据.")
+    m = eval_metrics.from_db(conn, pid)
+    assert m["hedge_words"]["all"] == 1 and m["hedge_words"]["every"] == 1
+    assert m["hedge_words"]["no exceptions"] == 1
+    assert m["hedge_words"]["consistently"] == 0
+    assert m["doubled_ids"] == ["[S001, S004, S001]"]
+    assert m["non_latin"] == {"checked": True, "chars": 2, "characters": ["据", "数"]}
+
+
+def test_stray_script_is_not_reported_when_the_material_is_not_latin(conn, project):
+    store.add_material(conn, project, "北京", "数据数据数据数据数据数据数据数据数据数据")
+    store.save_summary(conn, "project", project, "reading", "数据")
+    assert eval_metrics.from_db(conn, project)["non_latin"]["checked"] is False
+
+
+def test_what_a_verify_step_set_aside_is_absent_rather_than_zero(conn, analysed):
+    """The verify step is still being built. A column that is not there yet reports as not
+    measured — reported as 0 it would look like a step that ran and found nothing."""
+    pid = analysed["pid"]
+    rid = store.start_run(conn, pid, "doc", analysed["grande"], "x")
+    store.finish_run(conn, rid, notes=['the quote does not carry it: "we sailed in March"',
+                                       "1 quote(s) ran past the 12-word cap and were kept"])
+    aside = eval_metrics.from_db(conn, pid)["set_aside"]
+    assert aside["verify_superseded_claims"] is None, "no support_note column in this schema"
+    assert aside["runs_saying_does_not_carry_it"] == 1
+    assert aside["notes_total"] == 2
+
+
+def test_the_verify_column_is_counted_once_it_exists(conn, analysed):
+    conn.execute("ALTER TABLE moment ADD COLUMN support_note TEXT DEFAULT ''")
+    live = store.moments(conn, analysed["grande"])[0]
+    conn.execute("UPDATE moment SET status='superseded', support_note='the quote does not carry "
+                 "it' WHERE id=?", (live["id"],))
+    conn.commit()
+    assert eval_metrics.from_db(conn, analysed["pid"])["set_aside"]["verify_superseded_claims"] == 1
+
+
+def test_tokens_come_back_per_step(conn, analysed):
+    pid = analysed["pid"]
+    for kind, ti, to in (("read", 100, 20), ("read", 300, 40), ("themes", 50, 10)):
+        rid = store.start_run(conn, pid, kind, None, "x")
+        store.finish_run(conn, rid, tokens_in=ti, tokens_out=to)
+    steps = eval_metrics.from_db(conn, pid)["tokens_per_step"]
+    assert steps["read"] == {"runs": 2, "in": 400, "out": 60}
+    assert steps["themes"] == {"runs": 1, "in": 50, "out": 10}
+
+
+# ---- the same counts off a record, where the database is gone ------------------------------------
+
+def test_a_record_gives_back_the_counts_the_database_gave(conn, analysed, tmp_path):
+    """v1 of the Ellis Island record exists as a markdown file and nothing else. The .md path is
+    the poorer of the two — a record does not say how many passages were never cited — but what
+    it does carry has to agree."""
+    pid = analysed["pid"]
+    store.save_summary(conn, "theme", analysed["themes"]["Work and trade"], "reading",
+                       "Every material carries this, across the corpus, with no exceptions.")
+    record = tmp_path / "record.md"
+    record.write_text(pages._render("export.md", context.export(conn, pid)), encoding="utf-8")
+
+    a, b = eval_metrics.from_db(conn, pid), eval_metrics.from_record(record)
+    for key in ("materials", "themes_live", "themes_per_material", "claims_total",
+                "claims_per_theme", "materials_per_theme", "passages_per_theme",
+                "themes_in_one_material", "themes_in_two_or_more", "cited_passages"):
+        assert a[key] == b[key], key
+    assert b["hedge_words"]["every"] and b["hedge_words"]["no exceptions"]
+    assert b["total_passages"] is None, "a record does not say what was never cited"
+
+
+def test_two_readings_side_by_side(tmp_path):
+    a = {"themes_live": 12, "hedge_words": {"all": 9}, "doubled_ids": ["[S1, S1]"]}
+    b = {"themes_live": 7, "hedge_words": {"all": 2}, "doubled_ids": []}
+    table = eval_metrics.compare(a, b)
+    assert "themes_live" in table and "12" in table and "7" in table
+    assert "hedge_words.all" in table
+    for p, d in ((tmp_path / "a.json", a), (tmp_path / "b.json", b)):
+        p.write_text(json.dumps(d))
+    assert eval_metrics.main(["--compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]) == 0
+
+
+# ---- the runner ----------------------------------------------------------------------------------
+
+@pytest.fixture
+def corpus(tmp_path):
+    """Two tiny materials on disk, and a .DS_Store to be ignored."""
+    d = tmp_path / "materials"
+    d.mkdir()
+    (d / "one.txt").write_text("A: We left in March. It was cold.\nB: And after that?\n")
+    (d / "two.md").write_text("A: The work was steady. Nobody complained.\n")
+    (d / ".hidden.txt").write_text("not material")
+    (d / "notes.rtf").write_text("not a kind this reads")
+    return d
+
+
+def test_the_runner_runs_exactly_the_chain_the_application_runs(corpus, tmp_path, monkeypatch,
+                                                                capsys):
+    ran = []
+    for kind, (line, _) in list(jobs.STEPS.items()):
+        monkeypatch.setitem(jobs.STEPS, kind, (line, lambda c, p, r, _k=kind: ran.append(_k)))
+    out = tmp_path / "v2" / "record.md"
+    assert eval_run.main(["--materials", str(corpus), "--focus", "why people left",
+                          "--data", str(tmp_path / "v2data"), "--out", str(out)]) == 0
+
+    assert ran == ["frame", "angles", "read", "frame", "angles", "read",
+                   "themes", "themes", "doc", "doc", "accounts", "project"], \
+        "the same chain as jobs.ingest_chain, in the same order"
+    assert out.exists() and out.with_suffix(".metrics.json").exists()
+    metrics = json.loads(out.with_suffix(".metrics.json").read_text())
+    assert metrics["materials"] == 2, "the .rtf and the dotfile were not material"
+    assert metrics["source"] == "db"
+    printed = capsys.readouterr().out
+    assert "Reading one.txt" in printed and "Finding themes" in printed
+    assert "0 in / 0 out" in printed, "every step prints what it spent"
+
+
+def test_the_runner_leaves_the_store_as_it_found_it(corpus, tmp_path, monkeypatch):
+    """The trace prints by standing in front of two store functions; it puts them back."""
+    before = (store.start_run, store.finish_run)
+    for kind, (line, _) in list(jobs.STEPS.items()):
+        monkeypatch.setitem(jobs.STEPS, kind, (line, lambda c, p, r: None))
+    eval_run.main(["--materials", str(corpus), "--data", str(tmp_path / "d"),
+                   "--out", str(tmp_path / "r.md")])
+    assert (store.start_run, store.finish_run) == before
+
+
+def test_the_runner_refuses_a_data_directory_that_already_holds_a_reading(corpus, tmp_path):
+    data = tmp_path / "used"
+    data.mkdir()
+    (data / "aperture.db").write_text("")
+    with pytest.raises(SystemExit, match="already exists"):
+        eval_run.main(["--materials", str(corpus), "--data", str(data),
+                       "--out", str(tmp_path / "r.md")])
+
+
+def test_the_runner_says_so_when_there_is_nothing_to_read(tmp_path):
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    with pytest.raises(SystemExit, match="no .*files"):
+        eval_run.main(["--materials", str(empty), "--data", str(tmp_path / "d"),
+                       "--out", str(tmp_path / "r.md")])
