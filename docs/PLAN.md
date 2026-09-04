@@ -306,3 +306,57 @@ Only the two public seed transcripts enter this repo; `pairing_nirosha/` and `tr
 never do. codex-cli / luna is not a provider here and never deploys. Simulation output never mixes
 into validation against a human coder. The deployed model is M3 or GLM-5.2 via Mistral; P7's
 recorded checks are the compliance gate for any later model change.
+
+## 12. Theme lifecycle: candidate, open, frozen
+
+*Added 2026-09-04, after a four-interview project came back with twelve themes, eleven of them
+"in 4 of 4", and a ceiling change left the set unable to move.*
+
+The method this follows is template analysis with a constant-comparison loop, read through
+reflexive TA's rule that a theme need not appear in every item and that prevalence is not
+importance. Three consequences, each violated by the chain as it stood: a pattern seen in one case
+is a candidate, not a category; saturation is judged per theme, not for the set; and the analyst —
+not the instrument — declares a theme final, after which new material is *applied* to it and
+deviations are logged, not written in.
+
+**Three holds on a theme.** `theme.hold` is `candidate`, `open` or `frozen`; `status` stays
+`live | merged` as before.
+
+- **Candidate** — a pattern found in one material so far. It lives on that material's page and
+  in the "in one material so far" group, never counts against the ceiling, and gets no account.
+  THREAD follows a candidate through a new material only where its codes fired there (always,
+  whatever `APERTURE_FOLLOW` says: a candidate needs confirmation from coding, not a reader sent to
+  find it). It becomes **open** when a second material holds a line under it — Python, by
+  recurrence — or when the researcher promotes it. A theme THEMES coins is born a candidate.
+- **Open** — a project theme still developing. THEMES may reword, rescope, gather, merge. This is
+  the behaviour the chain has always had, now confined to this group.
+- **Frozen** — the researcher has declared it final. Name and gist are fixed in Python, not by
+  asking nicely: a changed name or gist returned for a frozen id is ignored, and a frozen theme
+  cannot be merged away (an open theme may be merged *into* it). New material is applied to it —
+  codes gathered, lines written, absence recorded — and what pulls against the definition comes
+  back as a **tension note** (`theme_note`: theme, material, run, ≤ 25 words) shown to the
+  researcher on the theme page, never written into the gist. Unfreeze is one click; the notes
+  are the case for it.
+
+**A saturation signal, bookkeeping only.** `theme.stable_passes` counts the consecutive THEMES
+passes over new material in which the theme's name, gist and gathered codes did not change (a
+fingerprint compared per pass; reset to 0 on any change). At three or more the page says
+*stable for N materials* beside a Freeze control. The researcher freezes; the instrument only
+counts.
+
+**The ceiling counts open + frozen.** Candidates are unbounded but THEMES may coin at most
+`MAX_NEW` (4) per pass. When open + frozen exceed the ceiling — a project that reached twelve
+under the old `4 + 2n` — THEMES is told so in its own slot and asked to merge down to it, folding
+the theme that gathers fewest codes into its nearest; nothing is dropped, merges carry their lines.
+
+**THEMES sees the set partitioned** — frozen (assign codes; report tensions; do not touch), open
+(revise), candidates from other materials (this material may confirm one by gathering its codes
+into it; a candidate left out of the answer simply stays a candidate) — in one call per material
+as before. Accounts are written for open and frozen only; a frozen theme's account is still
+rewritten when its claims change, since the fingerprint includes them.
+
+**Pages.** Overview: frozen first, then open by reach, candidates folded per material with a
+Promote control. Theme page: hold, stable-for count, Freeze/Unfreeze, tension notes with the
+material each came from. Material page: this material's candidates marked as such. Record:
+the hold printed with each theme; tension notes under the theme. Controls are the owner's and
+an invited editor's.
