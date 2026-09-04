@@ -5,9 +5,7 @@
     <p class="eyebrow">Reading record</p>
     <div class="head-row">
       <div><h1>{{ project.name | txt }}</h1>
-        <p class="lead">Everything the reading has arrived at, in one place: what the corpus shows,
-          each theme across it, each material with its claims and the words they rest on, what was
-          checked, what was excluded, and what the analysis cost.</p>
+        <p class="lead">Everything the reading has arrived at, in one place.</p>
         <p class="meta head-stat">{{ materials | length }} {{ 'material' | plural(materials | length) }} · {{ themes | length }} {{ 'theme' | plural(themes | length) }} · started {{ project.created_at | when }}</p>
       </div>
       <div class="head-actions">

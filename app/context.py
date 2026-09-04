@@ -364,8 +364,21 @@ def data_persistent() -> bool:
 
 
 def _shell(conn, pid: str) -> dict:
-    nav_materials = [{**dict(m), "display_title": _material_title(m)}
-                     for m in store.materials(conn, pid)]
+    # Where each material stands, for the rail's mark. A researcher with several materials could
+    # otherwise only tell which one is read by opening it.
+    # ponytail: four indexed queries per material, fine to about fifty; one grouped query over
+    # `run` if a corpus ever makes the rail slow.
+    nav_materials = []
+    for m in store.materials(conn, pid):
+        steps = _analysis_steps(conn, m)
+        states = {s["state"] for s in steps}
+        state = ("active" if "active" in states else "failed" if "failed" in states
+                 else "done" if states == {"done"} else "waiting")
+        said = {"active": "Being read", "done": "Read", "waiting": "Not read yet"}.get(state, "")
+        if state == "failed":
+            said = "Stopped: " + next(s["error"] for s in steps if s["state"] == "failed")
+        nav_materials.append({**dict(m), "display_title": _material_title(m),
+                              "reading_state": state, "reading_said": said})
     runs = [dict(r) for r in store.active_runs(conn, pid)]
     # The banner used to read run rows alone, and a job that is queued has none yet — so a page
     # whose work was waiting on another project's chain said nothing, offered no Stop and did not
