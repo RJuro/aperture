@@ -76,7 +76,7 @@ def _admin(request: Request) -> sqlite3.Row:
 
 # ---- routes -------------------------------------------------------------------------------------
 
-LOCAL = re.compile(r"/[A-Za-z0-9/_.~%!$&'()*+,;=:@-]*")
+LOCAL = re.compile(r"/[A-Za-z0-9/_.~%!$&'()*+,;=:@?-]*")
 
 
 def _local(where: str) -> str:
