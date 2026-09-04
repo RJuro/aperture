@@ -248,25 +248,31 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .upload-grid > button { grid-column: 1 / -1; justify-self: start; }
 
 /* Material workspace */
-.material-head { padding-top: clamp(34px, 5vw, 72px); padding-bottom: 28px; }
-.head-meta { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--muted); font-size: 12px; }
+/* The head is a label, not the page: at 1440×900 the title, the meta, the fold and the receipt
+   used to fill the fold and leave the reader two lines of the summary they came for. Nothing is
+   dropped, everything is pulled in — the display size steps down to the size the theme names are
+   read at, and the rows sit closer. */
+.material-head { padding-top: clamp(28px, 3.2vw, 46px); padding-bottom: 20px; }
+.material-head h1 { font-size: clamp(31px, 3.4vw, 46px); }
+.head-meta { margin-top: 9px; display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--muted); font-size: 12px; }
 .head-meta > span + span::before { content: '·'; margin-right: 14px; color: var(--border); }
 /* Folded inside the head, the people list needs none of the section rule a quiet fold carries
-   where it ends a page, and twenty ruled rows is a page of its own. */
-.head-people { margin-top: 12px; padding-top: 0; border-top: 0; }
+   where it ends a page, and twenty ruled rows is a page of its own. Closed it is one more phrase
+   on the meta line; opened it takes the line to itself so the names are not a narrow column. */
+.head-people { margin-top: 0; padding-top: 0; border-top: 0; }
+.head-people[open] { flex-basis: 100%; }
 .head-people .mats li { padding: 3px 0; border-bottom: 0; }
-.material-receipt { margin-top: 17px; }
+.material-receipt { margin-top: 12px; }
 .wide-menu { width: min(360px, calc(100vw - 36px)); }
 .wide-menu > details > summary { min-height: 42px; display: flex; align-items: center; padding: 8px 10px; border-radius: 6px; list-style: none; font-size: 13px; }
 .wide-menu > details > summary::-webkit-details-marker { display: none; }
 .wide-menu > details > summary:hover { background: var(--fg-soft); }
 .wide-menu p { margin: 0; color: var(--muted); font-size: 11px; }
 .summary-fold { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.summary-fold > summary { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 18px; list-style: none; font-weight: 650; }
+.summary-fold > summary { min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 18px; list-style: none; font-weight: 650; }
 .summary-fold > summary::-webkit-details-marker { display: none; }
 .summary-fold > summary::after { content: 'Show'; color: var(--muted); font: 10px var(--font-mono); }
 .summary-fold[open] > summary::after { content: 'Fold'; }
-.summary-fold > summary .meta { margin-left: auto; }
 .summary-fold .summary-copy { padding: 2px 0 12px; }
 .provisional { max-width: 76ch; color: var(--muted); font-style: italic; }
 .inline-response { max-width: 76ch; padding: 12px 0 25px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
@@ -274,15 +280,33 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .found-head { margin: 0 0 2px; font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
 .found-list { margin: 0 0 30px; padding: 0; list-style: none; }
 .found-list > li { padding: 15px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 20px; align-items: baseline; border-bottom: 1px solid var(--border); }
-.found-list .found-name { font: 500 19px/1.3 var(--font-display); }
+.found-list .found-name { font: 500 19px/1.3 var(--font-display); transition: color .18s cubic-bezier(.2, .7, .2, 1); }
 .found-list .found-name:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
 .found-list .num { color: var(--muted); white-space: nowrap; }
 .found-list p { grid-column: 1 / -1; max-width: 78ch; margin: 0; color: var(--muted); font: 15px/1.6 var(--font-display); }
-.themes-bar { position: sticky; top: 59px; z-index: 20; border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--bg) 94%, transparent); backdrop-filter: blur(12px); }
+/* Choosing a theme is a navigation, so the tabs link to #reading and the reading section clears
+   both sticky bars — the topnav and this one — instead of hiding under them. */
+#reading { scroll-margin-top: 124px; }
+@media (max-width: 620px) { #reading { scroll-margin-top: 114px; } }
+/* Smooth document scrolling is measured, on this page, as a full second of Chromium animating
+   from the top of the material down to #reading on every theme switch — the reload feeling this
+   page is losing. Only this page opts out, and only the document: the smooth scroll moves down to
+   .record-body, which is the container a quote link actually scrolls. */
+:root:has(#reading) { scroll-behavior: auto; }
+/* One line of CSS, not JavaScript: a cross-document view transition, so switching theme reads as
+   a tab change rather than a reload. Browsers without it navigate exactly as before. The record
+   and the tab bar are named so they carry across the navigation while the claims cross-fade.
+   The transition is put on this page's one duration and easing; and it is turned off outright
+   for reduced motion, which the blanket rule at the end of this file cannot reach — that rule
+   selects elements, and these are transition pseudo-elements on the root. */
+@view-transition { navigation: auto; }
+::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: .18s; animation-timing-function: cubic-bezier(.2, .7, .2, 1); }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+.themes-bar { position: sticky; top: 59px; z-index: 20; border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--bg) 94%, transparent); backdrop-filter: blur(12px); view-transition-name: themes-bar; }
 .theme-tabs { display: flex; align-items: stretch; gap: 28px; padding-right: 48px; overflow-x: auto; scrollbar-width: none; mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); }
 .theme-tabs::-webkit-scrollbar { display: none; }
-.theme-tab { min-height: 60px; flex: 0 0 auto; display: flex; align-items: center; gap: 9px; padding: 0; border-bottom: 2px solid transparent; color: var(--muted); font-size: 13px; }
-.theme-tab:hover { color: var(--fg); }
+.theme-tab { min-height: 60px; flex: 0 0 auto; display: flex; align-items: center; gap: 9px; padding: 0; border-bottom: 2px solid transparent; color: var(--muted); font-size: 13px; transition: color .18s cubic-bezier(.2, .7, .2, 1), border-color .18s cubic-bezier(.2, .7, .2, 1); }
+.theme-tab:hover { border-bottom-color: var(--border); color: var(--fg); }
 .theme-tab[aria-current='page'] { border-bottom-color: var(--accent); color: var(--fg); }
 .theme-intro { margin-bottom: 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; }
 .theme-intro p.gist { max-width: 70ch; margin: 8px 0 0; color: var(--muted); }
@@ -290,26 +314,29 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .theme-stats { white-space: nowrap; }
 .reading-grid { display: grid; grid-template-columns: minmax(290px, .78fr) minmax(460px, 1.35fr); gap: 28px; align-items: start; }
 .evidence-list { min-width: 0; }
-.evidence-head { padding-bottom: 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
-.evidence-head h3 { font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.evidence-head { padding-bottom: 12px; border-bottom: 1px solid var(--border); font: 600 13px var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
 .claims { margin: 0; padding: 0; list-style: none; }
 .claims > li { padding: 18px 0; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; border-bottom: 1px solid var(--border); }
-.claim-index { padding-top: 4px; color: var(--muted); font: 10px var(--font-mono); }
+.claim-index { padding-top: 4px; color: var(--muted); font: 10px var(--font-mono); transition: color .18s cubic-bezier(.2, .7, .2, 1); }
+.claims > li:hover .claim-index { color: var(--fg); }
 .claim { margin: 0; font: 500 18px/1.4 var(--font-display); }
-.quote-link { display: inline-block; margin-top: 9px; color: var(--muted); font: 12px/1.5 var(--font-mono); }
+.quote-link { display: inline-block; margin-top: 9px; color: var(--muted); font: 12px/1.5 var(--font-mono); transition: color .18s cubic-bezier(.2, .7, .2, 1); }
 .quote-link::before { content: '“'; }
 .quote-link::after { content: '”  ↗'; }
 .quote-link:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
-.record-pane { position: sticky; top: 132px; max-height: calc(100vh - 148px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.record-pane { position: sticky; top: 132px; max-height: calc(100vh - 148px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); view-transition-name: record; }
 .record-head { min-height: 54px; flex: 0 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); }
 .record-head strong { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
-.record-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: clamp(20px, 3.3vw, 46px); color: color-mix(in oklch, var(--fg) 84%, var(--surface)); font: 13px/1.78 var(--font-mono); }
+.record-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; padding: clamp(20px, 3.3vw, 46px); color: color-mix(in oklch, var(--fg) 84%, var(--surface)); font: 13px/1.78 var(--font-mono); }
 .record-body pre { margin: 0 0 1.05em; white-space: pre-wrap; overflow-wrap: anywhere; color: inherit; font: inherit; }
 .record-body pre > b { margin-right: 7px; color: var(--muted); font-size: 10px; font-weight: 400; user-select: none; }
 .record-body h3 { margin: 28px 0 10px; color: var(--muted); font: 700 10px var(--font-body); letter-spacing: .08em; text-transform: uppercase; }
 .record-body h3:first-child { margin-top: 0; }
 .s { scroll-margin-top: 14px; border-radius: 3px; }
-.s:target { background: var(--accent-soft); box-shadow: 0 0 0 4px var(--accent-soft), inset 3px 0 0 var(--accent); }
+/* The passage arrives under the quote that sent the reader there, so it fades up rather than
+   snapping on — the eye needs the moment to find it. */
+.s:target { background: var(--accent-soft); box-shadow: 0 0 0 4px var(--accent-soft), inset 3px 0 0 var(--accent); animation: passage-found .42s cubic-bezier(.2, .7, .2, 1); }
+@keyframes passage-found { from { background: transparent; box-shadow: 0 0 0 4px transparent, inset 3px 0 0 transparent; } }
 mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); color: var(--fg); }
 .research-actions { border-top: 1px solid var(--border); }
 .action-drawer { margin-top: 0; }
@@ -323,6 +350,11 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .check-list { color: var(--muted); font-size: 12px; }
 .found { margin-top: 7px; }
 .cite, .quote { font-family: var(--font-mono); }
+/* Opened content arrives instead of appearing. Only the folds that start closed are listed: the
+   summary fold is open on load, and an animation there would replay on every theme switch, which
+   is the jumpiness this page is meant to lose. */
+.material-head details[open] > :not(summary), .research-actions details[open] > :not(summary) { animation: unfold .18s cubic-bezier(.2, .7, .2, 1); }
+@keyframes unfold { from { opacity: 0; translate: 0 -4px; } }
 
 /* Reading record */
 .contents-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 34px; }

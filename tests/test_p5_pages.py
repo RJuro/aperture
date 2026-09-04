@@ -418,7 +418,10 @@ def test_material_that_was_never_read_is_told_apart_from_material_read_since(cli
 
 
 def _head_meta(html: str) -> str:
-    return html.split('class="head-meta"')[1].split("</div>")[0]
+    """The head line itself, up to the fold. The people list now rides in the same flex row to
+    save the head a line, and what these tests are about is who is named on the line, not who is
+    folded away on it."""
+    return html.split('class="head-meta"')[1].split("</div>")[0].split("<details")[0]
 
 
 def test_the_head_names_who_speaks_and_folds_away_everyone_the_reading_mentioned(client, conn,

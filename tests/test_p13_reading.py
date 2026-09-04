@@ -12,6 +12,8 @@ points at, drop what is not there, and mark the result as an estimate wherever a
 """
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from app import ingest, jobs, store
@@ -217,7 +219,14 @@ def test_the_material_page_lists_every_theme_it_found_here(conn, analysed, clien
 
     html = client.get(f"/p/{pid}/m/{mid}").text
     assert "Themes in this material" in html
-    assert f'?theme={second}"' in html, "each one is a way into its own line"
+    assert f'?theme={second}#reading"' in html, "each one is a way into its own line"
+    # Choosing a theme is a navigation, so every selector on the page — the tab strip, this list,
+    # the "Also read under" line — carries the fragment. Without it the browser lands at the top
+    # and the reader scrolls back down past the head, the summary and the list every time.
+    assert 'id="reading"' in html
+    stranded = [h for h in re.findall(r'href="([^"]*\?theme=[^"]*)"', html)
+                if not h.endswith("#reading")]
+    assert not stranded, stranded
     assert "Work is trade here, and the land is somewhere already left." in html
     assert "the crossing and after" in html, "with no account yet, the definition stands in"
     assert "3 claims" in html

@@ -108,7 +108,7 @@ def test_a_claim_whose_passage_another_theme_reads_says_which(client, one_materi
     d = one_material
     html = client.get(f'/p/{d["pid"]}/m/{d["mid"]}?theme={d["first"]}').text
     assert html.count("Also read under") == 1, "only the shared passage carries the line"
-    assert f'href="?theme={d["second"]}">Money at home</a>' in html
+    assert f'href="?theme={d["second"]}#reading">Money at home</a>' in html
 
 
 def test_a_feedback_entry_names_what_it_was_about(client, conn, analysed):
