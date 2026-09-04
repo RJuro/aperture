@@ -84,3 +84,28 @@ def test_a_project_with_one_material_shows_only_the_second_group(client, one_mat
         assert "Across materials" not in sect, f"nothing can span one material ({url})"
         assert "In one material so far" in sect
         assert "With one material, a theme cannot yet run across materials." in sect
+
+
+def test_a_themes_count_is_claims_and_the_passages_those_claims_rest_on(client, one_material):
+    """"81 of 818 passages" counted the same passage once per theme that read it."""
+    pid, first = one_material["pid"], one_material["first"]
+    for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md",
+                f"/p/{pid}/t/{first}"):
+        text = client.get(url).text
+        assert "2 claims on 2 passages · 1 passage shared with other themes" in text, url
+        if not url.endswith(first):
+            assert "3 claims on 2 passages · 1 passage shared with other themes" in text, url
+
+
+def test_nothing_is_said_about_sharing_when_no_passage_is_shared(client, analysed):
+    sect = _themes(client.get(f"/p/{analysed['pid']}").text)
+    assert "6 claims on 6 passages" in sect
+    assert "shared" not in sect
+
+
+def test_a_claim_whose_passage_another_theme_reads_says_which(client, one_material):
+    """The same passage under three themes, and each theme's page showed it as its own."""
+    d = one_material
+    html = client.get(f'/p/{d["pid"]}/m/{d["mid"]}?theme={d["first"]}').text
+    assert html.count("Also read under") == 1, "only the shared passage carries the line"
+    assert f'href="?theme={d["second"]}">Money at home</a>' in html
