@@ -22,6 +22,7 @@ enters another prompt — everything else the model writes is shown to a researc
 from __future__ import annotations
 
 import re
+import textwrap
 import unicodedata
 
 from .. import anchor, llm, store
@@ -55,6 +56,22 @@ def words(text, cap: int) -> str:
     end = max(kept.rfind(". "), kept.rfind("! "), kept.rfind("? "))
     # Only fall back to a hard cut if trimming to a sentence would throw away most of the text.
     return kept[:end + 1] if end > len(kept) * 0.6 else kept + " …"
+
+
+def clip(text, chars: int = 60) -> str:
+    """Shorten a quote or a claim for a set-aside note, on a word boundary, and say so.
+
+    A blind reader of a real record read `"...the savings built from factory an"` as damage to
+    the record itself. The note is naming a claim so a researcher can go and find it; a word cut
+    in half is a worse pointer than a shorter one.
+    """
+    t = " ".join(str(text or "").split())
+    if len(t) <= chars:
+        return t
+    short = textwrap.shorten(t, chars, placeholder=" …")
+    # One word longer than the whole budget leaves shorten nothing to keep — cut it hard.
+    return short if len(short) > 1 else t[:chars - 1] + "…"
+
 
 
 # The scripts a token can be written in that this instrument will question. Matched against the
@@ -289,10 +306,10 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         quote = str(m.get("anchor") or "").strip()
         bound = anchor.apply(m, [cited(m.get("sid"), nums)], sents, stats)   # the anchor law
         if not claim:
-            dropped.append(f'a moment with no claim was dropped (quote: "{quote[:60]}")')
+            dropped.append(f'a moment with no claim was dropped (quote: "{clip(quote)}")')
             continue
         if bound is None:
-            dropped.append(f'a moment was dropped: its quote is not in this material — "{quote[:60]}"'
+            dropped.append(f'a moment was dropped: its quote is not in this material — "{clip(quote)}"'
                            if quote else "a moment was dropped: it carried no quote")
             continue
         quote, sids = bound
@@ -303,7 +320,7 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
     # Named, one by one. "3 quote(s) ran past the cap and were kept" told a researcher that
     # something had been let through without telling them which claim to go and look at.
     dropped += [f'a quote ran past the {anchor.ANCHOR_WORD_CAP}-word cap and was kept — '
-                f'"{m["anchor"][:60]}" ({theme["name"]})'
+                f'"{clip(m["anchor"])}" ({theme["name"]})'
                 for m in kept if anchor.word_count(m["anchor"]) > anchor.ANCHOR_WORD_CAP]
     if len(kept) < MIN_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'

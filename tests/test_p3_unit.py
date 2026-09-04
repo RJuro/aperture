@@ -208,4 +208,14 @@ def test_a_quote_past_the_twelve_word_cap_is_named_in_the_exclusions(ready, conn
     out = synth.doc(conn, ready["mid"])
     said = [d for d in out["dropped"] if "12-word cap" in d]
     assert said, out["dropped"]
-    assert long_text[:60] in said[0] and "(Work)" in said[0]
+    assert synth.clip(long_text) in said[0] and "(Work)" in said[0]
+
+
+def test_a_note_cuts_a_quote_at_a_word_not_in_the_middle_of_one():
+    """A blind reader read `"...built from factory an"` in an exclusion as damage to the record."""
+    long = "The Depression consumed the savings built from factory and mill work over the years"
+    assert synth.clip("short enough to stand") == "short enough to stand"
+    cut = synth.clip(long)
+    assert len(cut) <= 60 and cut.endswith("…") and long.startswith(cut[:-2].rstrip())
+    assert cut.rstrip(" …").split()[-1] in long.split()      # last word kept whole, not "an"
+    assert synth.clip("x" * 80) == "x" * 59 + "…"             # one long word: cut hard, still marked

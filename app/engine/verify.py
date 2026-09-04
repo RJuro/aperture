@@ -91,7 +91,7 @@ def run(conn, mid: str, *, theme_id: str | None = None, run_id: str | None = Non
     claim = {r["id"]: r["claim"] for r in rows}
     return {
         "dropped": [f'a claim was set aside — its passage does not carry it: '
-                    f'"{claim[i][:60]}" ({why})'
+                    f'"{synth.clip(claim[i])}" ({why})'
                     for i, (verdict, why) in ruled.items() if verdict == "not"],
         "set_aside": [i for i, (verdict, _) in ruled.items() if verdict == "not"],
         "marked": [i for i, (verdict, _) in ruled.items() if verdict == "partly"],
