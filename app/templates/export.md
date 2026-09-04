@@ -116,7 +116,10 @@ Printed in full under [{{ th.theme.name }}](#{{ th.theme.name | lower | replace(
 {% endfor %}
 ## Excluded from the analysis
 
-{% for n in set_aside %}- {{ n.note }}{% if n.material %} — {{ n.material }}{% endif %}
+{% for name, notes in set_aside | groupby("material") %}### {{ name or "The project" }}
+
+{% for n in notes %}- {{ n.note }}
+{% endfor %}
 {% else %}Nothing was excluded from the analysis.
 {% endfor %}
 ## Researcher feedback

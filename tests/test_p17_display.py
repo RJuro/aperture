@@ -136,3 +136,25 @@ def test_a_feedback_entry_names_what_it_was_about(client, conn, analysed):
             assert analysed["grande"] not in sect and tid not in sect, "an id is not a reference"
         if not removed:
             store.remove_material(conn, pid, analysed["grande"])
+
+
+def test_what_the_readings_dropped_is_grouped_by_material(client, conn, analysed):
+    """One flat list repeated the material's title on every line and scattered one material's
+    drops through the whole log."""
+    pid = analysed["pid"]
+    for mid, note in ((analysed["grande"], 'the line for "Work and trade" was set aside: 3 left'),
+                      (analysed["grande"], 'the line for "Leaving and arriving" was set aside: 2'),
+                      (analysed["rodwin"], 'the line for "Work and trade" was set aside: 1 left')):
+        rid = store.start_run(conn, pid, "doc", mid, "x")
+        store.finish_run(conn, rid, notes=[note])
+    name = context._material_title(store.material(conn, analysed["grande"]))
+    md = client.get(f"/p/{pid}/export.md").text
+    sect = md.split("## Excluded from the analysis", 1)[1].split("## Researcher feedback", 1)[0]
+    assert sect.count(name) == 1, "the title is a heading, not a word on every line"
+    assert f"### {name}" in sect
+    assert sect.index(f"### {name}") < sect.index("was set aside: 3 left") < sect.index(
+        "was set aside: 1 left"), "one material's drops sit together, under its own heading"
+
+    html = client.get(f"/p/{pid}/record").text
+    sect = html.split('id="excluded"', 1)[1].split('id="feedback"', 1)[0]
+    assert f"<h3>{name}</h3>" in sect and sect.count(name) == 1

@@ -150,11 +150,12 @@
 
 <section class="section" id="excluded"><div class="container">
 <div class="section-heading"><div><p class="eyebrow">What the reading dropped</p><h2>Excluded from the analysis</h2></div></div>
-<ul class="mats">
-{% for n in set_aside %}<li>{{ n.note | txt }}{% if n.material %} <span class="dim">— {{ n.material | txt }}</span>{% endif %}</li>
-{% else %}<li class="dim">Nothing was excluded from the analysis.</li>
+{% for name, notes in set_aside | groupby("material") %}
+<h3>{{ (name or "The project") | txt }}</h3>
+<ul class="mats">{% for n in notes %}<li>{{ n.note | txt }}</li>{% endfor %}</ul>
+{% else %}
+<ul class="mats"><li class="dim">Nothing was excluded from the analysis.</li></ul>
 {% endfor %}
-</ul>
 </div></section>
 
 <section class="section" id="feedback"><div class="container">
