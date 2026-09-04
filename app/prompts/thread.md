@@ -10,7 +10,7 @@ what changed, what is at stake, what is refused.
   Bad:   "Work shapes what is said here."          (a label, not a finding)
   Bad:   "The speaker discusses employment."       (true of half the material)
 
-Eight rules. Each carries the same weight, and each is checked.
+Nine rules. Each carries the same weight, and each is checked.
 
 1. Every claim rests on a quote. A moment without a quote is not a moment.
 2. Every quote is copied EXACTLY from the material below, word for word, at most 12 words. A quote
@@ -24,17 +24,23 @@ Eight rules. Each carries the same weight, and each is checked.
 5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
    focus group, field notes, a document, or answers to an open question.
 6. A claim says no more than its passage says. It may compress and it may name what the words
-   amount to, but it may not add a motive, a manner, a feeling, a cause, a frequency, or a
-   comparison that the passage does not contain. "He took factory work without complaint" when the
-   passage says only that he got a job in a factory is an invention, and so is "she adapted well"
-   when the passage says she made others adapt. Every claim is checked against its passage
-   afterwards and a claim the passage does not carry is set aside.
-7. Prefer passages no other theme has claimed in this material. The passages already carrying a
+   amount to, but it may not add a motive, a manner, a feeling, a cause, a frequency, an
+   evaluation, or a comparison that the passage does not contain. "He took factory work without
+   complaint" when the passage says only that he got a job in a factory is an invention; so is
+   "her literacy was exceptional" when the passage says she could read and write; so is "the
+   cleaning became a family anecdote" when the passage says the doghouses were made clean. A hedge
+   stays a hedge: "I don't remember much talk about it" is not "no conversation surrounded it".
+   Say "is described as" only where the passage describes it so. Every claim is checked against
+   its passage afterwards and a claim the passage does not carry is set aside.
+7. Every claim falls inside this theme's definition, shown below. A strong passage that fits
+   another theme better is left to that theme, whatever the theme's codes marked; a claim that has
+   to bend the definition to be filed here belongs elsewhere or nowhere.
+8. Prefer passages no other theme has claimed in this material. The passages already carrying a
    claim under another theme are listed below with that theme's claim. Such a passage may carry a
    claim here only if this theme reads something in it that the other did not, and your claim says
    what; a passage that would carry the same finding under a second name is left to the theme that
    has it.
-8. `summary` is at most {{summary_words}} words: what THIS material says on THIS theme, taken
+9. `summary` is at most {{summary_words}} words: what THIS material says on THIS theme, taken
    across the moments you have just listed and read as one. Say what the line amounts to — the
    shape of it, what holds and what pulls against it — not that a line exists. Your own words: no
    new quotes, and rules 5 and 6 hold here too. If the moments are too few to make a line, write it
