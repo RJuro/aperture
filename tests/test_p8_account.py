@@ -179,6 +179,13 @@ def test_a_passage_only_this_theme_reads_is_not_listed_as_shared(conn, corpus, m
     assert "also under" not in shown
 
 
+def test_a_word_in_a_script_no_material_uses_is_dropped_from_an_account(conn, corpus, model):
+    model.queue({"account": "Trade is 工作 what pays for staying."})
+    out = account.run(conn, corpus["pid"], corpus["tid"])
+    assert out["text"] == "Trade is what pays for staying."
+    assert any("工作" in d for d in out["dropped"])
+
+
 def test_a_theme_that_is_no_longer_live_is_not_written_about(conn, corpus, model):
     """The model fixture raises on an unexpected call, so this asserts no call was made."""
     store.merge_theme(conn, corpus["tid"], corpus["other"])

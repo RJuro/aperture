@@ -22,6 +22,7 @@ enters another prompt — everything else the model writes is shown to a researc
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from .. import anchor, llm, store
 
@@ -54,6 +55,49 @@ def words(text, cap: int) -> str:
     end = max(kept.rfind(". "), kept.rfind("! "), kept.rfind("? "))
     # Only fall back to a hard cut if trimming to a sentence would throw away most of the text.
     return kept[:end + 1] if end > len(kept) * 0.6 else kept + " …"
+
+
+# The scripts a token can be written in that this instrument will question. Matched against the
+# Unicode name of each character, so no table and no dependency: CJK UNIFIED IDEOGRAPH-4E2D,
+# HANGUL SYLLABLE GA, CYRILLIC SMALL LETTER A.
+_SCRIPTS = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL", "CYRILLIC", "ARABIC", "HEBREW", "GREEK",
+            "THAI")
+
+
+def scripts(text) -> set[str]:
+    """Which of those scripts these characters are written in."""
+    out: set[str] = set()
+    for ch in set(text or ""):
+        name = unicodedata.name(ch, "")
+        out |= {s for s in _SCRIPTS if s in name}
+    return out
+
+
+def foreign(text: str, allowed: str) -> tuple[str, list[str]]:
+    """Drop any word written in a script the material and the researcher's focus never use.
+
+    A summary of three English interviews came back with a Chinese token in the middle of a
+    sentence — the model's own vocabulary surfacing, not anything the material said. The test is
+    what the text in front of the reading is written in, never a list of scripts this instrument
+    approves of, so material in Cyrillic keeps its Cyrillic and this does nothing at all.
+    """
+    ok = scripts(allowed)
+    kept, dropped = [], []
+    for token in (text or "").split():
+        (dropped if scripts(token) - ok else kept).append(token)
+    return (" ".join(kept) if dropped else text), dropped
+
+
+def script_notes(dropped: list[str]) -> list[str]:
+    return [f"a word in a script the material does not use was removed: {t}" for t in dropped]
+
+
+def allowed_text(conn, pid: str, mid: str | None = None) -> str:
+    """What a reading of this material — or of this corpus — may be written in."""
+    proj = store.project(conn, pid)
+    rows = [store.material(conn, mid)] if mid else store.materials(conn, pid)
+    return " ".join([(proj["focus"] if proj else "") or ""]
+                    + [r["text"] for r in rows if r is not None])
 
 
 def sid_num(sid) -> str:
@@ -249,8 +293,11 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
     if len(kept) > MAX_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
         kept = kept[:MAX_MOMENTS]
-    if stats["over_cap"]:
-        dropped.append(f"{stats['over_cap']} quote(s) ran past the 12-word cap and were kept")
+    # Named, one by one. "3 quote(s) ran past the cap and were kept" told a researcher that
+    # something had been let through without telling them which claim to go and look at.
+    dropped += [f'a quote ran past the {anchor.ANCHOR_WORD_CAP}-word cap and was kept — '
+                f'"{m["anchor"][:60]}" ({theme["name"]})'
+                for m in kept if anchor.word_count(m["anchor"]) > anchor.ANCHOR_WORD_CAP]
     if len(kept) < MIN_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'
                        f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
@@ -258,7 +305,9 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         return [], dropped, stats
     # Written only over a line that was kept: an account of claims that were thrown away would be
     # a reading with nothing under it, and the page cannot tell the two apart.
-    if summary := words(data.get("summary"), THREAD_WORDS):
+    summary, odd = foreign(words(data.get("summary"), THREAD_WORDS), allowed_text(conn, pid, mid))
+    dropped += script_notes(odd)
+    if summary:
         store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", summary, run_id)
     store.save_moments(conn, mid, tid, kept, run_id)     # ordered by position in the material
     return kept, dropped, stats
@@ -320,7 +369,9 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     )
     data = llm.chat_json(system, user, label="doc")
 
-    if summary := words(data.get("summary"), SUMMARY_WORDS):
+    summary, odd = foreign(words(data.get("summary"), SUMMARY_WORDS), allowed_text(conn, pid, mid))
+    dropped += script_notes(odd)
+    if summary:
         store.save_summary(conn, "material", mid, "reading", summary, run_id)
     # The one self-prompting slot: QUESTIONS the corpus has left open, read only by the ideation
     # step for the next material. Never findings — conclusions flow up, only questions forward.
@@ -380,12 +431,18 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
 
     # Two movements, two rows: what the corpus shows, and what it may mean. Kept apart because a
     # researcher must be able to cite the first while still arguing with the second.
+    allowed = allowed_text(conn, pid)
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
     reading_of, more = _strip_dangling(words(data.get("interpretation"), INTERPRETATION_WORDS),
                                        live_moments)
     dangling += more
-    dropped = [f"the summary cited {len(dangling)} claim(s) that do not exist or are no longer live "
-               f"— {', '.join(sorted(set(dangling)))} — and those citations were removed"] if dangling else []
+    summary, odd = foreign(summary, allowed)
+    reading_of, more_odd = foreign(reading_of, allowed)
+    dropped = script_notes(odd + more_odd)
+    if dangling:
+        dropped.append(f"the summary cited {len(dangling)} claim(s) that do not exist or are no "
+                       f"longer live — {', '.join(sorted(set(dangling)))} — and those citations "
+                       "were removed")
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
     # Written even when it is empty, so a fresh summary never sits over an older reading of it.
     store.save_summary(conn, "project", pid, "interpretation", reading_of, run_id)

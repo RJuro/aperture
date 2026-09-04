@@ -203,8 +203,9 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
     # legitimately make. Anything else — invented, superseded, or another theme's — goes.
     live = {r["id"]: r for r in rows}
     text, gone = synth._strip_dangling(synth.words(data.get("account"), ACCOUNT_WORDS), live)
+    text, odd = synth.foreign(text, synth.allowed_text(conn, pid))
 
-    dropped = []
+    dropped = synth.script_notes(odd)
     if gone:
         dropped.append(f"the account cited {len(gone)} id(s) that are not live claims under this "
                        f"theme — {', '.join(sorted(set(gone)))} — and those citations were removed")
