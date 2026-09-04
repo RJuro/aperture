@@ -304,10 +304,16 @@ def _ask(system: str, user: str, timeout: float | None, effort: str = "") -> str
     for i, wait in enumerate(BUSY_WAITS, 1):
         try:
             return _send(body, timeout)
-        except _Busy as busy:
-            pause = int(busy.after) if busy.after.strip().isdigit() else wait
-            report(f"The model is busy; trying again in {pause} s "
-                   f"(attempt {i} of {len(BUSY_WAITS)})")
+        # A stream that stalls or drops is the same kind of failure as a busy provider: the answer
+        # never arrived, nothing was written, and the thing to do is ask again. Untreated it cost a
+        # whole chain — one THEMES call went quiet for longer than IDLE_TIMEOUT and the four
+        # syntheses, the theme accounts and the corpus summary after it never ran, with a raw
+        # exception name under an empty summary as the only word of what had happened.
+        except (_Busy, httpx.TransportError) as e:
+            busy = e.after if isinstance(e, _Busy) else ""
+            pause = int(busy) if busy.strip().isdigit() else wait
+            report(f"{'The model is busy' if isinstance(e, _Busy) else 'The model went quiet'}; "
+                   f"trying again in {pause} s (attempt {i} of {len(BUSY_WAITS)})")
             _sleep(pause)
     return _send(body, timeout)         # the sixth try, and its error is the one that stands
 

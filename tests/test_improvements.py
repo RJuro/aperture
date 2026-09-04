@@ -210,6 +210,49 @@ def test_a_busy_provider_is_waited_out_once_and_not_twice(monkeypatch, real_chat
     assert len(sent) == len(llm.BUSY_WAITS) + 1
 
 
+def test_a_stalled_stream_is_asked_again_and_does_not_take_the_chain_with_it(monkeypatch,
+                                                                             real_chat_json):
+    """A read timeout is a stall, not an answer. Left to stand it ended a chain of twenty steps at
+    step twelve: the four syntheses, the accounts and the corpus summary never ran, and the page
+    carried the exception's name where the summary should have been."""
+    import httpx
+    from app import llm
+    tries, waited = [], []
+
+    def stall(body, timeout):
+        tries.append(body)
+        if len(tries) == 1:
+            raise httpx.ReadTimeout("The read operation timed out")
+        return '{"summary": "written on the second ask"}'
+
+    monkeypatch.setattr(llm, "_send", stall)
+    monkeypatch.setattr(llm, "_sleep", waited.append)
+    monkeypatch.delenv("APERTURE_REPLAY", raising=False)
+    assert real_chat_json("s", "u", label="t") == {"summary": "written on the second ask"}
+    assert len(tries) == 2 and waited == [llm.BUSY_WAITS[0]]
+
+
+def test_a_stream_that_never_comes_back_still_stops_after_one_ladder(monkeypatch, real_chat_json):
+    """Asking again is not asking forever: the same five waits as a busy provider, then the error
+    stands and the step records it."""
+    import httpx
+    import pytest
+    from app import llm
+    tries, waited = [], []
+
+    def gone(body, timeout):
+        tries.append(body)
+        raise httpx.ReadTimeout("The read operation timed out")
+
+    monkeypatch.setattr(llm, "_send", gone)
+    monkeypatch.setattr(llm, "_sleep", waited.append)
+    monkeypatch.delenv("APERTURE_REPLAY", raising=False)
+    with pytest.raises(httpx.ReadTimeout):
+        real_chat_json("s", "u", label="t")
+    assert waited == list(llm.BUSY_WAITS)
+    assert len(tries) == len(llm.BUSY_WAITS) + 1
+
+
 def test_a_run_left_open_by_a_dead_process_is_closed_when_the_next_one_starts(conn, project, grande,
                                                                               monkeypatch):
     rid = store.start_run(conn, project, "doc", grande, "Writing what stands out")
