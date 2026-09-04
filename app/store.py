@@ -340,6 +340,38 @@ def save_moments(conn: sqlite3.Connection, mid: str, theme_id: str, moments: lis
     return len(ordered)
 
 
+def mark_support(conn: sqlite3.Connection, rows: list[tuple[str, str, str]]) -> None:
+    """What checking a claim against its own passage found: (claim id, verdict, why).
+
+    `not` sets the claim aside with the same status a rerun leaves behind, so the export can
+    still show it and the researcher can see what was taken out and why. `partly` leaves it live
+    and marked, because the claim is still worth reading — with the addition named beside it.
+    """
+    for moment_id, support, why in rows:
+        conn.execute("UPDATE moment SET support=?, support_note=?, status=? "
+                     "WHERE id=? AND status='live'",
+                     (support, why, "superseded" if support == "not" else "live", moment_id))
+    conn.commit()
+
+
+def set_aside_by_check(conn: sqlite3.Connection, mid: str) -> int:
+    """How many claims the check against the passages set aside in the reading that stands now.
+
+    The mark stays on the superseded row, so this is a query and not a stored counter. Which
+    reading a set-aside claim belonged to is its run: a line written again replaces its whole
+    reading, and what an earlier pass set aside went with it.
+
+    ponytail: a line every one of whose claims was set aside leaves no live row to match, so it
+    is not counted here. The exclusion note names each one; count from the run notes instead if
+    that case ever stops being rare.
+    """
+    rows = conn.execute("SELECT theme_id, run_id, status, support FROM moment WHERE material_id=?",
+                        (mid,)).fetchall()
+    standing = {(r["theme_id"], r["run_id"]) for r in rows if r["status"] == "live"}
+    return sum(1 for r in rows if r["support"] == "not" and r["status"] == "superseded"
+               and (r["theme_id"], r["run_id"]) in standing)
+
+
 def thread(conn: sqlite3.Connection, mid: str, theme_id: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM moment WHERE material_id=? AND theme_id=? AND status='live'"
                         " ORDER BY position", (mid, theme_id)).fetchall()

@@ -1,12 +1,14 @@
 You are writing what a project of qualitative material adds up to, for the researcher who is
 reading it. You see what the reading already found in each material: its summary, and its threads
 of moments, each moment a claim already resting on a quote that has been checked against the
-material it came from.
+material it came from. You also see what each theme amounts to across the corpus, written over
+those claims.
 
-Four rules. Each one carries the same weight, and each one is checked.
+Seven rules. Each one carries the same weight, and each one is checked.
 
 1. Every claim you make rests on moments that already exist, cited by moment id in square
-   brackets: `[mo1a2b3c4d5]`, or `[mo1a2b3c4d5, mo6e7f8g9h0]` for several.
+   brackets: `[mo1a2b3c4d5]`, or `[mo1a2b3c4d5, mo6e7f8g9h0]` for several. Cite an id once per
+   bracket.
 2. Every moment id you cite is copied exactly from the lists below. A citation to an id that does
    not exist is removed from what you write afterwards, taking its claim's support with it.
 3. You introduce no quotes of your own. At this level there is no material in front of you to
@@ -15,6 +17,18 @@ Four rules. Each one carries the same weight, and each one is checked.
 4. Every word is your own and none of them assume a speaker. These materials may be interviews,
    focus groups, field notes, documents, or answers to an open question. Write about what the
    materials show, not about what "he" or "she" said, unless a material names who is speaking.
+5. A statement about what the materials show rests on a moment from EACH material it speaks for.
+   "The materials narrate arrival as privilege" needs a cited moment about arrival from every
+   material you mean; where one has no such moment, narrow the statement to the materials that
+   do, or say which one differs. Never write "all", "every", "each", "consistently", or "no
+   exceptions" unless the ids in the same bracket come from every material in the project.
+6. Silence is missing data, not evidence. A material that does not raise something was most
+   often never asked. Do not infer from what a material does not say; if you note an absence,
+   name it and leave it.
+7. A theme's account is one reading of its passages, and some passages are read under two themes
+   in different directions — the same stay in an institution as a gift under one theme and as a
+   sorting of bodies under another. Where the accounts below disagree about the same moments,
+   say so; do not pick one reading and present it as what the corpus shows.
 
 You write in two movements, and they are two keys because they are two kinds of sentence:
 grounded synthesis, then interpretive synthesis. The researcher must be able to take the first
@@ -30,12 +44,12 @@ Return JSON in exactly this shape, and nothing else:
               Write about the CORPUS, not about each piece in turn. Do not walk the materials one
               by one; a summary shaped as 'the first account does X, the second does Y' stops
               working the moment a third arrives, and this project will have many. Instead name
-              the patterns: what recurs across materials and how widely, where they diverge and
-              along what axis, what appears in only one and is therefore not yet a pattern, and
-              what is thin everywhere. Reach for the material's own names when a pattern needs
-              one. Every statement carries moment ids in brackets like this [mo1a2b3c4d5] as its
-              evidence, drawn from more than one material wherever the pattern spans them. No
-              quotes of your own: at this level your claims rest on claims below.",
+              the patterns: what recurs, where the materials diverge and along what axis, what
+              appears in only one material and is therefore not yet a pattern, and what is thin
+              everywhere. Reach for the material's own names when a pattern needs one. Every
+              statement carries moment ids in brackets like this [mo1a2b3c4d5] as its evidence,
+              drawn from every material the statement speaks for. No quotes of your own: at this
+              level your claims rest on claims below.",
   "interpretation": "At most {{interpretation_words}} words of interpretive synthesis: what the
               relations among these themes may mean — what holds them together, what one of them
               does to another, what account of the whole they would support. Stay

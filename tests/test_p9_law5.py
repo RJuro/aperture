@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 
 from app import store
-from app.engine import account, angles, check, frame, read, synth, themes
+from app.engine import account, angles, check, frame, read, synth, themes, verify
 
 SELF_PROMPT = "SENTINEL-QUESTIONS the corpus left open"
 ACCOUNT_PROSE = "SENTINEL-ACCOUNT conclusion about the whole corpus"
@@ -43,16 +43,16 @@ def compiled(conn, analysed, model):
                        "segments": [], "orientation": "o"},
              "angles": {"field": ANGLES_PROSE, "subareas": [], "angles": []},
              "read": {"codes": []}, "themes": {"themes": []},
-             "thread": {"moments": []},
+             "thread": {"moments": []}, "verify": {"verdicts": []},
              "doc": {"summary": "", "questions": "", "people": []},
-             "account": {"text": "", "gist": ""}, "project": {"summary": ""},
+             "account": {"account": ""}, "project": {"summary": ""},
              "check": {"found": []}}
 
     def fake(system, user, *, label="", timeout=None):
         seen[label] = seen.get(label, "") + "\n" + system + "\n" + user
         return empty[label]
 
-    for mod in (frame, angles, read, themes, synth, check, account):
+    for mod in (frame, angles, read, themes, synth, check, account, verify):
         mod.llm.chat_json = fake
 
     frame.run(conn, mid)
@@ -67,8 +67,8 @@ def compiled(conn, analysed, model):
 
 
 def test_every_step_compiles(compiled):
-    assert set(compiled) >= {"frame", "angles", "read", "themes", "thread", "doc", "account",
-                             "project", "check"}
+    assert set(compiled) >= {"frame", "angles", "read", "themes", "thread", "verify", "doc",
+                             "account", "project", "check"}
 
 
 def test_the_self_prompting_slot_reaches_exactly_one_step(compiled):

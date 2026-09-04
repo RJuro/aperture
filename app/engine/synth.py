@@ -22,6 +22,7 @@ enters another prompt — everything else the model writes is shown to a researc
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from .. import anchor, llm, store
 
@@ -54,6 +55,56 @@ def words(text, cap: int) -> str:
     end = max(kept.rfind(". "), kept.rfind("! "), kept.rfind("? "))
     # Only fall back to a hard cut if trimming to a sentence would throw away most of the text.
     return kept[:end + 1] if end > len(kept) * 0.6 else kept + " …"
+
+
+# The scripts a token can be written in that this instrument will question. Matched against the
+# Unicode name of each character, so no table and no dependency: CJK UNIFIED IDEOGRAPH-4E2D,
+# HANGUL SYLLABLE GA, CYRILLIC SMALL LETTER A.
+_SCRIPTS = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL", "CYRILLIC", "ARABIC", "HEBREW", "GREEK",
+            "THAI")
+
+
+def scripts(text) -> set[str]:
+    """Which of those scripts these characters are written in."""
+    out: set[str] = set()
+    for ch in set(text or ""):
+        name = unicodedata.name(ch, "")
+        out |= {s for s in _SCRIPTS if s in name}
+    return out
+
+
+def foreign(text: str, allowed: str) -> tuple[str, list[str]]:
+    """Drop any word written in a script the material and the researcher's focus never use.
+
+    A summary of three English interviews came back with a Chinese token in the middle of a
+    sentence — the model's own vocabulary surfacing, not anything the material said. The test is
+    what the text in front of the reading is written in, never a list of scripts this instrument
+    approves of, so material in Cyrillic keeps its Cyrillic and this does nothing at all.
+    """
+    if not scripts(text):
+        return text, []                 # the ordinary case: nothing to weigh the material against
+    ok = scripts(allowed)
+    kept, dropped = [], []
+    for token in (text or "").split():
+        (dropped if scripts(token) - ok else kept).append(token)
+    return (" ".join(kept) if dropped else text), dropped
+
+
+def script_notes(dropped: list[str]) -> list[str]:
+    return [f"a word in a script the material does not use was removed: {t}" for t in dropped]
+
+
+def allowed_text(conn, pid: str, mid: str | None = None) -> str:
+    """What a reading of this material — or of this corpus — may be written in.
+
+    ponytail: without `mid` this reads every material's text. At fifty materials that is a few
+    megabytes per call, next to a model call that takes a minute; pass the scripts down from the
+    step above if it ever shows up in a profile.
+    """
+    proj = store.project(conn, pid)
+    rows = [store.material(conn, mid)] if mid else store.materials(conn, pid)
+    return " ".join([(proj["focus"] if proj else "") or ""]
+                    + [r["text"] for r in rows if r is not None])
 
 
 def sid_num(sid) -> str:
@@ -183,6 +234,23 @@ def _theme_codes_block(conn, mid: str, tid: str) -> str:
     return "\n".join(lines) or "None of this theme's codes were marked here. Follow the definition."
 
 
+def _claimed_block(conn, mid: str, tid: str) -> str:
+    """Passages in this material another live theme has already claimed, with its claim.
+
+    A real run recycled the same passages under three and four themes, twice with opposite
+    valence. A line that cannot see what another theme has already read in a passage cannot tell
+    whether it is adding a reading or repeating one under a second name.
+    """
+    rows = conn.execute(
+        "SELECT mo.sid AS sid, mo.claim AS claim, t.name AS theme FROM moment mo "
+        "JOIN theme t ON t.id = mo.theme_id "
+        "WHERE mo.material_id=? AND mo.theme_id<>? AND mo.status='live' AND t.status='live'",
+        (mid, tid)).fetchall()
+    pos = store.sid_position(conn, mid)
+    ordered = sorted(rows, key=lambda r: (pos.get(r["sid"], 10**9), r["theme"]))
+    return "\n".join(f'{r["sid"]} — {r["theme"]} — {r["claim"]}' for r in ordered) or "None yet."
+
+
 def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
     """One theme's line through one material — one call, full attention.
 
@@ -202,6 +270,7 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         "thread",
         theme=f'{theme["id"]}  {theme["name"]} — {theme["gist"]}',
         codes=_theme_codes_block(conn, mid, tid),
+        claimed=_claimed_block(conn, mid, tid),
         focus=proj["focus"] or "Nothing in particular. Follow the theme on its own terms.",
         frame=frame_block(conn, mid),
         feedback=feedback_block(conn, pid, mid, tid),
@@ -231,8 +300,11 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
     if len(kept) > MAX_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
         kept = kept[:MAX_MOMENTS]
-    if stats["over_cap"]:
-        dropped.append(f"{stats['over_cap']} quote(s) ran past the 12-word cap and were kept")
+    # Named, one by one. "3 quote(s) ran past the cap and were kept" told a researcher that
+    # something had been let through without telling them which claim to go and look at.
+    dropped += [f'a quote ran past the {anchor.ANCHOR_WORD_CAP}-word cap and was kept — '
+                f'"{m["anchor"][:60]}" ({theme["name"]})'
+                for m in kept if anchor.word_count(m["anchor"]) > anchor.ANCHOR_WORD_CAP]
     if len(kept) < MIN_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'
                        f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
@@ -240,7 +312,9 @@ def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict]
         return [], dropped, stats
     # Written only over a line that was kept: an account of claims that were thrown away would be
     # a reading with nothing under it, and the page cannot tell the two apart.
-    if summary := words(data.get("summary"), THREAD_WORDS):
+    summary, odd = foreign(words(data.get("summary"), THREAD_WORDS), allowed_text(conn, pid, mid))
+    dropped += script_notes(odd)
+    if summary:
         store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", summary, run_id)
     store.save_moments(conn, mid, tid, kept, run_id)     # ordered by position in the material
     return kept, dropped, stats
@@ -253,6 +327,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     they are. Otherwise every live theme gets its own call, and the summary call sees the lines
     that actually exist rather than being asked to write them and introduce them in one breath.
     """
+    from . import verify              # it reads this module; imported here so neither waits on the other
     row = store.material(conn, mid)
     if row is None:
         raise ValueError(f"no material {mid!r}")
@@ -271,6 +346,9 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                     "dropped": [f"theme {only_theme} is no longer live — its line was not rewritten"]}
         kept, dropped, st = _thread(conn, mid, only_theme, run_id=run_id)
         tally(st)
+        if kept:
+            dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
+            kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
         stored = store.get_summary(conn, "material", mid, "reading")
         return {"summary": stored["text"] if stored else "",
                 "threads": [{"theme_id": only_theme, "moments": kept}] if kept else [],
@@ -284,6 +362,13 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         dropped += d
         if kept:
             threads.append({"theme_id": tid, "moments": kept})
+
+    # Before the summary, never after: a summary written over a claim the passage does not carry
+    # introduces that claim by name, and the claim is gone by the time anyone reads it.
+    dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
+    threads = [t for t in ({"theme_id": t["theme_id"],
+                            "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
+                           for t in threads) if t["moments"]]
 
     shown = []
     for t in threads:
@@ -302,7 +387,9 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     )
     data = llm.chat_json(system, user, label="doc")
 
-    if summary := words(data.get("summary"), SUMMARY_WORDS):
+    summary, odd = foreign(words(data.get("summary"), SUMMARY_WORDS), allowed_text(conn, pid, mid))
+    dropped += script_notes(odd)
+    if summary:
         store.save_summary(conn, "material", mid, "reading", summary, run_id)
     # The one self-prompting slot: QUESTIONS the corpus has left open, read only by the ideation
     # step for the next material. Never findings — conclusions flow up, only questions forward.
@@ -362,12 +449,18 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
 
     # Two movements, two rows: what the corpus shows, and what it may mean. Kept apart because a
     # researcher must be able to cite the first while still arguing with the second.
+    allowed = allowed_text(conn, pid)
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
     reading_of, more = _strip_dangling(words(data.get("interpretation"), INTERPRETATION_WORDS),
                                        live_moments)
     dangling += more
-    dropped = [f"the summary cited {len(dangling)} claim(s) that do not exist or are no longer live "
-               f"— {', '.join(sorted(set(dangling)))} — and those citations were removed"] if dangling else []
+    summary, odd = foreign(summary, allowed)
+    reading_of, more_odd = foreign(reading_of, allowed)
+    dropped = script_notes(odd + more_odd)
+    if dangling:
+        dropped.append(f"the summary cited {len(dangling)} claim(s) that do not exist or are no "
+                       f"longer live — {', '.join(sorted(set(dangling)))} — and those citations "
+                       "were removed")
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
     # Written even when it is empty, so a fresh summary never sits over an older reading of it.
     store.save_summary(conn, "project", pid, "interpretation", reading_of, run_id)
@@ -375,13 +468,15 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
 
 
 def _strip_dangling(text: str, live: dict) -> tuple[str, list[str]]:
-    """Remove `[moment id]` citations that point at nothing. A dangling citation is D15 wearing a
-    different hat: a claim the researcher cannot open is a claim they must take on trust."""
+    """Remove `[moment id]` citations that point at nothing, and an id repeated inside one
+    bracket. A dangling citation is D15 wearing a different hat: a claim the researcher cannot
+    open is a claim they must take on trust. A doubled one is thinner support dressed as two —
+    `[mo1, mo1]` reads as two claims agreeing until you open them."""
     gone: list[str] = []
 
     def repl(m):
         ids = [i for i in re.split(r"[,;\s]+", m.group(1)) if i]
-        keep = [i for i in ids if i in live]
+        keep = list(dict.fromkeys(i for i in ids if i in live))     # first occurrence wins
         gone.extend(i for i in ids if i not in live)
         return f" [{', '.join(keep)}]" if keep else ""
 

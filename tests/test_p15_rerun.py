@@ -131,6 +131,7 @@ def test_the_note_is_still_open_when_the_synthesis_is_written(conn, analysed, mo
     fid = store.add_feedback(conn, pid, "material_summary", mid, "note", NOTE)
     model.queue({"codes": []}, {"themes": []},                    # read, themes
                 {"moments": []}, {"moments": []},                 # one line per live theme
+                {"verdicts": []},                                 # the claims against their passages
                 {"summary": "s", "questions": "", "people": []})  # the summary over them
     jobs.run_now(conn, pid, rerun.from_step(mid, "read", fid)[:3])
     assert NOTE in model.shown("doc"), "the synthesis never saw it"

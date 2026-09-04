@@ -161,6 +161,7 @@ def _moments(quote, mid, n=5, at=40):
 def test_a_line_carries_a_short_account_of_what_it_amounts_to(ready, conn, model, quote):
     said = "The stall fed them and the farm did not. " * 30
     model.queue({"moments": _moments(quote, ready["mid"], 5), "summary": said})
+    model.queue({"verdicts": []})
     model.queue({"summary": "what the reading found", "questions": "", "people": []})
     synth.doc(conn, ready["mid"])
 
@@ -184,6 +185,7 @@ def test_a_line_set_aside_leaves_no_account_behind(ready, conn, model, quote):
 def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, model, quote, client):
     model.queue({"moments": _moments(quote, ready["mid"], 5),
                  "summary": "The stall, not the land, is what fed this household."})
+    model.queue({"verdicts": []})
     model.queue({"summary": "what the reading found", "questions": "", "people": []})
     synth.doc(conn, ready["mid"])
 

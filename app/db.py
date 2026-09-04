@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS theme_code (
 CREATE TABLE IF NOT EXISTS moment (
     id TEXT PRIMARY KEY, material_id TEXT NOT NULL, theme_id TEXT NOT NULL, sid TEXT NOT NULL,
     position INTEGER NOT NULL, claim TEXT NOT NULL, anchor TEXT NOT NULL,
-    run_id TEXT, status TEXT NOT NULL DEFAULT 'live');
+    run_id TEXT, status TEXT NOT NULL DEFAULT 'live',
+    support TEXT DEFAULT '', support_note TEXT DEFAULT '');
 
 CREATE TABLE IF NOT EXISTS summary (
     id TEXT PRIMARY KEY, scope TEXT NOT NULL, ref_id TEXT NOT NULL, stage TEXT NOT NULL,
@@ -157,6 +158,14 @@ def migrate(conn: sqlite3.Connection) -> None:
         _recompose_titles(conn)
     if "speakers_estimated" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN speakers_estimated INTEGER DEFAULT 0")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(moment)")}
+    if "support" not in have:
+        # What checking the claim against its own passage found: '' where it was not checked or
+        # the passage carries it, 'partly' where the claim adds something the passage does not
+        # say, 'not' where the claim is set aside. Blank on every row written before the check
+        # existed, which is exactly right — those claims were never checked.
+        conn.execute("ALTER TABLE moment ADD COLUMN support TEXT DEFAULT ''")
+        conn.execute("ALTER TABLE moment ADD COLUMN support_note TEXT DEFAULT ''")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell
