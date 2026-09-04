@@ -50,7 +50,7 @@ IDLE_TIMEOUT = 180.0
 # against the material. Every other call — READ, THEMES, DOC, PROJECT, CHECK — keeps the
 # provider's default.
 EFFORT = {"frame": "", "angles": "low", "thread": "medium", "account": "medium",
-          "verify": "medium"}
+          "verify": "medium", "verify_summary": "medium"}
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)

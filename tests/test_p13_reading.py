@@ -163,6 +163,7 @@ def test_a_line_carries_a_short_account_of_what_it_amounts_to(ready, conn, model
     model.queue({"moments": _moments(quote, ready["mid"], 5), "summary": said})
     model.queue({"verdicts": []})
     model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    model.queue({"verdicts": []})
     synth.doc(conn, ready["mid"])
 
     row = store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading")
@@ -187,6 +188,7 @@ def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, mode
                  "summary": "The stall, not the land, is what fed this household."})
     model.queue({"verdicts": []})
     model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    model.queue({"verdicts": []})
     synth.doc(conn, ready["mid"])
 
     html = client.get(f'/p/{ready["pid"]}/m/{ready["mid"]}?theme={ready["tid"]}').text

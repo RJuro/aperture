@@ -1,7 +1,8 @@
-"""VERIFY — every claim read once more against its own passage. `app/engine/verify.py`,
-`app/prompts/verify.md`.
+"""VERIFY — every claim read once more against its own passage, and then the summary written over
+them. `app/engine/verify.py`, `app/engine/verify_summary.py`, and their two prompts.
 
     verify.run(conn, mid, *, theme_id=None) -> {"dropped", "set_aside", "marked"}
+    verify_summary.run(conn, mid, summary) -> (the summary to store, the notes)
 
 The anchor law rules that the quote is really there; it cannot rule on what was built on top of
 it. A real run produced "he took factory work without complaint" over a passage that said only
@@ -9,6 +10,11 @@ that he got a job in a factory. The quote was verbatim and the citation was righ
 
 Python owns the outcome: `not` sets the claim aside and says so, `partly` marks it where it is
 read, `supported` and a missing verdict change nothing at all.
+
+The summary is the same check one layer up. It is what a researcher reads first and it was not
+checked at all: a blind judge found material summaries carrying a place and a number no claim and
+no quote holds. A `not` sentence is removed before the summary is stored, a `partly` sentence
+stands with a note beside it, and the summary that reaches the page is the verified one.
 """
 from __future__ import annotations
 
@@ -46,10 +52,11 @@ def _moments(quote, mid, n=5, at=40):
 
 
 def run_doc(model, conn, ready, quote, verdicts=None, n=5, summary="what the reading found"):
-    """One full DOC: the line, the check, the summary."""
+    """One full DOC: the line, the check, the summary, the check of the summary."""
     model.queue({"moments": _moments(quote, ready["mid"], n)},
                 {"verdicts": verdicts or []},
-                {"summary": summary, "questions": "", "people": []})
+                {"summary": summary, "questions": "", "people": []},
+                {"verdicts": []})
     return synth.doc(conn, ready["mid"])
 
 
@@ -145,9 +152,11 @@ def test_a_full_reading_checks_after_every_line_and_before_the_summary(ready, co
     model.queue({"moments": _moments(quote, ready["mid"], 5)},
                 {"moments": _moments(quote, ready["mid"], 4, at=140)},
                 {"verdicts": []},
-                {"summary": "s", "questions": "", "people": []})
+                {"summary": "s", "questions": "", "people": []},
+                {"verdicts": []})
     synth.doc(conn, ready["mid"])
-    assert [c["label"] for c in model.calls] == ["thread", "thread", "verify", "doc"]
+    assert [c["label"] for c in model.calls] == ["thread", "thread", "verify", "doc",
+                                                 "verify_summary"]
 
 
 def test_the_check_is_shown_the_claim_its_quote_and_the_passage_around_it(ready, conn, model,
@@ -186,7 +195,8 @@ def test_a_one_line_rerun_checks_that_line_only(ready, conn, project, model, quo
     model.queue({"moments": _moments(quote, ready["mid"], 5)},
                 {"moments": _moments(quote, ready["mid"], 4, at=140)},
                 {"verdicts": []},
-                {"summary": "s", "questions": "", "people": []})
+                {"summary": "s", "questions": "", "people": []},
+                {"verdicts": []})
     synth.doc(conn, ready["mid"])
     theirs = [m["id"] for m in store.thread(conn, ready["mid"], other)]
 
@@ -291,3 +301,79 @@ def test_a_set_aside_claim_reaches_the_exclusions_the_page_prints(ready, conn, q
     notes = store.set_aside(conn, ready["pid"], ready["mid"])
     assert any(n.startswith("a claim was set aside — its passage does not carry it:")
                and "the passage says the opposite" in n for n in notes), notes
+
+
+# ---- and the summary, against the claims it was written over ----------------------------------
+
+SUMMARY = ("The reading follows work through this interview. "
+           "The family sailed from Trieste in 1913. "
+           "What the work paid is never said.")
+
+
+def doc_with(model, conn, ready, quote, verdicts, summary=SUMMARY):
+    """One full DOC whose summary check answers `verdicts`."""
+    model.queue({"moments": _moments(quote, ready["mid"], 5)},
+                {"verdicts": []},
+                {"summary": summary, "questions": "", "people": []},
+                {"verdicts": verdicts})
+    return synth.doc(conn, ready["mid"])
+
+
+def stored(conn, ready):
+    return store.get_summary(conn, "material", ready["mid"], "reading")["text"]
+
+
+def test_a_sentence_the_claims_do_not_carry_never_reaches_the_page(ready, conn, model, quote):
+    """The summary is what a researcher reads first, and DOC is shown the material as well as the
+    lines — so it can reach past its evidence without inventing anything at all."""
+    out = doc_with(model, conn, ready, quote,
+                   [{"n": 2, "verdict": "not", "why": "no claim names a port or a year"}])
+
+    assert stored(conn, ready) == ("The reading follows work through this interview. "
+                                   "What the work paid is never said.")
+    assert out["summary"] == stored(conn, ready), "what it hands back is what it stored"
+    said = [d for d in out["dropped"] if d.startswith("a sentence of the summary")]
+    assert said == ['a sentence of the summary was set aside — the claims do not carry it: '
+                    '"The family sailed from Trieste in 1913." '
+                    '(no claim names a port or a year)']
+
+
+def test_a_sentence_that_goes_past_the_claims_is_kept_and_said_so(ready, conn, model, quote):
+    """Part of it rests on the claims. It stands, and the researcher is told which sentence to
+    weigh rather than having it taken away from them."""
+    out = doc_with(model, conn, ready, quote,
+                   [{"n": 2, "verdict": "partly", "why": "'1913' appears in no claim or quote"}])
+
+    assert stored(conn, ready) == SUMMARY, "nothing was removed"
+    said = [d for d in out["dropped"] if d.startswith("a sentence of the summary")]
+    assert said == ['a sentence of the summary goes past the claims: '
+                    '"The family sailed from Trieste in 1913." '
+                    "('1913' appears in no claim or quote)"]
+
+
+def test_a_summary_the_claims_carry_is_stored_to_the_character(ready, conn, model, quote):
+    out = doc_with(model, conn, ready, quote,
+                   [{"n": n, "verdict": "supported", "why": ""} for n in (1, 2, 3)])
+    assert stored(conn, ready) == SUMMARY
+    assert not [d for d in out["dropped"] if d.startswith("a sentence of the summary")]
+
+
+def test_a_summary_with_no_sentences_in_it_is_not_checked(ready, conn, model, quote):
+    """Nothing queued for the check: the fake model raises on a call nobody expected, which is
+    how this asserts that no call was made."""
+    model.queue({"moments": _moments(quote, ready["mid"], 5)},
+                {"verdicts": []},
+                {"summary": "", "questions": "", "people": []})
+    synth.doc(conn, ready["mid"])
+    assert "verify_summary" not in [c["label"] for c in model.calls]
+
+
+def test_the_check_is_shown_the_numbered_sentences_the_claims_and_the_frame(ready, conn, model,
+                                                                            quote):
+    doc_with(model, conn, ready, quote, [])
+    shown = model.shown("verify_summary")
+    assert "1. The reading follows work through this interview." in shown
+    assert "3. What the work paid is never said." in shown
+    for m in claims(conn, ready):
+        assert f'[{m["id"]}] {m["claim"]} — "{m["anchor"]}" [{m["sid"]}]' in shown
+    assert "kind: interview" in shown, "the frame"

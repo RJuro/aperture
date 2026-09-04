@@ -330,7 +330,7 @@ def _answer(system: str, user: str, *, label: str = "", timeout=None) -> dict:
         return {"summary": "what this theme comes to here",
                 "moments": [{"claim": f"claim {i}", "anchor": text, "sid": sid}
                             for i, (sid, text) in enumerate(picked)]}
-    if label == "verify":
+    if label in ("verify", "verify_summary"):
         return {"verdicts": []}
     if label == "doc":
         return {"summary": "what the reading found", "questions": "what is still open?",

@@ -344,7 +344,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     they are. Otherwise every live theme gets its own call, and the summary call sees the lines
     that actually exist rather than being asked to write them and introduce them in one breath.
     """
-    from . import verify              # it reads this module; imported here so neither waits on the other
+    from . import verify, verify_summary   # they read this module; imported here so neither waits on the other
     row = store.material(conn, mid)
     if row is None:
         raise ValueError(f"no material {mid!r}")
@@ -414,6 +414,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
 
     summary, odd = foreign(words(data.get("summary"), SUMMARY_WORDS), allowed_text(conn, pid, mid))
     dropped += script_notes(odd)
+    # Before it is stored, never after: the summary a researcher reads first is the one that was
+    # checked against the claims under it, and a sentence they do not carry never reaches the page.
+    summary, said = verify_summary.run(conn, mid, summary)
+    dropped += said
     if summary:
         store.save_summary(conn, "material", mid, "reading", summary, run_id)
     # The one self-prompting slot: QUESTIONS the corpus has left open, read only by the ideation

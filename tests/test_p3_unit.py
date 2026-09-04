@@ -41,6 +41,7 @@ def _full_doc(model, conn, pid, by_tid, summary="s", questions="q", verdicts=Non
         model.queue(by_tid.get(t["id"], {"moments": []}))
     model.queue({"verdicts": verdicts or []})
     model.queue({"summary": summary, "questions": questions, "people": []})
+    model.queue({"verdicts": []})           # and the summary against the claims
 
 
 def test_a_citation_reads_back_from_the_number_the_material_was_printed_under(conn, ready):
@@ -190,6 +191,7 @@ def test_a_material_written_in_cyrillic_keeps_its_cyrillic(conn, project, model)
                              for i in range(4)]})
     model.queue({"verdicts": []})
     model.queue({"summary": "Работа держит семью вместе.", "questions": "q", "people": []})
+    model.queue({"verdicts": []})
     out = synth.doc(conn, mid)
     assert store.get_summary(conn, "material", mid, "reading")["text"] \
         == "Работа держит семью вместе."

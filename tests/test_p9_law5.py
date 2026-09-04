@@ -44,6 +44,7 @@ def compiled(conn, analysed, model):
              "angles": {"field": ANGLES_PROSE, "subareas": [], "angles": []},
              "read": {"codes": []}, "themes": {"themes": []},
              "thread": {"moments": []}, "verify": {"verdicts": []},
+             "verify_summary": {"verdicts": []},
              "doc": {"summary": "", "questions": "", "people": []},
              "account": {"account": ""}, "project": {"summary": ""},
              "check": {"found": []}}
