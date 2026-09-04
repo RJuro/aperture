@@ -40,9 +40,14 @@
 
 {{ t.gist }}
 
-{{ t.derivation }}
+{{ t.derivation }} · {{ t.hold }}
 {% if t.account %}
 {{ t.account.text }}
+{% endif %}{% if t.hold == 'frozen' and t.notes %}
+##### What has pulled against this definition
+
+{% for n in t.notes %}- {{ n.created_at[:10] }} — {{ n.text }}{% if n.display_title %} — {{ n.display_title }}{% endif %}
+{% endfor %}
 {% endif %}
 ##### Materials where this theme appears
 

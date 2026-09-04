@@ -236,8 +236,10 @@ def hits(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
 # ---- themes -----------------------------------------------------------------------------------
 
 def live_themes(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
-    return conn.execute("SELECT * FROM theme WHERE project_id=? AND status='live' ORDER BY name",
-                        (pid,)).fetchall()
+    """The project's themes: open and frozen. A candidate is a pattern in one material and is not
+    one of them — it is listed with its material until a second material holds a line under it."""
+    return conn.execute("SELECT * FROM theme WHERE project_id=? AND status='live' "
+                        "AND hold IN ('open','frozen') ORDER BY name", (pid,)).fetchall()
 
 
 def save_theme(conn: sqlite3.Connection, pid: str, *, tid: str | None, name: str, gist: str,
@@ -1027,3 +1029,35 @@ def theme_evidence(conn: sqlite3.Connection, pid: str) -> dict[str, dict]:
         if len(themes_here[(r["material_id"], r["sid"])]) > 1:
             d["shared"] += 1
     return out
+
+
+# ---- SHIM (pages agent, schema 15) ---------------------------------------------------------------
+# The engine agent owns these four; they are here only so the pages and their tests can run before
+# that branch lands. Drop this whole block on merge and keep its versions.
+
+def candidates(conn: sqlite3.Connection, pid: str,
+               mid: str | None = None) -> list[sqlite3.Row]:
+    """Live candidates. With `mid`, only those holding a line in that material."""
+    sql = "SELECT DISTINCT t.* FROM theme t"
+    args: list = []
+    if mid:
+        sql += (" JOIN moment mo ON mo.theme_id=t.id AND mo.status='live' AND mo.material_id=?")
+        args.append(mid)
+    sql += " WHERE t.project_id=? AND t.status='live' AND t.hold='candidate' ORDER BY t.name"
+    args.append(pid)
+    return conn.execute(sql, args).fetchall()
+
+
+def themes_for_material(conn: sqlite3.Connection, pid: str, mid: str) -> list[sqlite3.Row]:
+    """What this material may be read under: every project theme, plus its own candidates."""
+    return live_themes(conn, pid) + candidates(conn, pid, mid)
+
+
+def set_hold(conn: sqlite3.Connection, tid: str, hold: str) -> None:
+    conn.execute("UPDATE theme SET hold=? WHERE id=?", (hold, tid))
+    conn.commit()
+
+
+def theme_notes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
+    return conn.execute("SELECT * FROM theme_note WHERE theme_id=? ORDER BY created_at DESC, rowid "
+                        "DESC", (tid,)).fetchall()

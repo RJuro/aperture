@@ -81,7 +81,7 @@
   {% for c in cards %}
     <li>
       <a class="found-name" href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }}</a>
-      <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>
+      <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %}
       <p class="gist">{{ (c.summary.text if c.summary else c.gist) | prose }}</p>
     </li>
   {% endfor %}
@@ -92,7 +92,7 @@
    the browser lands at the top of the page, so the researcher scrolled back past the head, the
    summary and the theme list on every single switch. #}
 {% if cards %}<section class="themes-bar"><div class="container"><nav class="theme-tabs" aria-label="Themes in this material">
-{% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
+{% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }}{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
 </nav></div></section>{% endif %}
 
 <section class="section" id="reading"><div class="container">

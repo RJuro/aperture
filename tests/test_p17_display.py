@@ -65,6 +65,9 @@ def test_themes_across_materials_are_listed_apart_from_single_material_ones(clie
     pid = analysed["pid"]
     solo = store.save_theme(conn, pid, tid=None, name="Only here", gist="a single material",
                             code_ids=[])
+    # A pattern in one material is a candidate, and the second group is now exactly the
+    # candidates: the recurrence rule picks out the same set the reach count used to.
+    store.set_hold(conn, solo, "candidate")
     sid = store.moments(conn, analysed["grande"])[0]["sid"]
     store.save_moments(conn, analysed["grande"], solo,
                        [{"claim": "said once", "anchor": "x", "sid": sid}])
@@ -77,8 +80,12 @@ def test_themes_across_materials_are_listed_apart_from_single_material_ones(clie
             assert across < sect.index(name) < single, f"{name} is in the first group ({url})"
 
 
-def test_a_project_with_one_material_shows_only_the_second_group(client, one_material):
+def test_a_project_with_one_material_shows_only_the_second_group(client, conn, one_material):
     pid = one_material["pid"]
+    # With one material nothing has recurred, so every theme in the project is a candidate —
+    # which is what leaves the first group empty.
+    for tid in (one_material["first"], one_material["second"]):
+        store.set_hold(conn, tid, "candidate")
     for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md"):
         sect = _themes(client.get(url).text)
         assert "Across materials" not in sect, f"nothing can span one material ({url})"

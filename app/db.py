@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS theme_history (
     theme_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '', codes TEXT DEFAULT '',
     run_id TEXT, at TEXT NOT NULL);
 
+-- SHIM (pages agent, schema 15): the engine agent owns this table; drop this copy on merge.
+-- What pulled against a frozen theme's definition in one material — written by THEMES, shown on
+-- the theme page and in the record, never folded into the gist.
+CREATE TABLE IF NOT EXISTS theme_note (
+    id TEXT PRIMARY KEY, theme_id TEXT NOT NULL, material_id TEXT NOT NULL, run_id TEXT,
+    text TEXT NOT NULL, created_at TEXT NOT NULL);
+
 CREATE TABLE IF NOT EXISTS theme_code (
     theme_id TEXT NOT NULL, code_id TEXT NOT NULL, PRIMARY KEY (theme_id, code_id));
 
@@ -199,6 +206,14 @@ def migrate(conn: sqlite3.Connection) -> None:
         # existed, which is exactly right — those claims were never checked.
         conn.execute("ALTER TABLE moment ADD COLUMN support TEXT DEFAULT ''")
         conn.execute("ALTER TABLE moment ADD COLUMN support_note TEXT DEFAULT ''")
+    # SHIM (pages agent, schema 15): the engine agent owns both columns; drop this block on
+    # merge. `hold` is candidate | open | frozen and defaults to open so every theme written
+    # before the lifecycle existed stays exactly the project theme it already was;
+    # `stable_passes` counts the consecutive THEMES passes that left this theme untouched.
+    have = {r[1] for r in conn.execute("PRAGMA table_info(theme)")}
+    if "hold" not in have:
+        conn.execute("ALTER TABLE theme ADD COLUMN hold TEXT NOT NULL DEFAULT 'open'")
+        conn.execute("ALTER TABLE theme ADD COLUMN stable_passes INTEGER DEFAULT 0")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell
