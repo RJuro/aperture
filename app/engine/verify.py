@@ -39,17 +39,34 @@ BATCH = 60
 WHY_WORDS = 12
 
 
+CONTEXT_WORDS = 40     # on each side of the quoted sentence, at least
+CONTEXT_SENTENCES = 8  # and never more than this many sentences a side, however short they are
+
+
 def passage(sents: list[tuple[str, str]], where: dict[str, int], sid: str) -> str:
-    """The sentence the quote was bound to, with the one before and the one after it.
+    """The sentence the quote was bound to, with enough of its neighbours to carry a claim.
 
     One sentence alone reads as an assertion out of context and a whole material re-reads the
     material. The neighbours are what carry a manner, a cause or a comparison when the text
-    genuinely has one.
+    genuinely has one. One neighbour each side was enough for transcripts cut into sentences of
+    ten words or more, and not for the ones cut into fragments: an eight-material record showed
+    the share of claims marked only partly carried tracking passage granularity — 81% where the
+    material averaged 5.6 words a passage, 22–35% where it averaged eleven or more (docs/audits/
+    2026-09-05-eight-material-analysis.md). A claim compresses a stretch of talk; three fragments
+    of six words cannot carry what three sentences of twelve can. So the window is a word budget
+    each side, met by adding whole sentences, and bounded so that a run of one-word lines does
+    not pull in half the material.
     """
     i = where.get(sid)
     if i is None:
         return "(this passage is no longer in the material)"
-    return "\n".join(f"{s}  {t}" for s, t in sents[max(0, i - 1):i + 2])
+    lo, hi = max(0, i - 1), min(len(sents), i + 2)
+    def words(a, b): return sum(len(t.split()) for _, t in sents[a:b])
+    while lo > 0 and i - lo < CONTEXT_SENTENCES and words(lo, i) < CONTEXT_WORDS:
+        lo -= 1
+    while hi < len(sents) and hi - i - 1 < CONTEXT_SENTENCES and words(i + 1, hi) < CONTEXT_WORDS:
+        hi += 1
+    return "\n".join(f"{s}  {t}" for s, t in sents[lo:hi])
 
 
 def claims_block(rows: list[dict], sents: list[tuple[str, str]], where: dict[str, int]) -> str:
