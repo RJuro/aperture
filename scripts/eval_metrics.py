@@ -15,6 +15,11 @@ often two themes cite the same one, how much of the corpus is cited at all, how 
 verify step set aside, how many times the prose says *all* or *every*, stray non-Latin characters,
 an id written twice inside one bracket, and the tokens each step spent.
 
+From a database it also counts what the four-condition comparison needs and a record cannot say:
+the model calls under those steps with their attempts, cached and reasoning tokens and seconds;
+what became of every theme × material pair, including the pairs nothing ever looked at; the lines
+too short to be full; how much of each material no code touched; and the theme holds.
+
 A count is not a score. 12 themes over 3 materials is a number; whether it is inflation is a
 reading. These numbers sit *beside* the judges' scores, never in place of them.
 """
@@ -31,6 +36,11 @@ from pathlib import Path
 # Words that assert a pattern holds without exception. Counted where the model generalises — the
 # theme accounts and the corpus summary — never in the material's own words.
 HEDGES = ("all", "every", "each", "consistently", "no exceptions", "across the corpus")
+
+# The claim count below which the record prints a line as "sparse". A copy of
+# `synth.MIN_MOMENTS` rather than an import: counting a finished reading must not have to load the
+# engine, and this number changes about once a year.
+SPARSE_BELOW = 4
 
 _SID = re.compile(r"\bS\d{2,5}\b")
 _BRACKET = re.compile(r"\[([^\[\]\n]{0,300})\]")
@@ -85,7 +95,12 @@ def _blank(source: str) -> dict:
             "shared_passage_share_per_theme": {}, "shared_passage_share": 0.0,
             "cited_passages": 0, "total_passages": None, "cited_share": None,
             "set_aside": {}, "hedge_words": {}, "non_latin": {}, "doubled_ids": [],
-            "tokens_per_step": {}}
+            "tokens_per_step": {},
+            # Only the database knows these. A record prints neither the calls under a step nor
+            # the pairs nothing was written for, so off a record they stay null — "not measured",
+            # which is what `--compare` prints them as, and never a nought.
+            "calls": None, "cells": None, "sparse_lines": None, "unmarked_share": None,
+            "candidates": None, "proposed": None, "frozen": None}
 
 
 # ---- from the database ---------------------------------------------------------------------------
@@ -151,7 +166,103 @@ def from_db(conn: sqlite3.Connection, pid: str) -> dict:
             "SELECT kind, COUNT(*), SUM(tokens_in), SUM(tokens_out) FROM run WHERE project_id=? "
             "GROUP BY kind ORDER BY kind", (pid,)):
         out["tokens_per_step"][kind] = {"runs": n, "in": ti or 0, "out": to or 0}
+
+    out["calls"] = _calls(conn, pid)
+    out["cells"] = _cells(conn, pid)
+    out["sparse_lines"] = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT 1 FROM moment WHERE status='live' AND theme_id IN "
+        "(SELECT id FROM theme WHERE project_id=? AND status='live') AND material_id IN "
+        f"({','.join('?' * len(mids)) or 'NULL'}) "
+        "GROUP BY material_id, theme_id HAVING COUNT(*) < ?)",
+        [pid, *mids, SPARSE_BELOW]).fetchone()[0]
+    out["unmarked_share"] = _unmarked_share(conn, pid)
+    holds = dict(conn.execute("SELECT hold, COUNT(*) FROM theme WHERE project_id=? AND "
+                              "status='live' GROUP BY hold", (pid,)))
+    out["candidates"] = holds.get("candidate", 0)
+    out["frozen"] = holds.get("frozen", 0)
+    # A proposal is a count Python made, not a promotion anybody accepted (`store.propose`), so it
+    # is a share of the candidates and not a fourth hold.
+    out["proposed"] = conn.execute(
+        "SELECT COUNT(*) FROM theme WHERE project_id=? AND status='live' AND hold='candidate' "
+        "AND proposed_at IS NOT NULL", (pid,)).fetchone()[0]
     return out
+
+
+# ---- what the model actually did, and what the reading left alone --------------------------------
+
+_CALL_COLUMNS = ("calls", "attempts", "tokens_in", "tokens_out", "tokens_cached",
+                 "tokens_reasoning", "seconds_total")
+_CALL_SELECT = ("COUNT(*) AS calls, SUM(c.attempt) AS attempts, SUM(c.tokens_in) AS tokens_in, "
+                "SUM(c.tokens_out) AS tokens_out, SUM(c.tokens_cached) AS tokens_cached, "
+                "SUM(c.tokens_reasoning) AS tokens_reasoning, SUM(c.seconds) AS seconds_total")
+_CALL_FROM = "FROM call c JOIN run r ON r.id = c.run_id WHERE r.project_id=?"
+
+
+def _share(part, whole) -> float | None:
+    """None where the provider reported nothing. A share of an unreported total is not 0.0 — the
+    `call` table keeps 'not reported' and 'none' apart on purpose (AR-09), and so does this."""
+    if part is None or not whole:
+        return None
+    return round(part / whole, 3)
+
+
+def _calls(conn: sqlite3.Connection, pid: str) -> dict:
+    """One row per attempt at one model call, totalled. `run.tokens_in/out` are a step's totals and
+    a step is a dozen calls; only these rows carry cached and reasoning tokens, seconds, and the
+    retries — and on the first live M-3 run four output tokens in five were reasoning.
+
+    `attempts` sums the attempt NUMBERS, so it equals `calls` exactly where every call was
+    answered first time; the gap between them is what would not parse and had to be asked again.
+    """
+    total = conn.execute(f"SELECT {_CALL_SELECT} {_CALL_FROM}", (pid,)).fetchone()
+    out = {k: total[k] for k in _CALL_COLUMNS}
+    if out["seconds_total"] is not None:
+        out["seconds_total"] = round(out["seconds_total"], 1)
+    out["reasoning_share"] = _share(total["tokens_reasoning"], total["tokens_out"])
+    out["cached_share"] = _share(total["tokens_cached"], total["tokens_in"])
+    out["per_kind"] = {
+        r["kind"]: {k: (round(r[k], 1) if k == "seconds_total" and r[k] is not None else r[k])
+                    for k in _CALL_COLUMNS}
+        for r in conn.execute(f"SELECT r.kind AS kind, {_CALL_SELECT} {_CALL_FROM} "
+                              "GROUP BY r.kind ORDER BY r.kind", (pid,))}
+    return out
+
+
+def _cells(conn: sqlite3.Connection, pid: str) -> dict:
+    """Theme × material: what became of every pair. Three outcomes today and a fourth, `residual`,
+    where R4's omission pass looked through the unmarked passages and found nothing.
+
+    A pair with no row at all is `not_assessed`, counted separately for the reason
+    `store.followed` exists: a theme developed after a material was read was never looked for in
+    it, and reading that silence as "looked for and too thin" asserts a reading that never ran.
+    """
+    out = {k: 0 for k in ("line", "thin", "skipped", "residual")}
+    rows = conn.execute(
+        "SELECT f.outcome, COUNT(*) FROM follow f "
+        "JOIN material m ON m.id = f.material_id AND m.removed_at IS NULL "
+        "JOIN theme t ON t.id = f.theme_id AND t.status='live' "
+        "WHERE m.project_id=? AND t.project_id=? AND f.status='live' "
+        "GROUP BY f.outcome", (pid, pid)).fetchall()
+    for outcome, n in rows:
+        out[outcome] = out.get(outcome, 0) + n
+    pairs = conn.execute(
+        "SELECT (SELECT COUNT(*) FROM theme WHERE project_id=? AND status='live') * "
+        "(SELECT COUNT(*) FROM material WHERE project_id=? AND removed_at IS NULL)",
+        (pid, pid)).fetchone()[0]
+    out["not_assessed"] = pairs - sum(n for _, n in rows)
+    return out
+
+
+def _unmarked_share(conn: sqlite3.Connection, pid: str) -> dict:
+    """Per material, the share of its passages no code hit — how much of it the reading walked
+    past. The denominator for coverage, and the pool RESIDUAL reads."""
+    return {r["name"]: _share(r["total"] - r["marked"], r["total"])
+            for r in conn.execute(
+                "SELECT m.name AS name, "
+                "(SELECT COUNT(*) FROM sentence s WHERE s.material_id=m.id) AS total, "
+                "(SELECT COUNT(DISTINCT h.sid) FROM code_hit h WHERE h.material_id=m.id) AS marked "
+                "FROM material m WHERE m.project_id=? AND m.removed_at IS NULL "
+                "ORDER BY m.created_at", (pid,))}
 
 
 def _set_aside(conn: sqlite3.Connection, pid: str) -> dict:

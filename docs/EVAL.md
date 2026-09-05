@@ -131,8 +131,129 @@ be measured against v2 the same way.
 |---|---|
 | `scripts/eval_run.py` | produce a record from a folder of material, synchronously |
 | `scripts/eval_metrics.py` | count a finished reading — from its database, or from its record |
+| `scripts/eval_dossiers.py` | letter and shuffle the records of several conditions for blind judging |
 | `scripts/eval_rubric.md` | what the blind judges are given |
 | `tests/test_eval_metrics.py` | the counting, and that the runner runs the application's chain |
+| `tests/test_eval_harness.py` | the conditions a run can be given, and the blind dossiers |
+
+## Pass 6 protocol — the four-condition comparison
+
+*Written before the pass runs. No results here; they go under **Results** when there are any.*
+
+The question is the one Astra-review §8 and PLAN §13 pose: does the explore-R4 workflow — local
+evidence, cross-case themes over a batch, targeted lines, then a pass over what nothing marked —
+read better than the corrected iterative chain, and does it cost less per material.
+
+### The four conditions
+
+Same corpus, same focus, same model, a fresh data directory each. `bench/ellis3` (three Ellis
+Island interviews), focus `experience of migration, economic outcomes, integration`.
+
+```
+export APERTURE_PROVIDER=mistral
+C=bench/ellis3
+F="experience of migration, economic outcomes, integration"
+
+# A — the corrected iterative chain, the baseline everything else is measured against
+python scripts/eval_run.py --materials $C --focus "$F" --method iterative \
+  --data bench/p6-a --out bench/p6-a/record.md
+# B — the same chain with the code-hit gate
+python scripts/eval_run.py --materials $C --focus "$F" --method iterative --gate \
+  --data bench/p6-b --out bench/p6-b/record.md
+# C — explore-R4 without the pass over the unmarked passages
+python scripts/eval_run.py --materials $C --focus "$F" --method explore --no-residual \
+  --data bench/p6-c --out bench/p6-c/record.md
+# D — explore-R4 entire
+python scripts/eval_run.py --materials $C --focus "$F" --method explore \
+  --data bench/p6-d --out bench/p6-d/record.md
+```
+
+`--method` sets the project's column; `--gate` sets `APERTURE_FOLLOW=marked`; `--no-residual` sets
+`APERTURE_RESIDUAL=off`. A condition is one command line, not a shell prologue somebody forgets.
+Check each with `--dry-run` first — it prints provider, model, materials, condition and the steps
+that would run, and calls nothing. `--record-calls` is on by default and writes `<out>.calls.json`
+beside the record: the data directory is what gets deleted, and those rows are the only record of
+attempts, cached tokens, reasoning tokens and seconds.
+
+**The order rule.** One run per condition, and the three files given to all four in the same
+order — the one `sorted()` gives, which is the order the runner takes them in. Order sensitivity
+and repeat runs are what Astra §8 asks for next and are a later pass; this one buys the four-way
+comparison at one order. The caveat of pass 2 stands over every number here: one run per
+condition, so some of every difference is run-to-run variation, which is why the verdict comes
+from two judges and why nothing is adopted on one pass alone.
+
+### The counts, condition against condition
+
+```
+python scripts/eval_metrics.py --compare bench/p6-a/record.metrics.json bench/p6-d/record.metrics.json
+```
+
+Beside the standing counts (themes, claims, shared passages, totalising words, housekeeping),
+this pass compares, all of it SQL over the reading's own database:
+
+| Count | What it is beside |
+|---|---|
+| `calls`, `attempts`, `seconds_total`, and the same per step kind | efficiency; the gap between calls and attempts is what would not parse |
+| `tokens_in/out/cached/reasoning`, `reasoning_share`, `cached_share` | cost — output tokens ÷ materials is *cost per material*, the threshold below |
+| `cells`: `line · thin · skipped · residual · not_assessed` over theme × material | coverage, and which silence each condition produces |
+| `sparse_lines` — live lines under four claims | pattern hunger |
+| `unmarked_share` per material — passages no code hit | how much of each interview the reading walked past |
+| `candidates · proposed · frozen` | whether the reading converged at all (pass 5: explore did not) |
+
+Nothing there is a target. A condition that halves the theme count and loses the reading is worse,
+and only a reader can say so.
+
+### Judging
+
+```
+python scripts/eval_dossiers.py --pass pass6 --transcripts bench/ellis3 \
+  --conditions iterative=bench/p6-a gated=bench/p6-b explore=bench/p6-c explore-residual=bench/p6-d
+```
+
+That writes `bench/pass6/dossiers/A.md … D.md` — each record's **Themes** and **Materials**
+sections, claims in full, every condition's name replaced by its letter, shuffled on a seed — with
+the key sealed in `KEY.json`, an `INSTRUCTIONS.md` generated from `scripts/eval_rubric.md`, and
+`unseal.py`. *Processing history* is cut from every dossier: the step list would tell a judge
+which chain ran, which is the whole secret.
+
+Two Opus judges, each in a fresh session, neither told what was changed, both with the transcripts
+open. They mark **nine** dimensions: the seven of the rubric, plus **Coverage** (what remained
+unexamined; whether an absence is stated as searched-for or as never-looked-for; whether each
+material's account stands on its own) and **Within-case integrity** (whether a material reads as
+an account of that interview or as theme labels with quotations filled in). Then
+`python bench/pass6/unseal.py` tabulates their scores against the key.
+
+### Thresholds, fixed here, before anything is unblinded
+
+Taking each dimension as the mean of the two judges' scores, and cost per material as output
+tokens ÷ 3:
+
+> **Adopt explore-R4 (condition D) only if theme inflation, pattern hunger, overreading absence
+> and coverage are each ≥ the iterative baseline's (condition A), AND its cost per material is
+> lower than A's.** A tie on a dimension counts as met. A loss on any one of those four does not,
+> whatever the other five say.
+
+C against D says whether the residual pass earns its call: it is kept only if coverage rises and
+`cells.residual` is non-empty — an absence that was looked for beats one that was not. B is not
+adopted either way; pass 3 settled that the gate stays off by default, and it is in this pass as
+the cheap-and-lossy reference point the cost comparison needs a number for.
+
+Where the two judges differ by two points or more on a dimension, read both evidence lines before
+believing either.
+
+### What it should cost
+
+From pass 5's `call` rows, two materials on MiniMax-M3: the iterative build spent **294k output
+tokens over 13 steps**, explore **353k over 14**, with **82% of output tokens reasoning** and 29k
+of input served from the provider's cache. Three materials rather than two, and a theme set that
+grows with the corpus, puts each condition of the order of **400–600k output tokens**, so the four
+together are around **2M output** plus their input — one pass of the same order as passes 1–3 on
+GLM, and hours rather than minutes of wall clock.
+
+Treat that as an order of magnitude and not a quote. Four output tokens in five are reasoning,
+which is not predictable from the prompt, and cached input is priced differently again — so the
+**provider invoice is the number that gets reported**, beside the estimate and never instead of
+it (Astra §8).
 
 ## Results
 

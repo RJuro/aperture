@@ -93,6 +93,76 @@ def test_a_claim_the_verify_step_set_aside_is_counted(conn, analysed):
     assert eval_metrics.from_db(conn, analysed["pid"])["set_aside"]["verify_superseded_claims"] == 1
 
 
+def test_the_calls_under_the_steps_are_totalled(conn, analysed):
+    """A step is a dozen calls, and only the call rows carry cached and reasoning tokens, seconds
+    and retries. A counter no provider reported stays null — never a nought."""
+    pid = analysed["pid"]
+    rid = store.start_run(conn, pid, "doc", analysed["grande"], "x")
+    store.save_call(conn, rid, "thread", 1, "mistral", "glm", "medium",
+                    {"tokens_in": 1000, "tokens_out": 400, "tokens_cached": 250,
+                     "tokens_reasoning": 320}, "2026-09-05T10:00:00", 12.5, "ok")
+    store.save_call(conn, rid, "thread", 2, "mistral", "glm", "medium",
+                    {"tokens_in": 1000, "tokens_out": 100}, "2026-09-05T10:01:00", 7.5, "ok")
+    other = store.start_run(conn, pid, "read", analysed["rodwin"], "x")
+    store.save_call(conn, other, "read", 1, "mistral", "glm", "", {"tokens_in": 500},
+                    "2026-09-05T10:02:00", 5.0, "ok")
+
+    c = eval_metrics.from_db(conn, pid)["calls"]
+    assert c["calls"] == 3
+    assert c["attempts"] == 4, "1 + 2 + 1 — the gap from 3 is the answer that would not parse"
+    assert c["tokens_in"] == 2500 and c["tokens_out"] == 500
+    assert c["tokens_cached"] == 250 and c["tokens_reasoning"] == 320
+    assert c["reasoning_share"] == 0.64 and c["cached_share"] == 0.1
+    assert c["seconds_total"] == 25.0
+    assert c["per_kind"]["doc"]["calls"] == 2 and c["per_kind"]["read"]["calls"] == 1
+    assert c["per_kind"]["read"]["tokens_out"] is None, "the provider reported no output tokens"
+
+
+def test_a_provider_that_reports_no_cache_is_not_reported_as_caching_nothing(conn, analysed):
+    rid = store.start_run(conn, analysed["pid"], "read", None, "x")
+    store.save_call(conn, rid, "read", 1, "minimax", "M3", "", {"tokens_in": 10, "tokens_out": 5},
+                    "2026-09-05T10:00:00", 1.0, "ok")
+    c = eval_metrics.from_db(conn, analysed["pid"])["calls"]
+    assert c["tokens_cached"] is None and c["cached_share"] is None
+
+
+def test_every_theme_by_material_pair_is_one_of_five_things(conn, analysed):
+    """Two themes over two materials is four cells. A cell with no follow row was never assessed,
+    which is the distinction `store.followed` exists to keep — not a zero."""
+    pid, work = analysed["pid"], analysed["themes"]["Work and trade"]
+    leaving = analysed["themes"]["Leaving and arriving"]
+    assert eval_metrics.from_db(conn, pid)["cells"] == {
+        "line": 0, "thin": 0, "skipped": 0, "residual": 0, "not_assessed": 4}
+    store.save_follow(conn, analysed["grande"], work, "line")
+    store.save_follow(conn, analysed["rodwin"], work, "thin")
+    store.save_follow(conn, analysed["grande"], leaving, "skipped")
+    assert eval_metrics.from_db(conn, pid)["cells"] == {
+        "line": 1, "thin": 1, "skipped": 1, "residual": 0, "not_assessed": 1}
+    # `residual` is a key here and 0 for now: the follow table's CHECK constraint still refuses
+    # the word, and R4's omission pass is what widens it. The counter is ready for the day it does.
+
+
+def test_short_lines_uncoded_passages_and_the_holds_are_counted(conn, analysed, quote):
+    """Three counts a record cannot give back: lines under the four-claim floor, how much of each
+    material no code marked, and where the themes stand in the lifecycle."""
+    pid = analysed["pid"]
+    assert eval_metrics.from_db(conn, pid)["sparse_lines"] == 4, "four lines of three claims"
+    third = store.save_theme(conn, pid, tid=None, name="A candidate", gist="one life", code_ids=[])
+    store.set_hold(conn, third, "candidate")
+    sid, text = quote(analysed["grande"], at=200)
+    store.save_moments(conn, analysed["grande"], third,
+                       [{"claim": "one claim only", "anchor": " ".join(text.split()[:8]),
+                         "sid": sid}])
+    m = eval_metrics.from_db(conn, pid)
+    assert m["sparse_lines"] == 5, "and the new line of one"
+    assert m["candidates"] == 1 and m["proposed"] == 0 and m["frozen"] == 0
+    # Nothing was coded, so every passage in both materials is unmarked.
+    assert set(m["unmarked_share"].values()) == {1.0}
+    store.save_codes(conn, pid, analysed["grande"],
+                     [{"name": "work", "definition": "a living", "sids": [sid]}])
+    assert eval_metrics.from_db(conn, pid)["unmarked_share"]["DP-40 Grande"] < 1.0
+
+
 def test_tokens_come_back_per_step(conn, analysed):
     pid = analysed["pid"]
     for kind, ti, to in (("read", 100, 20), ("read", 300, 40), ("themes", 50, 10)):
@@ -216,6 +286,22 @@ def test_two_readings_side_by_side(tmp_path):
     assert eval_metrics.main(["--compare", str(tmp_path / "a.json"), str(tmp_path / "b.json")]) == 0
 
 
+def test_a_database_and_a_record_line_up_across_the_new_counts_too(conn, analysed, tmp_path):
+    """Two conditions are compared through this table, and one of the four may only ever exist as
+    a record. What only the database knows prints as '—' on that side, never as a nought."""
+    store.save_follow(conn, analysed["grande"], analysed["themes"]["Work and trade"], "line")
+    record = tmp_path / "record.md"
+    record.write_text(pages._render("export.md", context.export(conn, analysed["pid"])),
+                      encoding="utf-8")
+    table = eval_metrics.compare(eval_metrics.from_db(conn, analysed["pid"]),
+                                 eval_metrics.from_record(record))
+    row = next(ln for ln in table.splitlines() if ln.startswith("cells.line"))
+    assert row.split() == ["cells.line", "1", "—"]
+    for key in ("calls.calls", "calls.reasoning_share", "cells.not_assessed", "sparse_lines",
+                "candidates", "proposed", "frozen"):
+        assert any(ln.startswith(key + " ") for ln in table.splitlines()), key
+
+
 # ---- the runner ----------------------------------------------------------------------------------
 
 @pytest.fixture
@@ -230,8 +316,28 @@ def corpus(tmp_path):
     return d
 
 
+def the_applications_chain(pid, mids) -> list[str]:
+    """The step kinds `jobs.ingest_chain` queues, taken from that function by standing in for
+    `jobs.start` — the application's own planner, called directly.
+
+    The expectation is computed and not written down: the chain differs by the project's `method`
+    and grows as the workflow does, and a list copied into a test only ever pins the day it was
+    copied. What is being asserted is that the runner runs *that* plan, not a particular plan.
+    """
+    queued: list[dict] = []
+    real = jobs.start
+    jobs.start = lambda conn_factory, project, runs: queued.extend(runs)
+    try:
+        jobs.ingest_chain(pid, mids)
+    finally:
+        jobs.start = real
+    return [r["kind"] for r in queued]
+
+
 def test_the_runner_runs_exactly_the_chain_the_application_runs(corpus, tmp_path, monkeypatch,
                                                                 capsys):
+    from app import db
+
     ran = []
     for kind, (line, _) in list(jobs.STEPS.items()):
         monkeypatch.setitem(jobs.STEPS, kind, (line, lambda c, p, r, _k=kind: ran.append(_k)))
@@ -240,16 +346,18 @@ def test_the_runner_runs_exactly_the_chain_the_application_runs(corpus, tmp_path
                           "--data", str(tmp_path / "v2data"), "--out", str(out)]) == 0
 
     printed = capsys.readouterr().out
-    # The runner makes an ordinary new project, and a new project explores: each material is read
-    # on its own terms and what it named is compared with the project's vocabulary afterwards.
-    assert ("14 steps: frame → angles → read → reconcile → frame → angles → read → reconcile → "
-            "themes → themes → doc → doc → accounts → project") in printed, \
+    conn = db.connect(tmp_path / "v2data" / "aperture.db")
+    pid = conn.execute("SELECT id FROM project").fetchone()[0]
+    mids = [r[0] for r in conn.execute("SELECT id FROM material ORDER BY created_at")]
+    plan = the_applications_chain(pid, mids)
+    assert f"{len(plan)} steps: {' → '.join(plan)}" in printed, \
         "the same chain as jobs.ingest_chain, planned in the same order"
-    # What it RUNS is that plan in stages: the two materials side by side, THEMES one at a time,
-    # the corpus level last (`jobs._stages`). So the tail is fixed and the rest is a multiset.
-    assert sorted(ran) == sorted(["frame", "angles", "read", "reconcile"] * 2 +
-                                 ["themes", "themes", "doc", "doc", "accounts", "project"])
-    assert ran[8:10] == ["themes", "themes"] and ran[-2:] == ["accounts", "project"]
+    # What it RUNS is that plan in stages: the materials side by side, THEMES one at a time, the
+    # corpus level last (`jobs._stages`). So the order is a multiset, with two things fixed —
+    # every material is read before anything moves the theme set, and the tail is last.
+    assert sorted(ran) == sorted(plan)
+    assert ran[-2:] == plan[-2:] == ["accounts", "project"]
+    assert ran.index("themes") > max(i for i, k in enumerate(ran) if k == "read")
     assert out.exists() and out.with_suffix(".metrics.json").exists()
     metrics = json.loads(out.with_suffix(".metrics.json").read_text())
     assert metrics["materials"] == 2, "the .rtf and the dotfile were not material"
