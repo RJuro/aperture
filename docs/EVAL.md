@@ -289,3 +289,29 @@ Nothing here was judged on quality — these are mechanics, and mechanics are fo
 quality question the audit raises (a reusable document reading instead of theme-by-document
 THREADs) is the four-condition comparison in Astra-review §8; it starts only after R2/R3 land and the
 corrected chain has been run once as the baseline.
+
+### Pass 5 — 2026-09-05, two MiniMax-M3 mechanics smokes (bench/mini: Michael + von Trapp)
+
+Not quality runs — M3 is the wrong model for that (docs/MODELS.md) — but the first live exercise
+of R1 and wave 2 on a real provider. Both chains completed with no failed step.
+
+| | R1 build (`4e9e522`, iterative) | wave 2 (`023d458`, explore) |
+|---|---|---|
+| steps | 13 | 14 (reconcile ×2) |
+| output tokens | 294k | 353k |
+| DOC output / seconds | 202k / 1330 | 217k / 1686 |
+| READ output | 20k | 69k (no project vocabulary shown; 42 codes coined) |
+| live themes | 2 open + 6 candidates | 8 candidates, 0 proposed |
+| follow outcomes | line / skipped as designed | same |
+
+What the `call` table showed on its first live run (24 calls, 24 ok, no JSON retry):
+- **MiniMax reports cached and reasoning tokens.** 29,426 cached of 353k output-side, 21,120 of
+  them on the eight THREAD calls — the material-first prompt order is being cached. Whether GLM
+  reports the same is still unknown.
+- **82% of output tokens are reasoning** (287,947 of 353,034). That is the cost, not the answers.
+
+An observation for R4, not a defect: in explore mode with two materials, every theme stayed a
+candidate — each material was coded on its own terms, RECONCILE judged the second material's 15
+new codes `distinct` from the first's, and THEMES therefore confirmed nothing across the two.
+Exploratory reading does not converge on its own; cross-case theme development has to be an
+explicit step over evidence from several cases (Astra AR-11), which is what R4 builds.
