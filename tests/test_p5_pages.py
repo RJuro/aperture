@@ -111,6 +111,9 @@ def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, con
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
+    # The reading was made here and set aside; without that row this material would be named
+    # under "not assessed yet", which is the other finding entirely.
+    store.save_follow(conn, analysed["rodwin"], tid, "thin", None)
     html = client.get(f"/p/{pid}/t/{tid}").text
     assert "Materials with no claims under this theme" in html
     assert "Looked for and found too thin" in html
@@ -223,7 +226,8 @@ def test_the_export_prints_the_whole_record(client, conn, analysed):
         for m in store.moments(conn, mid):
             assert m["claim"] in md and m["anchor"] in md
     for c in store.checks(conn, analysed["pid"]):
-        assert c["question"] in md and c["verdict"] in md and str(c["searched_n"]) in md
+        assert c["question"] in md and str(c["searched_n"]) in md
+        assert ("found —" if c["verdict"] == "found" else "nothing found —") in md
 
 
 def test_no_javascript_except_the_one_poller(client, analysed):

@@ -157,7 +157,10 @@ def _project(conn, pid, run):
 def _check(conn, pid, run):
     from .engine import check
     mid = run.get("material_id")
-    check.run(conn, pid, "material" if mid else "project", mid or pid, _text(conn, run))
+    # `scope` is which passages the researcher asked for — it rides on the planned run rather than
+    # on the feedback row, because it is a setting on the search and not a word they wrote.
+    check.run(conn, pid, "material" if mid else "project", mid or pid, _text(conn, run),
+              run.get("scope") or "all")
 
 
 #                 line a person can read              what it calls

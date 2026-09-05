@@ -335,6 +335,20 @@ def _analysis_steps(conn, row) -> list[dict]:
     return out
 
 
+def _check_said(c: dict) -> str:
+    """What one check found, and over which passages — one sentence, four surfaces.
+
+    Never "the material contains none of it": an empty result is a statement about the passages
+    that were read, and until the search could be asked to read all of them it was routinely a
+    statement about the remainder, where the answer had already been claimed.
+    """
+    n = c.get("searched_n") or 0
+    passages = "passage" if n == 1 else "passages"
+    where = (f"searched {n} of {n} {passages}" if (c.get("searched_scope") or "unused") == "all"
+             else f"searched {n} {passages} not yet cited")
+    return f"found — {where}" if c.get("verdict") == "found" else f"nothing found — {where}"
+
+
 def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
     """Whole rows, with the stored quotes decoded — a check without its quotes is an opinion."""
     out = []
@@ -346,6 +360,7 @@ def _checks(conn, pid: str, ref_id: str | None = None) -> list[dict]:
             d["anchors"] = json.loads(d.get("anchors_json") or "[]")
         except ValueError:
             d["anchors"] = []
+        d["said"] = _check_said(d)
         # A check on the project page is otherwise an orphaned question: at twenty materials the
         # list says what was asked and never of what.
         if c["scope"] == "material":
@@ -404,13 +419,42 @@ def _shell(conn, pid: str) -> dict:
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
 
+# What an empty cell means, in the three states `_assessed` tells apart. The page and the record
+# name them in their own headings; this is for a cell that has room for nothing but a dash.
+ASSESSED_SAID = {
+    "thin": "Looked for and found too thin",
+    "skipped": "Not looked for here — none of this theme's codes marked this material",
+    None: "Not assessed yet — this material was not read for this theme",
+}
+
+
+def _assessed(outcomes: dict, tid: str, mid: str) -> str | None:
+    """Which kind of nothing this material is for this theme: 'thin' where a reading under it was
+    made and set aside, 'skipped' where none of the theme's codes marked the material and it was
+    never looked for, and None where the pair was never assessed at all.
+
+    A missing row is the third state and not the first. A material uploaded and not yet read, and
+    an older material never revisited for a theme developed since, both have no row — and both
+    were shown as "looked for and found too thin", which asserts an absence over a reading that
+    never happened. 'line' with no live claims left reads as thin: it was looked for, and what it
+    found is no longer there.
+    """
+    outcome = outcomes.get((tid, mid))
+    return None if outcome is None else ("skipped" if outcome == "skipped" else "thin")
+
+
 def _threads(conn, mid: str, themes: dict) -> list[dict]:
     """Every live moment on this material, grouped by its theme — built from the rows, so a theme
     that was merged away still carries its moments into the record."""
+    from .engine import synth
+
     by: dict[str, list[dict]] = {}
     for m in store.moments(conn, mid):
         by.setdefault(m["theme_id"], []).append(dict(m))
     return [{"theme": themes.get(t, {"id": t, "name": t, "gist": ""}), "moments": ms,
+             # A line of one to three claims is kept now rather than dropped whole, so the record
+             # has to say it is one: three observations and thirty read the same on a page.
+             "sparse": len(ms) < synth.MIN_MOMENTS,
              "summary": _row(store.get_summary(conn, "thread", f"{mid}:{t}", "reading"))}
             for t, ms in by.items()]
 
@@ -451,13 +495,17 @@ def project_page(conn, pid: str) -> dict:
             "WHERE status='live' GROUP BY theme_id, material_id"):
         counts[(r["theme_id"], r["material_id"])] = r["n"]
     evidence = store.theme_evidence(conn, pid)
+    outcomes = store.followed(conn, pid)
     themes = []
     # Candidates are project themes' juniors, not a separate page: they belong under the same
     # headings, at the bottom, with the control that makes one a theme.
     for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         row = dict(t)
+        # An empty cell is a dash, and the three reasons a cell is empty are not the same finding
+        # — so the dash carries which one, where the table has no room to print it.
         row["columns"] = [{"material_id": m["id"], "material": m,
-                           "moments": [None] * counts.get((t["id"], m["id"]), 0)}
+                           "moments": [None] * counts.get((t["id"], m["id"]), 0),
+                           "assessed_said": ASSESSED_SAID[_assessed(outcomes, t["id"], m["id"])]}
                           for m in mats]
         carried = sum(1 for c in row["columns"] if c["moments"])
         # A theme resting on one material is a motif in that material, not a corpus theme, and
@@ -490,10 +538,13 @@ def project_page(conn, pid: str) -> dict:
             "interpretation_html": cite(reading_of["text"], index, pid) if reading_of else "",
             "summary_state": store.summary_state(conn, pid),
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
+            "questions": store.open_questions(conn, pid),
             "checks": _checks(conn, pid)}
 
 
 def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict:
+    from .engine import synth
+
     p, m = store.project(conn, pid), store.material(conn, mid)
     if p is None or m is None or m["project_id"] != pid:
         return {}
@@ -509,6 +560,9 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         for x in ms:
             x["reactions"] = [dict(f) for f in store.feedback_for(conn, "moment", x["id"])]
         cards.append({**dict(t), "moments": ms,
+                      # A line kept below the floor is still a line; the page says which, so a
+                      # reader does not weigh three claims as they would weigh thirty.
+                      "sparse": len(ms) < synth.MIN_MOMENTS,
                       "summary": _row(store.get_summary(conn, "thread", f'{mid}:{t["id"]}',
                                                         "reading")),
                       "codes": [dict(c) for c in store.theme_codes(conn, t["id"], mid)]})
@@ -562,11 +616,8 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], tid)]
             carrying.append(row)
         else:
-            # Which kind of nothing this is: the line was looked for and set aside, or none of the
-            # theme's codes marked this material and it was never looked for. A material read
-            # before this was recorded has no row and reads as looked-for, which is what the page
-            # said about every absence before the two were told apart.
-            row["looked_for"] = outcomes.get((tid, m["material_id"])) != "skipped"
+            # Which kind of nothing this is — set aside, never looked for, or never assessed.
+            row["assessed"] = _assessed(outcomes, tid, m["material_id"])
             absent.append(row)
     summary = _row(store.get_summary(conn, "theme", tid))
     return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
@@ -626,6 +677,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
         mats.append(d)
     said = _export_comments(conn, pid)
     ctx = {"app_name": APP_NAME, "project": dict(p), "materials": mats,
+            "questions": store.open_questions(conn, pid),
             "summary": _row(store.get_summary(conn, "project", pid)),
             "interpretation": _row(store.get_summary(conn, "project", pid, "interpretation")),
             "themes": _export_themes(conn, pid, aside),
@@ -739,9 +791,9 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                     conn, "thread", f'{m["material_id"]}:{t["id"]}', "reading"))
                 carrying.append(row)
             else:
-                # As on the theme page: True where the line was looked for and set aside, False
-                # where none of the theme's codes marked this material and it was never looked for.
-                row["looked_for"] = outcomes.get((t["id"], m["material_id"])) != "skipped"
+                # As on the theme page: 'thin', 'skipped', or None where the theme and this
+                # material were never assessed against each other at all.
+                row["assessed"] = _assessed(outcomes, t["id"], m["material_id"])
                 absent.append(row)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,

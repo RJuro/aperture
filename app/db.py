@@ -127,10 +127,15 @@ CREATE TABLE IF NOT EXISTS feedback (
     target_id TEXT NOT NULL, kind TEXT NOT NULL, text TEXT DEFAULT '',
     created_at TEXT NOT NULL, consumed_by_run TEXT);
 
+-- `scope` is WHAT was searched (a material, the project); `searched_scope` is WHICH of its
+-- passages — 'all' of them, or only the 'unused' ones no claim rests on yet. The two are stored
+-- apart because a result that does not say which set it looked at cannot be read honestly a
+-- month later: "not found" over the uncited remainder is not "not found in the material".
 CREATE TABLE IF NOT EXISTS check_ (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, scope TEXT NOT NULL, ref_id TEXT NOT NULL,
     question TEXT NOT NULL, verdict TEXT NOT NULL, anchors_json TEXT DEFAULT '[]',
-    searched_n INTEGER DEFAULT 0, run_id TEXT, created_at TEXT NOT NULL);
+    searched_n INTEGER DEFAULT 0, searched_scope TEXT DEFAULT 'unused', run_id TEXT,
+    created_at TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS run (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, kind TEXT NOT NULL, material_id TEXT,
@@ -227,6 +232,12 @@ def migrate(conn: sqlite3.Connection) -> None:
             "  LEFT JOIN moment mo ON mo.theme_id = t.id AND mo.status='live'"
             "  LEFT JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL"
             "  GROUP BY t.id HAVING COUNT(DISTINCT m.id) < 2)")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(check_)")}
+    if "searched_scope" not in have:
+        # Every check written before this column searched only the passages no claim rested on,
+        # which is what the default says. A row that cannot say which set it read is a row whose
+        # "not found" a reader has to guess at.
+        conn.execute("ALTER TABLE check_ ADD COLUMN searched_scope TEXT DEFAULT 'unused'")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell

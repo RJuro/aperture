@@ -160,8 +160,16 @@ def react(request: Request, pid: str, text: str = Form(""), kind: str = Form("no
 
 
 @router.post("/p/{pid}/check")
-def check(request: Request, pid: str, question: str = Form(...), material_id: str = Form("")):
-    """"Check this against the material" — searches the passages no claim rests on."""
+def check(request: Request, pid: str, question: str = Form(...), material_id: str = Form(""),
+          scope: str = Form("all")):
+    """"Check this against the material" — searches the material for what bears on a question.
+
+    `scope` is which passages: everything, or only the ones no claim rests on yet. Everything is
+    the default, because searching only the remainder answers a question the researcher did not
+    ask — it returns "not found" on a material whose answer is the sentence a claim already
+    rests on. Anything but the two known words is read as everything: a scope this app does not
+    have must not silently narrow a search.
+    """
     conn = connection()
     _mine(request, conn, pid)
     if not question.strip():
@@ -169,7 +177,11 @@ def check(request: Request, pid: str, question: str = Form(...), material_id: st
     target_kind, target_id = ("material_summary", material_id) if material_id \
         else ("project_summary", pid)
     fid = store.add_feedback(conn, pid, target_kind, target_id, "check", question.strip())
-    _go(conn, pid, fid)
+    # Not `_go`: the searched set is a setting on this run, and it travels with the run rather
+    # than with the researcher's words.
+    if runs := rerun.plan(conn, fid):
+        jobs.start(db.connect, pid, [{**r, "scope": "unused" if scope == "unused" else "all"}
+                                     for r in runs])
     return _back(request, f"/p/{pid}")
 
 

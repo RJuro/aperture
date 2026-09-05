@@ -159,7 +159,6 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
     stores the prose as this material's `angles` summary."""
     m = store.material(conn, mid)
     pid = m["project_id"]
-    proj = store.project(conn, pid)
     described = store.get_summary(conn, "material", mid, "orientation")
 
     system, user = llm.prompt(
@@ -167,7 +166,8 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
         frame=_frame_block(m, store.speakers(conn, mid)),
         orientation=((described["text"] if described else "") or "").strip()
                     or "Nothing has been written about this material yet.",
-        questions=(proj["brief"] or "").strip()
+        # Every material's open questions, newest first, not the last one to finish writing them.
+        questions=store.questions_text(conn, pid)
               or "Nothing has been written about this corpus yet; this is an early piece.",
         themes=_themes_block(store.live_themes(conn, pid)),
         feedback=_verbatim(feedback, "The researcher has said nothing about what to look "

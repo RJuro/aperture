@@ -64,8 +64,10 @@
 {% if focus_history %}
 <ul class="mats">{% for f in focus_history %}<li><span class="num">{{ f.created_at[:10] }}</span> <q>{{ f.text | txt }}</q></li>{% endfor %}</ul>
 {% endif %}
-{% if project.brief %}
-<details class="quiet-details"><summary>Open questions from the analysis</summary><p class="summary">{{ project.brief | txt }}</p></details>
+{% if questions %}
+<details class="quiet-details"><summary>Open questions from the analysis</summary>
+{% for q in questions %}<p class="summary">{% if q.material %}From {{ q.material | txt }}: {% endif %}{{ q.text | prose }}</p>{% endfor %}
+</details>
 {% endif %}
 </div></section>
 
@@ -95,8 +97,9 @@
   {% endfor %}
   {% if t.absent %}
   {% for head, mats in
-     ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
-       ("Not looked for here", t.absent | rejectattr("looked_for") | list)]) %}
+     ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
+       ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
+       ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}
   {% if mats %}
   <h4>{{ head }}</h4>
   <ul class="mats">
@@ -128,7 +131,7 @@
   {% if m.reading %}<p class="eyebrow">After reading</p><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
   {% for th in m.threads %}
-  <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
+  <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{% if th.sparse %}sparse · {% endif %}{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
   {% if th.summary %}<div class="summary-copy">{{ th.summary.text | cite(cites, project.id) }}</div>{% endif %}
   <ol class="claims">
   {% for x in th.moments %}
@@ -153,7 +156,7 @@
 <div class="section-heading"><div><p class="eyebrow">Doubt</p><h2>Questions checked against the materials</h2></div></div>
 <ul class="check-list">
 {% for k in checks %}
-  <li><span class="num">{{ k.created_at[:10] }}</span> <q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+  <li><span class="num">{{ k.created_at[:10] }}</span> <q>{{ k.question | txt }}</q> — {{ k.said }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
   {% if k.anchors %}<ul class="found">{% for a in k.anchors %}<li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> {{ a.sid }}</a></li>{% endfor %}</ul>{% endif %}</li>
 {% else %}
   <li class="dim">Nothing has been checked against the material yet.</li>

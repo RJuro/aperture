@@ -82,7 +82,8 @@ def test_one_theme_rerun_touches_that_thread_and_nothing_else(ready, conn, model
     assert [m["claim"] for m in store.thread(conn, ready["mid"], ready["b"])] == before
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] \
         == "the whole reading"
-    assert store.project(conn, ready["pid"])["brief"] == "the first questions"
+    assert store.get_summary(conn, "material", ready["mid"], "questions")["text"] \
+        == "the first questions"
 
 
 def test_feedback_on_another_thread_stays_out_of_a_one_theme_rerun(ready, conn, model, quote):
