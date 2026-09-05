@@ -62,7 +62,7 @@ def _frame(conn, pid, run):
     spent = dict(llm.usage)                 # the framing call's, which the row above still wants
     rid = store.start_run(conn, pid, "diarize", mid,
                           line(conn, {"kind": "diarize", "material_id": mid}))
-    llm.usage.update(tokens_in=0, tokens_out=0)
+    llm.new_usage(rid)                      # its own counter AND its own row for its calls
     try:
         said = (diarize.run(conn, mid) or {}).get("dropped") or []
     except Exception as e:                  # its own row carries the reason; the chain stops
@@ -70,6 +70,7 @@ def _frame(conn, pid, run):
         raise
     store.finish_run(conn, rid, tokens_in=llm.usage.get("tokens_in", 0),
                      tokens_out=llm.usage.get("tokens_out", 0), notes=said)
+    llm.new_usage(run.get("run_id"))        # and back to the framing step's row and its total
     llm.usage.update(**spent)
     return notes + said
 
@@ -118,7 +119,8 @@ def _themes(conn, pid, run):
 def _doc(conn, pid, run):
     from .engine import synth
     out = synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"),
-                    run_id=run.get("run_id"))
+                    run_id=run.get("run_id"), skip_done=_resuming(conn, run),
+                    stop=_stopping(conn, run))
     return (out or {}).get("dropped")
 
 
@@ -126,8 +128,45 @@ def _summary(conn, pid, run):
     """The material's summary over its lines as they stand: what a comment on one line, or on the
     summary itself, actually asks for. No line is rewritten here."""
     from .engine import synth
-    out = synth.doc(conn, run["material_id"], summary_only=True, run_id=run.get("run_id"))
+    out = synth.doc(conn, run["material_id"], summary_only=True, run_id=run.get("run_id"),
+                    stop=_stopping(conn, run))
     return (out or {}).get("dropped")
+
+
+def _resuming(conn: sqlite3.Connection, run: dict) -> str | None:
+    """The id of the attempt at THIS step that a restart interrupted, where there was one.
+
+    A chain that died mid-step is requeued whole — `store.requeue_job` drops only the steps that
+    finished cleanly — so the step running now is a second attempt at the same step of the same
+    job. Its predecessor's run row is still there, closed by `store.close_orphaned_runs` with the
+    reason. Handing that id to DOC is the whole of how a synthesis resumes: a dozen model calls
+    live inside one step, and most of them had been made, paid for and checked (AR-09).
+    """
+    if not run.get("job_id"):
+        return None
+    row = conn.execute(
+        "SELECT id FROM run WHERE job_id=? AND kind=? AND material_id IS ? AND error IS NOT NULL "
+        "AND id<>? ORDER BY rowid DESC LIMIT 1",
+        (run["job_id"], run["kind"], run.get("material_id"), run.get("run_id") or "")).fetchone()
+    return row["id"] if row else None
+
+
+def _stopping(conn: sqlite3.Connection, run: dict) -> Callable[[], bool]:
+    """Whether the researcher has stopped this chain, asked between a step's own model calls.
+
+    Stopping was checked between planned STEPS, and a synthesis is one step holding a dozen paid
+    calls: a stop pressed as DOC began waited out every line, the check and the summary before it
+    took effect. A step that is not part of a chain cannot be stopped and says so.
+    """
+    job = run.get("job_id")
+    if not job:
+        return lambda: False
+
+    def stopped() -> bool:
+        row = store.job(conn, job)
+        return row is None or row["status"] != "running"
+
+    return stopped
 
 
 def _accounts(conn, pid, run):
@@ -254,6 +293,13 @@ def _another_chain(conn: sqlite3.Connection, pid: str, job: str | None, kind: st
 # flight than that is more 429s, not more throughput.
 PARALLEL = 4
 
+# ...and the same number across EVERY project at once, which is what makes per-project chains safe
+# to run side by side. What is scarce is the provider's rate limit, not this machine, so the budget
+# belongs to the process rather than to a chain. Held around a step and not around a sequence: a
+# reading waits for the reading before it (`IN_TURN`) outside this, so no step can ever sit on a
+# permit while waiting for a step that needs one.
+CALLS = threading.Semaphore(PARALLEL)
+
 # The kinds a material may run while another material is running them, in the groups they may
 # form. Each of these is shown only its own material and writes only its own material's rows.
 #
@@ -304,13 +350,14 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
     kind, mid = run["kind"], run.get("material_id")
     base = line(conn, run)
     rid = store.start_run(conn, pid, kind, mid, base, job)
-    run["run_id"] = rid
+    run["run_id"], run["job_id"] = rid, job
     log.info("step kind=%s project=%s material=%s started", kind, pid, mid or "-")
     t0 = time.monotonic()
     if mid:
         store.set_state(conn, mid, kind)
-    # This step's tokens, in this thread's context and no other (see llm.new_usage).
-    llm.new_usage()
+    # This step's tokens, in this thread's context and no other, and the row every call made from
+    # here records itself under (see llm.new_usage).
+    llm.new_usage(rid)
     error, notes = None, None
     try:
         # Where the step has got to, on the row the page is already reading. Only for the length
@@ -322,7 +369,8 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
             if _another_chain(conn, pid, job, kind):
                 store.set_run_line(conn, rid, LEFT_TO_THE_LAST)
             else:
-                notes = STEPS[kind][1](conn, pid, run)
+                with CALLS:                 # the shared provider budget, across every project
+                    notes = STEPS[kind][1](conn, pid, run)
     except Exception as e:                              # the sequence stops; the process does not
         error = f"{type(e).__name__}: {e}"
     store.finish_run(conn, rid, error=error, tokens_in=llm.usage.get("tokens_in", 0),
@@ -452,7 +500,23 @@ def run_now(conn: sqlite3.Connection, pid: str, runs: Iterable[dict], *,
 
 
 _JOBS: dict[str, threading.Thread] = {}
-_RUNNER_LOCK = threading.Lock()
+
+# One lock PER PROJECT, not one for the process. A project's chains stay strictly ordered — its
+# codebook, its themes and its summaries are one shared state, and two chains over them would be
+# two writers on the same theme rows — but two projects share no analytical state at all, and a
+# long corpus used to hold every other project on the instance behind it (AR-09). What keeps the
+# provider from being asked for everything at once is `CALLS`, not this.
+#
+# ponytail: in-process locks, and no lock is ever dropped — one small object per project on a
+# single-user instrument. Database claims or leases the day this runs in more than one process.
+_PROJECT_LOCKS: dict[str, threading.Lock] = {}
+_LOCKS = threading.Lock()
+
+
+def _project_lock(pid: str) -> threading.Lock:
+    """This project's lock, made once."""
+    with _LOCKS:
+        return _PROJECT_LOCKS.setdefault(pid, threading.Lock())
 
 
 def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) -> None:
@@ -467,10 +531,10 @@ def _launch(job: str, pid: str, conn_factory: Callable[[], sqlite3.Connection]) 
             store.start_job(conn, job)
             t0 = time.monotonic()
             log.info("job id=%s project=%s started steps=%d", job, pid, len(runs))
-            # One chain at a time in this process. The parallelism is INSIDE a chain (see
-            # `_stages`); two chains at once would be two projects' worth of calls in flight
-            # against a provider that rate-limits, and two writers on shared theme rows.
-            with _RUNNER_LOCK:
+            # One chain at a time in this PROJECT. The parallelism is INSIDE a chain (see
+            # `_stages`), and two chains over one project would be two writers on shared theme
+            # rows; another project's chain waits on nothing here, only on `CALLS`.
+            with _project_lock(pid):
                 ids = run_now(conn, pid, runs, job=job)
             if ids:
                 failed = conn.execute("SELECT error FROM run WHERE id=?", (ids[-1],)).fetchone()

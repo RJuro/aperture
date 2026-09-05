@@ -651,6 +651,18 @@ def followed(conn: sqlite3.Connection, pid: str) -> dict[tuple[str, str], str]:
         "WHERE m.project_id=? AND m.removed_at IS NULL AND f.status='live'", (pid,))}
 
 
+def followed_in_run(conn: sqlite3.Connection, mid: str, run_id: str) -> set[str]:
+    """The themes ONE run already recorded an outcome for in this material.
+
+    What a resumed DOC needs and nothing else tells it. A synthesis is a dozen model calls inside
+    one step, and a step that died half way had already written, paid for and verified most of
+    them; without this the rerun asks for every one of those lines again (AR-09).
+    """
+    return {r["theme_id"] for r in conn.execute(
+        "SELECT theme_id FROM follow WHERE material_id=? AND run_id=? AND status='live'",
+        (mid, run_id))}
+
+
 def thread(conn: sqlite3.Connection, mid: str, theme_id: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM moment WHERE material_id=? AND theme_id=? AND status='live'"
                         " ORDER BY position", (mid, theme_id)).fetchall()
@@ -901,6 +913,40 @@ def finish_run(conn: sqlite3.Connection, rid: str, *, error: str | None = None,
     conn.commit()
 
 
+def save_call(conn: sqlite3.Connection, run_id: str | None, label: str, attempt: int,
+              provider: str, model: str, effort: str, got: dict, started: str, seconds: float,
+              status: str, error: str = "") -> str:
+    """One attempt at one model call, under the run that made it (AR-09).
+
+    `got` is what the PROVIDER said about this call. A counter it did not mention is missing from
+    that dict and is stored NULL rather than 0: 'not reported' and 'none' are different facts, and
+    a cached-input count of zero would assert something about a provider that never mentioned
+    caching. Every reader of `tokens_cached` has to be able to tell the two apart.
+    """
+    cid = db.new_id("c")
+    conn.execute(
+        "INSERT INTO call (id, run_id, label, attempt, provider, model, effort, tokens_in, "
+        "tokens_out, tokens_cached, tokens_reasoning, seconds, status, error, started, finished) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (cid, run_id, label, attempt, provider, model, effort, got.get("tokens_in"),
+         got.get("tokens_out"), got.get("tokens_cached"), got.get("tokens_reasoning"),
+         seconds, status, error, started, now()))
+    conn.commit()
+    return cid
+
+
+def calls(conn: sqlite3.Connection, rid: str) -> list[sqlite3.Row]:
+    """Every attempt this step made, oldest first."""
+    return conn.execute("SELECT * FROM call WHERE run_id=? ORDER BY rowid", (rid,)).fetchall()
+
+
+# One row per run: how many attempts it made, and how many of its input tokens the provider said
+# it served from its own cache. NULL cached means no call on that run reported a count at all,
+# which the page has to say in those words rather than printing a nought.
+_PER_RUN = ("(SELECT run_id, COUNT(*) AS attempts, SUM(tokens_cached) AS cached "
+            "FROM call GROUP BY run_id)")
+
+
 def set_aside(conn: sqlite3.Connection, pid: str, mid: str | None = None) -> list[str]:
     """Everything the readings set aside, newest first, for the material or the whole project."""
     sql = "SELECT notes FROM run WHERE project_id=? AND notes NOT IN ('', '[]')"
@@ -1005,9 +1051,10 @@ def recent_runs(conn: sqlite3.Connection, limit: int = 200) -> list[sqlite3.Row]
     administrator has. The project's NAME, because administration already lists names, and the
     material's ID and never its title: a title is usually somebody's name."""
     return conn.execute(
-        "SELECT r.*, p.name AS project, "
+        "SELECT r.*, p.name AS project, c.attempts AS attempts, c.cached AS cached, "
         "(julianday(r.finished) - julianday(r.started)) * 86400 AS seconds "
         "FROM run r LEFT JOIN project p ON p.id = r.project_id "
+        f"LEFT JOIN {_PER_RUN} c ON c.run_id = r.id "
         # rowid breaks the tie: `now()` is milliseconds and three steps of one chain can
         # start inside one, which left the newest of them in the middle of the page.
         "ORDER BY r.started DESC, r.rowid DESC LIMIT ?", (limit,)).fetchall()
@@ -1018,12 +1065,16 @@ def runs_by_day(conn: sqlite3.Connection, days: int = 14) -> list[sqlite3.Row]:
     running counts as a run and contributes no minutes — `julianday(NULL)` is NULL and SUM skips
     it — which is the honest answer while a call is in flight."""
     return conn.execute(
-        "SELECT substr(started, 1, 10) AS day, COUNT(*) AS runs, "
-        "SUM(error IS NOT NULL) AS failed, "
-        "SUM(tokens_in) AS tokens_in, SUM(tokens_out) AS tokens_out, "
-        "SUM((julianday(finished) - julianday(started)) * 1440) AS minutes, "
-        "SUM(COALESCE(notes, '') NOT IN ('', '[]')) AS set_aside "
-        "FROM run WHERE started >= date('now', ?) GROUP BY day ORDER BY day DESC",
+        "SELECT substr(r.started, 1, 10) AS day, COUNT(*) AS runs, "
+        "SUM(r.error IS NOT NULL) AS failed, "
+        "SUM(r.tokens_in) AS tokens_in, SUM(r.tokens_out) AS tokens_out, "
+        "SUM((julianday(r.finished) - julianday(r.started)) * 1440) AS minutes, "
+        "SUM(COALESCE(r.notes, '') NOT IN ('', '[]')) AS set_aside, "
+        # Joined one-to-one on a run rather than to `call` directly: a join to the calls
+        # themselves would multiply every run row by its dozen attempts and every total with it.
+        "SUM(c.cached) AS cached "
+        f"FROM run r LEFT JOIN {_PER_RUN} c ON c.run_id = r.id "
+        "WHERE r.started >= date('now', ?) GROUP BY day ORDER BY day DESC",
         (f"-{days - 1} days",)).fetchall()
 
 

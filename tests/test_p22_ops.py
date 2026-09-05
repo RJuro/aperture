@@ -175,3 +175,25 @@ def test_the_last_runs_come_back_newest_first_with_their_project(conn, ran):
     assert {r["project"] for r in rows} == {"Test project"}
     assert rows[0]["seconds"] is None and rows[-1]["seconds"] >= 0
     assert store.recent_runs(conn, limit=1) == rows[:1]
+
+
+def test_a_run_says_how_many_tries_it_took_and_what_the_provider_served_cached(client, conn, ran):
+    """A step is many calls, and until the `call` table the page could only say what they cost
+    together. `not reported` where the provider mentioned no cached count — never nought, which
+    would claim the call cached nothing."""
+    store.create_user(conn, "ada", "correct horse", is_admin=True)
+    client.post("/login", data={"name": "ada", "password": "correct horse"})
+    rid = store.start_run(conn, ran, "doc", None, "Writing what stands out")
+    store.save_call(conn, rid, "thread", 1, "minimax", "MiniMax-M3", "medium",
+                    {"tokens_in": 9000, "tokens_out": 400}, store.now(), 61.0, "invalid_json")
+    store.save_call(conn, rid, "thread", 2, "minimax", "MiniMax-M3", "medium",
+                    {"tokens_in": 9000, "tokens_out": 400, "tokens_cached": 7800},
+                    store.now(), 58.0, "ok")
+    store.finish_run(conn, rid, tokens_in=18000, tokens_out=800)
+
+    row = next(r for r in store.recent_runs(conn) if r["id"] == rid)
+    assert (row["attempts"], row["cached"]) == (2, 7800)
+    assert store.runs_by_day(conn)[0]["cached"] == 7800
+
+    page = client.get("/admin/runs").text
+    assert "Tries" in page and "7,800" in page and "not reported" in page

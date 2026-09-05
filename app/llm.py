@@ -74,6 +74,17 @@ _usage: contextvars.ContextVar[dict] = contextvars.ContextVar("usage")
 _report: contextvars.ContextVar[Callable[[str], None]] = contextvars.ContextVar(
     "report", default=lambda msg: None)
 
+# Which run row a call made from here belongs to. Beside the counter rather than inside it: the
+# counter is a dict several calls of one wave SHARE, and `dict(llm.usage)` is read as a pair of
+# totals in three places. Outside a step there is no run, and such a call still records itself.
+_run: contextvars.ContextVar[str | None] = contextvars.ContextVar("run", default=None)
+
+# THIS call's own usage, as the provider reported it — never the step counter's before/after
+# difference. A wave of THREAD calls shares one step counter, so a difference measured around one
+# call includes whatever its wave-mates spent in the same seconds; the `call` row has to be this
+# call's alone (AR-09). Set fresh per attempt in `chat_json`, filled in `_send`.
+_call: contextvars.ContextVar[dict | None] = contextvars.ContextVar("call", default=None)
+
 
 class _Usage(MutableMapping):
     """`llm.usage`, one counter per context. A mapping rather than a function so no caller
@@ -113,10 +124,12 @@ usage = _Usage()
 _TOKENS = threading.Lock()
 
 
-def new_usage() -> None:
+def new_usage(run_id: str | None = None) -> None:
     """Start this context's counter at zero, as a NEW dict — a context that inherited another
-    step's counter must not go on adding to it."""
+    step's counter must not go on adding to it — and say which run row the calls made from here
+    belong to, so each of them can record itself under the step that paid for it."""
     _usage.set({"tokens_in": 0, "tokens_out": 0})
+    _run.set(run_id)
 
 
 def report(msg: str) -> None:
@@ -133,6 +146,63 @@ def reporting(hook: Callable[[str], None]):
         yield
     finally:
         _report.reset(token)
+
+
+def _tally(u: dict) -> None:
+    """This call's own counters, out of one streamed usage object.
+
+    Four, not two: input, cached input, visible output and reasoning output. A counter the
+    provider does not mention is LEFT OUT here and therefore stored NULL — a zero would claim the
+    call cached nothing, which is not what a provider that never mentions caching has said, and a
+    saving nobody can measure is a saving nobody may claim (AR-09).
+
+    Both the nested shape the OpenAI-compatible providers document and a flat one are read, since
+    the two this speaks to do not agree on where they put it.
+    """
+    mine = _call.get()
+    if mine is None:
+        return
+    mine["tokens_in"] = mine.get("tokens_in", 0) + (u.get("prompt_tokens") or 0)
+    mine["tokens_out"] = mine.get("tokens_out", 0) + (u.get("completion_tokens") or 0)
+    for key, block, field in (
+            ("tokens_cached", "prompt_tokens_details", "cached_tokens"),
+            ("tokens_reasoning", "completion_tokens_details", "reasoning_tokens")):
+        d = u.get(block)
+        got = d.get(field) if isinstance(d, dict) else None
+        if got is None:
+            got = u.get(field)
+        if got is not None:
+            mine[key] = mine.get(key, 0) + got
+
+
+def _now() -> str:
+    """The wall clock every other row in this database is stamped with."""
+    from . import store
+    return store.now()
+
+
+def _record(label: str, attempt: int, got: dict, started: str, seconds: float, status: str,
+            error: str = "") -> None:
+    """One `call` row for one attempt (AR-09), so a step's dozen calls are no longer one total.
+
+    On its OWN connection: a call runs in whatever thread its wave put it in, and a sqlite
+    connection belongs to one thread. Opening one costs a couple of milliseconds against a call
+    that costs a minute. A failure here is logged and swallowed — bookkeeping must never be able
+    to lose an answer that has already been paid for.
+
+    ponytail: a connection per attempt, re-running the migration each time. A connection cached
+    per thread if a wave ever shows up in a profile.
+    """
+    try:
+        from . import db, store
+        conn = db.connect()
+        try:
+            store.save_call(conn, _run.get(), label, attempt, provider(), model(),
+                            reasoning(label), got, started, seconds, status, error)
+        finally:
+            conn.close()
+    except Exception as e:                  # noqa: BLE001 — never the calling step's problem
+        log.warning("call label=%s not recorded: %.80s", label, e)
 
 
 class LLMError(RuntimeError):
@@ -355,6 +425,7 @@ def _send(body: dict, timeout: float | None) -> str:
                     with _TOKENS:
                         usage["tokens_in"] += u.get("prompt_tokens", 0) or 0
                         usage["tokens_out"] += u.get("completion_tokens", 0) or 0
+                    _tally(u)               # and again on this call's own row, unshared
 
     return "".join(chunks)
 
@@ -374,26 +445,41 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
     # two the failure is real and lands on the run row as before.
     t0 = time.monotonic()
     spent = usage.get("tokens_in", 0), usage.get("tokens_out", 0)     # this context's, so far
+    got: dict = {}
     for attempt in (1, 2):
+        # An ATTEMPT is a request that was answered or that failed trying. A wait for a loaded
+        # provider is not one: `_ask` may send the same body six times over four minutes without
+        # anything coming back or being charged, and counting those as attempts would turn one
+        # afternoon of 429s into a record of six analytical readings that never happened.
+        got, began, t1 = {}, _now(), time.monotonic()
+        _call.set(got)
         try:
             raw = _ask(system, user, timeout, reasoning(label), label)
         except Exception as e:
             # The provider's own error, hard-truncated. What the model was SHOWN is never in it.
+            _record(label, attempt, got, began, time.monotonic() - t1, "failed",
+                    f"{type(e).__name__}: {e}"[:200])
             log.error("llm label=%s failed=%s: %.120s", label, type(e).__name__, e)
             raise
         try:
             out = parse(raw, label)
-            break
         except (json.JSONDecodeError, LLMError) as e:
+            # That it would not parse, never the answer itself — here as on the log line below:
+            # the answer is the material talked back, and neither leaves with its words in it.
+            _record(label, attempt, got, began, time.monotonic() - t1, "invalid_json",
+                    "the model's answer was not JSON")
             if attempt == 2:
-                # That it would not parse, never the answer itself: the answer is the material
-                # talked back, and this line leaves the researcher's machine.
                 log.error("llm label=%s failed=LLMError: the model's answer was not JSON, twice",
                           label)
                 raise LLMError(f"the model's answer was not JSON, twice: {e}") from e
             log.info("llm label=%s json=retry", label)
-    log.info("llm label=%s provider=%s model=%s in=%d out=%d s=%.1f", label, provider(), model(),
+        else:
+            _record(label, attempt, got, began, time.monotonic() - t1, "ok")
+            break
+    log.info("llm label=%s provider=%s model=%s in=%d out=%d%s s=%.1f", label, provider(), model(),
              usage.get("tokens_in", 0) - spent[0], usage.get("tokens_out", 0) - spent[1],
+             # Only where the provider said so. Silence is not a cache miss.
+             f" cached={got['tokens_cached']}" if "tokens_cached" in got else "",
              time.monotonic() - t0)
     if record := os.environ.get("APERTURE_RECORD"):
         d = Path(record)

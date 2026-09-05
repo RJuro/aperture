@@ -7,23 +7,28 @@
 <section class="admin runs-page">
 <h1>Recent runs</h1>
 <p class="dim">Every project on this instance. Times are UTC, and a step still running has no
-seconds yet.</p>
+seconds yet. <em>Tries</em> is how many requests a step actually sent, counting a second try at an
+answer that would not parse and not counting a wait for a busy provider. <em>Cached</em> is input
+the provider said it served from its own cache; where a provider reports no cached count at all it
+says <em>not reported</em>, which is not the same as none.</p>
 
 <h2>The last 14 days</h2>
 <div class="scroller">
 <table class="runs">
-  <thead><tr><th>Day</th><th>Runs</th><th>Failed</th><th>Tokens in</th><th>Tokens out</th>
-             <th>Minutes</th><th>Set aside</th></tr></thead>
+  <thead><tr><th>Day</th><th>Runs</th><th>Failed</th><th>Tokens in</th><th>Cached</th>
+             <th>Tokens out</th><th>Minutes</th><th>Set aside</th></tr></thead>
   <tbody>
   {% for d in days %}
   <tr><td class="num">{{ d.day }}</td><td class="num">{{ d.runs }}</td>
       <td class="num">{{ d.failed or 0 }}</td>
       <td class="num">{{ '{:,}'.format(d.tokens_in or 0) }}</td>
+      <td class="num">{% if d.cached is none %}<span class="dim">not reported</span>
+          {%- else %}{{ '{:,}'.format(d.cached) }}{% endif %}</td>
       <td class="num">{{ '{:,}'.format(d.tokens_out or 0) }}</td>
       <td class="num">{{ '%.1f' | format(d.minutes or 0) }}</td>
       <td class="num">{{ d.set_aside or 0 }}</td></tr>
   {% else %}
-  <tr><td class="dim" colspan="7">Nothing yet.</td></tr>
+  <tr><td class="dim" colspan="8">Nothing yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>
@@ -33,7 +38,8 @@ seconds yet.</p>
 <div class="scroller">
 <table class="runs">
   <thead><tr><th>Started</th><th>Project</th><th>Step</th><th>Material</th><th>Model</th>
-             <th>In</th><th>Out</th><th>Seconds</th><th>What happened</th></tr></thead>
+             <th>Tries</th><th>In</th><th>Cached</th><th>Out</th><th>Seconds</th>
+             <th>What happened</th></tr></thead>
   <tbody>
   {% for r in runs %}
   <tr>
@@ -42,14 +48,18 @@ seconds yet.</p>
     <td>{{ STEP.get(r.kind, r.kind) }}</td>
     <td class="num">{{ r.material_id or '—' }}</td>
     <td class="num">{{ r.provider | txt }}/{{ r.model | txt }}</td>
+    <td class="num">{{ r.attempts if r.attempts else '—' }}</td>
     <td class="num">{{ r.tokens_in or 0 }}</td>
+    <td class="num">{% if r.cached is not none %}{{ r.cached }}
+        {%- elif r.attempts %}<span class="dim">not reported</span>
+        {%- else %}—{% endif %}</td>
     <td class="num">{{ r.tokens_out or 0 }}</td>
     <td class="num">{{ '%.1f' | format(r.seconds or 0) if r.finished else '' }}</td>
     <td>{% if r.error %}<span class="failed">{{ r.error | txt }}</span>
         {%- elif r.finished %}ok{% else %}running{% endif %}</td>
   </tr>
   {% else %}
-  <tr><td class="dim" colspan="9">Nothing yet.</td></tr>
+  <tr><td class="dim" colspan="11">Nothing yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>

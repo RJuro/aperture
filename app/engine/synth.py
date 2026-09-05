@@ -318,15 +318,25 @@ def _thread_prompt(conn, mid: str, tid: str) -> tuple[tuple[str, str], list, dic
     pid = row["project_id"]
     proj = store.project(conn, pid)
     theme = conn.execute("SELECT * FROM theme WHERE id=?", (tid,)).fetchone()
+    # The stable half first and the theme-specific half after it — see the slot order in
+    # prompts/thread.md. The material, its layout and the researcher's focus are the same text in
+    # every one of this material's theme calls, so leading with them gives those calls a long
+    # identical prefix; the theme, its codes, what other themes have already claimed and the
+    # researcher's note on this line all change per call and follow. The rules are unchanged and
+    # still say "the material below", which they are: they live in the system message.
+    #
+    # Whether a provider actually serves that prefix from a cache is its business and nothing
+    # here can tell. Read `call.tokens_cached` before claiming a saving — where the provider
+    # reports no cached count at all the admin page says "not reported", never nought.
     prompt = llm.prompt(
         "thread",
+        material=layout(conn, mid),
+        frame=frame_block(conn, mid),
+        focus=proj["focus"] or "Nothing in particular. Follow the theme on its own terms.",
         theme=f'{theme["id"]}  {theme["name"]} — {theme["gist"]}',
         codes=_theme_codes_block(conn, mid, tid),
         claimed=_claimed_block(conn, mid, tid),
-        focus=proj["focus"] or "Nothing in particular. Follow the theme on its own terms.",
-        frame=frame_block(conn, mid),
         feedback=feedback_block(conn, pid, mid, tid),
-        material=layout(conn, mid),
         max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
     )
     return prompt, store.sentences(conn, mid), theme, pid
@@ -419,7 +429,7 @@ def _thread(conn, mid: str, tid: str, *,
 
 
 def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = False,
-        run_id: str | None = None) -> dict:
+        run_id: str | None = None, skip_done: str | None = None, stop=None) -> dict:
     """Write this material's lines, then its summary over them.
 
     `only_theme` re-makes one line and leaves the summary, the questions and the people exactly as
@@ -427,6 +437,16 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
     lines that already stand, without a single THREAD call. Otherwise every live theme gets its own call — in waves of `WAVE`, side by side —
     and the summary call sees the lines that actually exist rather than being asked to write them
     and introduce them in one breath.
+
+    `skip_done` is the run id of an attempt at this same step that a restart interrupted. The
+    themes it already recorded an outcome for are left exactly as it left them and their lines
+    still go into the summary: a synthesis is a dozen paid calls inside one step, and replaying
+    the eleven that succeeded to redo the twelfth is most of a material's cost for nothing.
+
+    `stop` is asked before each wave, before the check and before the summary call. Stopping used
+    to be checked between planned STEPS only, so a stop pressed as this began waited out every
+    line, the check and the summary before it took effect — none of which can be taken back once
+    sent (AR-09).
     """
     from . import verify, verify_summary   # they read this module; imported here so neither waits on the other
     row = store.material(conn, mid)
@@ -445,6 +465,14 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
     def tally(st):
         for k in totals:
             totals[k] += st.get(k, 0)
+
+    def halted() -> dict:
+        """What this returns when the researcher stopped it part-way. On the run's LINE rather
+        than in its notes: the notes are what a reading threw away and the page prints them under
+        "Excluded from the analysis", where this would read as a claim that had been dropped."""
+        llm.report("stopped — the lines already written stand")
+        return {"summary": "", "threads": threads, "dropped": dropped,
+                "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     if only_theme:
         if only_theme not in live:
@@ -496,9 +524,17 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         # what promotes it is a second material's coding carrying it — so confirmation has to come
         # from the codes, not from a reader sent to find it here.
         skipped |= {tid for tid in cands if not _marked_here(conn, mid, tid)}
+        # What an interrupted attempt at this same step already reached. Its lines are live, so
+        # they go straight into `threads` and the summary below is written over the whole material
+        # rather than over only the themes this attempt got to.
+        done = store.followed_in_run(conn, mid, skip_done) if skip_done else set()
+        threads = [t for t in ({"theme_id": tid,
+                                "moments": [dict(m) for m in store.thread(conn, mid, tid)]}
+                               for tid in done) if t["moments"]]
         # live_themes order, so the waves compose the same way twice.
-        order = [tid for tid in live if tid not in skipped]
+        order = [tid for tid in live if tid not in skipped and tid not in done]
         tail = f" · {len(skipped)} not looked for" if skipped else ""
+        tail += f" · {len(done)} already written" if done else ""
         # In waves, because this is the dominant cost of the whole chain — nine to ten calls at 60–80
         # s each, 1351 s for one nine-theme material — and the calls are not independent. The guard the
         # sequence existed for is kept whole: every line is shown what the waves BEFORE it claimed in
@@ -507,10 +543,13 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         # its own wave-mates, claiming at the same moment as it.
         #
         # Up to `jobs.PARALLEL` × WAVE calls are therefore in flight when DOC steps run side by side.
-        # No semaphore: the provider answers over its rate limit with a 429 and `llm._ask` waits that
-        # out, which is the same answer a semaphore would give more slowly.
+        # No semaphore over the calls of one wave: the provider answers over its rate limit with a
+        # 429 and `llm._ask` waits that out, which is the same answer a semaphore would give more
+        # slowly. `jobs.CALLS` budgets whole STEPS across every project; it does not reach in here.
         with ThreadPoolExecutor(max_workers=WAVE) as pool:
             for at in range(0, len(order), WAVE):
+                if stop and stop():
+                    return halted()
                 wave = order[at:at + WAVE]
                 prepared = [_thread_prompt(conn, mid, tid) for tid in wave]
                 # Each in its OWN copy of this context, so `llm.usage` and `llm.report` are still this
@@ -525,10 +564,18 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
                     dropped += d
                     if kept is None:
                         failed.add(tid)             # nothing written; its last outcome still holds
-                    elif kept:
-                        threads.append({"theme_id": tid, "moments": kept})
+                    else:
+                        # Written HERE as well as after the check, so an interruption leaves a
+                        # per-theme record of how far this run got and the rerun can pick up from
+                        # it. The pass below writes over these once VERIFY has had its say, which
+                        # is where 'line' comes to mean a line that survived the check.
+                        store.save_follow(conn, mid, tid, "line" if kept else "thin", run_id)
+                        if kept:
+                            threads.append({"theme_id": tid, "moments": kept})
                 llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written{tail}")
 
+        if stop and stop():
+            return halted()
         # Before the summary, never after: a summary written over a claim the passage does not carry
         # introduces that claim by name, and the claim is gone by the time anyone reads it.
         dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
@@ -565,6 +612,8 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         material=layout(conn, mid),
         summary_words=SUMMARY_WORDS, question_words=BRIEF_WORDS,
     )
+    if stop and stop():
+        return halted()
     data = llm.chat_json(system, user, label="doc")
 
     summary, odd = foreign(words(data.get("summary"), SUMMARY_WORDS), allowed_text(conn, pid, mid))

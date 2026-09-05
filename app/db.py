@@ -168,6 +168,23 @@ CREATE TABLE IF NOT EXISTS job (
     status TEXT NOT NULL DEFAULT 'queued', created_at TEXT NOT NULL,
     started_at TEXT, finished_at TEXT, error TEXT DEFAULT '');
 
+-- One row per ATTEMPT at one model call, under the run that made it. A run is a STEP and a step is
+-- many calls — a DOC over nine themes is a dozen — and until this table the only record of them was
+-- the step's total, so nothing could say which call was slow, which one was retried, or how much of
+-- one step's input the provider served from its own cache. `attempt` is 1, and 2 where the first
+-- answer would not parse; a wait for a loaded provider is NOT an attempt, because nothing was
+-- answered and nothing was charged. `status` is ok | failed | invalid_json.
+--
+-- The four token counters are NULL where the provider did not report them. 'Not reported' and
+-- 'none' are different facts: a cached-input count of 0 asserts that this call cached nothing,
+-- which is something this app cannot know about a provider that never mentions caching (AR-09).
+CREATE TABLE IF NOT EXISTS call (
+    id TEXT PRIMARY KEY, run_id TEXT, label TEXT DEFAULT '', attempt INTEGER NOT NULL DEFAULT 1,
+    provider TEXT DEFAULT '', model TEXT DEFAULT '', effort TEXT DEFAULT '',
+    tokens_in INTEGER, tokens_out INTEGER, tokens_cached INTEGER, tokens_reasoning INTEGER,
+    seconds REAL, status TEXT NOT NULL DEFAULT 'ok', error TEXT DEFAULT '',
+    started TEXT, finished TEXT);
+
 CREATE INDEX IF NOT EXISTS ix_material_project ON material(project_id);
 CREATE INDEX IF NOT EXISTS ix_sentence_material ON sentence(material_id, idx);
 CREATE INDEX IF NOT EXISTS ix_hit_material ON code_hit(material_id);
