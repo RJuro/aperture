@@ -74,6 +74,7 @@ you send feedback below.</p>
 {% if absent %}
 {% set searched = absent | selectattr('assessed', 'equalto', 'thin') | list %}
 {% set unsearched = absent | selectattr('assessed', 'equalto', 'skipped') | list %}
+{% set residual = absent | selectattr('assessed', 'equalto', 'residual') | list %}
 {% set unassessed = absent | rejectattr('assessed') | list %}
 <section class="section"><div class="container"><h2>Materials with no claims under this theme</h2>
 {% if searched %}
@@ -94,6 +95,18 @@ dropped whole and would look the same as absence here.</p>
 looking for it in them. This says where the reading went, not what these materials do not say.</p>
 <ul class="mats">
 {% for m in unsearched %}
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
+      <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if residual %}
+<h3>Searched in the passages the coding did not mark — nothing found</h3>
+<p class="dim">No code of this theme fired in these materials, so the reading did not follow it
+through them; the passages no code marked at all were then read for it, and held nothing. This is
+an absence that was looked for.</p>
+<ul class="mats">
+{% for m in residual %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
 {% endfor %}

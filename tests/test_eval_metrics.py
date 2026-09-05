@@ -240,16 +240,19 @@ def test_the_runner_runs_exactly_the_chain_the_application_runs(corpus, tmp_path
                           "--data", str(tmp_path / "v2data"), "--out", str(out)]) == 0
 
     printed = capsys.readouterr().out
-    # The runner makes an ordinary new project, and a new project explores: each material is read
-    # on its own terms and what it named is compared with the project's vocabulary afterwards.
-    assert ("14 steps: frame → angles → read → reconcile → frame → angles → read → reconcile → "
-            "themes → themes → doc → doc → accounts → project") in printed, \
-        "the same chain as jobs.ingest_chain, planned in the same order"
-    # What it RUNS is that plan in stages: the two materials side by side, THEMES one at a time,
-    # the corpus level last (`jobs._stages`). So the tail is fixed and the rest is a multiset.
-    assert sorted(ran) == sorted(["frame", "angles", "read", "reconcile"] * 2 +
-                                 ["themes", "themes", "doc", "doc", "accounts", "project"])
-    assert ran[8:10] == ["themes", "themes"] and ran[-2:] == ["accounts", "project"]
+    # The runner makes an ordinary new project, and a new project explores: PLAN.md §13's chain,
+    # each material read and memoed on its own terms, ONE cross-case themes pass over the batch,
+    # then each material's lines and the pass over what its coding did not mark.
+    assert ("17 steps: frame → angles → read → reconcile → memo → frame → angles → read → "
+            "reconcile → memo → themes → doc → residual → doc → residual → accounts → project"
+            ) in printed, "the same chain as jobs.ingest_chain, planned in the same order"
+    # What it RUNS is that plan in stages: the two materials side by side, the cross-case pass
+    # alone, the corpus level last (`jobs._stages`). So the fixed points are fixed and the rest
+    # is a multiset.
+    assert sorted(ran) == sorted(["frame", "angles", "read", "reconcile", "memo"] * 2 +
+                                 ["themes", "doc", "doc", "residual", "residual",
+                                  "accounts", "project"])
+    assert ran[10] == "themes" and ran[-2:] == ["accounts", "project"]
     assert out.exists() and out.with_suffix(".metrics.json").exists()
     metrics = json.loads(out.with_suffix(".metrics.json").read_text())
     assert metrics["materials"] == 2, "the .rtf and the dotfile were not material"

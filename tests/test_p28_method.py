@@ -64,6 +64,7 @@ def test_the_method_is_one_of_two_things_and_anything_else_is_refused(conn):
 # ---- what the reading is shown ------------------------------------------------------------------
 
 def test_an_exploratory_reading_is_shown_no_project_codes(conn, project, grande, rodwin, model):
+    store.set_method(conn, project, "explore")
     # A name the prompt's own worked example does not use, or this would pass on the example.
     _coded(conn, project, rodwin, "Papers and permits", "Passages about documents.")
     model.queue({"codes": []})
@@ -90,6 +91,7 @@ def test_an_iterative_reading_is_shown_the_codebook_and_told_to_reuse_it(conn, p
 def test_an_exploratory_ideation_is_shown_no_themes(conn, project, grande, model):
     """The questions still travel — they are questions, and law 5 lets those forward. What the
     corpus has been grouped into does not."""
+    store.set_method(conn, project, "explore")
     store.save_theme(conn, project, tid=None, name="Work and trade", gist="how a living is made",
                      code_ids=[])
     store.save_summary(conn, "material", grande, "orientation", "A 1978 oral history.")
@@ -205,6 +207,7 @@ def _planned(monkeypatch, pid: str, mids: list[str]) -> list[str]:
 
 
 def test_only_an_exploratory_project_plans_the_comparison(conn, project, grande, monkeypatch):
+    store.set_method(conn, project, "explore")
     assert _planned(monkeypatch, project, [grande])[:4] == \
         ["frame", "angles", "read", "reconcile"]
     store.set_method(conn, project, "iterative")

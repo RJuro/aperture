@@ -454,6 +454,12 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         raise ValueError(f"no material {mid!r}")
     pid = row["project_id"]
     proj = store.project(conn, pid)
+    # Where the project explores, this material's account is its MEMO — written over the passages
+    # the coding marked, so it does not go stale when the themes move (PLAN.md §13). DOC still
+    # writes the lines and everything that hangs off them; it writes no summary beside the memo,
+    # and the gate of §3 law 2 is on for every theme, because after RECONCILE a code that fired
+    # here means something across the corpus.
+    explore = (proj["method"] if proj else "") == "explore"
     live = {t["id"]: t for t in store.live_themes(conn, pid)}
     # The project's themes, and then every live candidate of the project — a candidate is followed
     # into a new material to see whether this one carries it too, which is the only way it ever
@@ -500,6 +506,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped, failed = [], [], set()
+    if summary_only and explore:
+        # "Write the account of this material again" means the memo here: it is what the material
+        # page shows and what a comment on it is about. No line is rewritten, exactly as below.
+        from . import memo
+        return memo.run(conn, mid, run_id=run_id)
     if summary_only:
         # The summary again, over the lines as they stand — no line is rewritten. A comment on one
         # line used to plan the whole material, every theme re-threaded, to refresh a summary that
@@ -519,7 +530,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         # cost with a third of the good lines it would have found (bench/gate-test, docs/EVAL.md
         # pass 3). A researcher who wants that trade sets APERTURE_FOLLOW=marked.
         skipped = ({tid for tid in live if not _marked_here(conn, mid, tid)}
-                   if os.environ.get("APERTURE_FOLLOW") == "marked" else set())
+                   if explore or os.environ.get("APERTURE_FOLLOW") == "marked" else set())
         # A candidate is gated whatever that setting says. It is a pattern seen in one material, and
         # what promotes it is a second material's coding carrying it — so confirmation has to come
         # from the codes, not from a reader sent to find it here.
@@ -597,6 +608,12 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         # recurrence is a count of cases, and a count is a question, not a confirmation.
         for tid in store.propose_by_recurrence(conn, pid):
             log.info("theme id=%s proposed", tid)
+    if explore:
+        # Everything above — the waves, the check, the follow rows, the promotion proposals —
+        # and then no summary call and no VERIFY-SUMMARY: the memo is this material's account and
+        # it was written before any of these lines, over the passages rather than over them.
+        return {"summary": "", "threads": threads, "dropped": dropped,
+                "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
     shown = []
     for t in threads:
         shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(

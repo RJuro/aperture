@@ -105,16 +105,27 @@ def _predating_summaries(conn, mid: str, gone: list[dict], run_id: str | None) -
                            "summary predates that.)", run_id)
 
 
-def run(conn, mid: str, *, theme_id: str | None = None, run_id: str | None = None) -> dict:
+def run(conn, mid: str, *, theme_id: str | None = None, ids: list[str] | None = None,
+        run_id: str | None = None) -> dict:
     """Check this material's live claims against their passages.
 
     Returns {"dropped", "set_aside", "marked"}. `theme_id` narrows it to one line, for the rerun
-    that rewrites one line and must not pay to check the rest of the material again.
+    that rewrites one line and must not pay to check the rest of the material again. `ids` narrows
+    it to named claims, which is what RESIDUAL needs: it adds a handful of moments to lines that
+    were checked minutes ago, and re-checking those is paying twice for the same verdict.
     """
     sql = ("SELECT id, sid, claim, anchor, theme_id, support FROM moment "
-           "WHERE material_id=? AND status='live'"
-           + (" AND theme_id=? " if theme_id else " ") + "ORDER BY position")
-    rows = [dict(r) for r in conn.execute(sql, (mid, theme_id) if theme_id else (mid,))]
+           "WHERE material_id=? AND status='live'")
+    args: list = [mid]
+    if theme_id:
+        sql += " AND theme_id=?"
+        args.append(theme_id)
+    if ids is not None:
+        if not ids:
+            return {"dropped": [], "set_aside": [], "marked": []}   # `IN ()` is not SQL
+        sql += f" AND id IN ({','.join('?' * len(ids))})"
+        args += list(ids)
+    rows = [dict(r) for r in conn.execute(sql + " ORDER BY position", args)]
     if not rows:
         return {"dropped": [], "set_aside": [], "marked": []}
 

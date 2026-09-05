@@ -580,6 +580,33 @@ def save_moments(conn: sqlite3.Connection, mid: str, theme_id: str, moments: lis
     return len(ordered)
 
 
+def add_moments(conn: sqlite3.Connection, mid: str, theme_id: str, moments: list[dict],
+                run_id: str | None = None) -> list[str]:
+    """Add to a thread that already stands, and return the new claims' ids.
+
+    `save_moments` REPLACES a thread, which is right for a rerun and wrong for RESIDUAL: the line
+    it is adding to was written and checked minutes ago, and superseding it would give every claim
+    a new id — breaking the comments and the check verdicts that already point at them. So these
+    are inserted beside the live ones and the whole thread is renumbered by position, because the
+    reader walks the material and an addition belongs where its passage is, not at the end.
+    """
+    if material(conn, mid) is None or not moments:
+        return []
+    ids = []
+    for m in moments:
+        ids.append(db.new_id("mo"))
+        conn.execute("INSERT INTO moment (id, material_id, theme_id, sid, position, claim, "
+                     "anchor, run_id, status) VALUES (?,?,?,?,0,?,?,?,'live')",
+                     (ids[-1], mid, theme_id, m["sid"], m["claim"], m["anchor"], run_id))
+    pos = sid_position(conn, mid)
+    rows = conn.execute("SELECT id, sid FROM moment WHERE material_id=? AND theme_id=? "
+                        "AND status='live'", (mid, theme_id)).fetchall()
+    for i, r in enumerate(sorted(rows, key=lambda r: pos.get(r["sid"], 10**9))):
+        conn.execute("UPDATE moment SET position=? WHERE id=?", (i, r["id"]))
+    conn.commit()
+    return ids
+
+
 def mark_support(conn: sqlite3.Connection, rows: list[tuple[str, str, str]]) -> None:
     """What checking a claim against its own passage found: (claim id, verdict, why).
 
@@ -620,9 +647,9 @@ def set_aside_by_check(conn: sqlite3.Connection, mid: str) -> int:
 
 def save_follow(conn: sqlite3.Connection, mid: str, theme_id: str, outcome: str,
                 run_id: str | None = None) -> None:
-    """Record what became of one theme in one material: 'line', 'thin', or 'skipped'.
+    """Record what became of one theme in one material: 'line', 'thin', 'skipped' or 'residual'.
 
-    The three are what a researcher has to be able to tell apart, and nothing else in the database
+    The four are what a researcher has to be able to tell apart, and nothing else in the database
     tells them apart: a line set aside for being too thin and a line never written both leave the
     same nothing. Keyed by theme id rather than by name, because a note in the run's own words —
     the only place this used to be said at all — stops naming the theme the moment it is renamed.
@@ -726,11 +753,14 @@ def get_summary(conn: sqlite3.Connection, scope: str, ref_id: str,
     # 'questions' is never the answer here whatever else exists. It is what the reading has left
     # OPEN, not an account of the material, and this lookup feeds prompt slots that Law 5 reserves
     # for the material, validated structure, or the researcher's words.
+    # 'memo' outranks 'reading': where a project explores, the memo IS what the reading found —
+    # written over the passages the coding marked rather than over lines that go stale when the
+    # themes move (PLAN.md §13) — and DOC writes no summary beside it.
     return conn.execute(
         "SELECT * FROM summary WHERE scope=? AND ref_id=? AND status='live' "
-        "AND stage<>'questions' "
-        "ORDER BY CASE stage WHEN 'reading' THEN 0 WHEN 'orientation' THEN 1 "
-        "WHEN 'angles' THEN 2 ELSE 3 END LIMIT 1", (scope, ref_id)).fetchone()
+        "AND stage NOT IN ('questions','residual') "
+        "ORDER BY CASE stage WHEN 'memo' THEN 0 WHEN 'reading' THEN 1 WHEN 'orientation' THEN 2 "
+        "WHEN 'angles' THEN 3 ELSE 4 END LIMIT 1", (scope, ref_id)).fetchone()
 
 
 # What the project's open questions may cost the reader, and the prompt that is shown them.
@@ -1030,10 +1060,13 @@ def summary_state(conn: sqlite3.Connection, pid: str) -> dict:
     at = conn.execute("SELECT rowid FROM summary WHERE scope='project' AND ref_id=? "
                       "AND stage='reading' AND status='live'", (pid,)).fetchone()
     at = at["rowid"] if at else 0
+    # Either stage counts as read: an exploratory project's account of a material is its memo and
+    # DOC writes no 'reading' row beside it, so measured on that stage alone every material in
+    # such a project would be reported unread for ever.
     read = conn.execute(
-        "SELECT s.rowid AS seq FROM material m LEFT JOIN summary s ON s.scope='material' "
-        "AND s.ref_id=m.id AND s.stage='reading' AND s.status='live' "
-        "WHERE m.project_id=? AND m.removed_at IS NULL", (pid,)).fetchall()
+        "SELECT MAX(s.rowid) AS seq FROM material m LEFT JOIN summary s ON s.scope='material' "
+        "AND s.ref_id=m.id AND s.stage IN ('reading','memo') AND s.status='live' "
+        "WHERE m.project_id=? AND m.removed_at IS NULL GROUP BY m.id", (pid,)).fetchall()
     job = conn.execute("SELECT * FROM job WHERE project_id=? ORDER BY rowid DESC LIMIT 1",
                        (pid,)).fetchone()
     return {"behind": sum(1 for r in read if r["seq"] is not None and r["seq"] > at),

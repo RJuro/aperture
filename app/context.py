@@ -463,11 +463,12 @@ def _shell(conn, pid: str) -> dict:
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
 
-# What an empty cell means, in the three states `_assessed` tells apart. The page and the record
+# What an empty cell means, in the four states `_assessed` tells apart. The page and the record
 # name them in their own headings; this is for a cell that has room for nothing but a dash.
 ASSESSED_SAID = {
     "thin": "Looked for and found too thin",
     "skipped": "Not looked for here — none of this theme's codes marked this material",
+    "residual": "Searched in the passages the coding did not mark — nothing found",
     None: "Not assessed yet — this material was not read for this theme",
 }
 
@@ -475,7 +476,8 @@ ASSESSED_SAID = {
 def _assessed(outcomes: dict, tid: str, mid: str) -> str | None:
     """Which kind of nothing this material is for this theme: 'thin' where a reading under it was
     made and set aside, 'skipped' where none of the theme's codes marked the material and it was
-    never looked for, and None where the pair was never assessed at all.
+    never looked for, 'residual' where the skip was then searched in the passages no code marked
+    and nothing was found, and None where the pair was never assessed at all.
 
     A missing row is the third state and not the first. A material uploaded and not yet read, and
     an older material never revisited for a theme developed since, both have no row — and both
@@ -484,7 +486,9 @@ def _assessed(outcomes: dict, tid: str, mid: str) -> str | None:
     found is no longer there.
     """
     outcome = outcomes.get((tid, mid))
-    return None if outcome is None else ("skipped" if outcome == "skipped" else "thin")
+    if outcome in (None, "skipped", "residual"):
+        return outcome
+    return "thin"
 
 
 def _threads(conn, mid: str, themes: dict) -> list[dict]:
@@ -724,8 +728,11 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     for m in store.materials(conn, pid):
         d = dict(m)
         d["display_title"] = _material_title(m)
-        for stage in ("orientation", "reading", "angles"):
+        for stage in ("orientation", "reading", "angles", "memo", "residual"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
+        # Where the project explores, the memo IS what the reading found and DOC wrote no summary
+        # beside it, so it stands in the same place in the record (PLAN.md §13).
+        d["reading"] = d["memo"] or d["reading"]
         d["people"] = [dict(x) for x in store.people(conn, m["id"])]
         d["speakers"] = [dict(x) for x in store.speakers(conn, m["id"])]
         d["threads"] = _threads(conn, m["id"], themes)

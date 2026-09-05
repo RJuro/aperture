@@ -193,13 +193,15 @@ def _shared_block(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
 def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: list[dict]) -> str:
     """The materials with no claim under this theme, each saying WHICH kind of nothing it is.
 
-    Three of them, and only one is a silence about the pattern. Where the theme was looked for, a
+    Four of them, and only two are a silence about the pattern. Where the theme was looked for, a
     reading of that material under it was made and set aside — thin, or its quotes did not survive
     the check. Where it was not looked for, nothing this theme gathers was ever marked there and no
     reading under it exists; that is a fact about where the reading went, and a model that cannot
-    tell the two apart writes the second one up as absence (PLAN.md §3, law 2).
+    tell the two apart writes the second one up as absence (PLAN.md §3, law 2). Where it was not
+    looked for AND the passages no code marked were then searched for it and held nothing, the
+    absence is one somebody actually went and tested (PLAN.md §13).
 
-    The third is a material this theme has never been through at all — uploaded after the theme's
+    The last is a material this theme has never been through at all — uploaded after the theme's
     last pass, or never revisited for a theme that grew up around it — and it has no row here to
     say so. A missing row used to read as the first kind, which turned every unread material into
     an absence the model was invited to interpret: the strongest of the three statements made
@@ -212,6 +214,9 @@ def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: lis
         if outcome == "skipped":
             why = ("NOT LOOKED FOR HERE — none of this theme's codes marked this material, so no "
                    "reading of it under this theme was ever made")
+        elif outcome == "residual":
+            why = ("SEARCHED IN THE PASSAGES THE CODING DID NOT MARK AND NOT FOUND — no code of "
+                   "this theme fired here, and the passages no code touched hold nothing under it")
         elif outcome:
             why = ("LOOKED FOR AND TOO THIN — a reading of this material under this theme was "
                    "made and set aside")

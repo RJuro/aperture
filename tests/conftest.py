@@ -96,8 +96,16 @@ def conn():
 
 @pytest.fixture
 def project(conn):
+    """A project that says which method it is, rather than inheriting the default.
+
+    The default is 'explore' and the two methods now plan different chains and different synthesis
+    (PLAN.md §13), so a fixture that leaves the choice implicit makes every test that uses it a
+    test of whichever method the default happens to be that month. These tests were written for
+    the iterative chain and are named for it; the exploratory chain has its own file (P31) and the
+    handful of older tests about it say so in their own body.
+    """
     from app import store
-    return store.create_project(conn, "Test project", focus="")
+    return store.create_project(conn, "Test project", focus="", method="iterative")
 
 
 @pytest.fixture
