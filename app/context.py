@@ -293,17 +293,29 @@ def _cases(conn, pid: str) -> dict[str, str] | None:
     return of if any(cid != mid for mid, cid in of.items()) else None
 
 
-def _reach(carrying: list[str], mids: list[str], of: dict | None) -> tuple[int, int, str]:
+def _reach(carrying: list[str], mids: list[str], of: dict | None,
+           claims: dict[str, int] | None = None) -> tuple[int, int, str]:
     """How far a theme reaches, as the count it groups by, the whole it is out of, and the words.
 
     The material count stays beside the case count because the columns beside it are materials:
     law 4 wants the number derivable from the rows the page links to, and "2 of 3 cases" alone
     cannot be checked against four filled cells.
+
+    `claims` is how many claims the theme holds in each material, and where a carrying line is
+    shorter than a full one the reach says how many are: a line of one claim counts towards "7 of
+    8 materials" exactly as a line of twelve does, and a reader weighing that number cannot see
+    the difference. The count of carrying materials is untouched — it still matches the filled
+    cells beside it — and the qualification follows it in a parenthesis.
     """
+    from .engine import synth
+
+    thin = sum(1 for m in carrying if (claims or {}).get(m, synth.MIN_MOMENTS) < synth.MIN_MOMENTS)
     if of is None:
-        return len(carrying), len(mids), f"{len(carrying)} of {len(mids)} materials"
+        said = f"{len(carrying)} of {len(mids)} materials"
+        return len(carrying), len(mids), f"{said} ({thin} sparse)" if thin else said
     n, total = len({of[m] for m in carrying}), len({of[m] for m in mids})
-    return n, total, f"{n} of {total} cases ({_n(len(carrying), 'material')})"
+    inside = _n(len(carrying), "material") + (f", {thin} sparse" if thin else "")
+    return n, total, f"{n} of {total} cases ({inside})"
 
 
 def _single_group(of: dict | None) -> str:
@@ -557,7 +569,8 @@ def project_page(conn, pid: str) -> dict:
                            "assessed_said": ASSESSED_SAID[_assessed(outcomes, t["id"], m["id"])]}
                           for m in mats]
         carried, whole, said = _reach([c["material_id"] for c in row["columns"] if c["moments"]],
-                                      [m["id"] for m in mats], of)
+                                      [m["id"] for m in mats], of,
+                                      {c["material_id"]: len(c["moments"]) for c in row["columns"]})
         # A theme resting on one case is a motif in that case, not a corpus theme, and listed
         # beside the others it reads as if it had the same reach. `single` is what the page
         # groups by, and it is the same threshold the proposal uses.
@@ -688,7 +701,8 @@ def theme_page(conn, pid: str, tid: str) -> dict:
     summary = _row(store.get_summary(conn, "theme", tid))
     of = _cases(conn, pid)
     carried, _, said = _reach([m["material_id"] for m in cover["per_material"] if m["claims"]],
-                              [m["material_id"] for m in cover["per_material"]], of)
+                              [m["material_id"] for m in cover["per_material"]], of,
+                              {m["material_id"]: m["claims"] for m in cover["per_material"]})
     return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
             "page_section": "themes",
             "coverage": cover, "carrying": carrying, "absent": absent, "summary": summary,
@@ -873,7 +887,8 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 row["assessed"] = _assessed(outcomes, t["id"], m["material_id"])
                 absent.append(row)
         carried, _, said = _reach([m["material_id"] for m in cover["per_material"] if m["claims"]],
-                                  [m["material_id"] for m in cover["per_material"]], of)
+                                  [m["material_id"] for m in cover["per_material"]], of,
+                                  {m["material_id"]: m["claims"] for m in cover["per_material"]})
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
                     "notes": _tension_notes(conn, t["id"]),

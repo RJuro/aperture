@@ -414,6 +414,45 @@ def _claim_line(m) -> str:
     return f"{line} — partly: {note}" if m["support"] == "partly" else line
 
 
+def line_summary(conn, mid: str, tid: str, *, run_id: str | None = None) -> list[str]:
+    """Write one line's summary again over the claims that stand NOW.
+
+    A line's summary is written with the THREAD answer, before any of its claims is checked, so a
+    paragraph about four claims could end up standing over a line of two. It used to have a
+    sentence appended saying it predated the check, which tells a researcher what they are looking
+    at and leaves them looking at it anyway; a summary is ninety words over claims already in
+    front of the model, and rewriting it is the cheapest call in this system.
+
+    Called wherever claims of a line change after it was written — the check setting one aside,
+    the tightening pass rewriting one. Returns the notes for the run row.
+    """
+    rows = store.thread(conn, mid, tid)
+    if not rows:
+        # Every claim is gone. There is nothing to summarise and no reader for a paragraph about
+        # claims that are not there; the line is `thin` and its account goes with them.
+        store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", "", run_id)
+        return []
+    theme = conn.execute("SELECT name, gist FROM theme WHERE id=?", (tid,)).fetchone()
+    data = llm.chat_json(*llm.prompt(
+        "line_summary", summary_words=THREAD_WORDS,
+        theme=f'{theme["name"]} — {theme["gist"] or "no gist yet"}' if theme else tid,
+        claims="\n".join(_line_summary_claim(m) for m in rows)), label="line_summary")
+    pid = store.material(conn, mid)["project_id"]
+    summary, odd = foreign(words(data.get("summary"), THREAD_WORDS), allowed_text(conn, pid, mid))
+    # A missing field must not be able to blank a paragraph — the same rule `_thread_kept` follows.
+    if summary:
+        with store.atomic(conn) as tx:
+            store.save_summary(tx, "thread", f"{mid}:{tid}", "reading", summary, run_id)
+    return script_notes(odd)
+
+
+def _line_summary_claim(m) -> str:
+    """One standing claim as the line summary is shown it, carrying what the check left on it."""
+    line = f'[{m["id"]}] {m["claim"]} — quoted "{m["anchor"]}"'
+    note = (m["support_note"] or "").strip() if m["support"] == "partly" else ""
+    return f"{line} — partly: {note}" if m["support"] == "partly" else line
+
+
 def _thread(conn, mid: str, tid: str, *,
             run_id: str | None) -> tuple[list[dict] | None, list[str], dict]:
     """One theme's line through one material — one call, full attention.
@@ -495,7 +534,12 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
             kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
         else:
             if kept:
-                dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
+                checked = verify.run(conn, mid, theme_id=only_theme, run_id=run_id)
+                dropped += checked["dropped"]
+                # Over what stands: the summary was written with the answer above, before any of
+                # these claims was checked.
+                for tid in checked["lost"]:
+                    dropped += line_summary(conn, mid, tid, run_id=run_id)
                 kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
             # 'line' wherever claims stand, however few: sparse is a label, not an outcome. Only a
             # line that now holds nothing at all is thin, and its old claims are already gone.
@@ -589,7 +633,12 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
             return halted()
         # Before the summary, never after: a summary written over a claim the passage does not carry
         # introduces that claim by name, and the claim is gone by the time anyone reads it.
-        dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
+        checked = verify.run(conn, mid, run_id=run_id)
+        dropped += checked["dropped"]
+        # A line whose claims the check took away is summarised again over the ones that stand.
+        # Its old paragraph was written with the THREAD answer, before any of this.
+        for tid in checked["lost"]:
+            dropped += line_summary(conn, mid, tid, run_id=run_id)
         threads = [t for t in ({"theme_id": t["theme_id"],
                                 "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
                                for t in threads) if t["moments"]]
@@ -619,25 +668,36 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(
             _claim_line(m) for m in t["moments"]))
     orientation = store.get_summary(conn, "material", mid, "orientation")
-    system, user = llm.prompt(
-        "doc",
+    said_here = feedback_block(conn, pid, mid, None)
+    slots = dict(
         orientation=orientation["text"] if orientation else "Not written.",
         frame=frame_block(conn, mid),
         focus=proj["focus"] or "Nothing in particular. Read it on its own terms.",
         threads="\n\n".join(shown) or "No line held in this material.",
-        feedback=feedback_block(conn, pid, mid, None),
         material=layout(conn, mid),
         summary_words=SUMMARY_WORDS, question_words=BRIEF_WORDS,
     )
     if stop and stop():
         return halted()
-    data = llm.chat_json(system, user, label="doc")
 
+    def write(feedback: str) -> dict:
+        return llm.chat_json(*llm.prompt("doc", feedback=feedback, **slots), label="doc")
+
+    data = write(said_here)
     summary, odd = foreign(words(data.get("summary"), SUMMARY_WORDS), allowed_text(conn, pid, mid))
     dropped += script_notes(odd)
+
+    def again(flags: str):
+        """The summary once more, shown what the check flagged. The flags are the instrument's own
+        prose, so they go into the feedback slot as their OWN labelled paragraph, under the
+        researcher's words and never mixed into them (PLAN.md §3 law 5)."""
+        second = write(f"{said_here}\n\n{flags}")
+        return foreign(words(second.get("summary"), SUMMARY_WORDS),
+                       allowed_text(conn, pid, mid))[0], None
+
     # Before it is stored, never after: the summary a researcher reads first is the one that was
     # checked against the claims under it, and a sentence they do not carry never reaches the page.
-    summary, said = verify_summary.run(conn, mid, summary)
+    summary, said = verify_summary.run(conn, mid, summary, again=again)
     dropped += said
     if summary:
         store.save_summary(conn, "material", mid, "reading", summary, run_id)

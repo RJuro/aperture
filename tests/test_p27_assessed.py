@@ -269,11 +269,13 @@ def test_a_project_read_before_questions_were_kept_per_material_keeps_its_own(co
 
 
 def test_the_register_is_capped_and_says_so_in_whole_questions(conn, project, grande, rodwin):
-    store.save_summary(conn, "material", grande, "questions", "word " * 300)
-    store.save_summary(conn, "material", rodwin, "questions", "other " * 300)
+    """The cap is allocated across the materials and each share is cut at a whole question, so a
+    long register loses questions rather than ending in the middle of one (test_p34)."""
+    store.save_summary(conn, "material", grande, "questions", "What became of the sisters? " * 60)
+    store.save_summary(conn, "material", rodwin, "questions", "Who paid for the crossing? " * 60)
     out = store.open_questions(conn, project)
-    kept = [w for q in out for w in q["text"].split() if w != "…"]   # the cut is marked, not a word
-    assert len(kept) <= store.QUESTION_WORDS
+    assert sum(len(q["text"].split()) for q in out) <= store.QUESTION_WORDS
+    assert not any("…" in q["text"] for q in out)
     assert len(out) == 2, "a capped register still names both materials"
 
 

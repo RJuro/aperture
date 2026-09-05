@@ -834,6 +834,31 @@ def get_summary(conn: sqlite3.Connection, scope: str, ref_id: str,
 QUESTION_WORDS = 400
 
 
+# The least a material's share may be before it is left out instead. Under about this a share
+# holds no whole question, and half a question is worse than a material named as not shown.
+QUESTION_SHARE = 25
+
+
+def whole_questions(text: str, cap: int) -> str:
+    """The whole sentences of `text` that fit in `cap` words, and nothing after them.
+
+    A question ends in a question mark, so cutting at a sentence boundary cuts at a question. The
+    general word cap falls back to a hard cut wherever the last boundary lies before 60% of it,
+    and the union of eight materials' questions under one cap hits that every time: a register a
+    researcher reads to decide what to look for next ended "…" in the middle of a clause. The tail
+    is dropped, and what is dropped is counted rather than elided.
+    """
+    from .engine.verify_summary import sentences
+
+    kept, used = [], 0
+    for said in sentences(text):
+        if used + len(said.split()) > cap:
+            break
+        kept.append(said)
+        used += len(said.split())
+    return " ".join(kept)
+
+
 def open_questions(conn: sqlite3.Connection, pid: str,
                    cap: int = QUESTION_WORDS) -> list[dict]:
     """What the readings have left open across this project — newest material first, each with the
@@ -844,23 +869,36 @@ def open_questions(conn: sqlite3.Connection, pid: str,
     last document's questions and depended on completion order. They are kept per material now
     and read back as their union, which is order-independent by construction.
 
+    The cap is ALLOCATED across the materials rather than spent first come first served: an even
+    share each, with whatever a material does not use passing to the next. A material whose share
+    cannot hold a whole question is left out and counted in a closing line, so the register says
+    how much of the corpus it is speaking for.
+
     A project analysed before that change has questions in `brief` and none on its materials; that
     text stands in until a material writes its own, so nothing already written disappears.
     """
-    from .engine import synth       # for the word cap; synth imports this module at load
-
-    out, left = [], cap
-    for r in conn.execute(
-            "SELECT s.text AS text, m.id AS material_id, m.title AS title, m.name AS name "
-            "FROM summary s JOIN material m ON m.id = s.ref_id "
-            "WHERE s.scope='material' AND s.stage='questions' AND s.status='live' "
-            "AND m.project_id=? AND m.removed_at IS NULL ORDER BY s.rowid DESC", (pid,)):
-        if left <= 0:
-            break
-        if text := synth.words(r["text"], left):
-            out.append({"material_id": r["material_id"], "material": r["title"] or r["name"],
-                        "text": text})
-            left -= len(text.split())
+    rows = list(conn.execute(
+        "SELECT s.text AS text, m.id AS material_id, m.title AS title, m.name AS name "
+        "FROM summary s JOIN material m ON m.id = s.ref_id "
+        "WHERE s.scope='material' AND s.stage='questions' AND s.status='live' "
+        "AND m.project_id=? AND m.removed_at IS NULL ORDER BY s.rowid DESC", (pid,)))
+    out, left, not_shown = [], cap, 0
+    for i, r in enumerate(rows):
+        # An even share of what is left, floored at the least that can hold a question — so the
+        # materials that run out are the oldest, at the end, and not the newest, at the front.
+        share = max(left // (len(rows) - i), QUESTION_SHARE)
+        text = whole_questions(r["text"], share) if left >= QUESTION_SHARE else ""
+        if not text:
+            not_shown += 1
+            continue
+        out.append({"material_id": r["material_id"], "material": r["title"] or r["name"],
+                    "text": text})
+        left -= len(text.split())
+    # Named as a row with no material, exactly as the legacy column below is, so every surface
+    # that prints these already prints it.
+    if out and not_shown:
+        out.append({"material_id": "", "material": "",
+                    "text": f"(questions from {not_shown} more materials not shown)"})
     if not out and (p := project(conn, pid)) and (p["brief"] or "").strip():
         out = [{"material_id": "", "material": "", "text": p["brief"].strip()}]
     return out

@@ -66,7 +66,8 @@ def test_a_dry_run_plans_the_iterative_chain_and_leaves_the_data_directory_alone
     assert "provider minimax" in printed
     assert "one.txt: 3 passages" in printed and "two.md: 2 passages" in printed
     assert ("frame → angles → read → frame → angles → read → themes → themes → "
-            "doc → doc") in printed, "no reconcile: an iterative project is shown the codebook"
+            "doc → tighten → doc → tighten") in printed, \
+        "no reconcile: an iterative project is shown the codebook"
     assert not (tmp_path / "d" / "aperture.db").exists()
 
 

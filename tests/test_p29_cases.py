@@ -72,8 +72,9 @@ def test_with_no_case_defined_the_wording_is_exactly_what_it_was(client, corpus)
     its own case, so counting cases and counting materials would give the same number — and the
     page says materials, because that is what its columns are."""
     for page in _pages(client, corpus["pid"]):
-        assert "3 of 3 materials · 7 claims" in page
-        assert "2 of 3 materials · 6 claims" in page
+        # Every line in the fixture is short of a full one, so every reach says how many are.
+        assert "3 of 3 materials (3 sparse) · 7 claims" in page
+        assert "2 of 3 materials (2 sparse) · 6 claims" in page
         assert "cases" not in page.split('id="themes"')[-1].split('id="materials"')[0]
     for page in _grouped(client, corpus["pid"]):
         assert "In one material so far" in page
@@ -84,8 +85,8 @@ def test_two_materials_in_one_case_count_as_one_in_reach(client, conn, corpus):
     case, and the material count stays beside it because the columns are still materials."""
     store.add_case(conn, corpus["pid"], "Participant 1", [corpus["grande"], corpus["rodwin"]])
     for page in _pages(client, corpus["pid"]):
-        assert "2 of 2 cases (3 materials) · 7 claims" in page, "the note is its own case"
-        assert "1 of 2 cases (2 materials) · 6 claims" in page
+        assert "2 of 2 cases (3 materials, 3 sparse) · 7 claims" in page, "the note is its own case"
+        assert "1 of 2 cases (2 materials, 2 sparse) · 6 claims" in page
         assert "of 3 materials ·" not in page, "no reach is still counted in files"
 
 
@@ -101,9 +102,10 @@ def test_a_theme_carried_by_one_case_is_grouped_with_the_singles(client, conn, c
 
 def test_the_theme_page_derives_its_reach_the_same_way(client, conn, corpus):
     pid, tid = corpus["pid"], corpus["themes"]["Leaving and arriving"]
-    assert "2 of 3 materials · 6 claims" in client.get(f"/p/{pid}/t/{tid}").text
+    assert "2 of 3 materials (2 sparse) · 6 claims" in client.get(f"/p/{pid}/t/{tid}").text
     store.add_case(conn, pid, "Participant 1", [corpus["grande"], corpus["rodwin"]])
-    assert "1 of 2 cases (2 materials) · 6 claims" in client.get(f"/p/{pid}/t/{tid}").text
+    assert "1 of 2 cases (2 materials, 2 sparse) · 6 claims" in \
+        client.get(f"/p/{pid}/t/{tid}").text
 
 
 # ---- making and unmaking a case -----------------------------------------------------------------

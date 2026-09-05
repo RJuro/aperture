@@ -109,6 +109,13 @@ def _memo(conn, pid, run):
     return (memo.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
 
 
+def _tighten(conn, pid, run):
+    """Rewrite the claims the check found only partly carried, right after the material's lines
+    have been checked — while the mark is fresh and before anything is written over them."""
+    from .engine import tighten
+    return (tighten.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
+
+
 def _residual(conn, pid, run):
     from .engine import residual
     return (residual.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
@@ -295,6 +302,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "consolidate": ("Comparing every theme across the corpus", _consolidate),
     "settle":  ("Counting where each theme now reaches", _settle),
     "doc":     ("Writing what stands out in {name}", _doc),
+    "tighten": ("Tightening claims the check found only partly carried in {name}", _tighten),
     "residual": ("Reading what the coding did not mark in {name}", _residual),
     "summary": ("Writing the summary of {name} again", _summary),
     "account":  ("Writing where a theme runs across everything", _account),
@@ -375,11 +383,12 @@ CALLS = threading.Semaphore(PARALLEL)
 # THEMES is absent by law: it revises one set shared by the whole project, so it runs strictly one
 # material at a time, and every material is read before any of them moves the set.
 #
-# RESIDUAL joins DOC's group rather than forming one of its own: it reads one material's unmarked
-# passages and writes that material's moments and follow rows, exactly as DOC does, so a material's
-# synthesis and the pass over what its coding missed are one sequence that runs beside another
-# material's pair.
-SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile", "memo"}, {"doc", "residual"})
+# RESIDUAL and TIGHTEN join DOC's group rather than forming groups of their own: each reads one
+# material and writes that material's moments and follow rows, exactly as DOC does, so a
+# material's synthesis and the passes that follow it are one sequence that runs beside another
+# material's.
+SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile", "memo"},
+                {"doc", "tighten", "residual"})
 
 # ...and inside such a stage, these still take their turn, in the order the chain planned them.
 # READ is SHOWN the project codebook and `store.save_codes` reuses a code by name: two readings at
@@ -726,7 +735,8 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
               for k in ("frame", "angles", "read", "reconcile", "memo")),
             {"kind": "themes", "material_id": None, "materials": mids},
             *({"kind": k, "material_id": mid} for mid in mids
-              for k in (("doc", "residual") if rerun.residual_planned() else ("doc",))),
+              for k in (("doc", "tighten", "residual") if rerun.residual_planned()
+                        else ("doc", "tighten"))),
             {"kind": "accounts"},
             {"kind": "project"},
         ])
@@ -737,7 +747,7 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
         # piece is read before any of them moves the theme set, so DOC writes against the set as
         # it finally stands.
         *({"kind": "themes", "material_id": mid} for mid in mids),
-        *({"kind": "doc", "material_id": mid} for mid in mids),
+        *({"kind": k, "material_id": mid} for mid in mids for k in ("doc", "tighten")),
         # Accounts are planned when the chain reaches them, not now: THEMES has not run yet, so
         # the live theme set at this moment is the old one.
         {"kind": "accounts"},
