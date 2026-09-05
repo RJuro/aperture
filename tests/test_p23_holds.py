@@ -278,6 +278,6 @@ def test_a_database_from_before_the_holds_comes_up_with_its_thin_themes_as_candi
     try:
         assert dict(conn.execute("SELECT id, hold FROM theme")) == {
             "t1": "candidate", "t2": "open", "t3": "candidate"}
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 15
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 16
     finally:
         conn.close()

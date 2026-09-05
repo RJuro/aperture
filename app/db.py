@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
