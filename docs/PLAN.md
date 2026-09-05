@@ -201,7 +201,8 @@ aperture/
 
 ```sql
 project (id, name, focus, brief, created_at)
-material (id, project_id, name, text, kind, display, title, state, created_at)
+material (id, project_id, name, text, kind, display, title, state, created_at, case_id)
+case     (id, project_id, name, note, created_at)                  -- a file is not a case
 sentence (material_id, idx, sid, turn_idx, speaker, text)          -- sid "S014"
 speaker  (material_id, label, name, role)                          -- role: interviewer|participant|other
 segment  (material_id, idx, sid, label)                            -- anchored section starts
@@ -326,8 +327,9 @@ deviations are logged, not written in.
   in the "in one material so far" group, never counts against the ceiling, and gets no account.
   THREAD follows a candidate through a new material only where its codes fired there (always,
   whatever `APERTURE_FOLLOW` says: a candidate needs confirmation from coding, not a reader sent to
-  find it). It becomes **open** when a second material holds a line under it — Python, by
-  recurrence — or when the researcher promotes it. A theme THEMES coins is born a candidate.
+  find it). It becomes **open** when the researcher promotes it, and
+  where a second *case* holds a line under it Python only **proposes** that — a count of
+  cases is a question, not a confirmation. A theme THEMES coins is born a candidate.
 - **Open** — a project theme still developing. THEMES may reword, rescope, gather, merge. This is
   the behaviour the chain has always had, now confined to this group.
 - **Frozen** — the researcher has declared it final. Name and gist are fixed in Python, not by

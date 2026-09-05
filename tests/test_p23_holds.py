@@ -81,10 +81,12 @@ def test_only_a_known_hold_can_be_set(conn, project):
 
 # ---- promotion by recurrence ---------------------------------------------------------------
 
-def test_a_candidate_a_second_material_holds_a_line_under_is_promoted_by_doc(conn, project, grande,
+def test_a_candidate_a_second_material_holds_a_line_under_is_proposed_by_doc(conn, project, grande,
                                                                             rodwin, model, quote):
-    """Recurrence is Python's, not the model's. The candidate came out of Grande; Rodwin's coding
-    carries it too, a line holds there, and the corpus has now said it twice."""
+    """Recurrence is Python's, not the model's, and it is a proposal. The candidate came out of
+    Grande; Rodwin's coding carries it too, and the corpus has now said it twice — which is a
+    count of two materials, not a confirmation from two independent cases, so the theme is put to
+    the researcher and stays a candidate until they promote it."""
     for mid in (grande, rodwin):
         _ready(conn, mid)
     cid = _coded(conn, project, grande, "Work")
@@ -99,9 +101,9 @@ def test_a_candidate_a_second_material_holds_a_line_under_is_promoted_by_doc(con
     _doc_calls(model, quote, rodwin)
     synth.doc(conn, rodwin)
 
-    assert [t["id"] for t in store.live_themes(conn, project)] == [tid]
-    assert conn.execute("SELECT hold FROM theme WHERE id=?", (tid,)).fetchone()[0] == "open"
-    assert store.candidates(conn, project) == []
+    assert store.live_themes(conn, project) == [], "a proposal does not make a project theme"
+    assert [t["id"] for t in store.candidates(conn, project)] == [tid]
+    assert conn.execute("SELECT proposed_at FROM theme WHERE id=?", (tid,)).fetchone()[0]
 
 
 def test_a_candidate_is_followed_only_where_its_codes_fired_whatever_the_gate_says(

@@ -74,7 +74,7 @@
 <section class="section" id="themes"><div class="container">
 <div class="section-heading"><div><p class="eyebrow">Each theme across the corpus</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its material</span></div>
 {% if materials | length == 1 %}<p class="dim">With one material, a theme cannot yet run across materials.</p>{% endif %}
-{% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}
+{% for group, rows in [("Across materials", themes | rejectattr("single") | list), (single_group, themes | selectattr("single") | list)] %}
 {% if rows %}<h3 class="theme-group">{{ group }}</h3>{% endif %}
 {% for t in rows %}
 <section class="record-entry" id="t-{{ t.id }}">

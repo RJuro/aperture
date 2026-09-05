@@ -325,22 +325,80 @@ def theme_notes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
                         "rowid DESC", (tid,)).fetchall()
 
 
-def promote_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
-    """Candidates a second material has now put a line under, promoted to open. Returns their ids.
+def propose_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
+    """Candidates the corpus now carries in two cases or more, put to the researcher as a
+    question. Returns the ids newly proposed.
 
-    Recurrence is Python's judgement, not the model's: a pattern is a candidate until the corpus
-    itself carries it twice. The researcher may promote earlier by hand (`set_hold`).
+    This used to promote them outright, and printing that as confirmation was the error: two
+    materials holding a line under one candidate can be two files from one participant, and the
+    lines themselves were written by a reading that went looking for the theme. A count of cases
+    is a count, so Python proposes and the researcher promotes (`/promote`). The proposal is
+    withdrawn again — `proposed_at` back to NULL — if the claims fall back under two cases, which
+    a removed material or a rerun that dropped a line will do.
     """
-    ids = [r["id"] for r in conn.execute(
-        "SELECT t.id AS id FROM theme t "
-        "JOIN moment mo ON mo.theme_id = t.id AND mo.status='live' "
-        "JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL "
-        "WHERE t.project_id=? AND t.status='live' AND t.hold='candidate' "
-        "GROUP BY t.id HAVING COUNT(DISTINCT mo.material_id) >= 2", (pid,))]
-    for tid in ids:
-        conn.execute("UPDATE theme SET hold='open' WHERE id=?", (tid,))
+    of = case_of(conn, pid)
+    carried: dict[str, set[str]] = {}
+    for r in conn.execute(
+            "SELECT t.id AS id, mo.material_id AS mid FROM theme t "
+            "JOIN moment mo ON mo.theme_id = t.id AND mo.status='live' "
+            "JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL "
+            "WHERE t.project_id=? AND t.status='live' AND t.hold='candidate'", (pid,)):
+        carried.setdefault(r["id"], set()).add(of.get(r["mid"], r["mid"]))
+    fresh = []
+    for r in conn.execute("SELECT id, proposed_at FROM theme WHERE project_id=? AND status='live' "
+                          "AND hold='candidate'", (pid,)).fetchall():
+        enough = len(carried.get(r["id"], ())) >= 2
+        if enough and not r["proposed_at"]:
+            conn.execute("UPDATE theme SET proposed_at=? WHERE id=?", (now(), r["id"]))
+            fresh.append(r["id"])
+        elif not enough and r["proposed_at"]:
+            conn.execute("UPDATE theme SET proposed_at=NULL WHERE id=?", (r["id"],))
     conn.commit()
-    return ids
+    return fresh
+
+
+# ---- cases ------------------------------------------------------------------------------------
+# A file is not a case. Two files from one participant are two materials and one case; a
+# spreadsheet of forty respondents is one material and — until the researcher says otherwise —
+# one case. Everything that counts recurrence counts these, and a material nobody has grouped
+# counts as its own, so a project with no cases behaves exactly as it did before they existed.
+
+def cases(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
+    """The project's cases that still hold live material, oldest first. A case emptied by taking
+    its last material out is not shown: the row stays so that the same name finds it again."""
+    return conn.execute(
+        "SELECT c.* FROM case_ c JOIN material m ON m.case_id = c.id AND m.removed_at IS NULL "
+        "WHERE c.project_id=? GROUP BY c.id ORDER BY c.created_at, c.rowid", (pid,)).fetchall()
+
+
+def case_of(conn: sqlite3.Connection, pid: str) -> dict[str, str]:
+    """Material id → the case it counts under, its own id where it is in none."""
+    return {m["id"]: m["case_id"] or m["id"] for m in materials(conn, pid)}
+
+
+def add_case(conn: sqlite3.Connection, pid: str, name: str, mids: list[str],
+             note: str = "") -> str:
+    """Put these materials in a case, making it if the project has none by that name.
+
+    Reusing the name rather than making a second case with it is what lets a participant's
+    later interview join the first: the form makes cases, and a project that could only ever
+    make new ones would need a case rebuilt every time material arrived.
+    """
+    row = conn.execute("SELECT id FROM case_ WHERE project_id=? AND name=?", (pid, name)).fetchone()
+    cid = row["id"] if row else db.new_id("ca")
+    if row is None:
+        conn.execute("INSERT INTO case_ (id, project_id, name, note, created_at) "
+                     "VALUES (?,?,?,?,?)", (cid, pid, name, note, now()))
+    for mid in mids:
+        conn.execute("UPDATE material SET case_id=? WHERE id=? AND project_id=?", (cid, mid, pid))
+    conn.commit()
+    return cid
+
+
+def uncase(conn: sqlite3.Connection, pid: str, mid: str) -> None:
+    """Take one material out of whatever case it is in. It goes back to counting as its own."""
+    conn.execute("UPDATE material SET case_id=NULL WHERE id=? AND project_id=?", (mid, pid))
+    conn.commit()
 
 
 def save_theme(conn: sqlite3.Connection, pid: str, *, tid: str | None, name: str, gist: str,

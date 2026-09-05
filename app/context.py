@@ -280,6 +280,50 @@ def _evidence(row: dict | None) -> str:
     return out
 
 
+def _cases(conn, pid: str) -> dict[str, str] | None:
+    """Material id → the case it counts under, or None where the researcher has grouped nothing.
+
+    A file is not a case. Two files from one participant are two materials, a spreadsheet of
+    forty respondents is one, and neither count can ground a statement about recurrence across
+    independent cases — which is what "in 3 of 4 materials" was being read as. So where a
+    researcher has said which materials are one case, every reach on every page counts cases;
+    where they have not, None says so and nothing changes.
+    """
+    of = store.case_of(conn, pid)
+    return of if any(cid != mid for mid, cid in of.items()) else None
+
+
+def _reach(carrying: list[str], mids: list[str], of: dict | None) -> tuple[int, int, str]:
+    """How far a theme reaches, as the count it groups by, the whole it is out of, and the words.
+
+    The material count stays beside the case count because the columns beside it are materials:
+    law 4 wants the number derivable from the rows the page links to, and "2 of 3 cases" alone
+    cannot be checked against four filled cells.
+    """
+    if of is None:
+        return len(carrying), len(mids), f"{len(carrying)} of {len(mids)} materials"
+    n, total = len({of[m] for m in carrying}), len({of[m] for m in mids})
+    return n, total, f"{n} of {total} cases ({_n(len(carrying), 'material')})"
+
+
+def _single_group(of: dict | None) -> str:
+    """The heading over the themes nothing has yet repeated. It follows what reach is counted in,
+    because a theme two materials of one case carry is now in this group and calling that group
+    "in one material so far" would be false about the rows underneath it."""
+    return "In one case so far" if of else "In one material so far"
+
+
+def _proposal(t: dict, carried: int, of: dict | None) -> str:
+    """What the page asks the researcher about a candidate the corpus has now said twice.
+
+    A question, not a receipt: promotion is theirs (`/promote`), and the count is printed so
+    they can see what it was counted over.
+    """
+    if t["hold"] != "candidate" or not t["proposed_at"]:
+        return ""
+    return f'Found in {_n(carried, "case" if of else "material")} — promote?'
+
+
 def _row(r) -> dict | None:
     return dict(r) if r is not None else None
 
@@ -496,6 +540,7 @@ def project_page(conn, pid: str) -> dict:
         counts[(r["theme_id"], r["material_id"])] = r["n"]
     evidence = store.theme_evidence(conn, pid)
     outcomes = store.followed(conn, pid)
+    of = _cases(conn, pid)
     themes = []
     # Candidates are project themes' juniors, not a separate page: they belong under the same
     # headings, at the bottom, with the control that makes one a theme.
@@ -507,17 +552,18 @@ def project_page(conn, pid: str) -> dict:
                            "moments": [None] * counts.get((t["id"], m["id"]), 0),
                            "assessed_said": ASSESSED_SAID[_assessed(outcomes, t["id"], m["id"])]}
                           for m in mats]
-        carried = sum(1 for c in row["columns"] if c["moments"])
-        # A theme resting on one material is a motif in that material, not a corpus theme, and
-        # listed beside the others it reads as if it had the same reach. `single` is what the
-        # page groups by.
+        carried, whole, said = _reach([c["material_id"] for c in row["columns"] if c["moments"]],
+                                      [m["id"] for m in mats], of)
+        # A theme resting on one case is a motif in that case, not a corpus theme, and listed
+        # beside the others it reads as if it had the same reach. `single` is what the page
+        # groups by, and it is the same threshold the proposal uses.
         row["single"] = carried < 2
         row["reach"], row["claims"] = carried, sum(len(c["moments"]) for c in row["columns"])
         # Three steps, so the table can set the strongest themes larger: carried by every
-        # material, by several, or by one.
-        row["tier"] = 3 if row["single"] else 1 if carried == len(mats) else 2
-        row["derivation"] = (f'{carried} of {len(mats)} materials · '
-                             f'{_evidence(evidence.get(t["id"]))}')
+        # case, by several, or by one.
+        row["tier"] = 3 if row["single"] else 1 if carried == whole else 2
+        row["derivation"] = f'{said} · {_evidence(evidence.get(t["id"]))}'
+        row["proposal"] = _proposal(row, carried, of)
         themes.append(row)
     # `live_themes` orders by name, which other pages depend on. Alphabetical here made a theme
     # every material carries with twenty claims look like one a single reading mentioned twice.
@@ -530,7 +576,14 @@ def project_page(conn, pid: str) -> dict:
     summary = _row(store.get_summary(conn, "project", pid))
     # What it may mean, kept apart from what it shows: one is cited, the other argued with.
     reading_of = _row(store.get_summary(conn, "project", pid, "interpretation"))
+    by_case: dict[str, list] = {}
+    for m in mats:
+        if m["case_id"]:
+            by_case.setdefault(m["case_id"], []).append(m)
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
+            "cases": [{**dict(c), "materials": by_case.get(c["id"], [])}
+                      for c in store.cases(conn, pid)],
+            "single_group": _single_group(of),
             "page_section": "overview", "reading": reading,
             "summary": summary,
             "summary_html": cite(summary["text"], index, pid) if summary else "",
@@ -620,12 +673,15 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             row["assessed"] = _assessed(outcomes, tid, m["material_id"])
             absent.append(row)
     summary = _row(store.get_summary(conn, "theme", tid))
+    of = _cases(conn, pid)
+    carried, _, said = _reach([m["material_id"] for m in cover["per_material"] if m["claims"]],
+                              [m["material_id"] for m in cover["per_material"]], of)
     return {**_shell(conn, pid), "project": dict(p), "theme": dict(t),
             "page_section": "themes",
             "coverage": cover, "carrying": carrying, "absent": absent, "summary": summary,
             "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
-            "derivation": (f'{cover["materials_with"]} of {cover["materials_total"]} materials'
-                           f' · {_evidence(store.theme_evidence(conn, pid).get(tid))}'),
+            "derivation": f'{said} · {_evidence(store.theme_evidence(conn, pid).get(tid))}',
+            "proposal": _proposal(dict(t), carried, of),
             "codes": [dict(c) for c in store.theme_codes(conn, tid)],
             "notes": _tension_notes(conn, tid),
             "set_aside": store.set_aside(conn, pid)}
@@ -681,6 +737,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
             "summary": _row(store.get_summary(conn, "project", pid)),
             "interpretation": _row(store.get_summary(conn, "project", pid, "interpretation")),
             "themes": _export_themes(conn, pid, aside),
+            "single_group": _single_group(_cases(conn, pid)),
             "checks": _checks(conn, pid),
             "set_aside": aside,
             "feedback": said,
@@ -780,6 +837,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
     out = []
     evidence = store.theme_evidence(conn, pid)
     outcomes = store.followed(conn, pid)
+    of = _cases(conn, pid)
     for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         cover = account.coverage(conn, pid, t["id"])
         carrying, absent = [], []
@@ -795,12 +853,14 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                 # material were never assessed against each other at all.
                 row["assessed"] = _assessed(outcomes, t["id"], m["material_id"])
                 absent.append(row)
+        carried, _, said = _reach([m["material_id"] for m in cover["per_material"] if m["claims"]],
+                                  [m["material_id"] for m in cover["per_material"]], of)
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
                     "notes": _tension_notes(conn, t["id"]),
-                    "single": cover["materials_with"] < 2,
-                    "derivation": (f'in {cover["materials_with"]} of {cover["materials_total"]} '
-                                   f'materials · {_evidence(evidence.get(t["id"]))}'),
+                    "single": carried < 2,
+                    "derivation": f'in {said} · {_evidence(evidence.get(t["id"]))}',
+                    "proposal": _proposal(dict(t), carried, of),
                     "set_aside": [n for n in aside if t["name"] and t["name"] in n["note"]]})
     return out
 
