@@ -403,3 +403,21 @@ def test_the_paragraph_the_summary_was_written_in_survives_the_check(ready, conn
              [{"n": 2, "verdict": "not", "why": "no claim names a port"}],
              summary="One holds. Two does not.\n\nThree stands alone.")
     assert stored(conn, ready) == "One holds.\n\nThree stands alone."
+
+
+def test_the_passage_shown_to_the_check_is_a_word_budget_not_one_neighbour():
+    """Fragmentary transcripts made the check mark most claims only partly carried: three
+    fragments of six words cannot carry what a claim compresses. Short sentences pull in more
+    neighbours until forty words stand each side; long ones still get one each side; and a run of
+    one-word lines is bounded."""
+    from app.engine import verify
+    short = [(f"S{i:03d}", "yes I did that") for i in range(40)]
+    where = {s: i for i, (s, _) in enumerate(short)}
+    n = verify.passage(short, where, "S020").count("\n") + 1
+    assert n == 2 * verify.CONTEXT_SENTENCES + 1, "bounded by sentences when the words never add up"
+    long = [(f"L{i:03d}", " ".join(["word"] * 45)) for i in range(5)]
+    where = {s: i for i, (s, _) in enumerate(long)}
+    assert verify.passage(long, where, "L002").count("\n") + 1 == 3, "one neighbour each side suffices"
+    mid = [(f"M{i:03d}", " ".join(["w"] * 10)) for i in range(20)]
+    where = {s: i for i, (s, _) in enumerate(mid)}
+    assert verify.passage(mid, where, "M010").count("\n") + 1 == 9, "four ten-word sentences a side reach forty"

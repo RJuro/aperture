@@ -46,11 +46,11 @@ TAIL = ["accounts", "project"]
 @pytest.mark.parametrize("sent,expected", [
     # The fixture project is built iteratively, so this is `rerun.CHAIN` from the chosen step on.
     # The exploratory chain is a different list and P31 holds it.
-    ("structure", ["frame", "angles", "read", "themes", "doc"]),
-    ("angles", ["angles", "read", "themes", "doc"]),
-    ("coding", ["read", "themes", "doc"]),
-    ("themes", ["themes", "doc"]),
-    ("synthesis", ["doc"]),
+    ("structure", ["frame", "angles", "read", "themes", "doc", "tighten"]),
+    ("angles", ["angles", "read", "themes", "doc", "tighten"]),
+    ("coding", ["read", "themes", "doc", "tighten"]),
+    ("themes", ["themes", "doc", "tighten"]),
+    ("synthesis", ["doc", "tighten"]),
 ])
 def test_it_runs_everything_from_the_chosen_step_to_the_end(app, analysed, sent, expected):
     """Everything after the chosen step runs too: a reading that changed with a synthesis still
@@ -84,9 +84,10 @@ def test_from_the_beginning_is_the_chain_material_arrives_on(app, analysed):
     """"Reset" is not a separate path through the code: it is the upward chain, run again."""
     pid, mid = analysed["pid"], analysed["grande"]
     app.post(f"/p/{pid}/m/{mid}/rerun", data={"from": "structure"})
-    # An iteratively built project's upload chain is `rerun.CHAIN` itself — the same list
-    # `jobs.ingest_chain` plans for it.
-    assert kinds(app.planned[-1]) == list(rerun.CHAIN) + TAIL
+    # An iteratively built project's upload chain is `rerun.CHAIN` with the tightening of
+    # partly-carried claims after the lines — the same list `jobs.ingest_chain` plans for it.
+    upload = list(rerun.CHAIN); upload.insert(upload.index("doc") + 1, "tighten")
+    assert kinds(app.planned[-1]) == upload + TAIL
 
 
 # ---- the note -----------------------------------------------------------------------------------
@@ -239,5 +240,5 @@ def test_a_project_that_explores_reruns_the_chain_it_was_read_with():
     explored = [r["kind"] for r in rerun.from_step("m1", "read", explore=True)]
     assert plain[:2] == ["read", "themes"]
     assert explored[:5] == ["read", "reconcile", "memo", "themes", "doc"]
-    assert explored[5] == "residual"
+    assert explored[5:7] == ["tighten", "residual"]
     assert [r["kind"] for r in rerun.from_step("m1", "themes", explore=True)][:1] == ["themes"]

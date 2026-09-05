@@ -79,6 +79,12 @@ def from_step(mid: str, step: str, feedback_id: str | None = None, *,
             chain[chain.index("read") + 1:chain.index("read") + 1] = ["reconcile", "memo"]
         if "doc" in chain and residual_planned():
             chain.insert(chain.index("doc") + 1, "residual")
+    if "doc" in chain:
+        # The upload chain tightens the claims the check found only partly carried right after the
+        # lines are written (before the residual pass, as `jobs.ingest_chain` orders it); a
+        # material run again from any step that rewrites its lines gets the same pass, or the
+        # rerun would leave hedges the first reading did not.
+        chain.insert(chain.index("doc") + 1, "tighten")
     runs = [_run(k, mid, feedback_id=feedback_id) for k in chain]
     for r in runs:
         # The cross-case pass takes its batch on the run rather than a material: here the batch is

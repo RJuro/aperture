@@ -463,7 +463,7 @@ def test_a_material_read_again_carries_the_same_chain_it_arrived_on(explored, co
     cross-case pass takes that one material as its batch."""
     runs = rerun.from_step(explored["grande"], "frame", explore=True)
     assert [r["kind"] for r in runs] == \
-        ["frame", "angles", "read", "reconcile", "memo", "themes", "doc", "residual",
+        ["frame", "angles", "read", "reconcile", "memo", "themes", "doc", "tighten", "residual",
          "accounts", "project"]
     cross = [r for r in runs if r["kind"] == "themes"][0]
     assert cross["material_id"] is None and cross["materials"] == [explored["grande"]]
