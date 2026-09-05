@@ -48,7 +48,16 @@ CREATE TABLE IF NOT EXISTS material (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL,
     kind TEXT DEFAULT '', display TEXT DEFAULT 'plain', title TEXT DEFAULT '',
     year TEXT DEFAULT '', state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL,
-    speakers_estimated INTEGER DEFAULT 0);
+    speakers_estimated INTEGER DEFAULT 0, case_id TEXT);
+
+-- What the researcher says is one unit of analysis: a participant, an interview, a time point.
+-- A file is not a case — two files from one participant are two materials and one case, and a
+-- spreadsheet of forty respondents is one material — so recurrence, which is a claim about
+-- independent cases, cannot be counted over files. A material in no case counts as its own.
+-- Trailing underscore because CASE is reserved in SQL, as with `check_`.
+CREATE TABLE IF NOT EXISTS case_ (
+    id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL,
+    note TEXT DEFAULT '', created_at TEXT NOT NULL);
 
 CREATE TABLE IF NOT EXISTS sentence (
     material_id TEXT NOT NULL, idx INTEGER NOT NULL, sid TEXT NOT NULL,
@@ -75,11 +84,14 @@ CREATE TABLE IF NOT EXISTS code_hit (
 -- is the analyst's to promote (or Python's, by recurrence); an 'open' theme is the project's and
 -- THEMES may still reword it; a 'frozen' one the researcher has declared final, and its words are
 -- fixed here rather than by asking the model nicely. `status` stays live | merged.
+-- `proposed_at` is when the corpus reached two cases under a candidate. It is a count, not a
+-- confirmation, so it only puts the question to the researcher; the hold still changes by hand.
 CREATE TABLE IF NOT EXISTS theme (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '',
     status TEXT NOT NULL DEFAULT 'live', merged_into TEXT,
     hold TEXT NOT NULL DEFAULT 'open',
-    stable_passes INTEGER NOT NULL DEFAULT 0, pass_fingerprint TEXT NOT NULL DEFAULT '');
+    stable_passes INTEGER NOT NULL DEFAULT 0, pass_fingerprint TEXT NOT NULL DEFAULT '',
+    proposed_at TEXT);
 
 -- What pulled against a frozen theme's definition in one material, in at most 25 words. It is
 -- shown to the researcher beside the theme and never written into the gist: new material is
@@ -209,6 +221,10 @@ def migrate(conn: sqlite3.Connection) -> None:
         _recompose_titles(conn)
     if "speakers_estimated" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN speakers_estimated INTEGER DEFAULT 0")
+    if "case_id" not in have:
+        # Null on every material read before cases existed, which is the honest reading of them:
+        # nobody had said which files were one participant, so each one still counts as its own.
+        conn.execute("ALTER TABLE material ADD COLUMN case_id TEXT")
     have = {r[1] for r in conn.execute("PRAGMA table_info(moment)")}
     if "support" not in have:
         # What checking the claim against its own passage found: '' where it was not checked or
@@ -232,6 +248,11 @@ def migrate(conn: sqlite3.Connection) -> None:
             "  LEFT JOIN moment mo ON mo.theme_id = t.id AND mo.status='live'"
             "  LEFT JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL"
             "  GROUP BY t.id HAVING COUNT(DISTINCT m.id) < 2)")
+    if "proposed_at" not in have:
+        # Null everywhere, including on candidates a second material already carries: the next
+        # DOC over the project puts the question again, and a proposal nobody was shown is not
+        # one that was declined.
+        conn.execute("ALTER TABLE theme ADD COLUMN proposed_at TEXT")
     have = {r[1] for r in conn.execute("PRAGMA table_info(check_)")}
     if "searched_scope" not in have:
         # Every check written before this column searched only the passages no claim rested on,

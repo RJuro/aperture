@@ -81,7 +81,7 @@
 {# The second group is the candidates: a pattern found in one material is not yet a theme. It is
    the same set the reach rule used to pick out, except that a project theme left in one material
    by a removal stays a theme, with its reach, in the first group. #}
-{% for group, rows in [("Across materials", themes | rejectattr("hold", "equalto", "candidate") | list), ("In one material so far", themes | selectattr("hold", "equalto", "candidate") | list)] %}
+{% for group, rows in [("Across materials", themes | rejectattr("hold", "equalto", "candidate") | list), (single_group, themes | selectattr("hold", "equalto", "candidate") | list)] %}
 {% if rows %}
 {# Nine themes each resting on one material took most of the page and told the reader least.
    Folded they are one line, still open to anyone who wants them, and still in the page's text. #}
@@ -98,6 +98,8 @@
         <br><span>{{ t.gist | prose }}</span>
         <br><span class="dim">{{ t.derivation }}</span>
         {% if t.hold == 'candidate' and role in ('edit', 'owner') %}
+        {# The count is the question, never the answer: recurrence proposes, the researcher promotes. #}
+        {% if t.proposal %}<br><span class="dim">{{ t.proposal }}</span>{% endif %}
         <form method="post" action="/p/{{ project.id }}/t/{{ t.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
         {% endif %}</th>
   {% for col in t.columns %}
@@ -152,6 +154,36 @@
 {% endfor %}
 </ul>
 {% if problem %}<p class="problem">{{ problem | txt }}</p>{% endif %}
+{# A file is not a case. Until the researcher says which files are one participant, one interview
+   or one time point, every reach on this page is counted over files — which is a fact about the
+   upload and not about the corpus. This is where they say it. #}
+<details class="quiet-details">
+  <summary>Cases · {{ cases | length }}</summary>
+  <p class="dim small">A case is one participant, interview or time point. Two files from one person are two materials and one case; a spreadsheet of many respondents is one material. A material in no case counts as its own, and reach is counted over cases as soon as one exists.</p>
+  <ul class="mats">
+  {% for c in cases %}
+    <li><strong>{{ c.name | txt }}</strong> <span class="dim">{{ c.materials | length }} {{ 'material' | plural(c.materials | length) }}</span>
+      <ul class="mats">
+      {% for m in c.materials %}
+        <li><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
+        {% if role in ('edit', 'owner') %}<form method="post" action="/p/{{ project.id }}/cases/remove">
+          <input type="hidden" name="material_id" value="{{ m.id }}">
+          <button class="btn btn-small btn-secondary">Take out of this case</button></form>{% endif %}</li>
+      {% endfor %}
+      </ul></li>
+  {% else %}
+    <li class="dim">No case yet — each material counts as its own.</li>
+  {% endfor %}
+  </ul>
+  {% if materials and role in ('edit', 'owner') %}
+  <form method="post" action="/p/{{ project.id }}/cases" class="form-stack compact">
+    <label>Case name <input name="name" required placeholder="Participant, interview or time point"></label>
+    <label>Materials in it <select name="material_id" multiple size="{{ [materials | length, 8] | min }}" required>
+      {% for m in materials %}<option value="{{ m.id }}">{{ m.display_title | txt }}</option>{% endfor %}
+    </select><small>An existing case of the same name takes them in.</small></label>
+    <button class="btn btn-secondary">Make a case</button>
+  </form>{% endif %}
+</details>
 <details class="add-drawer"{% if not materials or problem %} open{% endif %}>
   <summary><span><strong>Add material</strong><small>Analysis starts in the background.</small></span></summary>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">

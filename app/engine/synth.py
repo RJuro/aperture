@@ -546,10 +546,10 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
                               "skipped" if tid in skipped else "line" if tid in held else "thin",
                               run_id)
 
-        # A candidate a second material now holds a line under is a project theme, and Python says so
-        # rather than the model: recurrence is a fact about the corpus, not a judgement.
-        for tid in store.promote_by_recurrence(conn, pid):
-            log.info("theme id=%s promoted", tid)
+        # A candidate a second case now holds a line under is put to the researcher, not promoted:
+        # recurrence is a count of cases, and a count is a question, not a confirmation.
+        for tid in store.propose_by_recurrence(conn, pid):
+            log.info("theme id=%s proposed", tid)
     shown = []
     for t in threads:
         shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(

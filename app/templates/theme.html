@@ -13,6 +13,7 @@
       materials read as saturation across cases, which is a methodological claim nothing here made. #}
   {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
   {%- endif %}</span>
+  {%- if proposal %} <span class="meta">{{ proposal }}</span>{% endif %}
   {% if role in ('edit', 'owner') %}
   {% if theme.hold == 'candidate' %}
   <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>

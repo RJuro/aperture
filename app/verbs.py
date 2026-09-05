@@ -126,6 +126,28 @@ def remove_material(request: Request, pid: str, mid: str):
     return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
+@router.post("/p/{pid}/cases")
+def make_case(request: Request, pid: str, name: str = Form(""),
+              material_id: list[str] = Form(default=[])):
+    """Say that these materials are one case. Nothing re-runs: a case changes how the pages count
+    reach, not what any reading found, and re-reading a corpus to learn who its participants are
+    would spend money on a fact the researcher already has."""
+    conn = connection()
+    _mine(request, conn, pid)
+    if name.strip() and material_id:
+        store.add_case(conn, pid, name.strip(), material_id)
+    return _back(request, f"/p/{pid}")
+
+
+@router.post("/p/{pid}/cases/remove")
+def uncase(request: Request, pid: str, material_id: str = Form(...)):
+    """Take one material back out. It counts as its own case again, as it did before."""
+    conn = connection()
+    _mine(request, conn, pid)
+    store.uncase(conn, pid, material_id)
+    return _back(request, f"/p/{pid}")
+
+
 @router.post("/p/{pid}/stop")
 def stop(request: Request, pid: str):
     """Stop what is running for this project. The step in flight finishes; nothing after it starts."""

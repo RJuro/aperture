@@ -35,7 +35,7 @@
 
 {% if materials | length == 1 %}With one material, a theme cannot yet run across materials.
 
-{% endif %}{% for group, rows in [("Across materials", themes | rejectattr("single") | list), ("In one material so far", themes | selectattr("single") | list)] %}{% if rows %}### {{ group }}
+{% endif %}{% for group, rows in [("Across materials", themes | rejectattr("single") | list), (single_group, themes | selectattr("single") | list)] %}{% if rows %}### {{ group }}
 
 {% endif %}{% for t in rows %}#### {{ t.name }}
 
