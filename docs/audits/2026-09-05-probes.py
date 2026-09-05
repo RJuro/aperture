@@ -1,7 +1,7 @@
 """Offline audit reproductions. Synthetic data; in-memory databases; no live LLM calls.
 
-These assert the observed defects at revision 92ed796. They are diagnostic probes,
-not desired-behavior regression tests; an assertion should change when its defect is fixed.
+These reproduced the observed defects at revision 92ed796. Since R1 (2026-09-05) the final
+assertions expect the REPAIRED behaviour: run it as a regression check.
 Run from the repository with: .venv/bin/python docs/audits/2026-09-05-probes.py
 """
 import json, os, sys
@@ -99,5 +99,7 @@ with patch.object(llm, 'chat_json', side_effect=AssertionError('No real model ca
         results['account_151_materials'] = type(exc).__name__
 
 print(json.dumps(results,indent=2))
-assert all(v is True for k,v in results.items() if k not in ('check_search_count','account_151_materials'))
-assert results['account_151_materials']=='ZeroDivisionError'
+# Flipped on 2026-09-05 after R1 (docs/EVAL.md, Astra-review §3): every defect these probes
+# reproduced is fixed, so the script now asserts the repaired behaviour and is a regression check.
+assert all(v is False for k,v in results.items() if k not in ('check_search_count','account_151_materials')), results
+assert results['account_151_materials']=='no error'
