@@ -261,3 +261,31 @@ and not found*. It attacks pattern hunger and inflation on both sides of the cod
 absence a verified claim, and costs a few thousand tokens per material against THREAD's hundreds
 of thousands. To be judged the same way: the 24 dossiers are the test set, and the check's
 verdicts can be scored against the judges' before it ever runs in a chain.
+
+### Pass 4 — 2026-09-05, R1 trust repairs, judged by the audit's own probes (no model run)
+
+The September audit (`Astra-review.md`, `docs/audits/`) shipped twelve offline probes that reproduced
+defects at `92ed796`: theme feedback consumed without reaching ACCOUNT; READ clearing a material's
+coding before the model answered; a thin THREAD rerun recorded beside still-live old claims; a
+missing follow row read as "looked for and too thin"; VERIFY treating an omitted verdict as support
+and erasing an earlier "partly"; CHECK searching only uncited passages; a code-less candidate followed
+everywhere; a candidate-only project's PROJECT prompt given no claim ids; an account fingerprint blind
+to added materials, focus and support changes; a division by zero at 151 carrying materials.
+
+R1 (three agents, `9514098..4e9e522`) repaired all twelve; the probe script now asserts the repaired
+behaviour and runs as a regression check. Structural changes worth knowing: `store.atomic` (BEGIN
+IMMEDIATE, helpers' commits neutralised, one commit after validation) around READ and THREAD
+activation; a valid empty THREAD result supersedes the old line; the four-claim floor is a label
+("sparse · N claims"), not an evidential rule — thread.md rule 4 rewritten; VERIFY writes only the
+verdicts it received (`unchecked` otherwise) and a thread summary that lost claims says so; ACCOUNT
+gains a feedback slot and consumes the comment only after a validated result, prints partly-carried
+claims, and its fingerprint covers materials, focus and support; `NOT ASSESSED` is a third silence on
+every surface; CHECK takes `scope=all|unused` and says which set it searched; DOC's questions are
+stored per material and read as a capped union (the project brief is no longer the last writer's);
+a comment on one line plans `doc(theme) → summary → accounts → project`, the new `summary` step
+writing the material summary over standing lines without a THREAD call.
+
+Nothing here was judged on quality — these are mechanics, and mechanics are for tests. The
+quality question the audit raises (a reusable document reading instead of theme-by-document
+THREADs) is the four-condition comparison in Astra-review §8; it starts only after R2/R3 land and the
+corrected chain has been run once as the baseline.
