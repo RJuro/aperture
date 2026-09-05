@@ -113,6 +113,16 @@ def home(request: Request) -> str:
     return _env.get_template("home.html").render(**context.home(connection(), user))
 
 
+@router.get("/guide", response_class=HTMLResponse)
+def guide(request: Request) -> str:
+    """What each control does and what it lets a researcher say. No project: the guide is about
+    the instrument, is reached from inside a project and from outside one, and must render either
+    way — so it is given the two things `base.html` needs of every page and nothing else."""
+    user = getattr(request.state, "user", None)
+    return _render("guide.html", {"app_name": context.APP_NAME,
+                                  "css_v": context._css_version()}, user)
+
+
 @router.get("/p/{pid}", response_class=HTMLResponse)
 def project(request: Request, pid: str, problem: str = "") -> str:
     conn = connection()

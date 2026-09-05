@@ -59,21 +59,25 @@
       {% for q in questions %}<p>{% if q.material %}From {{ q.material | txt }}: {% endif %}{{ q.text | prose }}</p>{% endfor %}</details>{% endif %}
     </div>
     <aside class="focus-note">
-      <p class="eyebrow">Research focus</p>
+      <p class="eyebrow">Research focus <a class="help" href="/guide#focus" title="What the research focus does">?</a></p>
       {% if project.focus %}<blockquote>{{ project.focus | txt }}</blockquote>{% else %}<p class="dim">No focus set yet.</p>{% endif %}
       <details><summary>Edit focus</summary>
         <form method="post" action="/p/{{ project.id }}/focus" class="form-stack compact">
-          <label>Research question or focus <textarea name="focus" rows="3">{{ project.focus | txt }}</textarea></label>
+          <label><span>Research question or focus</span><textarea name="focus" rows="3">{{ project.focus | txt }}</textarea></label>
           <button class="btn btn-secondary">Save focus</button>
         </form>
       </details>
-      <p class="dim small">Method: {% if project.method == 'explore' %}Read exploratively — each material is read on its own terms first.{% else %}Built iteratively — each material is read with the project's codes and themes in view.{% endif %}</p>
+      <p class="dim small">Method: {% if project.method == 'explore' %}Read exploratively — each material is read on its own terms first.{% else %}Built iteratively — each material is read with the project's codes and themes in view.{% endif %} <a class="help" href="/guide#method" title="Explore or build iteratively">?</a></p>
       {% if role == 'owner' %}<details><summary>Change how material is read</summary>
         <form method="post" action="/p/{{ project.id }}/method" class="form-stack compact">
           <fieldset class="scope-choice"><legend>Applies to material read from here on; nothing already read changes</legend>
-            <label><input type="radio" name="method" value="explore" {{ 'checked' if project.method == 'explore' }}> Explore the material</label>
-            <label><input type="radio" name="method" value="iterative" {{ 'checked' if project.method != 'explore' }}> Build iteratively</label>
+            <label class="choice"><input type="radio" name="method" value="explore" {{ 'checked' if project.method == 'explore' }}> <span>Explore the material — read on its own terms, its codes compared with the project's afterwards</span></label>
+            <label class="choice"><input type="radio" name="method" value="iterative" {{ 'checked' if project.method != 'explore' }}> <span>Build iteratively — read with the project's codes and themes in view</span></label>
           </fieldset>
+          <details class="info"><summary>What changes if I switch?</summary>
+            <p>Only what later readings are shown. Material already read keeps the codes it was
+              read with, and no summary is rewritten. <a href="/guide#method">More in the guide</a>.</p>
+          </details>
           <button class="btn btn-secondary">Save method</button>
         </form>
       </details>{% endif %}
@@ -83,10 +87,10 @@
 
 <section class="section" id="themes">
 <div class="container">
-<div class="section-heading"><h2>Themes</h2></div>
+<div class="section-heading"><h2>Themes <a class="help" href="/guide#themes" title="What a theme is, and what promoting or freezing does">?</a></h2></div>
 {% if themes %}
 {% set most = themes | map(attribute='claims') | max or 1 %}{# themes are named before any claim is read #}
-<p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. A dash means none.{% if themes | selectattr("hold", "equalto", "frozen") | first %} A theme you have frozen leads its group.{% endif %}</p>
+<p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. A dash means none.{% if themes | selectattr("hold", "equalto", "frozen") | first %} A theme you have frozen leads its group.{% endif %} <a class="help" href="/guide#reach" title="How to read the counts under each theme">?</a></p>
 {% if materials | length == 1 %}<p class="dim small">With one material, a theme cannot yet run across materials.</p>{% endif %}
 {# The second group is the candidates: a pattern found in one material is not yet a theme. It is
    the same set the reach rule used to pick out, except that a project theme left in one material
@@ -168,7 +172,7 @@
    or one time point, every reach on this page is counted over files — which is a fact about the
    upload and not about the corpus. This is where they say it. #}
 <details class="quiet-details">
-  <summary>Cases · {{ cases | length }}</summary>
+  <summary>Cases · {{ cases | length }} <a class="help" href="/guide#cases" title="Why grouping files into cases changes every count">?</a></summary>
   <p class="dim small">A case is one participant, interview or time point. Two files from one person are two materials and one case; a spreadsheet of many respondents is one material. A material in no case counts as its own, and reach is counted over cases as soon as one exists.</p>
   <ul class="mats">
   {% for c in cases %}
@@ -195,7 +199,14 @@
   </form>{% endif %}
 </details>
 <details class="add-drawer"{% if not materials or problem %} open{% endif %}>
-  <summary><span><strong>Add material</strong><small>Analysis starts in the background.</small></span></summary>
+  <summary><span><strong>Add material</strong><small>Analysis starts in the background. <a class="help" href="/guide#what-happens" title="What runs when you add material">?</a></small></span></summary>
+  <details class="info"><summary>What will this start?</summary>
+    <p>One job for the whole upload. Each file is laid out, read, coded and written up; then the
+      themes are grouped over everything, a line of claims is written per theme per material, and
+      the theme accounts and project summary are written last. It takes minutes and costs model
+      calls — a measured two-material run made 24. You can leave the page.
+      <a href="/guide#what-happens">More in the guide</a>.</p>
+  </details>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
     <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"><small>.txt, .md, .docx, .pdf, or .csv · each file becomes one material</small></label>
     <div class="paste-fields"><label>Or paste text — material name <input name="name" placeholder="Material name"></label>
@@ -212,17 +223,23 @@
   <summary><span><strong>Research actions</strong></span></summary>
   <div class="action-grid">
     <form method="post" action="/p/{{ project.id }}/react" class="action-card">
-      <h3>Respond to the project synthesis</h3><p>Your words guide the next corpus-level revision.</p>
-      <label>Feedback <textarea name="text" rows="3" placeholder="What does the synthesis miss or overstate?"></textarea></label>
+      <h3>Respond to the project synthesis <a class="help" href="/guide#comments" title="Where a comment goes and what it rewrites">?</a></h3><p>Your words guide the next corpus-level revision.</p>
+      <label><span>Feedback</span><textarea name="text" rows="3" placeholder="What does the synthesis miss or overstate?"></textarea></label>
       <button class="btn btn-primary">Revise synthesis</button>
     </form>
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
-      <h3>Check against all material</h3><p>Search the materials without changing the reading.</p>
-      <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
+      <h3>Check against all material <a class="help" href="/guide#check" title="What a check does, and what its answer means">?</a></h3><p>Search the materials without changing the reading.</p>
+      <label><span>Question or claim</span><textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
       <fieldset class="scope-choice"><legend>What to search</legend>
-        <label><input type="radio" name="scope" value="all" checked> Search everything</label>
-        <label><input type="radio" name="scope" value="unused"> Only passages no claim rests on yet</label>
+        <label class="choice"><input type="radio" name="scope" value="all" checked> <span>Search everything</span></label>
+        <label class="choice"><input type="radio" name="scope" value="unused"> <span>Only passages no claim rests on yet</span></label>
       </fieldset>
+      <details class="info"><summary>What will the answer mean?</summary>
+        <p>Nothing is rewritten either way. Searching the uncited passages asks whether the reading
+          missed something; an empty answer reads <em>nothing found — searched N passages not yet
+          cited</em>, which is a statement about what was searched and not about the material.
+          <a href="/guide#check">More in the guide</a>.</p>
+      </details>
       <button class="btn btn-primary">Check all {{ materials | length }} {{ 'material' | plural(materials | length) }}</button>
     </form>
   </div>
