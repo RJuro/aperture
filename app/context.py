@@ -576,12 +576,13 @@ def project_page(conn, pid: str) -> dict:
     themes.sort(key=lambda r: (r["hold"] == "candidate", r["hold"] != "frozen",
                                -r["reach"], -r["claims"], r["name"]))
     # What the consolidate control would cost, before it is pressed: every theme goes into one
-    # comparison, and one line call goes back to each cell a theme two cases carry has never been
-    # read in. Law 4 — the number is the rows it is over, and `store.backfill_cells` is what the
-    # plan is built from too, so the estimate cannot drift from the work.
+    # comparison, and each cell a theme two cases carry has never been read in costs a line call
+    # AND the check of that line — two calls, not one; a preview that counted the lines alone said
+    # half the price. Law 4 — the number is the rows it is over, and `store.backfill_cells` is
+    # what the plan is built from too, so the estimate cannot drift from the work.
     cells = store.backfill_cells(conn, pid)
     consolidate = (f'{_n(len(themes), "theme")} to compare · {_n(len(cells), "cell")} to read '
-                   f'(about {_n(len(cells) + 1, "model call")})'
+                   f'(about {_n(2 * len(cells) + 1, "model call")})'
                    if cells or sum(t["hold"] == "candidate" for t in themes) > 1 else "")
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)

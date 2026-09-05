@@ -82,7 +82,7 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     assert (corpus["wide"], mids[3]) not in cells, "thin is an answer, not a hole"
 
     said = context.project_page(conn, corpus["pid"])["consolidate"]
-    assert said == "2 themes to compare · 3 cells to read (about 4 model calls)"
+    assert said == "2 themes to compare · 3 cells to read (about 7 model calls)"
 
 
 def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
@@ -349,7 +349,7 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
 
     html = client.get(f"/p/{pid}").text
     assert "Compare every theme across the corpus" in html
-    assert "1 cell to read (about 2 model calls)" in html
+    assert "1 cell to read (about 3 model calls)" in html
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"
