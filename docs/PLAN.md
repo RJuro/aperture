@@ -329,7 +329,9 @@ deviations are logged, not written in.
   whatever `APERTURE_FOLLOW` says: a candidate needs confirmation from coding, not a reader sent to
   find it). It becomes **open** when the researcher promotes it, and
   where a second *case* holds a line under it Python only **proposes** that — a count of
-  cases is a question, not a confirmation. A theme THEMES coins is born a candidate.
+  cases is a question, not a confirmation. The one exception is a consolidation (§14), where
+  the count has been asked of a reading that went and looked everywhere: half the cases,
+  rounded up and never fewer than two, opens it. A theme THEMES coins is born a candidate.
 - **Open** — a project theme still developing. THEMES may reword, rescope, gather, merge. This is
   the behaviour the chain has always had, now confined to this group.
 - **Frozen** — the researcher has declared it final. Name and gist are fixed in Python, not by
@@ -408,3 +410,49 @@ model — iterative (corrected) · iterative with the code-hit gate · explore-R
 explore-R4 with RESIDUAL — records judged blind on the seven faults plus coverage (what stayed
 unexamined), with `call` rows giving calls, cached and reasoning tokens and seconds per material.
 Thresholds fixed before unblinding. `explore` stays opt-in until that pass is written up.
+
+## 14. Consolidate: comparing the themes against the whole corpus
+
+*Added 2026-09-05, after an eight-material record came back with 28 themes and 748 claims: three
+open, twenty-five candidates, fourteen of them resting on one material, three of them about
+language. The corpus summary was written over the three.*
+
+The chain revises the theme set one material — or one batch — at a time, and it never goes back.
+A theme named at the fifth material is *not assessed yet* for the four before it, and wherever the
+code gate passed it over it is *not looked for here*; a near-duplicate is folded only when THEMES
+volunteers a `merge_into` in the pass that happens to see both; and since promotion became the
+researcher's alone (§12), a candidate seen in seven of eight materials stays a candidate that no
+account speaks for and PROJECT never reads. Every one of those is the same missing verb: nothing
+in the instrument ever asks how the set stands **as a set, against the whole corpus**.
+
+**Consolidate is that verb**, on the project page, with what it would cost printed before it is
+pressed — *N themes to compare · M cells to read* — and an optional note that goes verbatim into
+the THEMES call and nowhere else. It plans four movements (`rerun.consolidate_plan`):
+
+1. **`consolidate`** — `themes.run_cross` over every live material at once, its ceiling slot
+   carrying one extra sentence: this is a consolidation, fold two themes that define one pattern
+   with `merge_into`, and a candidate seen in several materials is still a candidate here. Merges
+   carry their lines, as they always have. Both methods consolidate through this call: what it
+   reads is the codebook's own passages, so an iterative project needs no memo for it.
+2. **The back-fill** — one `doc(mid, only_theme=tid)` per cell where a theme **two cases already
+   carry** was never assessed, or was skipped by the gate. `only_theme` is a person asking, so the
+   gate is off (§3, law 2) and the cell ends as a line, a sparse line, or thin: *looked for and
+   found too thin* is a finding; *not assessed yet* was never one. These run side by side like any
+   DOC step, and no memo or material summary is rewritten by them — an iterative project's summary
+   is written over its lines, so it is rerun once per touched material afterwards; an exploratory
+   project's memo is written over passages and does not move.
+3. **The count rule** (`store.settle_holds`, `OPEN_AT = 0.5`) — now that every cell has been read,
+   a candidate carried by half the cases (rounded up, never fewer than two) becomes **open**;
+   below that but carried by two it stays a candidate with a proposal against it; frozen and open
+   themes are untouched. This is the only place a count promotes, and it is allowed to because the
+   looking is finished.
+4. **The accounts and the corpus summary**, over the set as it now stands.
+
+And PROJECT is widened to match: besides the accounts, it reads the claims of every **proposed**
+candidate, not only those of materials no account carries. A candidate's claims enter as claims,
+cited by id, never as an account's conclusions.
+
+What this does not do: it does not re-read, re-code or re-frame anything (§1's rule holds — only
+the researcher's own *run again* may re-read), it never promotes a theme one case carries, and it
+never unfreezes. It is a paid verb — one THEMES call plus one line call per cell — which is why
+the page prints the count first.

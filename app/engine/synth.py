@@ -659,12 +659,18 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
 
 # The most candidate claims the corpus summary reads at once, over the whole project. The theme
 # accounts are the ordinary route to evidence and they have their own budget (account.CLAIMS_SHOWN);
-# this is the smaller allowance for the materials no account speaks for.
-PROJECT_CLAIMS = 120
+# this is the allowance for the candidates no account speaks for.
+#
+# Raised from 120 with PLAN.md §14: a proposed candidate's whole spread now comes through here, and
+# one theme of an eight-material corpus can carry fifty claims on its own — at 120 the third such
+# candidate was cut off mid-corpus, which is this level reading part of a theme and never being
+# told so.
+PROJECT_CLAIMS = 200
 
 
 def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dict[str, list[str]]:
-    """Live candidate claims, per material, for the materials no theme account carries.
+    """Live candidate claims, per material: every proposed candidate's, and elsewhere the ones for
+    materials no theme account carries.
 
     The corpus summary reads what the layer below it concluded, and its prompt requires every
     statement to cite a claim id. A project whose themes are all candidates — a single case, or a
@@ -672,19 +678,24 @@ def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dic
     and asked to cite ids it had never been shown. It cited nothing, or invented one, and
     `_strip_dangling` took it out again.
 
-    A candidate is a pattern seen in one material; here that is exactly the evidence there is.
-    Where accounts do exist, this fills only the gaps in them: a material carrying nothing an
-    account speaks for is otherwise present in this prompt as a paragraph of prose with no
-    evidence under it at all.
+    A **proposed** candidate is the other case, and the one PLAN.md §14 is about. Since promotion
+    became the researcher's alone, an eight-material project came back with twenty-five candidates
+    and three open themes, and the corpus summary was written over those three — a candidate in
+    seven of eight materials with fifty-three claims under it was not in the prompt at all. Two
+    cases carrying it is what `propose_by_recurrence` already puts to the researcher as a
+    question; the same threshold puts its evidence in front of this level, still as a candidate's
+    claims and never as an account's conclusion. Proposed candidates go in first, so a long tail
+    of one-material ones cannot spend the budget before the corpus-wide patterns reach it.
     """
-    cands = {t["id"] for t in store.candidates(conn, pid)}
+    cands = {t["id"]: bool(t["proposed_at"]) for t in store.candidates(conn, pid)}
     out: dict[str, list[str]] = {}
     left = PROJECT_CLAIMS
-    # In material order, so the same corpus composes the same prompt twice.
-    for r in live_moments.values():
+    # Proposed first, then the gap-fillers; `sorted` is stable, so within each half this is still
+    # material order and the same corpus composes the same prompt twice.
+    for r in sorted(live_moments.values(), key=lambda r: not cands.get(r["theme_id"], False)):
         if left <= 0:
             break
-        if r["theme_id"] in cands and r["material_id"] not in evidenced:
+        if r["theme_id"] in cands and (cands[r["theme_id"]] or r["material_id"] not in evidenced):
             out.setdefault(r["material_id"], []).append(
                 f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"')
             left -= 1
@@ -704,7 +715,9 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     not live is stripped and said so.
 
     Where no account speaks for a material, its candidates' own claims stand in
-    (`_candidate_claims`) — evidence this level may cite rather than prose it cannot.
+    (`_candidate_claims`) — evidence this level may cite rather than prose it cannot — and so do
+    every proposed candidate's, wherever they are: accounts are written for open and frozen themes
+    only, so without that a corpus of twenty-eight themes was summarised over three of them.
     """
     proj = store.project(conn, pid)
     live_themes = {t["id"]: t for t in store.live_themes(conn, pid)}

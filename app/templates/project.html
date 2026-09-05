@@ -87,7 +87,21 @@
 
 <section class="section" id="themes">
 <div class="container">
-<div class="section-heading"><h2>Themes <a class="help" href="/guide#themes" title="What a theme is, and what promoting or freezing does">?</a></h2></div>
+<div class="section-heading"><h2>Themes <a class="help" href="/guide#themes" title="What a theme is, and what promoting or freezing does">?</a></h2>
+{# The chain revises the theme set one material at a time and never goes back: a theme named at
+   the fifth material was never looked for in the first four. This is the one control that reads
+   the whole corpus at once — so it prints what it would cost before it is pressed. #}
+{% if consolidate and role in ('edit', 'owner') %}
+<details class="quiet-details">
+<summary>Compare every theme across the corpus</summary>
+<form method="post" action="/p/{{ project.id }}/compare">
+  <p class="dim small">{{ consolidate }}</p>
+  <label class="small" for="compare-note">Anything you want said about the themes first (optional)</label>
+  <input id="compare-note" type="text" name="note" placeholder="e.g. the three language themes are one">
+  <button class="btn btn-small btn-secondary">Compare every theme</button>
+</form>
+</details>
+{% endif %}</div>
 {% if themes %}
 {% set most = themes | map(attribute='claims') | max or 1 %}{# themes are named before any claim is read #}
 <p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. A dash means none.{% if themes | selectattr("hold", "equalto", "frozen") | first %} A theme you have frozen leads its group.{% endif %} <a class="help" href="/guide#reach" title="How to read the counts under each theme">?</a></p>
