@@ -109,7 +109,7 @@ def test_a_reading_every_claim_of_which_holds_is_left_exactly_as_it_was(ready, c
     # here, they carry no question at all — and nothing else about them moves.
     assert {m["support"] for m in before} == {"unchecked"}
     assert [dict(m) for m in claims(conn, ready)] == [dict(m, support="") for m in before]
-    assert out == {"dropped": [], "set_aside": [], "marked": []}
+    assert out == {"dropped": [], "set_aside": [], "marked": [], "lost": []}
 
 
 def test_an_id_from_nowhere_is_ignored_and_a_claim_with_no_verdict_stands(ready, conn, model,
@@ -320,11 +320,20 @@ SUMMARY = ("The reading follows work through this interview. "
 
 
 def doc_with(model, conn, ready, quote, verdicts, summary=SUMMARY):
-    """One full DOC whose summary check answers `verdicts`."""
+    """One full DOC whose summary check answers `verdicts`.
+
+    A check that flags anything sends the summary back to DOC once, and the answer to that is
+    checked the same way — so a flagging test queues a second pair. The rewrite here comes back
+    with the same words and the same verdicts, which is the case these tests are about: what is
+    STILL flagged after the one rewrite is what a researcher reads.
+    """
     model.queue({"moments": _moments(quote, ready["mid"], 5)},
                 {"verdicts": []},
                 {"summary": summary, "questions": "", "people": []},
                 {"verdicts": verdicts})
+    if any(v["verdict"] in ("not", "partly") for v in verdicts):
+        model.queue({"summary": summary, "questions": "", "people": []},
+                    {"verdicts": verdicts})
     return synth.doc(conn, ready["mid"])
 
 

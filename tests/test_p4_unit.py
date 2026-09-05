@@ -27,7 +27,7 @@ def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, gr
     assert jobs.wait(jobs.ingest_chain(project, [grande], conn_factory=db.connect), 10)
     # The fixture project is built iteratively, which is the chain this file has always run.
     # `test_p31_evidence_first` holds the exploratory one, which is a different list.
-    assert ran == ["frame", "angles", "read", "themes", "doc", "accounts", "project"]
+    assert ran == ["frame", "angles", "read", "themes", "doc", "tighten", "accounts", "project"]
     assert [r["kind"] for r in store.runs(conn, project)] == ran
     assert all(r["finished"] and r["error"] is None for r in store.runs(conn, project))
 
@@ -44,13 +44,14 @@ def test_one_upload_of_several_files_is_one_chain_with_one_tail(conn, project, g
     ran = _stub(monkeypatch)
     assert jobs.wait(jobs.ingest_chain(project, [grande, rodwin], conn_factory=db.connect), 10)
     assert sorted(ran) == sorted(["frame", "angles", "read"] * 2 +
-                                 ["themes", "themes", "doc", "doc", "accounts", "project"])
+                                 ["themes", "themes", "doc", "doc", "tighten", "tighten",
+                                  "accounts", "project"])
     assert ran[6:8] == ["themes", "themes"], "after every material has been read"
     assert ran[-2:] == ["accounts", "project"], "and the corpus level once, at the end"
     rows = store.runs(conn, project)
     for mid in (grande, rodwin):
         assert [r["kind"] for r in rows if r["material_id"] == mid] == \
-            ["frame", "angles", "read", "themes", "doc"], \
+            ["frame", "angles", "read", "themes", "doc", "tighten"], \
             "one material's own order is kept"
     assert [r["material_id"] for r in rows if r["kind"] == "themes"] == [grande, rodwin]
     assert {r["material_id"] for r in rows if r["kind"] == "doc"} == {grande, rodwin}

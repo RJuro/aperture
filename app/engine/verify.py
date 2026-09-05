@@ -30,8 +30,6 @@ material summary is written afterwards — over claims that survived it.
 """
 from __future__ import annotations
 
-from collections import Counter
-
 from .. import llm, store
 from . import synth
 
@@ -85,34 +83,21 @@ def _ask(batch: list[dict], sents, where, frame: str) -> dict[str, tuple[str, st
     return out
 
 
-def _predating_summaries(conn, mid: str, gone: list[dict], run_id: str | None) -> None:
-    """Say so on the line summaries whose claims this check has just taken away.
-
-    A line's summary is written over its claims and stored before any of them is checked, so a
-    paragraph about four claims can end up standing over a line of two — reading as authoritative
-    about evidence that is no longer there (AR-05). Rewriting it properly means another model call
-    over an answer nobody asked for; one sentence saying it predates the check costs nothing and
-    tells the researcher exactly what they are looking at.
-    """
-    for tid, n in Counter(r["theme_id"] for r in gone).items():
-        row = store.get_summary(conn, "thread", f"{mid}:{tid}", "reading")
-        text = (row["text"] if row else "").strip()
-        if not text:
-            continue
-        store.save_summary(conn, "thread", f"{mid}:{tid}", "reading",
-                           f"{text} ({n} claim{'' if n == 1 else 's'} "
-                           f"{'was' if n == 1 else 'were'} set aside after checking; this "
-                           "summary predates that.)", run_id)
-
-
 def run(conn, mid: str, *, theme_id: str | None = None, ids: list[str] | None = None,
         run_id: str | None = None) -> dict:
     """Check this material's live claims against their passages.
 
-    Returns {"dropped", "set_aside", "marked"}. `theme_id` narrows it to one line, for the rerun
-    that rewrites one line and must not pay to check the rest of the material again. `ids` narrows
-    it to named claims, which is what RESIDUAL needs: it adds a handful of moments to lines that
-    were checked minutes ago, and re-checking those is paying twice for the same verdict.
+    Returns {"dropped", "set_aside", "marked", "lost"}. `lost` is the themes whose lines this
+    check has just taken a claim away from: a line's summary is written over its claims and stored
+    before any of them is checked, so a paragraph about four claims can end up standing over a
+    line of two (AR-05). The caller writes those summaries again over what stands
+    (`synth.line_summary`) — this cannot, because a model call has no business inside the
+    transaction that sets the claims aside.
+
+    `theme_id` narrows it to one line, for the rerun that rewrites one line and must not pay to
+    check the rest of the material again. `ids` narrows it to named claims, which is what RESIDUAL
+    needs: it adds a handful of moments to lines that were checked minutes ago, and re-checking
+    those is paying twice for the same verdict.
     """
     sql = ("SELECT id, sid, claim, anchor, theme_id, support FROM moment "
            "WHERE material_id=? AND status='live'")
@@ -122,12 +107,13 @@ def run(conn, mid: str, *, theme_id: str | None = None, ids: list[str] | None = 
         args.append(theme_id)
     if ids is not None:
         if not ids:
-            return {"dropped": [], "set_aside": [], "marked": []}   # `IN ()` is not SQL
+            # `IN ()` is not SQL.
+            return {"dropped": [], "set_aside": [], "marked": [], "lost": []}
         sql += f" AND id IN ({','.join('?' * len(ids))})"
         args += list(ids)
     rows = [dict(r) for r in conn.execute(sql + " ORDER BY position", args)]
     if not rows:
-        return {"dropped": [], "set_aside": [], "marked": []}
+        return {"dropped": [], "set_aside": [], "marked": [], "lost": []}
 
     llm.report(f"checking {len(rows)} claims against their passages")
     sents = store.sentences(conn, mid)
@@ -155,19 +141,19 @@ def run(conn, mid: str, *, theme_id: str | None = None, ids: list[str] | None = 
     # confirm it nor lift the qualification standing on it. `supported` still clears a mark,
     # because that is a ruling — the page would otherwise keep warning a researcher about words
     # that are no longer in question.
-    # One transaction: a claim taken away and the note on the summary that stood over it are the
-    # same finding, and the record must not be able to hold one without the other.
+    # One transaction: every verdict of one pass is one finding about this material, and the
+    # record must not be able to hold half of it.
     with store.atomic(conn) as tx:
         store.mark_support(tx, [(r["id"], *ruled[r["id"]]) for r in rows if r["id"] in ruled]
                            + [(r["id"], "unchecked", "") for r in rows
                               if r["id"] not in ruled and not (r["support"] or "")])
-        _predating_summaries(tx, mid, [r for r in rows
-                                       if ruled.get(r["id"], ("", ""))[0] == "not"], run_id)
     claim = {r["id"]: r["claim"] for r in rows}
+    gone = [r for r in rows if ruled.get(r["id"], ("", ""))[0] == "not"]
     return {
         "dropped": [f'a claim was set aside — its passage does not carry it: '
                     f'"{synth.clip(claim[i])}" ({why})'
                     for i, (verdict, why) in ruled.items() if verdict == "not"],
         "set_aside": [i for i, (verdict, _) in ruled.items() if verdict == "not"],
         "marked": [i for i, (verdict, _) in ruled.items() if verdict == "partly"],
+        "lost": list(dict.fromkeys(r["theme_id"] for r in gone)),
     }

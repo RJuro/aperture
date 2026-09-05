@@ -219,19 +219,21 @@ def test_an_answer_that_ruled_on_nothing_is_not_asked_again(ready, conn, model, 
     assert len([c for c in model.calls if c["label"] == "verify"]) == before + 1
 
 
-def test_a_summary_written_before_the_check_says_that_it_predates_it(ready, conn, model, quote):
+def test_the_check_names_the_lines_it_took_a_claim_from(ready, conn, model, quote):
     """The line's account is written over its claims and stored before any of them is checked.
-    Take one away and the paragraph stands over evidence that is no longer there."""
+    Take one away and the paragraph stands over evidence that is no longer there — so the check
+    NAMES the line, and its caller writes the summary again (test_p34). It cannot do that itself:
+    a model call has no business inside the transaction that sets the claim aside."""
     _doc(model, conn, ready["pid"], _moments(quote, ready["mid"], 5))
     synth.doc(conn, ready["mid"])
     doomed = store.thread(conn, ready["mid"], ready["tid"])[0]
 
     model.queue({"verdicts": [{"id": doomed["id"], "verdict": "not", "why": "not said here"}]},
                 {"verdicts": []})
-    verify.run(conn, ready["mid"])
+    out = verify.run(conn, ready["mid"])
+    assert out["lost"] == [ready["tid"]]
     said = store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading")["text"]
-    assert said == ("an account of this line (1 claim was set aside after checking; this summary "
-                    "predates that.)")
+    assert said == "an account of this line", "no note appended to it, and none needed"
 
 
 def test_the_doc_prompt_carries_the_partly_note_beside_the_claim(ready, conn, quote, monkeypatch):

@@ -101,27 +101,42 @@ def run(conn, mid: str, *, run_id: str | None = None) -> dict:
     pid = row["project_id"]
     proj = store.project(conn, pid)
     orientation = store.get_summary(conn, "material", mid, "orientation")
-    system, user = llm.prompt(
-        "memo",
+    said_here = synth.feedback_block(conn, pid, mid, None)
+    slots = dict(
         orientation=orientation["text"] if orientation else "Not written.",
         frame=synth.frame_block(conn, mid),
         focus=(proj["focus"] if proj else "") or "Nothing in particular. Read it on its own terms.",
-        feedback=synth.feedback_block(conn, pid, mid, None),
         coded=coded_block(conn, mid),
         material=synth.layout(conn, mid),
         memo_words=MEMO_WORDS, question_words=synth.BRIEF_WORDS,
     )
-    data = llm.chat_json(system, user, label="memo")
+    data = llm.chat_json(*llm.prompt("memo", feedback=said_here, **slots), label="memo")
 
     sents = store.sentences(conn, mid)
+    nums, sids = synth.numbers(sents), {sid for sid, _ in sents}
     memo, odd = synth.foreign(synth.words(data.get("memo"), MEMO_WORDS),
                               synth.allowed_text(conn, pid, mid))
     dropped = synth.script_notes(odd)
-    memo, said, cited = _uncited(memo, synth.numbers(sents), {sid for sid, _ in sents})
+    memo, said, cited = _uncited(memo, nums, sids)
     dropped += said
+
+    def again(flags: str):
+        """The memo once more, shown what the check flagged, and the passages the NEW memo cites —
+        a rewrite may drop a citation, and checking it against the first memo's evidence would
+        judge it on passages it no longer rests on. The flags are the instrument's own prose, so
+        they go into the feedback slot as their own labelled paragraph (PLAN.md §3 law 5)."""
+        second = llm.chat_json(*llm.prompt("memo", feedback=f"{said_here}\n\n{flags}", **slots),
+                               label="memo")
+        text, strange = synth.foreign(synth.words(second.get("memo"), MEMO_WORDS),
+                                      synth.allowed_text(conn, pid, mid))
+        text, notes, now = _uncited(text, nums, sids)
+        dropped.extend(synth.script_notes(strange) + notes)
+        return text, evidence_block(conn, mid, now)
+
     # Before it is stored, never after — the same rule DOC follows: the account a researcher reads
     # first is the one that was checked against what it says it rests on.
-    memo, said = verify_summary.run(conn, mid, memo, evidence=evidence_block(conn, mid, cited))
+    memo, said = verify_summary.run(conn, mid, memo, evidence=evidence_block(conn, mid, cited),
+                                    again=again)
     dropped += said
 
     questions = synth.words(data.get("questions"), synth.BRIEF_WORDS)

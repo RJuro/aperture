@@ -161,7 +161,8 @@ def test_three_materials_are_framed_and_ideated_side_by_side(conn, project, thre
     assert watch.overlap(a, b) > 0 and watch.overlap(b, c) > 0
     for mid in three:
         assert [s["kind"] for s in watch.spans if s["mid"] == mid] == \
-            ["frame", "angles", "read", "themes", "doc"], "one material's own order is kept"
+            ["frame", "angles", "read", "themes", "doc", "tighten"], \
+            "one material's own order is kept"
 
 
 def test_the_readings_themselves_still_queue_behind_each_other(conn, project, three, monkeypatch):

@@ -103,6 +103,10 @@ def test_the_memo_is_checked_against_the_passages_it_cites_and_not_against_claim
     passages = dict(store.sentences(conn, mid))
     model.queue({"memo": text, "questions": "", "people": []})
     model.queue({"verdicts": [{"n": 2, "verdict": "not", "why": "no passage says this"}]})
+    # A flagged memo is written once more and checked again; here the second answer is the same
+    # memo and the same verdict, so what this asserts is what survives that.
+    model.queue({"memo": text, "questions": "", "people": []})
+    model.queue({"verdicts": [{"n": 2, "verdict": "not", "why": "no passage says this"}]})
 
     out = memo.run(conn, mid)
 
@@ -440,7 +444,8 @@ def test_the_exploratory_chain_reads_each_material_then_asks_the_corpus_once(exp
     runs = _planned(monkeypatch, explored["pid"], [explored["grande"], explored["rodwin"]])
     assert [r["kind"] for r in runs] == \
         ["frame", "angles", "read", "reconcile", "memo"] * 2 + \
-        ["themes", "doc", "residual", "doc", "residual", "accounts", "project"]
+        ["themes", "doc", "tighten", "residual", "doc", "tighten", "residual",
+         "accounts", "project"]
 
     cross = [r for r in runs if r["kind"] == "themes"]
     assert len(cross) == 1, "one question asked of the corpus, not one per material"
@@ -471,7 +476,7 @@ def test_the_residual_pass_can_be_left_out_of_the_chain_entirely(explored, conn,
     monkeypatch.setenv("APERTURE_RESIDUAL", "off")
     kinds = [r["kind"] for r in _planned(monkeypatch, explored["pid"], [explored["grande"]])]
     assert kinds == ["frame", "angles", "read", "reconcile", "memo", "themes", "doc",
-                     "accounts", "project"]
+                     "tighten", "accounts", "project"]
     assert "residual" not in [r["kind"] for r in
                               rerun.from_step(explored["grande"], "frame", explore=True)]
 

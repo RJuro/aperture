@@ -23,7 +23,8 @@ Rules. Each one carries the same weight.
    front of you; a fact the material may well contain but no claim carries is still added here,
    because the summary is written over the claims.
 2. Sentences that say what the material IS — its kind, who speaks, when it was recorded — are
-   judged against the description of the material given below, not against the claims.
+   judged against the description of the material given below, not against the claims. The
+   description of the material below is evidence for such sentences.
 3. Sentences that name what is thin, contested, missing or unresolved are `supported` when the
    claims show the thinness — one claim where a pattern would need several, or none on a matter
    the sentence names — and `partly` when they assert a specific absence the evidence does not
@@ -44,9 +45,14 @@ Return JSON in exactly this shape and nothing else:
   ]
 }
 ---
-WHAT THIS MATERIAL IS, worked out from its shape:
+HOW THIS MATERIAL IS LAID OUT:
 
 {{frame}}
+
+WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Sentences that say
+what the material IS are judged against this:
+
+{{description}}
 
 THE SUMMARY, sentence by sentence, each numbered:
 

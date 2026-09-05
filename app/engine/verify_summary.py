@@ -60,7 +60,12 @@ def claims_block(rows) -> str:
     return "\n".join(f'[{r["id"]}] {r["claim"]} — "{r["anchor"]}" [{r["sid"]}]' for r in rows)
 
 
-def run(conn, mid: str, summary: str, *, evidence: str | None = None) -> tuple[str, list[str]]:
+FLAG_HEAD = ("THE CHECK FOUND these sentences go past the claims. This paragraph is the "
+             "instrument's, not the researcher's; write the summary again without what it names:")
+
+
+def run(conn, mid: str, summary: str, *, evidence: str | None = None,
+        again=None) -> tuple[str, list[str]]:
     """Check one material's summary against its live claims. Returns the summary to store and the
     notes for the run row.
 
@@ -68,6 +73,13 @@ def run(conn, mid: str, summary: str, *, evidence: str | None = None) -> tuple[s
     the MEMO's case: a memo is written before any line exists, so what it can be checked against
     is the passages it cites rather than claims that are not there yet. Left unset, this is the
     path DOC has always taken, to the character.
+
+    `again(flags) -> (text, evidence)` writes the account again, shown what this check flagged.
+    Flagging and keeping is not a resolution: a sentence the claims do not carry was removed and a
+    sentence going past them was kept with a note, and a record carried thirty-four of the second
+    kind. So the writer is given the flags and one more attempt, and the answer is checked the same
+    way — ONCE. A second rewrite would be a loop over a judgement the model has already made, and
+    what is still flagged then is kept-with-flag as it always was.
     """
     text = str(summary or "").strip()
     paragraphs = [sentences(p) for p in re.split(r"\n\s*\n", text)]
@@ -77,9 +89,15 @@ def run(conn, mid: str, summary: str, *, evidence: str | None = None) -> tuple[s
         return text, []
 
     llm.report("checking the summary against the claims")
+    # What this material IS, worked out at framing. Rule 2 judges a sentence about the material's
+    # kind, its date or who recorded it against the description rather than against the claims,
+    # and the description was not in the prompt: eleven of one record's thirty-four flagged
+    # sentences were of exactly that kind, flagged for a date or a place no claim carries.
+    described = store.get_summary(conn, "material", mid, "orientation")
     system, user = llm.prompt(
         "verify_summary",
         frame=synth.frame_block(conn, mid),
+        description=(described["text"] if described else "") or "Not written.",
         sentences="\n".join(f"{i}. {s}" for i, s in enumerate(numbered, 1)),
         claims=against)
     data = llm.chat_json(system, user, label="verify_summary")
@@ -99,6 +117,14 @@ def run(conn, mid: str, summary: str, *, evidence: str | None = None) -> tuple[s
             ruled[n] = (verdict, synth.words(v.get("why"), WHY_WORDS))
     if not ruled:
         return text, []                  # untouched, to the character
+
+    if again is not None:
+        flags = "\n".join(f'{numbered[n - 1]} — {why}' for n, (_, why) in sorted(ruled.items()))
+        written, ev = again(f"{FLAG_HEAD}\n{flags}")
+        if str(written or "").strip():
+            said, notes = run(conn, mid, written, evidence=ev)
+            return said, [f"the account was written again after the check flagged "
+                          f"{len(ruled)} {'sentence' if len(ruled) == 1 else 'sentences'}"] + notes
 
     notes, kept_paragraphs, n = [], [], 0
     for paragraph in paragraphs:
