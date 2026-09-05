@@ -64,8 +64,8 @@
 
 {% if summary %}<section class="reading-summary"><div class="container">
   <details class="summary-fold" open>
-    <summary><span>{% if summary.stage == 'reading' %}What the reading found{% else %}What this is{% endif %}</span></summary>
-    {% if summary.stage != 'reading' %}<p class="provisional">Analysis is still underway. This description uses only the material's structure.</p>{% endif %}
+    <summary><span>{% if summary.stage in ('reading', 'memo') %}What the reading found{% else %}What this is{% endif %}</span></summary>
+    {% if summary.stage not in ('reading', 'memo') %}<p class="provisional">Analysis is still underway. This description uses only the material's structure.</p>{% endif %}
     <div class="summary-copy">{{ summary_html }}</div>
     <form method="post" action="/p/{{ project.id }}/react" class="inline-response">
       <input type="hidden" name="material_id" value="{{ material.id }}">

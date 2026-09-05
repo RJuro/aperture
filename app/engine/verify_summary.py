@@ -60,14 +60,20 @@ def claims_block(rows) -> str:
     return "\n".join(f'[{r["id"]}] {r["claim"]} — "{r["anchor"]}" [{r["sid"]}]' for r in rows)
 
 
-def run(conn, mid: str, summary: str) -> tuple[str, list[str]]:
+def run(conn, mid: str, summary: str, *, evidence: str | None = None) -> tuple[str, list[str]]:
     """Check one material's summary against its live claims. Returns the summary to store and the
-    notes for the run row."""
+    notes for the run row.
+
+    `evidence` replaces those claims with something else the caller has already assembled, and is
+    the MEMO's case: a memo is written before any line exists, so what it can be checked against
+    is the passages it cites rather than claims that are not there yet. Left unset, this is the
+    path DOC has always taken, to the character.
+    """
     text = str(summary or "").strip()
     paragraphs = [sentences(p) for p in re.split(r"\n\s*\n", text)]
     numbered = [s for p in paragraphs for s in p]
-    rows = store.moments(conn, mid)
-    if not numbered or not rows:
+    against = evidence if evidence is not None else claims_block(store.moments(conn, mid))
+    if not numbered or not against.strip():
         return text, []
 
     llm.report("checking the summary against the claims")
@@ -75,7 +81,7 @@ def run(conn, mid: str, summary: str) -> tuple[str, list[str]]:
         "verify_summary",
         frame=synth.frame_block(conn, mid),
         sentences="\n".join(f"{i}. {s}" for i, s in enumerate(numbered, 1)),
-        claims=claims_block(rows))
+        claims=against)
     data = llm.chat_json(system, user, label="verify_summary")
 
     ruled: dict[int, tuple[str, str]] = {}

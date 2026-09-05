@@ -97,6 +97,18 @@ def _reconcile(conn, pid, run):
     return (reconcile.run(conn, run["material_id"]) or {}).get("dropped")
 
 
+def _memo(conn, pid, run):
+    """What this material says on its own terms — an exploratory project's account of it, written
+    over the passages the coding marked rather than over theme lines."""
+    from .engine import memo
+    return (memo.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
+
+
+def _residual(conn, pid, run):
+    from .engine import residual
+    return (residual.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
+
+
 def _theme_set(conn, pid) -> list[tuple]:
     return [(t["id"], t["name"], t["gist"]) for t in store.live_themes(conn, pid)]
 
@@ -107,11 +119,18 @@ def _themes(conn, pid, run):
     `out_of_date` measures every material against it, and most passes over new material leave the
     set exactly as it stands. Unrecorded, each of those marked every other material as analysed
     before the themes last changed, which was not true and cost a call each to answer.
+
+    A run carrying `materials` is the cross-case pass of PLAN.md §13: one call for the whole batch,
+    over the codebook's own passages and the batch's memos, instead of one call per material.
     """
     from .engine import themes
     before = _theme_set(conn, pid)
-    themes.run(conn, pid, feedback=_text(conn, run), material_id=run.get("material_id"),
-               run_id=run.get("run_id"))
+    if mids := run.get("materials"):
+        themes.run_cross(conn, pid, list(mids), feedback=_text(conn, run),
+                         run_id=run.get("run_id"))
+    else:
+        themes.run(conn, pid, feedback=_text(conn, run), material_id=run.get("material_id"),
+                   run_id=run.get("run_id"))
     if _theme_set(conn, pid) == before and run.get("run_id"):
         store.mark_unchanged(conn, run["run_id"])
 
@@ -229,8 +248,10 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "angles":  ("Working out what to look for in {name}", _angles),
     "read":    ("Reading {name}",                     _read),
     "reconcile": ("Comparing {name}'s codes with the project's", _reconcile),
+    "memo":    ("Writing what {name} says on its own terms", _memo),
     "themes":  ("Finding themes",                     _themes),
     "doc":     ("Writing what stands out in {name}", _doc),
+    "residual": ("Reading what the coding did not mark in {name}", _residual),
     "summary": ("Writing the summary of {name} again", _summary),
     "account":  ("Writing where a theme runs across everything", _account),
     "accounts": ("Writing where each theme runs across everything", _accounts),
@@ -255,6 +276,10 @@ def line(conn: sqlite3.Connection, run: dict) -> str:
         if theme:
             return (f"Writing what stands out in {_name(conn, mid)} "
                     f"on {theme['name']}")
+    # The cross-case pass is one call for a batch and no material's own step, so the line says how
+    # much it read: "Finding themes" over five interviews reads as five passes that never happened.
+    if kind == "themes" and run.get("materials"):
+        return f'Finding themes across {len(run["materials"])} materials'
     return STEPS[kind][0].format(name=_name(conn, mid))
 
 
@@ -305,7 +330,12 @@ CALLS = threading.Semaphore(PARALLEL)
 #
 # THEMES is absent by law: it revises one set shared by the whole project, so it runs strictly one
 # material at a time, and every material is read before any of them moves the set.
-SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile"}, {"doc"})
+#
+# RESIDUAL joins DOC's group rather than forming one of its own: it reads one material's unmarked
+# passages and writes that material's moments and follow rows, exactly as DOC does, so a material's
+# synthesis and the pass over what its coding missed are one sequence that runs beside another
+# material's pair.
+SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile", "memo"}, {"doc", "residual"})
 
 # ...and inside such a stage, these still take their turn, in the order the chain planned them.
 # READ is SHOWN the project codebook and `store.save_codes` reuses a code by name: two readings at
@@ -612,10 +642,11 @@ def wait(job: str, timeout: float = 60.0) -> bool:
 def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.connect) -> str:
     """Up: FRAME → ANGLES → READ for each material, then THEMES and DOC for each, then the tail.
 
-    Where the project explores, RECONCILE follows each reading: that reading was shown no
-    codebook, so what it named is compared with the project's vocabulary in a step of its own,
-    before THEMES gathers any of it. Where the project is built iteratively the chain is exactly
-    what it has always been.
+    Where the project explores, the chain is the one PLAN.md §13 describes instead: RECONCILE and
+    MEMO follow each reading — that reading was shown no codebook, so what it named is compared
+    with the project's vocabulary and then written up on its own terms — then ONE cross-case
+    THEMES over the whole batch, then each material's lines and RESIDUAL. Where the project is
+    built iteratively the chain is exactly what it has always been.
 
     One upload is one chain, whatever it carried. Five files used to start five chains, and each
     of them found themes again and rewrote the corpus summary with four of the five still unread.
@@ -640,12 +671,24 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
         conn.close()
     # A project this cannot read has no method to honour, and the chain that has always run is the
     # one to plan for it.
-    per_material = (("frame", "angles", "read", "reconcile")
-                    if proj is not None and proj["method"] == "explore"
-                    else ("frame", "angles", "read"))
+    explore = proj is not None and proj["method"] == "explore"
+    if explore:
+        # PLAN.md §13. The unit of expensive work is a reading of one material and a question
+        # asked of the corpus: each material is framed, read, reconciled and memoed on its own,
+        # then ONE cross-case pass over the batch's evidence, then each material's lines and the
+        # pass over what its coding did not mark. THEMES per material is what this replaces.
+        return start(conn_factory, pid, [
+            *({"kind": k, "material_id": mid} for mid in mids
+              for k in ("frame", "angles", "read", "reconcile", "memo")),
+            {"kind": "themes", "material_id": None, "materials": mids},
+            *({"kind": k, "material_id": mid} for mid in mids
+              for k in (("doc", "residual") if rerun.residual_planned() else ("doc",))),
+            {"kind": "accounts"},
+            {"kind": "project"},
+        ])
     return start(conn_factory, pid, [
         *({"kind": k, "material_id": mid} for mid in mids
-          for k in per_material),
+          for k in ("frame", "angles", "read")),
         # THEMES takes one material because it must see that material's codes by passage; every
         # piece is read before any of them moves the theme set, so DOC writes against the set as
         # it finally stands.

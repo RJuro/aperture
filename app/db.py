@@ -123,14 +123,16 @@ CREATE TABLE IF NOT EXISTS moment (
 
 -- What became of one theme in one material: 'line' where a line holds, 'thin' where it was
 -- looked for and what came back was set aside, 'skipped' where none of the codes the theme
--- gathers marked this material and it was therefore never looked for. Written by DOC and
--- superseded per run the way a moment is. It exists because the three cannot be told apart from
--- anything else in the database — a line set aside and a line never written both leave no live
--- moment — and because a note in the run's own words would say the wrong thing the moment a
--- researcher renamed the theme.
+-- gathers marked this material and it was therefore never looked for, 'residual' where the gate
+-- passed it over and the pass over the unmarked passages then found nothing under it either —
+-- a searched absence rather than a fact about where the reading went (PLAN.md §13). Written by
+-- DOC and RESIDUAL and superseded per run the way a moment is. It exists because the four cannot
+-- be told apart from anything else in the database — a line set aside and a line never written
+-- both leave no live moment — and because a note in the run's own words would say the wrong
+-- thing the moment a researcher renamed the theme.
 CREATE TABLE IF NOT EXISTS follow (
     id TEXT PRIMARY KEY, material_id TEXT NOT NULL, theme_id TEXT NOT NULL,
-    outcome TEXT NOT NULL CHECK (outcome IN ('line','thin','skipped')),
+    outcome TEXT NOT NULL CHECK (outcome IN ('line','thin','skipped','residual')),
     run_id TEXT, status TEXT NOT NULL DEFAULT 'live');
 
 CREATE TABLE IF NOT EXISTS summary (
@@ -293,6 +295,22 @@ def migrate(conn: sqlite3.Connection) -> None:
         # which is what the default says. A row that cannot say which set it read is a row whose
         # "not found" a reader has to guess at.
         conn.execute("ALTER TABLE check_ ADD COLUMN searched_scope TEXT DEFAULT 'unused'")
+    # A CHECK constraint cannot be altered in place, and `CREATE TABLE IF NOT EXISTS` leaves a
+    # table that already exists exactly as it was — so a database made before RESIDUAL had a
+    # fourth outcome would refuse to write one. The rows are copied into a table with the new
+    # constraint and nothing else changes; the old rows all satisfy it.
+    said = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='follow'"
+                        ).fetchone()
+    if said and "residual" not in (said[0] or ""):
+        conn.executescript(
+            "CREATE TABLE follow_new (id TEXT PRIMARY KEY, material_id TEXT NOT NULL, "
+            "theme_id TEXT NOT NULL, outcome TEXT NOT NULL CHECK (outcome IN "
+            "('line','thin','skipped','residual')), run_id TEXT, "
+            "status TEXT NOT NULL DEFAULT 'live');"
+            "INSERT INTO follow_new SELECT id, material_id, theme_id, outcome, run_id, status "
+            "FROM follow;"
+            "DROP TABLE follow;"
+            "ALTER TABLE follow_new RENAME TO follow;")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell

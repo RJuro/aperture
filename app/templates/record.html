@@ -99,6 +99,8 @@
   {% for head, mats in
      ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
        ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
+       ("Searched in the passages the coding did not mark — nothing found",
+        t.absent | selectattr("assessed", "equalto", "residual") | list),
        ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}
   {% if mats %}
   <h4>{{ head }}</h4>
@@ -129,6 +131,7 @@
   {% if m.speakers %}<p class="dim small">Speakers: {% for s in m.speakers %}{{ s.label | txt }}{% if s.name %}, identified as {{ s.name | txt }}{% endif %}{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
   {% if m.orientation %}<p class="eyebrow">Before reading</p><div class="summary-copy">{{ m.orientation.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.reading %}<p class="eyebrow">After reading</p><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
+  {% if m.residual %}<p class="dim small">What the coding did not mark, read afterwards: {{ m.residual.text | txt }}</p>{% endif %}
   {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
   {% for th in m.threads %}
   <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{% if th.sparse %}sparse · {% endif %}{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>

@@ -18,9 +18,21 @@ This module imports nothing from `app.engine` — it decides, it does not run. `
 """
 from __future__ import annotations
 
+import os
 import sqlite3
 
 from . import store
+
+
+def residual_planned() -> bool:
+    """Whether an exploratory chain carries RESIDUAL, the pass over what the coding did not mark.
+
+    It is a paid call per material and PLAN.md §13 puts explore-R4 with and without it among the
+    four conditions the evaluation compares, so the harness has to be able to take it out without
+    a second chain to maintain. Off only when the variable says exactly `off`; anything else,
+    unset included, means the chain of §13 entire.
+    """
+    return os.environ.get("APERTURE_RESIDUAL") != "off"
 
 
 def feedback(conn: sqlite3.Connection, fid: str) -> sqlite3.Row | None:
@@ -54,17 +66,27 @@ def from_step(mid: str, step: str, feedback_id: str | None = None, *,
 
     A note rides on every run rather than only the first, so each step that takes the
     researcher's words verbatim is handed them, and the synthesis at the end still counts the
-    note among the material's open comments. A project that explores compares a reading's codes
-    with the project's before the themes are revised, so its chain carries `reconcile` after
-    `read` here as it does on upload.
+    note among the material's open comments. A project that explores runs the chain of PLAN.md
+    §13 — `reconcile` and `memo` after the reading, `residual` after the synthesis, and the themes
+    pass reading this material's evidence rather than its text — which is the same order and the
+    same steps `jobs.ingest_chain` plans for it, over a batch of one.
     """
     if step not in CHAIN:
         raise KeyError(f"no such step {step!r}; expected one of {list(CHAIN)}")
     chain = list(CHAIN[CHAIN.index(step):])
-    if explore and "read" in chain:
-        chain.insert(chain.index("read") + 1, "reconcile")
-    return [_run(k, mid, feedback_id=feedback_id) for k in chain] + [
-        _run("accounts", feedback_id=feedback_id), _run("project", feedback_id=feedback_id)]
+    if explore:
+        if "read" in chain:
+            chain[chain.index("read") + 1:chain.index("read") + 1] = ["reconcile", "memo"]
+        if "doc" in chain and residual_planned():
+            chain.insert(chain.index("doc") + 1, "residual")
+    runs = [_run(k, mid, feedback_id=feedback_id) for k in chain]
+    for r in runs:
+        # The cross-case pass takes its batch on the run rather than a material: here the batch is
+        # the one material the researcher asked to have read again.
+        if explore and r["kind"] == "themes":
+            r["material_id"], r["materials"] = None, [mid]
+    return runs + [_run("accounts", feedback_id=feedback_id),
+                   _run("project", feedback_id=feedback_id)]
 
 
 # ---- what a row of the table does ---------------------------------------------------------------

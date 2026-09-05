@@ -147,6 +147,79 @@ def _material_block(conn: sqlite3.Connection, mid: str | None) -> str:
             f"THE MATERIAL:\n{synth.layout(conn, mid)}")
 
 
+# How much of the evidence packet one cross-case pass may read. Lines, not tokens, because a line
+# here is one passage and a researcher can count them: 1,500 is a long transcript's worth of
+# passages spread over the whole codebook, which is the point — at two passages a code it is
+# roughly 500 codes before anything is cut, and no project has been near that.
+#
+# ponytail: a flat line cap, not a token estimate. Swap it for one if a corpus of very long
+# sentences ever makes a prompt this builds too big to send.
+EVIDENCE_LINES = 1500
+
+# Passages shown per code, and never two from the same material: a theme is a pattern ACROSS
+# materials, so one code's evidence has to come from more than one of them or it shows nothing a
+# single reading would not have shown.
+PER_CODE = 2
+
+
+def _evidence_block(conn: sqlite3.Connection, pid: str, mids: list[str]) -> str:
+    """Every code of the project with passages that carry it, from different materials.
+
+    This is what replaces the material in a cross-case pass. The batch's own materials are
+    preferred — they are what has just been read and what the pass is about — and older ones fill
+    the second slot where a code fired only once in the batch, so a code that spans the corpus
+    reads as spanning it rather than as this batch's alone.
+    """
+    text: dict[str, dict[str, str]] = {}
+    names = {}
+    for m in store.materials(conn, pid):
+        names[m["id"]] = m["title"] or m["name"]
+        text[m["id"]] = dict(store.sentences(conn, m["id"]))
+    # Preferred first, then the rest, so `sorted` on this rank picks the batch before the corpus.
+    rank = {mid: i for i, mid in enumerate(mids)}
+    hits: dict[str, list[sqlite3.Row]] = {}
+    for r in conn.execute(
+            "SELECT h.code_id AS code_id, h.material_id AS mid, h.sid AS sid FROM code_hit h "
+            "JOIN material m ON m.id = h.material_id "
+            "WHERE m.project_id=? AND m.removed_at IS NULL", (pid,)):
+        hits.setdefault(r["code_id"], []).append(r)
+
+    out, cut = [], 0
+    for c in store.codebook(conn, pid):
+        rows = sorted(hits.get(c["id"], []), key=lambda r: (rank.get(r["mid"], len(rank)), r["sid"]))
+        shown, seen = [], set()
+        for r in rows:
+            if r["mid"] in seen or len(shown) >= PER_CODE:
+                continue
+            seen.add(r["mid"])
+            shown.append(f'[{r["mid"]} · {names.get(r["mid"], "")}] {r["sid"]}  '
+                         f'{text.get(r["mid"], {}).get(r["sid"], "")}')
+        block = [f"## {c['name']} — {c['definition'] or 'no definition recorded'}"] + (
+            shown or ["(no passage of this project carries it now)"])
+        if len(out) + len(block) > EVIDENCE_LINES:
+            cut += 1
+            continue
+        out += block
+    if cut:
+        out.append(f"… and {cut} more codes, not shown: this packet is capped at "
+                   f"{EVIDENCE_LINES} lines.")
+    return "\n".join(out) or "The codebook is empty; nothing has been read yet."
+
+
+def _memos_block(conn: sqlite3.Connection, mids: list[str]) -> str:
+    """Each material of the batch in the words of its own memo — its account on its own terms,
+    which is the one thing about it a cross-case pass is shown whole."""
+    out = []
+    for mid in mids:
+        m = store.material(conn, mid)
+        if m is None:
+            continue
+        memo = store.get_summary(conn, "material", mid, "memo")
+        out.append(f"## {m['title'] or m['name']} ({m['kind'] or 'kind not worked out'})\n"
+                   f"{memo['text'] if memo else 'No memo was written for this material.'}")
+    return "\n\n".join(out) or "No memo accompanies this pass."
+
+
 def _code_ids(t: dict, by_name: dict[str, str]) -> list[str]:
     names = t.get("code_names") or []
     return [by_name[n] for n in ([names] if isinstance(names, str) else names) if n in by_name]
@@ -159,28 +232,65 @@ def _fingerprint(conn: sqlite3.Connection, t: sqlite3.Row) -> str:
     return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()[:16]
 
 
+def _slots(conn: sqlite3.Connection, pid: str, feedback: str) -> dict:
+    """The half of the prompt that is the same whether one material or a batch was read: the set
+    in its three holds, the codebook, the researcher's words, and where the project stands against
+    its ceiling. Both prompts take these under the same names."""
+    proj = store.project(conn, pid)
+    cap = ceiling(conn, pid)
+    project_themes = store.live_themes(conn, pid)
+    return {
+        "frozen": _themes_block(conn, [t for t in project_themes if t["hold"] == "frozen"]),
+        "open": _themes_block(conn, [t for t in project_themes if t["hold"] == "open"]),
+        "candidates": _themes_block(conn, store.candidates(conn, pid), where=True),
+        "codebook": _codebook_block(conn, pid),
+        "focus": _verbatim(proj["focus"], "The researcher has not said what they are looking for. "
+                                          "Group the codes on their own terms."),
+        "feedback": _verbatim(feedback, "The researcher has said nothing about the themes."),
+        "max_themes": cap, "ceiling": ceiling_text(len(project_themes), cap), "max_new": MAX_NEW,
+    }
+
+
 def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         material_id: str | None = None, run_id: str | None = None) -> dict:
     """Revise the theme set in the light of one newly read material. Returns
     {themes: [tid], merged: [tid]} — `themes` being every theme this pass wrote, candidates
     included."""
-    proj = store.project(conn, pid)
-    cap = ceiling(conn, pid)
+    system, user = llm.prompt("themes", material=_material_block(conn, material_id),
+                              **_slots(conn, pid, feedback))
+    out = llm.chat_json(system, user, label="themes")
+    return _apply(conn, pid, out, material_id=material_id, run_id=run_id)
+
+
+def run_cross(conn: sqlite3.Connection, pid: str, mids: list[str], *, feedback: str = "",
+              run_id: str | None = None) -> dict:
+    """Revise the theme set over a whole batch at once, from evidence rather than from one text.
+
+    One call per batch instead of one per material (PLAN.md §13). What replaces the material is a
+    packet of the codebook's own passages — up to two per code, from different materials — and
+    each material's memo: a theme is a pattern across what people said, and reading one transcript
+    at a time is how a batch of two produced eight candidates and nothing across them (EVAL pass
+    5). Nothing else changes: the same answer shape, the same Python enforcement, the same
+    stability count.
+    """
+    system, user = llm.prompt("themes_cross", evidence=_evidence_block(conn, pid, mids),
+                              memos=_memos_block(conn, mids), **_slots(conn, pid, feedback))
+    out = llm.chat_json(system, user, label="themes")
+    # No material_id: a tension raised here belongs to whichever material's passage raised it, and
+    # the answer says which. `mids` is what that id is checked against.
+    return _apply(conn, pid, out, material_id=None, mids=set(mids), run_id=run_id)
+
+
+def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | None,
+           mids: set[str] | None = None, run_id: str | None = None) -> dict:
+    """Python's half: what one answer is allowed to do to the theme set.
+
+    Shared by both passes, because the rules are about the holds and not about what the model was
+    shown — merges first, then the project themes, then the candidates, then the tensions, then
+    the stability count.
+    """
     project_themes = store.live_themes(conn, pid)
     cands = store.candidates(conn, pid)
-    system, user = llm.prompt(
-        "themes",
-        material=_material_block(conn, material_id),
-        frozen=_themes_block(conn, [t for t in project_themes if t["hold"] == "frozen"]),
-        open=_themes_block(conn, [t for t in project_themes if t["hold"] == "open"]),
-        candidates=_themes_block(conn, cands, where=True),
-        codebook=_codebook_block(conn, pid),
-        focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
-                                       "Group the codes on their own terms."),
-        feedback=_verbatim(feedback, "The researcher has said nothing about the themes."),
-        max_themes=cap, ceiling=ceiling_text(len(project_themes), cap), max_new=MAX_NEW)
-    out = llm.chat_json(system, user, label="themes")
-
     by_name = {r["name"]: r["id"] for r in store.codebook(conn, pid)}
     rows = {t["id"]: t for t in list(project_themes) + list(cands)}
     payload = [t for t in (out.get("themes") or []) if isinstance(t, dict)]
@@ -252,8 +362,15 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         row = rows.get(t.get("id"))
         if row is None or row["hold"] != "frozen":
             continue
+        # Over a batch nobody knows which material pulled but the answer, so it says — and the id
+        # it says is only believed where it is one of the materials this pass actually read. A
+        # note whose material cannot be traced is half a note (`context._tension_notes`).
+        mid = material_id
+        if mid is None and mids is not None:
+            said = str(t.get("material") or "")
+            mid = said if said in mids else None
         if note := synth.words(t.get("note"), TENSION_WORDS):
-            store.add_theme_note(conn, row["id"], material_id, run_id, note)
+            store.add_theme_note(conn, row["id"], mid, run_id, note)
 
     # The saturation signal (PLAN.md §12), bookkeeping only: how many passes in a row this theme's
     # words and codes stood still. The researcher reads it and freezes; the instrument only counts.
