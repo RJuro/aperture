@@ -732,9 +732,12 @@ def _export_step(kind: str) -> str:
     `kind` alone is a machine label — a researcher reading `doc — 2 runs` learns nothing. The
     material's name comes out of the line: a totals row is every run of that step, not one
     material's.
+
+    The preposition and the possessive that hold the name go with it, or the line is left
+    ungrammatical: "Writing the summary of again", "Comparing's codes with the project's".
     """
     from . import jobs
-    return re.sub(r"\s*(in )?\{name\}", "", jobs.STEPS.get(kind, (kind,))[0])
+    return re.sub(r"\s*(in |of )?\{name\}('s)?", "", jobs.STEPS.get(kind, (kind,))[0])
 
 
 def _export_names(conn, pid: str) -> dict[str, str]:

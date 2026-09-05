@@ -150,6 +150,9 @@ def test_the_frame_and_the_description_reach_the_prompt(conn, project, grande, m
     store.set_brief(conn, project, "Two interviews so far, both about crossings.")
     store.save_theme(conn, project, tid=None, name="Work and trade", gist="how a living is made",
                      code_ids=[])
+    # The themes are shown to a project built iteratively. An exploratory one is shown none of
+    # them, which is `test_p28_method`'s.
+    store.set_method(conn, project, "iterative")
     model.queue(_answer())
     angles.run(conn, grande)
     shown = model.shown("angles")

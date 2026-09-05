@@ -67,6 +67,16 @@
           <button class="btn btn-secondary">Save focus</button>
         </form>
       </details>
+      <p class="dim small">Method: {% if project.method == 'explore' %}Read exploratively — each material is read on its own terms first.{% else %}Built iteratively — each material is read with the project's codes and themes in view.{% endif %}</p>
+      {% if role == 'owner' %}<details><summary>Change how material is read</summary>
+        <form method="post" action="/p/{{ project.id }}/method" class="form-stack compact">
+          <fieldset class="scope-choice"><legend>Applies to material read from here on; nothing already read changes</legend>
+            <label><input type="radio" name="method" value="explore" {{ 'checked' if project.method == 'explore' }}> Explore the material</label>
+            <label><input type="radio" name="method" value="iterative" {{ 'checked' if project.method != 'explore' }}> Build iteratively</label>
+          </fieldset>
+          <button class="btn btn-secondary">Save method</button>
+        </form>
+      </details>{% endif %}
     </aside>
   </div>
 </section>

@@ -73,6 +73,9 @@ def _frame_block(m: sqlite3.Row, speakers: list[sqlite3.Row]) -> str:
     return "\n".join(out)
 
 
+NO_THEMES = "None shown: this is an exploratory reading."
+
+
 def _themes_block(rows: list[sqlite3.Row]) -> str:
     if not rows:
         return "This project has no themes yet; nothing has been grouped across materials."
@@ -160,6 +163,10 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
     m = store.material(conn, mid)
     pid = m["project_id"]
     described = store.get_summary(conn, "material", mid, "orientation")
+    # Where the project explores, this step is shown no themes: an angle written against what the
+    # corpus has already been grouped into is where the reading stops being this material's. The
+    # open questions stay — they are questions, and questions are what may travel forward.
+    explore = store.project(conn, pid)["method"] == "explore"
 
     system, user = llm.prompt(
         "angles",
@@ -169,7 +176,7 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
         # Every material's open questions, newest first, not the last one to finish writing them.
         questions=store.questions_text(conn, pid)
               or "Nothing has been written about this corpus yet; this is an early piece.",
-        themes=_themes_block(store.live_themes(conn, pid)),
+        themes=NO_THEMES if explore else _themes_block(store.live_themes(conn, pid)),
         feedback=_verbatim(feedback, "The researcher has said nothing about what to look "
                                      "for here."),
         material=ingest.head_and_tail(m["text"], HEAD, TAIL),

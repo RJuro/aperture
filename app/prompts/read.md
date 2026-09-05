@@ -4,7 +4,7 @@ Every rule below carries the same weight. Follow all of them on every code you m
 
 1. Return one JSON object and nothing else, shaped exactly like the example at the end of this message.
 2. Cite sentence ids: each code carries `sids`, the ids of the sentences it applies to, and every id you cite is one printed in the material below. Never invent an id, never guess at a range.
-3. Reuse before you invent: if a code already in the codebook covers a passage, cite it by its exact name as a plain string and make no second code for the same idea.
+3. {{mode_rule}}
 4. Return at most {{max_codes}} codes in total, and at most {{max_new}} of them new.
 5. Give every new code a one-sentence definition saying what would count as another instance of it, in material you have not seen.
 6. Keep every code at one level of abstraction — what a passage is *about*, not the event it reports. "Work as what makes staying possible" is a code; "arrived in the port" is a step in an itinerary and is not one. A code that only ever fits this one material is pitched too low; a code that would fit any material at all is pitched too high.
@@ -33,7 +33,7 @@ WHAT THE RESEARCHER SAID ABOUT THIS READING, IN THEIR OWN WORDS — take it as i
 
 {{feedback}}
 
-THE CODEBOOK AS IT STANDS — reuse these names exactly, as plain strings
+THE PROJECT'S CODEBOOK
 
 {{codebook}}
 

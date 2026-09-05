@@ -25,7 +25,9 @@ def _stub(monkeypatch, **by_kind):
 def test_the_upward_chain_runs_in_order_in_a_thread_of_its_own(conn, project, grande, monkeypatch):
     ran = _stub(monkeypatch)
     assert jobs.wait(jobs.ingest_chain(project, [grande], conn_factory=db.connect), 10)
-    assert ran == ["frame", "angles", "read", "themes", "doc", "accounts", "project"]
+    # A new project explores, so each reading is followed by the comparison of what it named with
+    # the project's vocabulary. `test_p28_method` holds the iterative chain, which has neither.
+    assert ran == ["frame", "angles", "read", "reconcile", "themes", "doc", "accounts", "project"]
     assert [r["kind"] for r in store.runs(conn, project)] == ran
     assert all(r["finished"] and r["error"] is None for r in store.runs(conn, project))
 
@@ -41,14 +43,15 @@ def test_one_upload_of_several_files_is_one_chain_with_one_tail(conn, project, g
     """
     ran = _stub(monkeypatch)
     assert jobs.wait(jobs.ingest_chain(project, [grande, rodwin], conn_factory=db.connect), 10)
-    assert sorted(ran) == sorted(["frame", "angles", "read"] * 2 +
+    assert sorted(ran) == sorted(["frame", "angles", "read", "reconcile"] * 2 +
                                  ["themes", "themes", "doc", "doc", "accounts", "project"])
-    assert ran[6:8] == ["themes", "themes"], "after every material has been read"
+    assert ran[8:10] == ["themes", "themes"], "after every material has been read"
     assert ran[-2:] == ["accounts", "project"], "and the corpus level once, at the end"
     rows = store.runs(conn, project)
     for mid in (grande, rodwin):
         assert [r["kind"] for r in rows if r["material_id"] == mid] == \
-            ["frame", "angles", "read", "themes", "doc"], "one material's own order is kept"
+            ["frame", "angles", "read", "reconcile", "themes", "doc"], \
+            "one material's own order is kept"
     assert [r["material_id"] for r in rows if r["kind"] == "themes"] == [grande, rodwin]
     assert {r["material_id"] for r in rows if r["kind"] == "doc"} == {grande, rodwin}
 

@@ -3,7 +3,8 @@
 The model is shown the brief, the researcher's focus in their own words, the live codebook, what
 this material is and who speaks in it, and the material itself laid out the way its frame says it
 should be — always as numbered sentence ids, because a code that cannot cite is a code that
-cannot be checked.
+cannot be checked. Where the project explores rather than building iteratively, the codebook is
+the one thing it is not shown: that is the whole of the difference, and `MODE_RULE` is it.
 
 Python rules on what comes back: a sentence id that is not in *this* material is dropped and
 reported, the caps in the prompt are the caps enforced here, and a name may appear once. The
@@ -18,6 +19,20 @@ from .. import llm, store
 
 MAX_CODES = 60      # codes accepted from one call
 MAX_NEW = 12        # floor; the real cap scales with the material — see new_cap()
+
+# What conditions the reading, by the project's method. An exploratory project shows the reading no
+# project vocabulary at all, so the rule that tells it to reuse a name would be asking it to guess
+# at names it cannot see; comparing what it made with the project's codes is a step of its own,
+# after this one. An iterative project keeps the rule exactly as it has always stood.
+MODE_RULE = {
+    "explore": "Name codes for what this material says. You are shown no project codes; do not "
+               "guess at them.",
+    "iterative": "Reuse before you invent: if a code already in the codebook covers a passage, "
+                 "cite it by its exact name as a plain string and make no second code for the "
+                 "same idea.",
+}
+NO_CODEBOOK = ("No project vocabulary is shown for this reading: code this material on its own "
+               "terms.")
 
 
 def new_cap(n_passages: int) -> int:
@@ -121,6 +136,12 @@ def _angles_block(conn: sqlite3.Connection, mid: str) -> str:
 def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
     """Code one material. Returns {new, reused, hits, dropped_sids}.
 
+    What the reading is shown depends on the project's method. An exploratory project shows it no
+    codebook: the material is coded on its own terms, and RECONCILE compares what it made with the
+    project's vocabulary afterwards. An iterative project shows it the codebook, as before. Either
+    way the codes belong to the project — the codebook is one table for the whole of it — and the
+    difference is only what this reading was allowed to see.
+
     `feedback` is the researcher's own words about this reading, verbatim, when they have
     asked for it to be read again. A reading that replaces this one replaces its hits too:
     left in place, the old ones would be counted beside the new in every code and theme.
@@ -136,12 +157,14 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
     proj = store.project(conn, pid)
     rows = store.sentence_rows(conn, mid)
     segments = store.segments(conn, mid)
+    explore = proj["method"] == "explore"
 
     system, user = llm.prompt(
         "read",
         focus=_verbatim(proj["focus"], "The researcher has not said what they are looking for. "
                                        "Read this material on its own terms."),
-        codebook=_codebook_block(store.codebook(conn, pid)),
+        mode_rule=MODE_RULE["explore" if explore else "iterative"],
+        codebook=NO_CODEBOOK if explore else _codebook_block(store.codebook(conn, pid)),
         frame=_frame_block(m, store.speakers(conn, mid), segments),
         material=_material_block(m, rows, segments),
         angles=_angles_block(conn, mid),

@@ -40,9 +40,14 @@ CREATE TABLE IF NOT EXISTS member (
     role TEXT NOT NULL CHECK (role IN ('edit','read')),
     joined_at TEXT NOT NULL, PRIMARY KEY (project_id, user_id));
 
+-- `method` is how this project reads a piece of material, and it is the researcher's choice,
+-- not something inferred from their question. 'explore' reads each material on its own terms and
+-- compares its vocabulary with the project's afterwards; 'iterative' reads it with the project's
+-- codes and themes in view, which is how every project worked before this column existed.
 CREATE TABLE IF NOT EXISTS project (
     id TEXT PRIMARY KEY, name TEXT NOT NULL, focus TEXT DEFAULT '',
-    brief TEXT DEFAULT '', created_at TEXT NOT NULL, removed_at TEXT);
+    brief TEXT DEFAULT '', created_at TEXT NOT NULL, removed_at TEXT,
+    method TEXT NOT NULL DEFAULT 'explore');
 
 CREATE TABLE IF NOT EXISTS material (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, text TEXT NOT NULL,
@@ -63,9 +68,12 @@ CREATE TABLE IF NOT EXISTS segment (
     material_id TEXT NOT NULL, idx INTEGER NOT NULL, sid TEXT NOT NULL, label TEXT NOT NULL,
     PRIMARY KEY (material_id, idx));
 
+-- `note` is what comparing this code with the project's vocabulary found, in the reconciling
+-- step's own words: 'narrower than X', 'wider than X', 'distinct'. A code the comparison found to
+-- be the same as an existing one is not noted — it is merged into it, and this row goes.
 CREATE TABLE IF NOT EXISTS code (
     id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL,
-    definition TEXT DEFAULT '', origin TEXT DEFAULT 'read');
+    definition TEXT DEFAULT '', origin TEXT DEFAULT 'read', note TEXT DEFAULT '');
 
 CREATE TABLE IF NOT EXISTS code_hit (
     code_id TEXT NOT NULL, material_id TEXT NOT NULL, sid TEXT NOT NULL,
@@ -201,6 +209,12 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE project ADD COLUMN owner_id TEXT")
     if "removed_at" not in have:
         conn.execute("ALTER TABLE project ADD COLUMN removed_at TEXT")
+    if "method" not in have:
+        # Every project that existed before this column was built iteratively — each reading was
+        # shown the codebook and the themes — and a new default must not silently reinterpret a
+        # corpus. The column default differs from the schema's on purpose: it is what the rows
+        # already here become, and `store.create_project` names the method of every new one.
+        conn.execute("ALTER TABLE project ADD COLUMN method TEXT NOT NULL DEFAULT 'iterative'")
     have = {r[1] for r in conn.execute("PRAGMA table_info(material)")}
     if "removed_at" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN removed_at TEXT")
@@ -209,6 +223,9 @@ def migrate(conn: sqlite3.Connection) -> None:
         _recompose_titles(conn)
     if "speakers_estimated" not in have:
         conn.execute("ALTER TABLE material ADD COLUMN speakers_estimated INTEGER DEFAULT 0")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(code)")}
+    if "note" not in have:
+        conn.execute("ALTER TABLE code ADD COLUMN note TEXT DEFAULT ''")
     have = {r[1] for r in conn.execute("PRAGMA table_info(moment)")}
     if "support" not in have:
         # What checking the claim against its own passage found: '' where it was not checked or

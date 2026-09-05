@@ -89,6 +89,13 @@ def _read(conn, pid, run):
     read.run(conn, run["material_id"], feedback=_text(conn, run))
 
 
+def _reconcile(conn, pid, run):
+    """Only where the project explores: the reading was shown no codebook, so what it named is
+    compared with the project's vocabulary here rather than during the reading."""
+    from .engine import reconcile
+    return (reconcile.run(conn, run["material_id"]) or {}).get("dropped")
+
+
 def _theme_set(conn, pid) -> list[tuple]:
     return [(t["id"], t["name"], t["gist"]) for t in store.live_themes(conn, pid)]
 
@@ -182,6 +189,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "diarize": ("Working out who is speaking in {name}", _diarize),
     "angles":  ("Working out what to look for in {name}", _angles),
     "read":    ("Reading {name}",                     _read),
+    "reconcile": ("Comparing {name}'s codes with the project's", _reconcile),
     "themes":  ("Finding themes",                     _themes),
     "doc":     ("Writing what stands out in {name}", _doc),
     "summary": ("Writing the summary of {name} again", _summary),
@@ -251,14 +259,15 @@ PARALLEL = 4
 #
 # THEMES is absent by law: it revises one set shared by the whole project, so it runs strictly one
 # material at a time, and every material is read before any of them moves the set.
-SIDE_BY_SIDE = ({"frame", "angles", "read"}, {"doc"})
+SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile"}, {"doc"})
 
 # ...and inside such a stage, these still take their turn, in the order the chain planned them.
 # READ is SHOWN the project codebook and `store.save_codes` reuses a code by name: two readings at
 # once would each be shown a codebook without the other's codes, and would coin two rows for one
 # name. So the framing and the ideation of the next material overlap a reading, and the readings
-# themselves queue behind each other exactly as they always have.
-IN_TURN = {"read"}
+# themselves queue behind each other exactly as they always have. RECONCILE writes the codebook
+# too — it merges rows away — so it takes the same turn.
+IN_TURN = {"read", "reconcile"}
 
 
 def _stages(runs: list[dict]) -> list[list[list[dict]]]:
@@ -351,14 +360,19 @@ def _sequence(conn: sqlite3.Connection, pid: str, seq: list[dict], job: str | No
     """One material's steps, in order, on this connection. Returns (run ids, materials touched,
     the material it failed on, why). A failure stops THIS sequence and no other."""
     before, after = turn
+    # One material's turn at the shared codebook covers every step that writes it, not each of
+    # them separately: the reading and the comparison that follows it are one turn, and the next
+    # material waits for both. Set after each of them, the turn would end at the reading and let
+    # the next material read while this one was still merging codes away underneath it.
+    turning = [r for r in seq if r["kind"] in IN_TURN]
     ids, touched, failed, error = [], [], None, ""
     for run in seq:
         if job and store.job(conn, job)["status"] != "running":
             break                                   # stopped by the researcher between steps
-        if run["kind"] in IN_TURN and before is not None:
+        if before is not None and turning and run is turning[0]:
             before.wait()
         rid, error = _step(conn, pid, run, job=job, last_feedback=last_feedback)
-        if run["kind"] in IN_TURN and after is not None:
+        if after is not None and turning and run is turning[-1]:
             after.set()
         ids.append(rid)
         if run.get("material_id"):
@@ -534,6 +548,11 @@ def wait(job: str, timeout: float = 60.0) -> bool:
 def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.connect) -> str:
     """Up: FRAME → ANGLES → READ for each material, then THEMES and DOC for each, then the tail.
 
+    Where the project explores, RECONCILE follows each reading: that reading was shown no
+    codebook, so what it named is compared with the project's vocabulary in a step of its own,
+    before THEMES gathers any of it. Where the project is built iteratively the chain is exactly
+    what it has always been.
+
     One upload is one chain, whatever it carried. Five files used to start five chains, and each
     of them found themes again and rewrote the corpus summary with four of the five still unread.
 
@@ -550,9 +569,19 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     This is the model half.
     """
     mids = list(mids)
+    conn = conn_factory()
+    try:
+        proj = store.project(conn, pid)
+    finally:
+        conn.close()
+    # A project this cannot read has no method to honour, and the chain that has always run is the
+    # one to plan for it.
+    per_material = (("frame", "angles", "read", "reconcile")
+                    if proj is not None and proj["method"] == "explore"
+                    else ("frame", "angles", "read"))
     return start(conn_factory, pid, [
         *({"kind": k, "material_id": mid} for mid in mids
-          for k in ("frame", "angles", "read")),
+          for k in per_material),
         # THEMES takes one material because it must see that material's codes by passage; every
         # piece is read before any of them moves the theme set, so DOC writes against the set as
         # it finally stands.

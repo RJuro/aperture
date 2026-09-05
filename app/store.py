@@ -67,13 +67,38 @@ def atomic(conn: sqlite3.Connection):
 
 # ---- projects and material --------------------------------------------------------------------
 
+# How a project reads a piece of material. 'explore' reads each one on its own terms and compares
+# its vocabulary with the project's afterwards; 'iterative' reads it with the project's codes and
+# themes in view. It is the researcher's choice and never inferred from their question.
+METHODS = ("explore", "iterative")
+
+
 def create_project(conn: sqlite3.Connection, name: str, focus: str = "",
-                   owner_id: str | None = None) -> str:
+                   owner_id: str | None = None, method: str = "explore") -> str:
+    """A new project explores unless it is told otherwise: reading each material on its own terms
+    is what the tool promises, and the older way is now something a researcher asks for."""
     pid = db.new_id("p")
-    conn.execute("INSERT INTO project (id, name, focus, created_at, owner_id) VALUES (?,?,?,?,?)",
-                 (pid, name, focus, now(), owner_id))
+    conn.execute("INSERT INTO project (id, name, focus, created_at, owner_id, method) "
+                 "VALUES (?,?,?,?,?,?)",
+                 (pid, name, focus, now(), owner_id,
+                  method if method in METHODS else "explore"))
     conn.commit()
     return pid
+
+
+def set_method(conn: sqlite3.Connection, pid: str, method: str) -> bool:
+    """Change how this project reads. It applies to material read from here on and rewrites
+    nothing: what has been read was read one way, and saying so afterwards would be a lie about
+    the record. No history row — the column is the whole of it.
+
+    An unknown value is refused rather than written: this is a choice between two things, and a
+    form can send anything at all.
+    """
+    if method not in METHODS:
+        return False
+    conn.execute("UPDATE project SET method=? WHERE id=?", (method, pid))
+    conn.commit()
+    return True
 
 
 def add_material(conn: sqlite3.Connection, pid: str, name: str, text: str) -> str:
@@ -248,6 +273,59 @@ def save_codes(conn: sqlite3.Connection, pid: str, mid: str, codes: list[dict],
             hits += cur.rowcount        # rows written, not sids offered — a repeat is not a hit
     conn.commit()
     return {"new": new, "reused": reused, "hits": hits}
+
+
+def codes_only_in(conn: sqlite3.Connection, pid: str, mid: str) -> list[sqlite3.Row]:
+    """The codes no other material carries — what this material's reading founded, each with one
+    of its own sentences as an example.
+
+    A code this reading gave a name the codebook already had is not here: `save_codes` reuses a
+    row by name, so that code now has hits in two materials and is the project's, not this one's.
+    An exact match is therefore settled before anything is asked of a model.
+    """
+    return conn.execute(
+        "SELECT c.id, c.name, c.definition, "
+        "  (SELECT s.text FROM code_hit h2 JOIN sentence s "
+        "     ON s.material_id=h2.material_id AND s.sid=h2.sid "
+        "    WHERE h2.code_id=c.id AND h2.material_id=? ORDER BY s.idx LIMIT 1) AS example "
+        "FROM code c JOIN code_hit h ON h.code_id=c.id WHERE c.project_id=? "
+        "GROUP BY c.id HAVING SUM(h.material_id <> ?)=0 ORDER BY c.name",
+        (mid, pid, mid)).fetchall()
+
+
+def codes_elsewhere(conn: sqlite3.Connection, pid: str, mid: str) -> list[sqlite3.Row]:
+    """The project's vocabulary as it stood before this material: every code some other material
+    carries. A code nothing rests on any more — a name a replaced reading left behind — is not
+    part of the vocabulary anything would be compared against."""
+    return conn.execute(
+        "SELECT c.* FROM code c JOIN code_hit h ON h.code_id=c.id "
+        "WHERE c.project_id=? AND h.material_id<>? GROUP BY c.id ORDER BY c.name",
+        (pid, mid)).fetchall()
+
+
+def merge_code(conn: sqlite3.Connection, local_id: str, into_id: str) -> int:
+    """One code's hits become another's and the row that carried them goes. Returns hits moved.
+
+    `UPDATE OR IGNORE` then `DELETE` because both tables key on the code id: where the material
+    already has that sentence under the other code, or the theme already gathers it, the move
+    would collide, and what would collide is a duplicate of what is already there.
+    """
+    n = conn.execute("UPDATE OR IGNORE code_hit SET code_id=? WHERE code_id=?",
+                     (into_id, local_id)).rowcount
+    conn.execute("DELETE FROM code_hit WHERE code_id=?", (local_id,))
+    conn.execute("UPDATE OR IGNORE theme_code SET code_id=? WHERE code_id=?",
+                 (into_id, local_id))
+    conn.execute("DELETE FROM theme_code WHERE code_id=?", (local_id,))
+    conn.execute("DELETE FROM code WHERE id=?", (local_id,))
+    conn.commit()
+    return n
+
+
+def note_code(conn: sqlite3.Connection, cid: str, note: str) -> None:
+    """What comparing this code with the project's vocabulary found. It is written beside the
+    code and never into its definition: the comparison is a reading of the code, not the code."""
+    conn.execute("UPDATE code SET note=? WHERE id=?", (note, cid))
+    conn.commit()
 
 
 def clear_hits(conn: sqlite3.Connection, pid: str, mid: str) -> int:
