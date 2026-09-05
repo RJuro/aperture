@@ -21,6 +21,10 @@
     <form method="post" action="/p/new" class="form-stack">
       <label>Project name <input name="name" required placeholder="Migration and work"></label>
       <label>Research question or focus <textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
+      <fieldset class="scope-choice"><legend>How each material is read</legend>
+        <label><input type="radio" name="method" value="explore" checked> Explore the material — each material is first read on its own terms; the project's vocabulary and themes are compared with it afterwards</label>
+        <label><input type="radio" name="method" value="iterative"> Build iteratively — each material is read with the project's codes and themes in view, the way projects have worked so far; freeze themes to apply them as a framework</label>
+      </fieldset>
       <button class="btn btn-primary">Start project</button>
     </form>
   </section>

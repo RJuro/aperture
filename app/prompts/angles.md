@@ -55,8 +55,8 @@ A worked answer, with the exact shape:
   ],
   "angles": [
     {
-      "name": "Work as the condition of staying",
-      "why": "Earning comes up every time the material turns to why anyone remained, and it sits next to housing and papers rather than next to ambition.",
+      "name": "How work and staying are spoken of together",
+      "why": "Work is named in several stretches of this material, and it appears alongside housing and papers.",
       "questions": [
         "Which kinds of work are named, and which are passed over in silence?",
         "Where is work spoken of as a choice, and where as the price of remaining?",
@@ -65,7 +65,7 @@ A worked answer, with the exact shape:
     },
     {
       "name": "Who is allowed to speak for the household",
-      "why": "Decisions are reported in the plural while the reasons behind them are given in one voice, and the material never says who settled them.",
+      "why": "Decisions are reported in the plural, and the material does not say who made them.",
       "questions": [
         "Whose account of a decision is given, and whose is reported second-hand?",
         "Where does the plural give way to a single person deciding?"

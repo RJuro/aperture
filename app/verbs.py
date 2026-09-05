@@ -60,11 +60,15 @@ def _target(claim_id: str, theme_id: str, material_id: str, pid: str) -> tuple[s
 
 
 @router.post("/p/new")
-def new_project(request: Request, name: str = Form(...), focus: str = Form("")):
+def new_project(request: Request, name: str = Form(...), focus: str = Form(""),
+                method: str = Form("explore")):
+    """`method` is how this project will read a piece of material, and it is asked on the form
+    beside the focus. A value the form did not offer is not honoured — `store.create_project`
+    explores rather than guessing at what was meant."""
     conn = connection()
     user = getattr(request.state, "user", None)
     pid = store.create_project(conn, name.strip() or "Untitled", focus.strip(),
-                               owner_id=user["id"] if user else None)
+                               owner_id=user["id"] if user else None, method=method)
     return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
@@ -369,6 +373,20 @@ def rename(request: Request, pid: str, name: str = Form(...)):
     if name.strip():
         store.rename_project(conn, pid, name.strip())
     return RedirectResponse(f"/p/{pid}", status_code=303)
+
+
+@router.post("/p/{pid}/method")
+def set_method(request: Request, pid: str, method: str = Form(...)):
+    """How this project reads material from here on.
+
+    The owner's alone, like renaming it: it is a decision about how the project is done, not an
+    edit to what is in it. It rewrites nothing — what has been read was read one way, and every
+    material read after this is read the other.
+    """
+    conn = connection()
+    pages_mine(request, conn, pid, need="owner")
+    store.set_method(conn, pid, method)
+    return _back(request, f"/p/{pid}")
 
 
 @router.post("/p/{pid}/remove")
