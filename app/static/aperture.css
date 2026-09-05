@@ -170,7 +170,14 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .quiet-details > p { max-width: 76ch; color: var(--muted); }
 
 /* Theme matrix */
-.scroller { max-width: 100%; overflow-x: auto; border-top: 1px solid var(--border); }
+/* At ten materials the matrix overflowed by 87px and nobody could tell: the columns had been
+   squeezed to 90px, the titles stacked six lines high in the header, and the scrollbar on a Mac
+   only appears while it is being moved. Wider material columns make the overflow real, and the
+   scrollbar is drawn so that a table that scrolls says so. */
+.scroller { max-width: 100%; overflow-x: auto; border-top: 1px solid var(--border); scrollbar-width: thin; scrollbar-color: var(--faint) transparent; }
+.scroller::-webkit-scrollbar { height: 8px; }
+.scroller::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 4px; }
+.scroller::-webkit-scrollbar-track { background: transparent; }
 .themes { width: 100%; border-collapse: collapse; font-size: 13px; }
 .themes th, .themes td { min-width: 90px; padding: 15px 14px; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; }
 .themes thead th { color: var(--muted); font: 10px/1.35 var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
@@ -178,7 +185,8 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
    the grid of numbers belonged to nothing. The first column holds; it needs its own background
    or the cells it passes show through. */
 .themes thead th:first-child { min-width: 310px; position: sticky; left: 0; z-index: 1; background: var(--bg); }
-.themes thead th.material { max-width: 22ch; font: 12px/1.4 var(--font-body); letter-spacing: 0; text-transform: none; }
+.themes thead th.material, .themes td { min-width: 150px; }
+.themes thead th.material { max-width: 26ch; font: 12px/1.4 var(--font-body); letter-spacing: 0; text-transform: none; }
 .themes th.gist { min-width: 310px; font-weight: 600; position: sticky; left: 0; background: var(--bg); }
 .themes th.gist > a { font: 600 17px var(--font-display); }
 .themes th.gist > span { display: block; max-width: 42ch; margin-top: 5px; color: var(--muted); font-size: 12px; font-weight: 400; }

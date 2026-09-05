@@ -116,6 +116,7 @@
 {% set fold = rows[0].hold == 'candidate' and rows | length > 3 %}
 <details class="theme-fold{% if fold %} folds{% endif %}"{% if not fold %} open{% endif %}>
 <summary><h3 class="theme-group">{{ group }} · {{ rows | length }} {{ 'theme' | plural(rows | length) }}</h3></summary>
+{% if materials | length > 5 and loop.first %}<p class="dim small">{{ materials | length }} materials across — the table scrolls sideways; the theme column stays.</p>{% endif %}
 <div class="scroller">
 <table class="themes">
   <thead><tr><th>Theme</th>{% for m in materials %}<th class="material">{{ m.display_title | txt }}</th>{% endfor %}</tr></thead>
