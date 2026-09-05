@@ -393,3 +393,12 @@ def test_the_same_answers_land_the_same_reading_side_by_side_as_one_at_a_time(co
 
     assert before["moments"] and before["codes"] and before["summaries"], "it really read"
     assert after == before
+
+
+def test_the_runner_lock_is_one_per_project_and_not_one_for_the_process(conn, project):
+    """What used to hold every chain on the instance behind the longest corpus. A project's own
+    chains are still strictly ordered — see `test_one_projects_chains_still_take_their_turn` —
+    and `jobs.CALLS` is what keeps the provider from being asked for everything at once."""
+    mine = jobs._project_lock(project)
+    assert mine is jobs._project_lock(project)
+    assert mine is not jobs._project_lock("some other project")

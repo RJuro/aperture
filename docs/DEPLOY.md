@@ -65,8 +65,19 @@ Grep `busy=429` for a rate-limited afternoon, `ERROR` or `failed` for a chain th
 no material, no title, no quote — a log leaves the researcher's machine and a title is usually
 somebody's name. The reason in full is on the run row, where its owner reads it.
 
+Every model call also leaves a row in the `call` table, one per attempt, under the run that made
+it: label, provider, model, effort, the four token counters, seconds, and `ok | failed |
+invalid_json`. A step is many calls — a synthesis over nine themes is a dozen — so this is where a
+slow call, a retried one, or a provider serving a cached prefix is visible at all.
+
+`tokens_cached` (and `tokens_reasoning`) are **NULL where the provider did not report them**, which
+is not zero: it means the provider said nothing about caching, not that nothing was cached. The
+page prints *not reported* for that, and no saving from the stable-prefix ordering in
+`prompts/thread.md` may be claimed until a real run shows cached input above nought.
+
 `/admin/runs` is the same thing after the fact, for an administrator: the last fourteen days by
-day (runs, failures, tokens, minutes of model time) and the last 200 runs across every project.
+day (runs, failures, tokens, cached input, minutes of model time) and the last 200 runs across
+every project, each with the number of attempts it took.
 
 ## Cost
 

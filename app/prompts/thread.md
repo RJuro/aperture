@@ -60,6 +60,18 @@ Return JSON in exactly this shape and nothing else:
               children's labour, are placed."
 }
 ---
+THE MATERIAL. Each line starts with the id a quote from that line must cite:
+
+{{material}}
+
+HOW THIS MATERIAL IS LAID OUT:
+
+{{frame}}
+
+WHAT THE RESEARCHER IS LOOKING FOR, in their words:
+
+{{focus}}
+
 THE THEME you are following. Its definition says what belongs to it; you decide where, in THIS
 material, it is present:
 
@@ -74,18 +86,6 @@ the other theme's name, and its claim:
 
 {{claimed}}
 
-WHAT THE RESEARCHER IS LOOKING FOR, in their words:
-
-{{focus}}
-
-HOW THIS MATERIAL IS LAID OUT:
-
-{{frame}}
-
 WHAT THE RESEARCHER SAID about this line, in their own words. Take it as instruction:
 
 {{feedback}}
-
-THE MATERIAL. Each line starts with the id a quote from that line must cite:
-
-{{material}}

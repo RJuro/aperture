@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from app import store
+from app import jobs, store
 
 rerun = pytest.importorskip("app.rerun")
 
@@ -120,3 +120,21 @@ def test_every_progress_line_is_in_the_researchers_words(conn, state):
         for word in context._BANNED:
             assert not re.search(rf"\b{re.escape(word)}s?\b", str(line), re.I), \
                 f"{word!r} in a progress line: {line!r}"
+
+
+def test_a_planned_step_that_never_died_has_nothing_to_resume(conn, state):
+    """`skip_done` is handed to DOC by the runner and is the id of an attempt a restart cut in
+    half. An ordinary planned step has none and follows every theme as it always did."""
+    assert jobs._resuming(conn, {"kind": "doc", "material_id": state["grande"]}) is None
+
+
+def test_a_synthesis_a_restart_cut_in_half_is_resumed_rather_than_replayed(conn, state):
+    """`store.requeue_job` drops only the steps that finished cleanly, so the step running now is
+    a second attempt at the same step of the same job — and the first attempt's run row is how
+    DOC learns which of its dozen calls it does not have to make again."""
+    jid = store.enqueue_job(conn, state["pid"], [{"kind": "doc", "material_id": state["grande"]}])
+    died = store.start_run(conn, state["pid"], "doc", state["grande"], "Writing", jid)
+    store.finish_run(conn, died, error="interrupted: the application restarted")
+
+    assert jobs._resuming(conn, {"kind": "doc", "material_id": state["grande"],
+                                 "job_id": jid, "run_id": "r2"}) == died
