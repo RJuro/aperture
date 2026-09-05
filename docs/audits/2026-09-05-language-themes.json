@@ -1,0 +1,531 @@
+{
+  "themes": [
+    {
+      "name": "Language as barrier and gateway",
+      "gist": "Suppression or absence of a shared language determines whether a child can enter schooling and whether a parent can navigate institutions.",
+      "claims": [
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Schooling in Austria-Hungary required Hungarian; the children's own language had no place in the school.",
+          "sid": "S034"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Parents, not the school, were the source of the child's native language; it was kept at home.",
+          "sid": "S035"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Speaking the native language outside the house was punishable.",
+          "sid": "S036"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Not knowing English is named as the cause of the child's misery upon entering American school.",
+          "sid": "S171"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Unable to function in school, the child spent class time in the park instead.",
+          "sid": "S172"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "The mother's lack of English prevented her from writing a school excuse for her daughter's absence.",
+          "sid": "S173"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Existing literacy in other languages let her advance quickly once English schooling began.",
+          "sid": "S186"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Parents assumed that attending school through eighth grade in English meant their daughter should know all answers.",
+          "sid": "S190"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "The first English word was understood on the train, before any schooling in the language.",
+          "sid": "S258"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "A stranger taught the first English word not through instruction but by demonstrating face-washing.",
+          "sid": "S259"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "The specific first English word she acquired was \"wash,\" learned from a fellow passenger.",
+          "sid": "S260"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Arriving in a strange country, not understanding the language around her compounded the confusion of reunion.",
+          "sid": "S379"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Comfort in the new country came only when she knew enough English to follow events around her.",
+          "sid": "S386"
+        },
+        {
+          "material": "Mary Masare Thome",
+          "claim": "Knowing English at her citizenship hearing meant the judge held her to a higher standard than other applicants.",
+          "sid": "S494"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "The child's first English was only two words, taught aboard the ship for a single occasion.",
+          "sid": "S449"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "Those two words failed him at the moment of meeting his father.",
+          "sid": "S456"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "The child reports little difficulty learning English once in Brooklyn.",
+          "sid": "S600"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "At school registration, a cousin answered questions the child could not.",
+          "sid": "S697"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "A school official could not spell the child's Italian name.",
+          "sid": "S700"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "The official gave the child an English name in place of the Italian one.",
+          "sid": "S703"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "The mother's English never went beyond fragments like yes and no.",
+          "sid": "S714"
+        },
+        {
+          "material": "Charles Rizzuto",
+          "claim": "The mother did not need to learn English.",
+          "sid": "S716"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "The interviewer names the absence of English as the barrier she faced at Ellis Island.",
+          "sid": "S346"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "She framed her English as learned to the extent of her ability.",
+          "sid": "S403"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "English came from hearing people talk, not from formal classes.",
+          "sid": "S406"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "She arrived already speaking Bohemian, a language from before the migration.",
+          "sid": "S407"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "She was speaking English within six months of arrival.",
+          "sid": "S410"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The father navigated Ellis Island's officials in German, a language he had acquired in Berlin for surgery.",
+          "sid": "S147"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "A combination of Jewish and German — neither language being English — was considered sufficient for institutional passage.",
+          "sid": "S151"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Family discussions of emigration named learning a new language as a condition for school access and acceptance.",
+          "sid": "S211"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The American photographer could not process the child's Russian name and recorded the photograph without it.",
+          "sid": "S262"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The family's Jewish language was not spoken in Russia and was acquired only after reaching America.",
+          "sid": "S402"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The child's English was acquired through immersion among other children, not through instruction, enabling the school to skip grades.",
+          "sid": "S436"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "English acquired fast enough to skip grades also left the child without the mathematics foundation those grades contained.",
+          "sid": "S437"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The mother's English came from her children's speech at home.",
+          "sid": "S493"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The children dropped Russian so quickly that only speech directed at the mother continued in it.",
+          "sid": "S495"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "For the mother, learning to read English remained harder than acquiring the spoken language.",
+          "sid": "S498"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The mother acquired English partly through radio soap operas, a source outside the family.",
+          "sid": "S500"
+        },
+        {
+          "material": "Helen Hansen",
+          "claim": "Accent marked the children at school as different; classmates' teasing was the form the language barrier took.",
+          "sid": "S143"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The uncle arrived at university barely able to speak English and still completed pharmacy training.",
+          "sid": "S056"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "English proficiency was the only remaining condition before professional practice could begin; his education was already complete.",
+          "sid": "S063"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The child entered with two languages from the old country and without the one that would determine her school placement.",
+          "sid": "S175"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "Kindergarten functioned as a language holding period; she remained there until English was acquired, then entered first grade with her age group.",
+          "sid": "S176"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The kindergarten period for language acquisition was prolonged, described by the child as a lot of time.",
+          "sid": "S177"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The child became the first in her family to actually speak English, the qualifier 'really' suggesting a gap between her English and the adults'.",
+          "sid": "S178"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The mother's route to English began through friendship with a non-Jewish neighbor, crossing the ethnic boundary of the community.",
+          "sid": "S184"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The community's objection to the friendship is set against its purpose: the mother was acquiring English through it.",
+          "sid": "S186"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The neighbor's English teaching was constant, embedded in their daily domestic interaction rather than formal instruction.",
+          "sid": "S188"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The father's English, unlike his Hebrew, was insufficient to prepare bar mitzvah students for their speeches.",
+          "sid": "S190"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The daughter took over writing the bar mitzvah speeches the father's English left him unable to help with.",
+          "sid": "S191"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "Language is named as the persistent barrier in the family's acceptance into the communities where they settled.",
+          "sid": "S221"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "School entry was blocked by the absence of English; the family's Danish-speaking circle was the reason she had none.",
+          "sid": "S330"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "The barrier lasted only the first months; immersion then produced spoken and written English within half a year.",
+          "sid": "S331"
+        }
+      ]
+    },
+    {
+      "name": "Language practices across migration",
+      "gist": "How multilingualism precedes migration as an ordinary condition and English is acquired through immersion rather than formal instruction.",
+      "claims": [
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "English is identified by the interviewer as a language she did not speak, placing it outside her pre-migration repertoire.",
+          "sid": "S346"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "Night classes are the expected method of learning English, which the interviewer's question assumes.",
+          "sid": "S405"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "Bohemian is described as a language spoken well, named as a language she already had before migration.",
+          "sid": "S407"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "Three languages are listed together as existing before English, framing multilingualism as an ordinary pre-migration condition.",
+          "sid": "S408"
+        },
+        {
+          "material": "Yolan Szency Batta",
+          "claim": "English is described as something that arrived on its own, without study or apparent effort.",
+          "sid": "S409"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The father's German, not an interpreter, enabled communication with examining officials at Ellis Island.",
+          "sid": "S147"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Father navigated Ellis Island by combining Jewish and German to get by.",
+          "sid": "S151"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Learning a new language was part of family discussions before leaving Russia.",
+          "sid": "S211"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The American photographer could not transcribe the Russian form of the child's name.",
+          "sid": "S255"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The language the family calls \"Jewish\" was acquired only after reaching America, not in Russia.",
+          "sid": "S402"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Russian is the only language the speaker carries from childhood.",
+          "sid": "S403"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Schooling in Russia already included German and French for the older sisters.",
+          "sid": "S404"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Even the younger brothers were sent to kindergarten where they learned German and French, though quickly forgotten.",
+          "sid": "S406"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "English was acquired through immersion fast enough that teachers skipped the children several grades.",
+          "sid": "S436"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The mother's English fell short of what the children felt they should have pressed her toward.",
+          "sid": "S492"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The children began speaking English among themselves at home.",
+          "sid": "S494"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Russian disappeared from daily household use except when addressing the mother.",
+          "sid": "S495"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "The mother learned English by listening to radio soap operas.",
+          "sid": "S500"
+        },
+        {
+          "material": "Elizabeth Friedman",
+          "claim": "Russian was never lost, enabling the speaker's later work as a translator.",
+          "sid": "S528"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "For an uncle who had already finished his pharmacy education, English was the remaining barrier to practicing his profession.",
+          "sid": "S063"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The father's multilingualism included writing in those languages, not only speaking them.",
+          "sid": "S099"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The child arrived in America already bilingual in Yiddish and Russian; English was the absent language.",
+          "sid": "S175"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "English was acquired by placement in kindergarten alongside younger children, not a language class.",
+          "sid": "S176"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The kindergarten placement served as extended English immersion before grade-level work with peers.",
+          "sid": "S177"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The child's immersion made her the first real English speaker in the family.",
+          "sid": "S178"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The mother acquired English from a non-Jewish neighbor, not from formal instruction.",
+          "sid": "S186"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "German served as a bridge between the mother and her neighbor, close enough to Yiddish for communication.",
+          "sid": "S188"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "English teaching happened during shared chores — peeling potatoes and gardening — rather than in a classroom.",
+          "sid": "S188"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The father's English, unlike his Hebrew, was insufficient for teaching bar mitzvah students.",
+          "sid": "S190"
+        },
+        {
+          "material": "Leona Turkin",
+          "claim": "The child's English surpassed her father's, making her the writer of his students' speeches.",
+          "sid": "S191"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "English, including understanding and speaking, was acquired through six months in school.",
+          "sid": "S331"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "She rejects the position that people coming to America need to be taught in their own language.",
+          "sid": "S332"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Confirmation stayed in Danish after English was acquired, each language occupying a separate context.",
+          "sid": "S340"
+        }
+      ]
+    },
+    {
+      "name": "Heritage language retained and valued",
+      "gist": "Heritage language continues voluntarily in the destination and is valued as cultural and literary enrichment rather than discarded for assimilation.",
+      "claims": [
+        {
+          "material": "Eleanor Larsen",
+          "claim": "The church's worship was conducted entirely in the heritage language.",
+          "sid": "S338"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Confirmation remained in Danish even though the children already spoke English.",
+          "sid": "S340"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Heritage language use at home was not compelled by parents.",
+          "sid": "S341"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Danish at home is described as spontaneous rather than enforced.",
+          "sid": "S342"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Retaining the heritage language is a source of retrospective satisfaction.",
+          "sid": "S344"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Other immigrants are contrasted for wanting to discard the heritage language.",
+          "sid": "S345"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Bilingualism is explicitly valued as an advantage.",
+          "sid": "S346"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Knowing Danish makes the speaker equally at home in Denmark.",
+          "sid": "S347"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "The heritage language is valued for access to Danish literature in its original form.",
+          "sid": "S349"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "Translation, however good, is said to lose something.",
+          "sid": "S350"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "A sibling translated the father's diaries and other documents into English.",
+          "sid": "S351"
+        },
+        {
+          "material": "Eleanor Larsen",
+          "claim": "The sibling's translations are described as matching what the father would have written himself in English.",
+          "sid": "S352"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "merge": [
+      [
+        "Language as barrier and gateway",
+        "Language practices across migration"
+      ]
+    ],
+    "keep_apart": [
+      [
+        "Heritage language retained and valued",
+        "Language as barrier and gateway"
+      ],
+      [
+        "Heritage language retained and valued",
+        "Language practices across migration"
+      ]
+    ],
+    "why": "Barrier and practices are one pattern read twice. Of 33 practices claims, 19 sit on a passage the barrier theme already holds in the same material (Turkin 9, Friedman 7, Batta 2, Larsen 1), and on those 19 the two claims paraphrase each other (S175 'entered with two languages ... without the one that would determine her school placement' / 'arrived already bilingual in Yiddish and Russian; English was the absent language'). The merge is mechanical for those 19 — drop one of each pair, no judgement needed — and interpretive for the rest: the 14 practices claims with no barrier twin are repertoire facts (German and French at school in Kiev, Russian kept for translation work, three languages listed before English) and the barrier theme already carries repertoire facts of its own (Batta S407, Turkin S175), so no boundary survives. The merged gist must be rewritten: 'determines whether a child can enter schooling and whether a parent can navigate institutions' is a test roughly half the claims do not meet. Heritage stays apart. It shares 0 passages with barrier and 1 with practices (Larsen S340, confirmation in Danish, read compatibly by both), and its other 11 claims are about voluntary retention and its value — Danish sermons, glad now, Danish literature better unread in translation, a brother's translations — with no access or acquisition in them. Its nearest neighbour is not a language theme at all: it shares 4 passages with Ethnic enclave as bounded social world. It is also single-material (Larsen, 12 claims), so it is a candidate, and a candidate must not be folded into an open theme on one case."
+  }
+}
