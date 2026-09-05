@@ -14,13 +14,23 @@ So every claim is read once more against its own passage, and Python owns the ou
               rerun leaves behind, and the exclusion names the claim and why
     partly    the claim stands and is MARKED, wherever it is read: a reader sees which words
               were added before deciding what to do with it
-    supported nothing happens, and a claim the check did not rule on is treated as supported.
-              The prompt says so. A missing verdict must not be able to delete a claim
+    supported the claim stands and any earlier mark on it is lifted: a claim questioned on one
+              pass and read as carried on this one must stop warning the researcher
+    unchecked nobody ruled on it. Only what the check RETURNED is written, and a claim it left
+              out is recorded as unchecked rather than counted as supported — an empty answer
+              used to read as a clean bill of health for every claim in the batch and could lift
+              a standing `partly` off one. A missing verdict still cannot delete a claim, and it
+              cannot clear a qualification either: a claim already marked keeps its mark
+
+The subset the check left out is asked for once more where the answer was cut short, and what
+comes back a second time is written the same way; what is still missing stays unchecked.
 
 One call per material over its live claims, so the check reads each passage once, and the
 material summary is written afterwards — over claims that survived it.
 """
 from __future__ import annotations
+
+from collections import Counter
 
 from .. import llm, store
 from . import synth
@@ -51,13 +61,58 @@ def claims_block(rows: list[dict], sents: list[tuple[str, str]], where: dict[str
                        for r in rows)
 
 
+def _ask(batch: list[dict], sents, where, frame: str) -> dict[str, tuple[str, str]]:
+    """One call, and the verdicts in its answer that are about claims in this batch.
+
+    All three readable verdicts are carried back, `supported` included, because only a claim that
+    was actually ruled on may be written: silence has to stay distinguishable from a clean bill of
+    health. A verdict word that is none of the three is not a ruling and is left out with them.
+    """
+    system, user = llm.prompt("verify", frame=frame, count=len(batch),
+                              claims=claims_block(batch, sents, where))
+    data = llm.chat_json(system, user, label="verify")
+    mine = {r["id"] for r in batch}
+    out: dict[str, tuple[str, str]] = {}
+    for v in (data.get("verdicts") if isinstance(data, dict) else None) or []:
+        if not isinstance(v, dict):
+            continue
+        vid, verdict = str(v.get("id") or ""), str(v.get("verdict") or "").strip().lower()
+        if vid in mine and verdict in ("supported", "partly", "not"):
+            # '' is what a supported claim carries: the column says what is in question, and
+            # nothing is.
+            out[vid] = ("" if verdict == "supported" else verdict,
+                        synth.words(v.get("why"), WHY_WORDS))
+    return out
+
+
+def _predating_summaries(conn, mid: str, gone: list[dict], run_id: str | None) -> None:
+    """Say so on the line summaries whose claims this check has just taken away.
+
+    A line's summary is written over its claims and stored before any of them is checked, so a
+    paragraph about four claims can end up standing over a line of two — reading as authoritative
+    about evidence that is no longer there (AR-05). Rewriting it properly means another model call
+    over an answer nobody asked for; one sentence saying it predates the check costs nothing and
+    tells the researcher exactly what they are looking at.
+    """
+    for tid, n in Counter(r["theme_id"] for r in gone).items():
+        row = store.get_summary(conn, "thread", f"{mid}:{tid}", "reading")
+        text = (row["text"] if row else "").strip()
+        if not text:
+            continue
+        store.save_summary(conn, "thread", f"{mid}:{tid}", "reading",
+                           f"{text} ({n} claim{'' if n == 1 else 's'} "
+                           f"{'was' if n == 1 else 'were'} set aside after checking; this "
+                           "summary predates that.)", run_id)
+
+
 def run(conn, mid: str, *, theme_id: str | None = None, run_id: str | None = None) -> dict:
     """Check this material's live claims against their passages.
 
     Returns {"dropped", "set_aside", "marked"}. `theme_id` narrows it to one line, for the rerun
     that rewrites one line and must not pay to check the rest of the material again.
     """
-    sql = ("SELECT id, sid, claim, anchor FROM moment WHERE material_id=? AND status='live'"
+    sql = ("SELECT id, sid, claim, anchor, theme_id, support FROM moment "
+           "WHERE material_id=? AND status='live'"
            + (" AND theme_id=? " if theme_id else " ") + "ORDER BY position")
     rows = [dict(r) for r in conn.execute(sql, (mid, theme_id) if theme_id else (mid,))]
     if not rows:
@@ -71,23 +126,32 @@ def run(conn, mid: str, *, theme_id: str | None = None, run_id: str | None = Non
     ruled: dict[str, tuple[str, str]] = {}
     for start in range(0, len(rows), BATCH):
         batch = rows[start:start + BATCH]
-        system, user = llm.prompt("verify", frame=frame, count=len(batch),
-                                  claims=claims_block(batch, sents, where))
-        data = llm.chat_json(system, user, label="verify")
-        mine = {r["id"] for r in batch}
-        for v in data.get("verdicts") or []:
-            if not isinstance(v, dict):
-                continue
-            vid, verdict = str(v.get("id") or ""), str(v.get("verdict") or "").strip().lower()
-            # An id from nowhere is ignored; `supported` and anything unreadable leave the claim
-            # exactly as the reading wrote it.
-            if vid in mine and verdict in ("not", "partly"):
-                ruled[vid] = (verdict, synth.words(v.get("why"), WHY_WORDS))
+        ruled |= _ask(batch, sents, where, frame)
+        missing = [r for r in batch if r["id"] not in ruled]
+        # Once, for the subset that came back unjudged, and only where SOME of the batch was
+        # judged. An answer cut off part way is worth asking again; an answer that ruled on
+        # nothing at all is a model declining the whole batch, and the identical prompt gets the
+        # identical nothing. Those claims are recorded unchecked instead, where a researcher can
+        # see them.
+        # ponytail: one retry per batch, never a loop — raise the bound if real answers turn out
+        # to arrive in thirds.
+        if missing and len(missing) < len(batch):
+            llm.report(f"asking again about {len(missing)} claims the check left out")
+            ruled |= _ask(missing, sents, where, frame)
 
-    # Every claim that was checked, not only the ones ruled against: a claim marked `partly` on
-    # an earlier pass and read as supported on this one must lose the mark, or the page keeps
-    # warning a researcher about words that are no longer in question.
-    store.mark_support(conn, [(r["id"], *ruled.get(r["id"], ("", ""))) for r in rows])
+    # Only what came back is written. A claim nobody ruled on is recorded `unchecked`, and one
+    # already carrying a mark keeps it: an omission says nothing about a claim, so it can neither
+    # confirm it nor lift the qualification standing on it. `supported` still clears a mark,
+    # because that is a ruling — the page would otherwise keep warning a researcher about words
+    # that are no longer in question.
+    # One transaction: a claim taken away and the note on the summary that stood over it are the
+    # same finding, and the record must not be able to hold one without the other.
+    with store.atomic(conn) as tx:
+        store.mark_support(tx, [(r["id"], *ruled[r["id"]]) for r in rows if r["id"] in ruled]
+                           + [(r["id"], "unchecked", "") for r in rows
+                              if r["id"] not in ruled and not (r["support"] or "")])
+        _predating_summaries(tx, mid, [r for r in rows
+                                       if ruled.get(r["id"], ("", ""))[0] == "not"], run_id)
     claim = {r["id"]: r["claim"] for r in rows}
     return {
         "dropped": [f'a claim was set aside — its passage does not carry it: '

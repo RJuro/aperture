@@ -175,14 +175,26 @@ def test_a_line_carries_a_short_account_of_what_it_amounts_to(ready, conn, model
     assert "at most 90 words" in model.shown("thread")
 
 
-def test_a_line_set_aside_leaves_no_account_behind(ready, conn, model, quote):
-    """Three claims is not a line, and an account of a line that was not kept would be a reading
-    with nothing under it."""
-    model.queue({"moments": _moments(quote, ready["mid"], 3), "summary": "an account of nothing"})
+def test_a_sparse_line_keeps_its_account_and_an_empty_one_loses_it(ready, conn, model, quote):
+    """Three claims is a sparse line and it is kept, account and all. A line that now holds
+    nothing loses its account in the same breath as its claims: an account of claims that are no
+    longer there is a reading with nothing under it, and the page cannot tell the two apart."""
+    model.queue({"moments": _moments(quote, ready["mid"], 3), "summary": "an account of three"})
+    model.queue({"verdicts": []})
     model.queue({"summary": "what the reading found", "questions": "", "people": []})
-    out = synth.doc(conn, ready["mid"])
-    assert any("set aside" in d for d in out["dropped"])
-    assert store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading") is None
+    model.queue({"verdicts": []})
+    synth.doc(conn, ready["mid"])
+    kept = store.thread(conn, ready["mid"], ready["tid"])
+    assert len(kept) == 3 < synth.MIN_MOMENTS
+    row = store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}', "reading")
+    assert row["text"] == "an account of three"
+
+    model.queue({"moments": [], "summary": "an account of nothing"})
+    model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    synth.doc(conn, ready["mid"])
+    assert store.thread(conn, ready["mid"], ready["tid"]) == []
+    assert store.get_summary(conn, "thread", f'{ready["mid"]}:{ready["tid"]}',
+                             "reading")["text"] == ""
 
 
 def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, model, quote, client):

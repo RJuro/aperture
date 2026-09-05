@@ -14,8 +14,10 @@ and Python owns the outcome, exactly as it does for a claim:
               summary is stored, and the exclusion quotes it and says why
     partly    the sentence stands and the exclusion says it goes past the claims, so a researcher
               reads the summary knowing which sentence to weigh
-    supported nothing happens, and a sentence the check did not rule on is treated as supported.
-              The prompt says so. A missing verdict must not be able to delete a sentence
+    supported nothing happens. A sentence the check did not rule on is KEPT and not marked — it
+              is not thereby supported either, and nothing about it is written down or cleared.
+              A missing verdict must not be able to delete a sentence, and it must not be able to
+              vouch for one
 
 One call per material, between the summary being written and its being stored, so the summary that
 reaches the page and the record is the verified one.
