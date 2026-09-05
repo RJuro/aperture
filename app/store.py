@@ -377,8 +377,9 @@ def set_theme_gist(conn: sqlite3.Connection, tid: str, gist: str) -> None:
 
 
 def set_brief(conn: sqlite3.Connection, pid: str, brief: str) -> None:
-    """The one slot the model writes for itself: what this corpus is like and what to look for
-    next. Read back by the next reading and the next synthesis, and by nothing else."""
+    """The one slot the model writes for itself, as it was written before questions were kept per
+    material. Nothing writes it now — `open_questions` reads it only for a project analysed before
+    that change, so those questions do not vanish from the record."""
     conn.execute("UPDATE project SET brief=? WHERE id=?", (brief, pid))
     conn.commit()
 
@@ -502,8 +503,11 @@ def followed(conn: sqlite3.Connection, pid: str) -> dict[tuple[str, str], str]:
     """(theme id, material id) -> what became of that theme in that material, for one project.
 
     One query, because the pages that want this want a row per theme and a column per material.
-    A pair with no row was read before any of this was recorded; every caller reads a missing pair
-    as looked-for, which is what the pages already said about every absence.
+    A pair with NO row is not assessed: a material added since this theme was developed, a theme
+    developed since this material was read, or a reading made before any of this was recorded.
+    Callers read a missing pair as not assessed and never as looked-for — the pages said
+    "looked for and found too thin" over material nothing had ever read for that theme, which is
+    an absence asserted about a reading that never happened (`context._assessed`).
     """
     return {(r["theme_id"], r["material_id"]): r["outcome"] for r in conn.execute(
         "SELECT f.theme_id AS theme_id, f.material_id AS material_id, f.outcome AS outcome "
@@ -571,10 +575,57 @@ def get_summary(conn: sqlite3.Connection, scope: str, ref_id: str,
     if stage:
         return conn.execute("SELECT * FROM summary WHERE scope=? AND ref_id=? AND stage=? "
                             "AND status='live'", (scope, ref_id, stage)).fetchone()
+    # 'questions' is never the answer here whatever else exists. It is what the reading has left
+    # OPEN, not an account of the material, and this lookup feeds prompt slots that Law 5 reserves
+    # for the material, validated structure, or the researcher's words.
     return conn.execute(
         "SELECT * FROM summary WHERE scope=? AND ref_id=? AND status='live' "
+        "AND stage<>'questions' "
         "ORDER BY CASE stage WHEN 'reading' THEN 0 WHEN 'orientation' THEN 1 "
         "WHEN 'angles' THEN 2 ELSE 3 END LIMIT 1", (scope, ref_id)).fetchone()
+
+
+# What the project's open questions may cost the reader, and the prompt that is shown them.
+QUESTION_WORDS = 400
+
+
+def open_questions(conn: sqlite3.Connection, pid: str,
+                   cap: int = QUESTION_WORDS) -> list[dict]:
+    """What the readings have left open across this project — newest material first, each with the
+    material that asked it, under a word cap.
+
+    DOC used to write its questions into `project.brief`, one column for the whole project, so two
+    materials read side by side left only whichever finished last: the project's memory was the
+    last document's questions and depended on completion order. They are kept per material now
+    and read back as their union, which is order-independent by construction.
+
+    A project analysed before that change has questions in `brief` and none on its materials; that
+    text stands in until a material writes its own, so nothing already written disappears.
+    """
+    from .engine import synth       # for the word cap; synth imports this module at load
+
+    out, left = [], cap
+    for r in conn.execute(
+            "SELECT s.text AS text, m.id AS material_id, m.title AS title, m.name AS name "
+            "FROM summary s JOIN material m ON m.id = s.ref_id "
+            "WHERE s.scope='material' AND s.stage='questions' AND s.status='live' "
+            "AND m.project_id=? AND m.removed_at IS NULL ORDER BY s.rowid DESC", (pid,)):
+        if left <= 0:
+            break
+        if text := synth.words(r["text"], left):
+            out.append({"material_id": r["material_id"], "material": r["title"] or r["name"],
+                        "text": text})
+            left -= len(text.split())
+    if not out and (p := project(conn, pid)) and (p["brief"] or "").strip():
+        out = [{"material_id": "", "material": "", "text": p["brief"].strip()}]
+    return out
+
+
+def questions_text(conn: sqlite3.Connection, pid: str, cap: int = QUESTION_WORDS) -> str:
+    """`open_questions` as one block of prose, each question set under the material that asked it
+    — the shape a prompt slot and a paragraph on a page both take."""
+    return "\n\n".join(f'From {q["material"]}: {q["text"]}' if q["material"] else q["text"]
+                       for q in open_questions(conn, pid, cap))
 
 
 def save_people(conn: sqlite3.Connection, mid: str, people: list[dict]) -> None:
@@ -650,12 +701,16 @@ def project_feedback(conn: sqlite3.Connection, pid: str) -> list[sqlite3.Row]:
 
 def save_check(conn: sqlite3.Connection, pid: str, scope: str, ref_id: str, question: str,
                verdict: str, anchors: list[dict], searched_n: int,
-               run_id: str | None = None) -> str:
+               run_id: str | None = None, searched_scope: str = "unused") -> str:
+    """`searched_scope` is which passages were read — 'all' of them, or only the 'unused' ones no
+    claim rests on yet. Stored with the result because the result cannot be read without it."""
     cid = db.new_id("k")
     conn.execute("INSERT INTO check_ (id, project_id, scope, ref_id, question, verdict, "
-                 "anchors_json, searched_n, run_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                 "anchors_json, searched_n, run_id, created_at, searched_scope) "
+                 "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                  (cid, pid, scope, ref_id, question, verdict,
-                  json.dumps(anchors, ensure_ascii=False), searched_n, run_id, now()))
+                  json.dumps(anchors, ensure_ascii=False), searched_n, run_id, now(),
+                  searched_scope))
     conn.commit()
     return cid
 

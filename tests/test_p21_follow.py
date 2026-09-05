@@ -142,19 +142,22 @@ def test_the_theme_page_puts_the_two_absences_under_their_own_headings(split, cl
     under = section.split("Not looked for here — none of this theme's codes marked these")
     assert len(under) == 2, "the heading a skip is named under"
     assert grande["title"] in under[1] and grande["title"] not in under[0]
-    # Rodwin has not been read at all, and reads as looked-for: a material with no row is a
-    # material read before any of this was recorded, and that is what the page used to say.
-    assert "Looked for and found too thin" in under[0] and rodwin["title"] in under[0]
+    # Rodwin has not been read at all. A pair with no row is not assessed, and calling that
+    # "looked for and found too thin" asserts an absence over a reading that never happened.
+    assert "Not assessed yet — not read for this theme" in under[1]
+    assert rodwin["title"] in under[1].split("Not assessed yet")[1]
+    assert "Looked for and found too thin" not in section
 
     from app import context
     absent = context.theme_page(conn, split["pid"], split["elsewhere"])["absent"]
-    assert {m["material_id"]: m["looked_for"] for m in absent} == {split["grande"]: False,
-                                                                   split["rodwin"]: True}
+    assert {m["material_id"]: m["assessed"] for m in absent} == {split["grande"]: "skipped",
+                                                                  split["rodwin"]: None}
 
 
-def test_the_record_says_looked_for_beside_every_absence_it_names(split, conn, model, quote):
+def test_the_record_says_which_silence_it_names(split, conn, model, quote):
     """The contract the reading record reads: every entry of a theme's `absent` carries
-    `looked_for`, so the record can name the two silences apart without asking again."""
+    `assessed` — 'thin', 'skipped', or None where the pair was never assessed — so the record can
+    name the three silences apart without asking again."""
     from app import context
     model.queue({"moments": _moments(quote, split["grande"], 5)})
     model.queue({"verdicts": []})
@@ -164,9 +167,9 @@ def test_the_record_says_looked_for_beside_every_absence_it_names(split, conn, m
 
     themes = context.export(conn, split["pid"])["themes"]
     mine = [t for t in themes if t["id"] == split["elsewhere"]][0]
-    assert all("looked_for" in m for m in mine["absent"])
-    assert {m["material_id"]: m["looked_for"] for m in mine["absent"]} == {split["grande"]: False,
-                                                                          split["rodwin"]: True}
+    assert all("assessed" in m for m in mine["absent"])
+    assert {m["material_id"]: m["assessed"] for m in mine["absent"]} == {split["grande"]: "skipped",
+                                                                        split["rodwin"]: None}
 
 
 def test_the_account_is_told_which_kind_of_nothing_each_material_is(split, conn, model, quote):

@@ -17,9 +17,7 @@ Four rules. Each one carries the same weight, and each one is checked.
    this researcher than a quote that only nearly fits: an empty list is read as "not found in
    these passages", which is a real and useful result.
 
-These are not all the passages in the material. They are the ones no claim currently rests on, so
-"not found here" means "not found outside what has already been claimed" — which is exactly what
-was asked.
+{{scope}}
 
 The cap, as a number: each quote at most 12 words.
 
@@ -42,7 +40,7 @@ THE MATERIAL these passages come from:
 
 {{material}}
 
-THE PASSAGES in scope for this check — every passage of this material that no claim rests on.
-Each line starts with the number a quote from that line must cite:
+THE PASSAGES in scope for this check. Each line starts with the number a quote from that line
+must cite:
 
 {{passages}}

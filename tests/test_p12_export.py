@@ -66,7 +66,10 @@ def test_every_live_row_reaches_the_document(client, conn, rich):
         for m in store.moments(conn, mid):
             assert m["claim"] in md and m["anchor"] in md
     for c in store.checks(conn, pid):
-        assert c["question"] in md and c["verdict"] in md and str(c["searched_n"]) in md
+        # Not the stored verdict word: an empty result is printed as what it is — nothing found
+        # in the passages that were read — never as an absence from the material.
+        assert c["question"] in md and str(c["searched_n"]) in md
+        assert ("found —" if c["verdict"] == "found" else "nothing found —") in md
     assert 'was set aside: 3 claims left' in md
     assert "the crossing is underplayed" in md and "still open, not yet honoured" in md
 

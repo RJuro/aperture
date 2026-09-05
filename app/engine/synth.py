@@ -17,8 +17,9 @@ Passages are printed to the model under the numeric part of their sentence id (`
 a citation comes back as that number, mapped back here. Ids are the spine; the number is how the
 material is laid out for a reader, on the page and in the prompt alike.
 
-DOC also rewrites the brief. That is the one slot in this system where something a model wrote
-enters another prompt — everything else the model writes is shown to a researcher and stops there.
+DOC also writes this material's open questions. That is the one slot in this system where
+something a model wrote enters another prompt — everything else the model writes is shown to a
+researcher and stops there.
 """
 from __future__ import annotations
 
@@ -576,8 +577,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         store.save_summary(conn, "material", mid, "reading", summary, run_id)
     # The one self-prompting slot: QUESTIONS the corpus has left open, read only by the ideation
     # step for the next material. Never findings — conclusions flow up, only questions forward.
+    # Kept on THIS material, not in the project's one brief column: two materials read side by
+    # side both wrote that column and only the later writer's questions survived, so the project's
+    # memory was whichever document happened to finish last (`store.open_questions`).
     if questions := words(data.get("questions"), BRIEF_WORDS):
-        store.set_brief(conn, pid, questions)
+        store.save_summary(conn, "material", mid, "questions", questions, run_id)
     if "people" in data:
         store.save_people(conn, mid, [p for p in (data.get("people") or [])
                                       if isinstance(p, dict) and p.get("name")])
@@ -586,6 +590,40 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
 
 
 # ---- PROJECT ------------------------------------------------------------------------------
+
+# The most candidate claims the corpus summary reads at once, over the whole project. The theme
+# accounts are the ordinary route to evidence and they have their own budget (account.CLAIMS_SHOWN);
+# this is the smaller allowance for the materials no account speaks for.
+PROJECT_CLAIMS = 120
+
+
+def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dict[str, list[str]]:
+    """Live candidate claims, per material, for the materials no theme account carries.
+
+    The corpus summary reads what the layer below it concluded, and its prompt requires every
+    statement to cite a claim id. A project whose themes are all candidates — a single case, or a
+    corpus early in its reading — has no accounts, so the prompt was handed prose summaries alone
+    and asked to cite ids it had never been shown. It cited nothing, or invented one, and
+    `_strip_dangling` took it out again.
+
+    A candidate is a pattern seen in one material; here that is exactly the evidence there is.
+    Where accounts do exist, this fills only the gaps in them: a material carrying nothing an
+    account speaks for is otherwise present in this prompt as a paragraph of prose with no
+    evidence under it at all.
+    """
+    cands = {t["id"] for t in store.candidates(conn, pid)}
+    out: dict[str, list[str]] = {}
+    left = PROJECT_CLAIMS
+    # In material order, so the same corpus composes the same prompt twice.
+    for r in live_moments.values():
+        if left <= 0:
+            break
+        if r["theme_id"] in cands and r["material_id"] not in evidenced:
+            out.setdefault(r["material_id"], []).append(
+                f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"')
+            left -= 1
+    return out
+
 
 def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     """The corpus summary, written over the theme accounts and the material summaries.
@@ -598,6 +636,9 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     what the layer below it concluded, which is what the account layer exists for. No new quotes
     at this level: a claim rests on claims below, cited by id, and a citation to a claim that is
     not live is stripped and said so.
+
+    Where no account speaks for a material, its candidates' own claims stand in
+    (`_candidate_claims`) — evidence this level may cite rather than prose it cannot.
     """
     proj = store.project(conn, pid)
     live_themes = {t["id"]: t for t in store.live_themes(conn, pid)}
@@ -605,16 +646,20 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
         "SELECT m.* FROM moment m JOIN material x ON x.id=m.material_id "
         "WHERE x.project_id=? AND x.removed_at IS NULL AND m.status='live'", (pid,))}
 
-    accounts = []
+    accounts, evidenced = [], set()
     for tid, t in live_themes.items():
         acc = store.get_summary(conn, "theme", tid)
         accounts.append(f'## {t["name"]} ({tid})\ndefinition: {t["gist"]}\n'
                         f'{acc["text"] if acc else "no account written yet"}')
+        if acc:
+            evidenced |= {r["material_id"] for r in live_moments.values() if r["theme_id"] == tid}
+    claims = _candidate_claims(conn, pid, live_moments, evidenced)
     mats = []
     for m in store.materials(conn, pid):
         summary = store.get_summary(conn, "material", m["id"])
         mats.append(f'## {m["title"] or m["name"]} — {m["kind"] or "kind not worked out"}\n'
-                    f'{summary["text"] if summary else "not read yet"}')
+                    f'{summary["text"] if summary else "not read yet"}'
+                    + ("\n" + "\n".join(claims[m["id"]]) if claims.get(m["id"]) else ""))
 
     fb = [f'{(f["created_at"] or "")[:10]} — {f["kind"]}\n"{f["text"]}"'
           for f in store.project_feedback(conn, pid)

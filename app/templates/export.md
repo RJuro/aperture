@@ -26,10 +26,11 @@
 {% if focus_history %}
 {% for f in focus_history %}- {{ f.created_at[:10] }} — {{ f.text }}
 {% endfor %}{% endif %}
-{% if project.brief %}**Open questions from the analysis**
+{% if questions %}**Open questions from the analysis**
 
-{{ project.brief }}
-{% endif %}
+{% for q in questions %}{% if q.material %}From {{ q.material }}: {% endif %}{{ q.text }}
+
+{% endfor %}{% endif %}
 ## Themes
 
 {% if materials | length == 1 %}With one material, a theme cannot yet run across materials.
@@ -59,8 +60,9 @@
 
 {% else %}No material contains claims for this theme yet.
 {% endfor %}{% if t.absent %}{% for head, mats in
-   ([("Looked for and found too thin", t.absent | selectattr("looked_for") | list),
-     ("Not looked for here", t.absent | rejectattr("looked_for") | list)]) %}{% if mats %}##### {{ head }}
+   ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
+     ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
+     ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}{% if mats %}##### {{ head }}
 
 {% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
 {% endfor %}
@@ -100,7 +102,8 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {% for th in m.threads %}#### {{ th.theme.name }}
 
 {{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}
-{% if th.summary %}
+{% if th.sparse %}sparse · fewer claims than a full line, kept and marked as short
+{% endif %}{% if th.summary %}
 {{ th.summary.text }}
 {% endif %}
 {% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
@@ -115,7 +118,7 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 ## Questions checked against the materials
 
 {% for k in checks %}- {{ k.created_at[:10] }} — {{ k.question }}
-  Verdict: {{ k.verdict }}. Searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name }}{% endif %}
+  {{ k.said }}{% if k.material_name %} in {{ k.material_name }}{% endif %}
 
 {% for a in k.anchors %}  > {{ a.anchor }}{% if a.sid %}  [{{ a.sid }}]{% endif %}
 {% endfor %}

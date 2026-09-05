@@ -233,7 +233,8 @@ def test_the_summary_the_questions_and_the_people_are_written(ready, conn, model
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] \
         == "what the reading found"
     assert store.get_summary(conn, "material", ready["mid"], "orientation") is not None
-    assert store.project(conn, ready["pid"])["brief"] == "why Trieste? what became of the brother?"
+    assert store.get_summary(conn, "material", ready["mid"], "questions")["text"] \
+        == "why Trieste? what became of the brother?"
     assert [p["name"] for p in store.people(conn, ready["mid"])] == ["M. Grande"]
 
 
@@ -246,7 +247,7 @@ def test_a_one_line_rerun_makes_one_call_and_leaves_the_summary_alone(ready, con
     assert [c["label"] for c in model.calls][-2:] == ["thread", "verify"]
     assert len(out["threads"]) == 1
     assert store.get_summary(conn, "material", ready["mid"], "reading")["text"] == "the whole reading"
-    assert store.project(conn, ready["pid"])["brief"] == "q1"
+    assert store.get_summary(conn, "material", ready["mid"], "questions")["text"] == "q1"
 
 
 def test_the_project_level_reads_the_accounts_and_may_not_introduce_a_quote(ready, conn, model,
@@ -305,12 +306,15 @@ def test_the_project_level_leaves_a_themes_definition_alone(ready, conn, model, 
     assert conn.execute("SELECT gist FROM theme WHERE id=?", (ready["tid"],)).fetchone()[0] == "a living"
 
 
-def test_a_check_searches_only_what_no_moment_rests_on(ready, conn, model, quote):
+def test_the_unused_scope_searches_only_what_no_moment_rests_on(ready, conn, model, quote):
+    """The residual search, now asked for by name. It is a different question from the default —
+    what is in here the reading has not used — and it says so on the page and in the record."""
     queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
     synth.doc(conn, ready["mid"])
     uncited = len(store.uncited(conn, ready["mid"]))
     model.queue({"found": []})
-    out = check.run(conn, ready["pid"], "material", ready["mid"], "Is religion mentioned?")
+    out = check.run(conn, ready["pid"], "material", ready["mid"], "Is religion mentioned?",
+                    "unused")
     assert out["searched_n"] == uncited
     assert out["verdict"] == "not found"
     cited = store.cited_sids(conn, ready["mid"])

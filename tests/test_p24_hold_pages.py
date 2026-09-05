@@ -171,20 +171,27 @@ def _claims(conn, holds, tid: str, n: int) -> None:
                         for i, r in enumerate(rows)])
 
 
-def test_stable_for_is_said_at_three_passes_and_only_while_the_theme_is_open(client, conn, holds):
+def test_unchanged_for_is_said_at_three_passes_and_only_while_the_theme_is_open(client, conn,
+                                                                                holds):
     """The count is bookkeeping — Python compares one fingerprint per pass — and it is shown
-    beside Freeze because the researcher freezes, not the instrument."""
+    beside Freeze because the researcher freezes, not the instrument.
+
+    Passes, not materials: the count rises on a rerun of one material too, and "stable for 3
+    materials" read as saturation across three cases, which is a claim nothing here measured.
+    """
     pid, tid = holds["pid"], holds["work"]
     url = f"/p/{pid}/t/{tid}"
     conn.execute("UPDATE theme SET stable_passes=2 WHERE id=?", (tid,))
     conn.commit()
-    assert "stable for" not in client.get(url).text
+    assert "unchanged for" not in client.get(url).text
     conn.execute("UPDATE theme SET stable_passes=3 WHERE id=?", (tid,))
     conn.commit()
-    assert "stable for 3 materials" in client.get(url).text
+    page = client.get(url).text
+    assert "unchanged for 3 passes" in page
+    assert "stable for" not in page, "passes are not materials and must not be called them"
     store.set_hold(conn, tid, "frozen")
     page = client.get(url).text
-    assert "stable for" not in page, "a frozen theme is not still steadying"
+    assert "unchanged for" not in page, "a frozen theme is not still steadying"
     assert "Frozen" in page and "Unfreeze" in page
 
 

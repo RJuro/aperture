@@ -81,7 +81,7 @@
   {% for c in cards %}
     <li>
       <a class="found-name" href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }}</a>
-      <span class="num">{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %}
+      <span class="num">{% if c.sparse %}sparse · {% endif %}{{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %}
       <p class="gist">{{ (c.summary.text if c.summary else c.gist) | prose }}</p>
     </li>
   {% endfor %}
@@ -92,7 +92,7 @@
    the browser lands at the top of the page, so the researcher scrolled back past the head, the
    summary and the theme list on every single switch. #}
 {% if cards %}<section class="themes-bar"><div class="container"><nav class="theme-tabs" aria-label="Themes in this material">
-{% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }}{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
+{% for c in cards %}<a class="theme-tab"{% if selected and c.id == selected.id %} aria-current="page"{% endif %} href="/p/{{ project.id }}/m/{{ material.id }}?theme={{ c.id }}#reading">{{ c.name | txt }}{% if c.hold == 'candidate' %} <span class="tag">Candidate</span>{% endif %}{% if c.sparse %} <span class="tag" title="Fewer claims than a full line — kept, and said to be short">sparse · {{ c.moments | length }} {{ 'claim' | plural(c.moments | length) }}</span>{% endif %} <span class="num">{{ '%02d' | format(c.moments | length) }}</span></a>{% endfor %}
 </nav></div></section>{% endif %}
 
 <section class="section" id="reading"><div class="container">
@@ -141,8 +141,12 @@
   <div class="action-grid">
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
       <input type="hidden" name="material_id" value="{{ material.id }}">
-      <h3>Check against the material</h3><p>Search uncited passages without changing the reading.</p>
+      <h3>Check against the material</h3><p>Search this material without changing the reading.</p>
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
+      <fieldset class="scope-choice"><legend>What to search</legend>
+        <label><input type="radio" name="scope" value="all" checked> Search everything</label>
+        <label><input type="radio" name="scope" value="unused"> Only passages no claim rests on yet</label>
+      </fieldset>
       <button class="btn btn-primary">Check material</button>
     </form>
     {% if selected %}
@@ -159,7 +163,7 @@
 {% endif %}
 {% if checks %}
 <details class="quiet-details"><summary>Previous checks · {{ checks | length }}</summary><ul class="check-list">
-{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+{% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.said }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
   {% if k.anchors %}<ul class="found">{% for a in k.anchors %}
     <li><a class="cite" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>
   {% endfor %}</ul>{% endif %}</li>{% endfor %}

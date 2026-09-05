@@ -55,7 +55,8 @@
         <button class="btn btn-small btn-secondary">Write the project summary again</button>
       </form>{% endif %}
       {% endif %}
-      {% if project.brief %}<details class="quiet-details"><summary>Open questions from the analysis</summary><p>{{ project.brief | txt }}</p></details>{% endif %}
+      {% if questions %}<details class="quiet-details"><summary>Open questions from the analysis</summary>
+      {% for q in questions %}<p>{% if q.material %}From {{ q.material | txt }}: {% endif %}{{ q.text | prose }}</p>{% endfor %}</details>{% endif %}
     </div>
     <aside class="focus-note">
       <p class="eyebrow">Research focus</p>
@@ -100,7 +101,7 @@
         <form method="post" action="/p/{{ project.id }}/t/{{ t.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
         {% endif %}</th>
   {% for col in t.columns %}
-    <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim">—</span>{% endif %}</td>
+    <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim" title="{{ col.assessed_said }}">—</span>{% endif %}</td>
   {% endfor %}
   </tr>
 {% endfor %}
@@ -174,13 +175,17 @@
       <button class="btn btn-primary">Revise synthesis</button>
     </form>
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
-      <h3>Check against all material</h3><p>Search uncited passages without changing the reading.</p>
+      <h3>Check against all material</h3><p>Search the materials without changing the reading.</p>
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
+      <fieldset class="scope-choice"><legend>What to search</legend>
+        <label><input type="radio" name="scope" value="all" checked> Search everything</label>
+        <label><input type="radio" name="scope" value="unused"> Only passages no claim rests on yet</label>
+      </fieldset>
       <button class="btn btn-primary">Check all {{ materials | length }} {{ 'material' | plural(materials | length) }}</button>
     </form>
   </div>
   {% if checks %}<details class="quiet-details"><summary>Previous checks · {{ checks | length }}</summary><ul class="check-list">
-  {% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.verdict }}, searched {{ k.searched_n }} {{ 'passage' | plural(k.searched_n) }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
+  {% for k in checks %}<li><q>{{ k.question | txt }}</q> — {{ k.said }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
     {% if k.anchors %}<ul class="found">{% for a in k.anchors %}<li><a class="cite" href="/p/{{ project.id }}/m/{{ a.material_id or k.ref_id }}#{{ a.sid }}"><q class="quote">{{ a.anchor | txt }}</q> [{{ a.sid }}]</a></li>{% endfor %}</ul>{% endif %}</li>{% endfor %}
   </ul></details>{% endif %}
 </details>

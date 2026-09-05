@@ -9,7 +9,9 @@
   <span class="meta">
   {%- if theme.hold == 'candidate' %}Candidate — found in one material so far
   {%- elif theme.hold == 'frozen' %}Frozen
-  {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · stable for {{ theme.stable_passes }} materials{% endif %}
+  {#- The count is passes of the grouping step, which includes rereading one material: calling it
+      materials read as saturation across cases, which is a methodological claim nothing here made. #}
+  {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
   {%- endif %}</span>
   {% if role in ('edit', 'owner') %}
   {% if theme.hold == 'candidate' %}
@@ -69,8 +71,9 @@ you send feedback below.</p>
 </div></section>
 
 {% if absent %}
-{% set searched = absent | selectattr('looked_for') | list %}
-{% set unsearched = absent | rejectattr('looked_for') | list %}
+{% set searched = absent | selectattr('assessed', 'equalto', 'thin') | list %}
+{% set unsearched = absent | selectattr('assessed', 'equalto', 'skipped') | list %}
+{% set unassessed = absent | rejectattr('assessed') | list %}
 <section class="section"><div class="container"><h2>Materials with no claims under this theme</h2>
 {% if searched %}
 <h3>Looked for and found too thin</h3>
@@ -90,6 +93,18 @@ dropped whole and would look the same as absence here.</p>
 looking for it in them. This says where the reading went, not what these materials do not say.</p>
 <ul class="mats">
 {% for m in unsearched %}
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
+      <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if unassessed %}
+<h3>Not assessed yet — not read for this theme</h3>
+<p class="dim">Nothing has been read in these materials for this theme: either they were added
+after it was worked out, or the theme was worked out after they were read. This is a gap in the
+reading, not a finding about the materials.</p>
+<ul class="mats">
+{% for m in unassessed %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
 {% endfor %}
