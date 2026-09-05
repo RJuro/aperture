@@ -44,19 +44,19 @@ def test_a_comment_on_a_claim_runs_nothing_now(conn, state):
 
 def test_feedback_on_a_thread_rewrites_that_line_and_everything_written_over_it(conn, state):
     """The line first, scoped to the theme the comment is about — the only run that cannot pass
-    that theme over. Then the material whose summary is written over that line, and the accounts
-    and corpus summary written over the claims it replaced: a corrected line used to leave every
-    sentence above it standing over claims that no longer existed."""
+    that theme over. Then the material's summary over its lines as they now stand — not every line
+    again; a comment on one line once re-threaded the whole material to refresh one paragraph —
+    and the accounts and corpus summary written over the claims it replaced."""
     tid = list(state["themes"].values())[0]
     plan = _plan(conn, state["pid"], "thread", f"{state['grande']}:{tid}")
-    assert kinds(plan) == ["doc", "doc", "accounts", "project"]
+    assert kinds(plan) == ["doc", "summary", "accounts", "project"]
     assert plan[0]["material_id"] == state["grande"] and plan[0]["theme_id"] == tid
     assert plan[1]["material_id"] == state["grande"] and not plan[1]["theme_id"]
 
 
-def test_feedback_on_a_materials_summary_re_synthesises_that_material_whole(conn, state):
+def test_feedback_on_a_materials_summary_writes_that_summary_again_over_its_lines(conn, state):
     plan = _plan(conn, state["pid"], "material_summary", state["grande"])
-    assert kinds(plan) == ["doc", "accounts", "project"]
+    assert kinds(plan) == ["summary", "accounts", "project"]
     assert plan[0]["material_id"] == state["grande"] and not plan[0].get("theme_id")
 
 

@@ -115,6 +115,14 @@ def _doc(conn, pid, run):
     return (out or {}).get("dropped")
 
 
+def _summary(conn, pid, run):
+    """The material's summary over its lines as they stand: what a comment on one line, or on the
+    summary itself, actually asks for. No line is rewritten here."""
+    from .engine import synth
+    out = synth.doc(conn, run["material_id"], summary_only=True, run_id=run.get("run_id"))
+    return (out or {}).get("dropped")
+
+
 def _accounts(conn, pid, run):
     """Every live theme's account, expanded when this step runs rather than when it was planned —
     the theme set is only known after THEMES has been over the new material.
@@ -173,6 +181,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "read":    ("Reading {name}",                     _read),
     "themes":  ("Finding themes",                     _themes),
     "doc":     ("Writing what stands out in {name}", _doc),
+    "summary": ("Writing the summary of {name} again", _summary),
     "account":  ("Writing where a theme runs across everything", _account),
     "accounts": ("Writing where each theme runs across everything", _accounts),
     "project": ("Updating the project summary",       _project),
@@ -328,7 +337,7 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
         # as it stood, or an account that came back empty, still marked the instruction answered.
         if fb is None or fb["target_kind"] != "theme":
             store.consume_feedback(conn, run["feedback_id"], rid)
-    if not error and kind == "doc" and mid:
+    if not error and kind in ("doc", "summary") and mid:
         # A rewrite answers every comment it was shown, not only the one that planned it.
         store.consume_material_feedback(conn, pid, mid, rid, run.get("theme_id"))
     return rid, error or ""

@@ -73,24 +73,21 @@ def _check(conn, fb) -> list[dict]:
 
 def _doc_thread(conn, fb) -> list[dict]:
     """A thread's target id is "<material_id>:<theme_id>" — that material, that theme only, and
-    then everything written over the claims that line has just replaced.
+    then everything written over the claims that line has just replaced: the material's summary
+    (over its lines as they now stand, no other line rewritten), the accounts, the corpus summary.
 
     The scoped run stays first and stays scoped: it is the only run that cannot pass this theme
-    over, whatever the codes say, and the researcher asked about this line. What follows is the
-    material whole, because its summary is written over its lines and `synth.doc` has no way to
-    write that summary alone — a corrected line used to leave the sentence above it standing over
-    claims that no longer exist. Then the accounts and the corpus summary, which are written from
-    those claims too; both steps skip what has not moved.
-    """
-    mid, _, tid = fb["target_id"].partition(":")
-    return [_run("doc", mid, tid or None, fb["id"]), _run("doc", mid, None, fb["id"]),
+    over, whatever the codes say, and the researcher asked about this line."""
+    mid, tid = fb["target_id"].split(":", 1)
+    return [_run("doc", mid, tid, fb["id"]), _run("summary", mid, feedback_id=fb["id"]),
             _run("accounts", feedback_id=fb["id"]), _run("project", feedback_id=fb["id"])]
 
 
 def _doc_material(conn, fb) -> list[dict]:
-    """That material whole, and then what is written over its claims. Same reason as the row
-    above: this run supersedes claims, and the accounts and the corpus summary rest on them."""
-    return [_run("doc", fb["target_id"], None, fb["id"]),
+    """A comment on a material's summary rewrites the summary over the lines that stand, then what
+    is written over it. It does not re-read every line: the researcher who wants that has "run
+    again from synthesis" and its note."""
+    return [_run("summary", fb["target_id"], feedback_id=fb["id"]),
             _run("accounts", feedback_id=fb["id"]), _run("project", feedback_id=fb["id"])]
 
 

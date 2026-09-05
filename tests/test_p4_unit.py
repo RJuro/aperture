@@ -279,7 +279,7 @@ def test_a_comment_on_a_claim_is_consumed_by_the_rewrite_that_answers_it(conn, a
 def test_a_failed_run_leaves_its_comment_open(conn, analysed, monkeypatch):
     def boom(conn, pid, run):
         raise RuntimeError("no")
-    _stub(monkeypatch, doc=boom)
+    _stub(monkeypatch, doc=boom, summary=boom)
     fid = store.add_feedback(conn, analysed["pid"], "material_summary", analysed["grande"], "note", "x")
     jobs.run_now(conn, analysed["pid"], rerun.plan(conn, fid))
     assert conn.execute("SELECT consumed_by_run FROM feedback WHERE id=?", (fid,)).fetchone()[0] is None

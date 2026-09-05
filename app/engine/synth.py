@@ -417,11 +417,13 @@ def _thread(conn, mid: str, tid: str, *,
     return _thread_kept(conn, mid, tid, data, sents, theme, pid, run_id=run_id)
 
 
-def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = None) -> dict:
+def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = False,
+        run_id: str | None = None) -> dict:
     """Write this material's lines, then its summary over them.
 
     `only_theme` re-makes one line and leaves the summary, the questions and the people exactly as
-    they are. Otherwise every live theme gets its own call — in waves of `WAVE`, side by side —
+    they are. `summary_only` does the opposite: the summary, questions and people again over the
+    lines that already stand, without a single THREAD call. Otherwise every live theme gets its own call — in waves of `WAVE`, side by side —
     and the summary call sees the lines that actually exist rather than being asked to write them
     and introduce them in one breath.
     """
@@ -469,77 +471,84 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
     threads, dropped, failed = [], [], set()
-    # Only where the reading of this material actually marked something the theme gathers. Every
-    # live theme used to be followed through every material after the first, whether its codes had
-    # fired there or not, and a line asked for where there is no evidence comes back with claims
-    # anyway (PLAN.md §3, law 2). What is skipped here is written down, not inferred later.
-    # Off unless asked for. Twenty-four lines were judged blind, twelve written where no code had
-    # fired against twelve where one had: the unmarked lines were weaker (found 2.9 against 4.0,
-    # five of twelve rated made against three) — and four of the twelve were among the best
-    # lines in the set, one of them the strongest of all. Skipping them buys a third of DOC's
-    # cost with a third of the good lines it would have found (bench/gate-test, docs/EVAL.md
-    # pass 3). A researcher who wants that trade sets APERTURE_FOLLOW=marked.
-    skipped = ({tid for tid in live if not _marked_here(conn, mid, tid)}
-               if os.environ.get("APERTURE_FOLLOW") == "marked" else set())
-    # A candidate is gated whatever that setting says. It is a pattern seen in one material, and
-    # what promotes it is a second material's coding carrying it — so confirmation has to come
-    # from the codes, not from a reader sent to find it here.
-    skipped |= {tid for tid in cands if not _marked_here(conn, mid, tid)}
-    # live_themes order, so the waves compose the same way twice.
-    order = [tid for tid in live if tid not in skipped]
-    tail = f" · {len(skipped)} not looked for" if skipped else ""
-    # In waves, because this is the dominant cost of the whole chain — nine to ten calls at 60–80
-    # s each, 1351 s for one nine-theme material — and the calls are not independent. The guard the
-    # sequence existed for is kept whole: every line is shown what the waves BEFORE it claimed in
-    # this material (`_claimed_block`, built here in theme order just before the wave goes out),
-    # which is what stops one passage coming back under three themes. What a line no longer sees is
-    # its own wave-mates, claiming at the same moment as it.
-    #
-    # Up to `jobs.PARALLEL` × WAVE calls are therefore in flight when DOC steps run side by side.
-    # No semaphore: the provider answers over its rate limit with a 429 and `llm._ask` waits that
-    # out, which is the same answer a semaphore would give more slowly.
-    with ThreadPoolExecutor(max_workers=WAVE) as pool:
-        for at in range(0, len(order), WAVE):
-            wave = order[at:at + WAVE]
-            prepared = [_thread_prompt(conn, mid, tid) for tid in wave]
-            # Each in its OWN copy of this context, so `llm.usage` and `llm.report` are still this
-            # step's — the tokens land on this run row (see llm.new_usage).
-            answers = [f.result() for f in [
-                pool.submit(contextvars.copy_context().run, llm.chat_json, *prompt,
-                            label="thread") for prompt, *_ in prepared]]
-            for tid, (_, sents, theme, tpid), data in zip(wave, prepared, answers):
-                kept, d, st = _thread_kept(conn, mid, tid, data, sents, theme, tpid,
-                                           run_id=run_id)
-                tally(st)
-                dropped += d
-                if kept is None:
-                    failed.add(tid)             # nothing written; its last outcome still holds
-                elif kept:
-                    threads.append({"theme_id": tid, "moments": kept})
-            llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written{tail}")
+    if summary_only:
+        # The summary again, over the lines as they stand — no line is rewritten. A comment on one
+        # line used to plan the whole material, every theme re-threaded, to refresh a summary that
+        # rests on lines nobody asked to change; that was most of a material's cost for one sentence.
+        threads = [t for t in ({"theme_id": tid, "moments": [dict(m) for m in store.thread(conn, mid, tid)]}
+                               for tid in live) if t["moments"]]
+    else:
+        threads, dropped, failed = [], [], set()
+        # Only where the reading of this material actually marked something the theme gathers. Every
+        # live theme used to be followed through every material after the first, whether its codes had
+        # fired there or not, and a line asked for where there is no evidence comes back with claims
+        # anyway (PLAN.md §3, law 2). What is skipped here is written down, not inferred later.
+        # Off unless asked for. Twenty-four lines were judged blind, twelve written where no code had
+        # fired against twelve where one had: the unmarked lines were weaker (found 2.9 against 4.0,
+        # five of twelve rated made against three) — and four of the twelve were among the best
+        # lines in the set, one of them the strongest of all. Skipping them buys a third of DOC's
+        # cost with a third of the good lines it would have found (bench/gate-test, docs/EVAL.md
+        # pass 3). A researcher who wants that trade sets APERTURE_FOLLOW=marked.
+        skipped = ({tid for tid in live if not _marked_here(conn, mid, tid)}
+                   if os.environ.get("APERTURE_FOLLOW") == "marked" else set())
+        # A candidate is gated whatever that setting says. It is a pattern seen in one material, and
+        # what promotes it is a second material's coding carrying it — so confirmation has to come
+        # from the codes, not from a reader sent to find it here.
+        skipped |= {tid for tid in cands if not _marked_here(conn, mid, tid)}
+        # live_themes order, so the waves compose the same way twice.
+        order = [tid for tid in live if tid not in skipped]
+        tail = f" · {len(skipped)} not looked for" if skipped else ""
+        # In waves, because this is the dominant cost of the whole chain — nine to ten calls at 60–80
+        # s each, 1351 s for one nine-theme material — and the calls are not independent. The guard the
+        # sequence existed for is kept whole: every line is shown what the waves BEFORE it claimed in
+        # this material (`_claimed_block`, built here in theme order just before the wave goes out),
+        # which is what stops one passage coming back under three themes. What a line no longer sees is
+        # its own wave-mates, claiming at the same moment as it.
+        #
+        # Up to `jobs.PARALLEL` × WAVE calls are therefore in flight when DOC steps run side by side.
+        # No semaphore: the provider answers over its rate limit with a 429 and `llm._ask` waits that
+        # out, which is the same answer a semaphore would give more slowly.
+        with ThreadPoolExecutor(max_workers=WAVE) as pool:
+            for at in range(0, len(order), WAVE):
+                wave = order[at:at + WAVE]
+                prepared = [_thread_prompt(conn, mid, tid) for tid in wave]
+                # Each in its OWN copy of this context, so `llm.usage` and `llm.report` are still this
+                # step's — the tokens land on this run row (see llm.new_usage).
+                answers = [f.result() for f in [
+                    pool.submit(contextvars.copy_context().run, llm.chat_json, *prompt,
+                                label="thread") for prompt, *_ in prepared]]
+                for tid, (_, sents, theme, tpid), data in zip(wave, prepared, answers):
+                    kept, d, st = _thread_kept(conn, mid, tid, data, sents, theme, tpid,
+                                               run_id=run_id)
+                    tally(st)
+                    dropped += d
+                    if kept is None:
+                        failed.add(tid)             # nothing written; its last outcome still holds
+                    elif kept:
+                        threads.append({"theme_id": tid, "moments": kept})
+                llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written{tail}")
 
-    # Before the summary, never after: a summary written over a claim the passage does not carry
-    # introduces that claim by name, and the claim is gone by the time anyone reads it.
-    dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
-    threads = [t for t in ({"theme_id": t["theme_id"],
-                            "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
-                           for t in threads) if t["moments"]]
+        # Before the summary, never after: a summary written over a claim the passage does not carry
+        # introduces that claim by name, and the claim is gone by the time anyone reads it.
+        dropped += verify.run(conn, mid, run_id=run_id)["dropped"]
+        threads = [t for t in ({"theme_id": t["theme_id"],
+                                "moments": [dict(m) for m in store.thread(conn, mid, t["theme_id"])]}
+                               for t in threads) if t["moments"]]
 
-    # Written after the check, so 'line' means a line that survived it. Every live theme, including
-    # the ones that were never looked for: this is the only place the three outcomes are said.
-    held = {t["theme_id"] for t in threads}
-    for tid in live:
-        if tid in failed:
-            continue        # its answer could not be read: what was recorded before still holds
-        store.save_follow(conn, mid, tid,
-                          "skipped" if tid in skipped else "line" if tid in held else "thin",
-                          run_id)
+        # Written after the check, so 'line' means a line that survived it. Every live theme, including
+        # the ones that were never looked for: this is the only place the three outcomes are said.
+        held = {t["theme_id"] for t in threads}
+        for tid in live:
+            if tid in failed:
+                continue        # its answer could not be read: what was recorded before still holds
+            store.save_follow(conn, mid, tid,
+                              "skipped" if tid in skipped else "line" if tid in held else "thin",
+                              run_id)
 
-    # A candidate a second material now holds a line under is a project theme, and Python says so
-    # rather than the model: recurrence is a fact about the corpus, not a judgement.
-    for tid in store.promote_by_recurrence(conn, pid):
-        log.info("theme id=%s promoted", tid)
-
+        # A candidate a second material now holds a line under is a project theme, and Python says so
+        # rather than the model: recurrence is a fact about the corpus, not a judgement.
+        for tid in store.promote_by_recurrence(conn, pid):
+            log.info("theme id=%s promoted", tid)
     shown = []
     for t in threads:
         shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(

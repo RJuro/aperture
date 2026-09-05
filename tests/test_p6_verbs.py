@@ -81,7 +81,7 @@ def test_a_comment_is_a_comment_and_an_empty_one_does_nothing(app, analysed, con
     fb = store.project_feedback(conn, pid)[-1]
     assert (fb["target_kind"], fb["kind"], fb["text"]) == ("material_summary", "note",
                                                            "the crossing is underplayed")
-    assert kinds(app.planned) == [["doc", "accounts", "project"]]
+    assert kinds(app.planned) == [["summary", "accounts", "project"]]
 
 
 def test_no_page_offers_a_control_on_a_single_claim(app, analysed):

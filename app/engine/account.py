@@ -77,7 +77,7 @@ SELECT mo.id AS id, mo.material_id AS material_id, mo.sid AS sid, mo.claim AS cl
 
 _CLAIMS = """
 SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor AS anchor,
-       mo.support AS support
+       mo.support AS support, mo.support_note AS support_note
   FROM moment mo
   JOIN material m ON m.id = mo.material_id
  WHERE m.project_id = ? AND m.removed_at IS NULL AND mo.theme_id = ? AND mo.status = 'live'
@@ -159,8 +159,13 @@ def _blocks(rows: list, carrying: list[dict]) -> tuple[str, int]:
         count = (f'{len(shown)} of {m["claims"]} claims shown' if len(shown) < m["claims"]
                  else f'{m["claims"]} claims')
         head = f'## {m["title"] or m["name"]} — {m["kind"] or "kind not worked out"} — {count}'
-        out.append("\n".join([head] + [f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"'
-                                       for r in shown]))
+        # A claim the check found only partly carried says so here, or the account rests its
+        # full weight on a qualification the reader of the page can see and the model cannot.
+        out.append("\n".join([head] + [
+            f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"'
+            + (f' — partly carried: {dict(r).get("support_note") or ""}'
+               if dict(r).get("support") == "partly" else "")
+            for r in shown]))
     return "\n\n".join(out), held_back
 
 

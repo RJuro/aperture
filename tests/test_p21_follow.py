@@ -230,3 +230,28 @@ def test_by_default_every_live_theme_is_followed_whatever_its_codes_did(split, c
     assert "skipped" not in outcomes.values()
     assert outcomes[(split["elsewhere"], split["grande"])] in ("line", "thin")
     assert not any("not looked for" in s for s in said)
+
+
+def test_the_summary_can_be_written_again_without_a_single_line_being_rewritten(split, conn, model,
+                                                                                 quote, monkeypatch):
+    """A comment on one line, or on the summary, used to plan the whole material — every theme
+    re-threaded to refresh one paragraph. `summary_only` writes the summary over the lines that
+    stand and asks nothing about any line."""
+    monkeypatch.delenv("APERTURE_FOLLOW", raising=False)
+    model.queue({"moments": _moments(quote, split["grande"], 5)})
+    model.queue({"moments": _moments(quote, split["grande"], 5, at=120)})
+    model.queue({"verdicts": []})
+    model.queue({"summary": "what the reading found", "questions": "what remains?", "people": []})
+    model.queue({"verdicts": []})
+    synth.doc(conn, split["grande"])
+    threads_before = len([c for c in model.calls if c["label"] == "thread"])
+
+    model.queue({"summary": "the summary, written again", "questions": "still open?", "people": []})
+    model.queue({"verdicts": []})
+    out = synth.doc(conn, split["grande"], summary_only=True)
+
+    assert len([c for c in model.calls if c["label"] == "thread"]) == threads_before
+    assert out["summary"].startswith("the summary, written again")
+    assert len(out["threads"]) == 2, "the standing lines are what the summary was written over"
+    assert store.get_summary(conn, "material", split["grande"], "reading")["text"].startswith(
+        "the summary, written again")
