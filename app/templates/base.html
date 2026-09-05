@@ -19,16 +19,21 @@
       {% if theme %}<i aria-hidden="true">/</i><span>{{ theme.name | txt }}</span>{% endif %}
       {% endif %}
     </nav>
-    {% if user %}
-    <details class="account-menu">
-      <summary class="account" aria-label="Open account menu">{{ user.name[:2] | upper | txt }}</summary>
-      <div class="menu-sheet">
-        <a href="/account">Account settings</a>
-        {% if user.is_admin %}<a href="/admin">Manage accounts</a>{% endif %}
-        <form method="post" action="/logout"><button>Sign out</button></form>
-      </div>
-    </details>
-    {% else %}<span></span>{% endif %}
+    {# One wrapper, so the third grid column stays one child however many things sit in it.
+       Inside a project the rail carries the guide; here it is for the pages that have no rail. #}
+    <div class="topnav-end">
+      {% if not project %}<a class="guide-link" href="/guide">Guide</a>{% endif %}
+      {% if user %}
+      <details class="account-menu">
+        <summary class="account" aria-label="Open account menu">{{ user.name[:2] | upper | txt }}</summary>
+        <div class="menu-sheet">
+          <a href="/account">Account settings</a>
+          {% if user.is_admin %}<a href="/admin">Manage accounts</a>{% endif %}
+          <form method="post" action="/logout"><button>Sign out</button></form>
+        </div>
+      </details>
+      {% endif %}
+    </div>
   </div>
 </header>
 
@@ -45,6 +50,7 @@
           <li><a href="/p/{{ project.id }}#materials"{% if page_section == 'materials' %} aria-current="page"{% endif %}><span>Materials</span><span class="rail-count">{{ '%02d' | format(nav_materials | length) }}</span></a></li>
           <li><a href="/p/{{ project.id }}#themes"{% if page_section == 'themes' %} aria-current="page"{% endif %}><span>Themes</span><span class="rail-count">{{ '%02d' | format(nav_theme_count) }}</span></a></li>
           <li><a href="/p/{{ project.id }}/record"{% if page_section == 'record' %} aria-current="page"{% endif %}><span>Reading record</span></a></li>
+          <li><a href="/guide"><span>Guide</span></a></li>
         </ul>
       </nav>
       {% if nav_materials %}

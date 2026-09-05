@@ -20,11 +20,20 @@
     <h2>New project</h2>
     <form method="post" action="/p/new" class="form-stack">
       <label>Project name <input name="name" required placeholder="Migration and work"></label>
-      <label>Research question or focus <textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
-      <fieldset class="scope-choice"><legend>How each material is read</legend>
-        <label><input type="radio" name="method" value="explore" checked> Explore the material — each material is first read on its own terms; the project's vocabulary and themes are compared with it afterwards</label>
-        <label><input type="radio" name="method" value="iterative"> Build iteratively — each material is read with the project's codes and themes in view, the way projects have worked so far; freeze themes to apply them as a framework</label>
+      {# The label's own text and its help link are one grid child, or `form label`'s single
+         column puts the question mark on a line of its own under the words. #}
+      <label><span>Research question or focus <a class="help" href="/guide#focus" title="What the research focus does">?</a></span><textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
+      <fieldset class="scope-choice"><legend>How each material is read <a class="help" href="/guide#method" title="Explore or build iteratively">?</a></legend>
+        <label class="choice"><input type="radio" name="method" value="explore" checked> <span>Explore the material — each material is first read on its own terms; the project's vocabulary and themes are compared with it afterwards</span></label>
+        <label class="choice"><input type="radio" name="method" value="iterative"> <span>Build iteratively — each material is read with the project's codes and themes in view, the way projects have worked so far; freeze themes to apply them as a framework</span></label>
       </fieldset>
+      <details class="info"><summary>Which should I choose?</summary>
+        <p>Exploring shows the reading no project codes, so a later material cannot be read into the
+          vocabulary of the first — but it converges more slowly and costs a further call per
+          material. Building iteratively reads each material against the codes and themes so far,
+          which is cumulative comparison and is also lock-in. Either can be changed later, and the
+          change applies to material read from then on. <a href="/guide#method">More in the guide</a>.</p>
+      </details>
       <button class="btn btn-primary">Start project</button>
     </form>
   </section>

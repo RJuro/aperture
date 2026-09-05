@@ -476,4 +476,48 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
    middle of the card read as a second form. */
 .scope-choice { margin: 0; padding: 0; border: 0; display: grid; gap: 4px; font-size: 12px; }
 .scope-choice legend { padding: 0; color: var(--muted); font-size: 12px; }
-.scope-choice label { display: flex; align-items: center; gap: 6px; }
+/* A label that is a whole sentence. `input { width: 100% }` at the top sizes every field, and a
+   radio in a centred flex row took that literally: it shrank to a sliver, and its sentence hung
+   off the middle of it and out of the column. The control keeps a column of its own and the words
+   wrap under themselves. */
+.scope-choice label, .choice { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; line-height: 1.45; }
+.scope-choice input[type=radio], .choice input[type=radio] { width: auto; margin: 2px 0 0; padding: 0; }
+
+/* Guide and help */
+/* A question mark beside a control, never a button: it goes to the guide's section on that
+   control, and it has to be small enough that a page full of them is still quiet. */
+.help { display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font: 10px/1 var(--font-mono); vertical-align: 1px; }
+.help:hover { border-color: var(--fg); color: var(--fg); }
+/* Two or three sentences folded beside the few controls that are read wrong most often. Quieter
+   than a caption, and closed it is one line. */
+.info { margin: 2px 0 0; }
+.info > summary { color: var(--muted); font-size: 12px; }
+.info[open] > summary { color: var(--fg); }
+.info p { max-width: 68ch; margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.info a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+/* The guide itself: contents beside the text, as a reference page rather than a document to read
+   through. Below the two-column width the contents become a header list. */
+.guide-head { padding-bottom: clamp(24px, 3vw, 40px); }
+.guide-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; padding-bottom: clamp(48px, 7vw, 96px); }
+.guide-contents li { padding: 4px 0; font-size: 13px; }
+.guide-contents a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.guide-sections section { max-width: 74ch; padding-top: 26px; border-top: 1px solid var(--border); }
+.guide-sections section + section { margin-top: 26px; }
+.guide-sections h2 { font-size: clamp(22px, 2.4vw, 28px); }
+.guide-sections h2 code { font: 400 .62em var(--font-mono); }
+.guide-sections p { margin: 14px 0 0; }
+.guide-sections ul { margin: 14px 0 0; }
+.guide-sections li + li { margin-top: 9px; }
+.guide-sections code { font: 12px var(--font-mono); }
+.where { color: var(--muted); font-size: 12px; }
+/* `:target` tints the section a `?` link arrived at, so the reader lands on the answer rather
+   than somewhere near it. */
+.guide-sections section:target { background: var(--accent-soft); box-shadow: 0 0 0 12px var(--accent-soft); border-radius: 2px; }
+@media (min-width: 900px) {
+  .guide-body { grid-template-columns: 210px minmax(0, 1fr); gap: 56px; }
+  .guide-contents { position: sticky; top: 88px; align-self: start; }
+}
+/* The top nav's third column holds whatever a page without a rail needs beside the account. */
+.topnav-end { display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
+.guide-link { color: var(--muted); font-size: 13px; }
+.guide-link:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
