@@ -124,10 +124,15 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
     `feedback` is the researcher's own words about this reading, verbatim, when they have
     asked for it to be read again. A reading that replaces this one replaces its hits too:
     left in place, the old ones would be counted beside the new in every code and theme.
+
+    The old hits are cleared at the END, in the same transaction that writes the new ones. They
+    used to be cleared before the call went out, so a 429 or a timeout took the previous coding
+    with it and left the material uncoded — and every theme that gathered a code left with
+    nothing lost the link as well. A reading that fails now leaves the reading before it exactly
+    as it was.
     """
     m = store.material(conn, mid)
     pid = m["project_id"]
-    store.clear_hits(conn, pid, mid)
     proj = store.project(conn, pid)
     rows = store.sentence_rows(conn, mid)
     segments = store.segments(conn, mid)
@@ -166,5 +171,7 @@ def run(conn: sqlite3.Connection, mid: str, *, feedback: str = "") -> dict:
         c["sids"] = sids
         kept[c["name"]] = c
 
-    return dict(store.save_codes(conn, pid, mid, list(kept.values()), origin="read"),
-                dropped_sids=dropped)
+    with store.atomic(conn) as tx:
+        store.clear_hits(tx, pid, mid)
+        saved = store.save_codes(tx, pid, mid, list(kept.values()), origin="read")
+    return dict(saved, dropped_sids=dropped)

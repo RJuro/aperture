@@ -12,6 +12,7 @@ one added last. Here, rows are built from dicts and tests walk real payloads.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import secrets
@@ -27,6 +28,41 @@ def now() -> str:
     `out_of_date` compares their times to decide whether a material was read before the themes
     changed — at second precision that comparison silently answers "no" every time."""
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
+class _NoCommit:
+    """A connection whose `commit` does nothing. Everything else goes straight through."""
+
+    def __init__(self, conn: sqlite3.Connection):
+        self._conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def commit(self) -> None:
+        pass
+
+
+@contextlib.contextmanager
+def atomic(conn: sqlite3.Connection):
+    """Several of these writers, one commit. Hand the yielded connection to them, not `conn`.
+
+    A rerun that replaces an analysis must never be able to leave half of the old one standing
+    beside half of the new: a reading whose hits were cleared but whose codes were never written,
+    or a line recorded as thin while its old claims are still live, is worse than either version
+    on its own. Each writer here commits as it goes, which would end the transaction half way, so
+    what they are given is a connection whose commit does nothing until this block ends.
+
+    The model has already answered by the time this opens. A write transaction is never held
+    across a network call: it is opened after validation and closed a few statements later.
+    """
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        yield _NoCommit(conn)
+    except BaseException:
+        conn.rollback()
+        raise
+    conn.commit()
 
 
 # ---- projects and material --------------------------------------------------------------------
@@ -413,6 +449,12 @@ def mark_support(conn: sqlite3.Connection, rows: list[tuple[str, str, str]]) -> 
     `not` sets the claim aside with the same status a rerun leaves behind, so the export can
     still show it and the researcher can see what was taken out and why. `partly` leaves it live
     and marked, because the claim is still worth reading — with the addition named beside it.
+    `unchecked` leaves it live and says nobody ruled on it; `''` is a claim its passage carries,
+    and it is also what every row written before the check existed says, which is the same
+    unknown said in an older word.
+
+    Only the claims the caller passes are written. A claim left out of this list keeps whatever
+    it had: a verdict nobody returned is not a verdict.
     """
     for moment_id, support, why in rows:
         conn.execute("UPDATE moment SET support=?, support_note=?, status=? "

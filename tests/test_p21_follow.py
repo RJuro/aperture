@@ -116,11 +116,11 @@ def test_a_line_asked_for_by_a_person_is_written_wherever_they_ask(split, conn, 
     assert store.thread(conn, split["rodwin"], split["here"])
 
 
-def test_a_line_that_was_looked_for_and_set_aside_is_told_apart_from_one_never_looked_for(
+def test_a_line_that_was_looked_for_and_held_nothing_is_told_apart_from_one_never_looked_for(
         split, conn, model, quote):
     """Both leave no claim behind, and until this was recorded the record called both of them
-    absence. Three claims is under the floor, so the line is looked for and set aside."""
-    model.queue({"moments": _moments(quote, split["grande"], 3)})
+    absence. A completed answer that holds nothing is the thin one."""
+    model.queue({"moments": []})
     model.queue({"summary": "s", "questions": "q", "people": []})
     synth.doc(conn, split["grande"])
     outcomes = store.followed(conn, split["pid"])
@@ -180,9 +180,9 @@ def test_the_account_is_told_which_kind_of_nothing_each_material_is(split, conn,
         model.queue({"verdicts": []})
         synth.doc(conn, mid)
         assert store.thread(conn, mid, tid)
-    # A person then asks for the Grande theme's line through Rodwin, and it comes back too thin:
-    # the same material, now looked for and set aside rather than never looked for.
-    model.queue({"moments": _moments(quote, split["rodwin"], 3)})
+    # A person then asks for the Grande theme's line through Rodwin, and it comes back holding
+    # nothing: the same material, now looked for and empty rather than never looked for.
+    model.queue({"moments": []})
     synth.doc(conn, split["rodwin"], only_theme=split["here"])
 
     def block(tid) -> str:

@@ -70,7 +70,8 @@ def test_a_claim_its_passage_does_not_carry_is_set_aside_and_named(ready, conn, 
     run_doc(model, conn, ready, quote)
     doomed = claims(conn, ready)[0]
     model.queue({"verdicts": [{"id": doomed["id"], "verdict": "not",
-                               "why": "the passage says the mother chose it"}]})
+                               "why": "the passage says the mother chose it"}]},
+                {"verdicts": []})       # the four it left out are asked about once more
     out = verify.run(conn, ready["mid"])
 
     assert store.moment(conn, doomed["id"])["status"] == "superseded"
@@ -86,7 +87,8 @@ def test_a_claim_the_passage_only_partly_carries_stays_live_and_is_marked(ready,
     run_doc(model, conn, ready, quote)
     marked = claims(conn, ready)[0]
     model.queue({"verdicts": [{"id": marked["id"], "verdict": "partly",
-                               "why": "'without complaint' is not in the passage"}]})
+                               "why": "'without complaint' is not in the passage"}]},
+                {"verdicts": []})
     out = verify.run(conn, ready["mid"])
 
     row = store.moment(conn, marked["id"])
@@ -103,7 +105,10 @@ def test_a_reading_every_claim_of_which_holds_is_left_exactly_as_it_was(ready, c
     model.queue({"verdicts": [{"id": m["id"], "verdict": "supported", "why": ""} for m in before]})
     out = verify.run(conn, ready["mid"])
 
-    assert [dict(m) for m in claims(conn, ready)] == before
+    # The check inside DOC returned nothing, so every claim came out `unchecked`. Ruled supported
+    # here, they carry no question at all — and nothing else about them moves.
+    assert {m["support"] for m in before} == {"unchecked"}
+    assert [dict(m) for m in claims(conn, ready)] == [dict(m, support="") for m in before]
     assert out == {"dropped": [], "set_aside": [], "marked": []}
 
 
@@ -212,7 +217,8 @@ def test_the_mark_is_shown_where_the_claim_is_read(ready, conn, model, quote, cl
     run_doc(model, conn, ready, quote)
     marked = claims(conn, ready)[0]
     model.queue({"verdicts": [{"id": marked["id"], "verdict": "partly",
-                               "why": "the passage does not say it was steady"}]})
+                               "why": "the passage does not say it was steady"}]},
+                {"verdicts": []})
     verify.run(conn, ready["mid"])
 
     page = client.get(f'/p/{ready["pid"]}/m/{ready["mid"]}?theme={ready["tid"]}').text
@@ -227,7 +233,8 @@ def test_the_derivation_says_how_many_claims_were_set_aside(ready, conn, model, 
     assert "set aside" not in context.derivation(conn, ready["mid"])
 
     doomed = claims(conn, ready)[0]
-    model.queue({"verdicts": [{"id": doomed["id"], "verdict": "not", "why": "not said here"}]})
+    model.queue({"verdicts": [{"id": doomed["id"], "verdict": "not", "why": "not said here"}]},
+                {"verdicts": []})
     verify.run(conn, ready["mid"])
     said = context.derivation(conn, ready["mid"])
     assert said.endswith(", 1 set aside as not carried by their passages")
@@ -241,11 +248,13 @@ def test_a_mark_is_lifted_when_a_later_check_reads_the_claim_as_supported(ready,
     ignore the warning."""
     run_doc(model, conn, ready, quote)
     marked = claims(conn, ready)[0]
-    model.queue({"verdicts": [{"id": marked["id"], "verdict": "partly", "why": "'steady' added"}]})
+    model.queue({"verdicts": [{"id": marked["id"], "verdict": "partly", "why": "'steady' added"}]},
+                {"verdicts": []})
     verify.run(conn, ready["mid"])
     assert store.moment(conn, marked["id"])["support"] == "partly"
 
-    model.queue({"verdicts": [{"id": marked["id"], "verdict": "supported", "why": ""}]})
+    model.queue({"verdicts": [{"id": marked["id"], "verdict": "supported", "why": ""}]},
+                {"verdicts": []})
     verify.run(conn, ready["mid"])
     row = store.moment(conn, marked["id"])
     assert (row["support"], row["support_note"], row["status"]) == ("", "", "live")

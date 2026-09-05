@@ -7,10 +7,11 @@ around three rules:
                                                       REPAIRED, never dropped — D15, the defect
                                                       that taught two readers to distrust a system
                                                       that was right
-    a quote that is nowhere is not a claim            the moment goes
-    a thread of one moment is not a thread            it is dropped, and the drop is REPORTED,
+    a quote that is nowhere is not a claim            the moment goes, and the drop is REPORTED,
                                                       because a silent drop is how a reading loses
                                                       material without anyone noticing
+    a thread of one moment is still a thread          it is kept and marked sparse. A count was
+                                                      never a test of whether a claim is warranted
 
 Passages are printed to the model under the numeric part of their sentence id (`S040` → `40`) and
 a citation comes back as that number, mapped back here. Ids are the spine; the number is how the
@@ -273,8 +274,19 @@ def _marked_here(conn, mid: str, tid: str) -> bool:
     one way or the other, so there is no evidence to skip on; the silence is in the codebook, not
     in the material, and a theme named by a researcher before any code was grouped under it would
     otherwise never be looked for anywhere.
+
+    A CANDIDATE with no codes is the opposite case, and it is not followed. A candidate is one
+    material's pattern; what makes it a project theme is a second material's coding carrying it,
+    so an empty code mapping is missing indexing rather than positive evidence that every material
+    in the corpus carries it. Followed anyway, it would be looked for everywhere and would confirm
+    itself out of the looking (AR-06).
     """
-    return not store.theme_codes(conn, tid) or bool(store.theme_codes(conn, tid, mid))
+    if store.theme_codes(conn, tid, mid):
+        return True
+    if store.theme_codes(conn, tid):
+        return False
+    row = conn.execute("SELECT hold FROM theme WHERE id=?", (tid,)).fetchone()
+    return row is None or row["hold"] != "candidate"
 
 
 def _claimed_block(conn, mid: str, tid: str) -> str:
@@ -314,18 +326,29 @@ def _thread_prompt(conn, mid: str, tid: str) -> tuple[tuple[str, str], list, dic
         frame=frame_block(conn, mid),
         feedback=feedback_block(conn, pid, mid, tid),
         material=layout(conn, mid),
-        min_moments=MIN_MOMENTS, max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
+        max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
     )
     return prompt, store.sentences(conn, mid), theme, pid
 
 
 def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: str, *,
-                 run_id: str | None) -> tuple[list[dict], list[str], dict]:
+                 run_id: str | None) -> tuple[list[dict] | None, list[str], dict]:
     """One answer → this line's moments, bound against the material, capped and written.
 
-    On the caller's connection, always: the calls of a wave run side by side, the writes that
-    follow them do not.
+    Returns the moments now live under this theme — possibly none — or `None` where the answer
+    carried no list of moments at all. The two are not the same finding, and the difference is the
+    whole of AR-02: a completed answer that holds nothing is a reassessment, and it supersedes the
+    line before it; an answer that cannot be read is a failed attempt, and it must leave that line
+    exactly as it was.
+
+    A valid answer is activated whole — the old claims superseded, the new ones written, this
+    line's own summary written over them — in ONE transaction on the caller's connection. The
+    calls of a wave run side by side; the writes that follow them do not, and none of them is held
+    open across the network call.
     """
+    if not isinstance(data, dict) or not isinstance(data.get("moments"), list):
+        return None, [f'the line for "{theme["name"]}" was not written: the answer carried no '
+                      "moments, so the line that was there still stands"], anchor.new_stats()
     nums = numbers(sents)
     stats, dropped, kept = anchor.new_stats(), [], []
     # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw away
@@ -348,22 +371,40 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
     if len(kept) > MAX_MOMENTS:
         dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
         kept = kept[:MAX_MOMENTS]
-    if len(kept) < MIN_MOMENTS:
-        dropped.append(f'the line for "{theme["name"]}" was set aside: {len(kept)} claim'
-                       f'{"" if len(kept) == 1 else "s"} left after checking the quotes, '
-                       f"{MIN_MOMENTS} needed")
-        return [], dropped, stats
-    # Written only over a line that was kept: an account of claims that were thrown away would be
-    # a reading with nothing under it, and the page cannot tell the two apart.
+    # A line of one, two or three claims is KEPT, and the page marks it sparse — it reads that
+    # off `len(moments) < MIN_MOMENTS`, so nothing is stored for it. The floor used to delete such
+    # a line: one to three sound observations went as a group, while a line cut below four by the
+    # check that runs afterwards stayed. A count says how much of a theme a material carries; it
+    # was never a rule about whether the claims are warranted, and a rare observation is a
+    # finding, not a shortfall (AR-06).
     summary, odd = foreign(words(data.get("summary"), THREAD_WORDS), allowed_text(conn, pid, mid))
     dropped += script_notes(odd)
-    if summary:
-        store.save_summary(conn, "thread", f"{mid}:{tid}", "reading", summary, run_id)
-    store.save_moments(conn, mid, tid, kept, run_id)     # ordered by position in the material
+    with store.atomic(conn) as tx:
+        store.save_moments(tx, mid, tid, kept, run_id)   # ordered by position in the material
+        # Superseded outright where the line now holds nothing: an account of claims that are no
+        # longer there is a reading with nothing under it, and the page cannot tell the two apart.
+        # Where the line holds and the answer wrote no summary, the one before it stands — a
+        # missing field must not be able to blank a paragraph.
+        if summary or not kept:
+            store.save_summary(tx, "thread", f"{mid}:{tid}", "reading",
+                               summary if kept else "", run_id)
     return kept, dropped, stats
 
 
-def _thread(conn, mid: str, tid: str, *, run_id: str | None) -> tuple[list[dict], list[str], dict]:
+def _claim_line(m) -> str:
+    """One claim as DOC is shown it, carrying what the check left on it.
+
+    A claim marked `partly` used to reach DOC bare, and a summary written over a bare claim
+    hardens back into prose exactly the manner or the motive the passage never carried — the
+    qualification a researcher would have read beside the claim on the page (AR-05).
+    """
+    line = f'- {m["claim"]} — "{m["anchor"]}" [{m["sid"]}]'
+    note = (m["support_note"] or "").strip() if m["support"] == "partly" else ""
+    return f"{line} — partly: {note}" if m["support"] == "partly" else line
+
+
+def _thread(conn, mid: str, tid: str, *,
+            run_id: str | None) -> tuple[list[dict] | None, list[str], dict]:
     """One theme's line through one material — one call, full attention.
 
     It used to be one call for every theme at once, plus the summary, plus the brief, plus the
@@ -410,16 +451,24 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
         # rerunning it or by reacting to it, and the answer to a person is not silence.
         kept, dropped, st = _thread(conn, mid, only_theme, run_id=run_id)
         tally(st)
-        if kept:
-            dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
+        if kept is None:
+            # The answer could not be read, so nothing was written and the line that stood before
+            # this call still stands. Its follow row is left alone too: a failed attempt is not a
+            # finding about the material.
             kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
-        store.save_follow(conn, mid, only_theme, "line" if kept else "thin", run_id)
+        else:
+            if kept:
+                dropped += verify.run(conn, mid, theme_id=only_theme, run_id=run_id)["dropped"]
+                kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
+            # 'line' wherever claims stand, however few: sparse is a label, not an outcome. Only a
+            # line that now holds nothing at all is thin, and its old claims are already gone.
+            store.save_follow(conn, mid, only_theme, "line" if kept else "thin", run_id)
         stored = store.get_summary(conn, "material", mid, "reading")
         return {"summary": stored["text"] if stored else "",
                 "threads": [{"theme_id": only_theme, "moments": kept}] if kept else [],
                 "dropped": dropped, "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
-    threads, dropped = [], []
+    threads, dropped, failed = [], [], set()
     # Only where the reading of this material actually marked something the theme gathers. Every
     # live theme used to be followed through every material after the first, whether its codes had
     # fired there or not, and a line asked for where there is no evidence comes back with claims
@@ -463,7 +512,9 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
                                            run_id=run_id)
                 tally(st)
                 dropped += d
-                if kept:
+                if kept is None:
+                    failed.add(tid)             # nothing written; its last outcome still holds
+                elif kept:
                     threads.append({"theme_id": tid, "moments": kept})
             llm.report(f"{min(at + WAVE, len(order))} of {len(order)} lines written{tail}")
 
@@ -478,6 +529,8 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     # the ones that were never looked for: this is the only place the three outcomes are said.
     held = {t["theme_id"] for t in threads}
     for tid in live:
+        if tid in failed:
+            continue        # its answer could not be read: what was recorded before still holds
         store.save_follow(conn, mid, tid,
                           "skipped" if tid in skipped else "line" if tid in held else "thin",
                           run_id)
@@ -490,7 +543,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, run_id: str | None = N
     shown = []
     for t in threads:
         shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(
-            f'- {m["claim"]} — "{m["anchor"]}" [{m["sid"]}]' for m in t["moments"]))
+            _claim_line(m) for m in t["moments"]))
     orientation = store.get_summary(conn, "material", mid, "orientation")
     system, user = llm.prompt(
         "doc",

@@ -18,9 +18,10 @@ Nine rules. Each carries the same weight, and each is checked.
    a moment whose quote is not there is thrown away.
 3. Every quote carries the id printed at the start of its line. If the id is wrong but the quote is
    real, the quote wins and the id is corrected for you.
-4. Between {{min_moments}} and {{max_moments}} moments, drawn from across the whole material —
-   beginning, middle and end. If this theme is genuinely present fewer than {{min_moments}} times
-   here, return fewer and the line will be set aside with that reason; never pad.
+4. At most {{max_moments}} moments, drawn from across the whole material — beginning, middle and
+   end. If this theme is present only once or twice here, return those one or two: a sparse line
+   is kept and marked sparse, and it is a finding. Never pad, and never invent a moment to reach a
+   number. If the theme is not present, return an empty list.
 5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
    focus group, field notes, a document, or answers to an open question.
 6. A claim says no more than its passage says. It may compress and it may name what the words

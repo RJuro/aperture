@@ -70,11 +70,20 @@ def test_a_real_quote_with_the_wrong_id_is_repaired_not_dropped(ready, conn, mod
     assert right_sid in {m["sid"] for m in store.thread(conn, ready["mid"], ready["tid"])}
 
 
-def test_a_line_too_thin_to_keep_is_set_aside_and_said_so(ready, conn, model, quote):
+def test_a_sparse_line_is_kept_and_only_an_empty_one_is_thin(ready, conn, model, quote):
+    """The four-claim floor was a deletion rule and it took one to three sound observations away
+    as a group. A sparse line is kept — the page reads `sparse` off the count — and only a
+    completed answer that holds nothing at all leaves the theme with no line here."""
     queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"], 3)})
-    out = synth.doc(conn, ready["mid"])
+    synth.doc(conn, ready["mid"])
+    kept = store.thread(conn, ready["mid"], ready["tid"])
+    assert len(kept) == 3 < synth.MIN_MOMENTS, "kept, and short enough for the page to mark it"
+    assert store.followed(conn, ready["pid"])[(ready["tid"], ready["mid"])] == "line"
+
+    queue_doc(model, conn, ready["pid"], {})            # the same line, now holding nothing
+    synth.doc(conn, ready["mid"])
     assert store.thread(conn, ready["mid"], ready["tid"]) == []
-    assert any("set aside" in d for d in out["dropped"]), "a dropped line must be reported"
+    assert store.followed(conn, ready["pid"])[(ready["tid"], ready["mid"])] == "thin"
 
 
 def test_moments_are_stored_in_material_order_whatever_order_the_model_gave(ready, conn, model,

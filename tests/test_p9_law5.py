@@ -43,7 +43,12 @@ def compiled(conn, analysed, model):
                        "segments": [], "orientation": "o"},
              "angles": {"field": ANGLES_PROSE, "subareas": [], "angles": []},
              "read": {"codes": []}, "themes": {"themes": []},
-             "thread": {"moments": []}, "verify": {"verdicts": []},
+             # Real claims, so the lines hold and the check of them is compiled too. An empty
+             # answer is a completed reassessment now: it supersedes the seeded claims, and with
+             # no live claim left there is nothing for VERIFY to be shown.
+             "thread": {"moments": [{"claim": m["claim"], "anchor": m["anchor"], "sid": m["sid"]}
+                                    for m in store.moments(conn, mid)]},
+             "verify": {"verdicts": []},
              "verify_summary": {"verdicts": []},
              "doc": {"summary": "", "questions": "", "people": []},
              "account": {"account": ""}, "project": {"summary": ""},

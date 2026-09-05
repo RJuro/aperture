@@ -30,7 +30,8 @@ Rules. Each one carries the same weight.
 2. `why` is at most 12 words, in your own words, naming what is added or contradicted. For
    `supported` it may be empty.
 3. Copy every `id` exactly as printed. An id not in the list below is ignored, and a claim you do
-   not return a verdict for is treated as `supported`, so return every one.
+   not return a verdict for is recorded as UNCHECKED — not as supported — and the researcher is
+   shown it as a claim nobody ruled on. Return every one.
 4. Be exact, not severe. Compression is not addition; naming what the words amount to is not
    addition. "The family ran a bakery" is supported by a passage about the mother baking and
    selling bread from the front room; "the family prospered from a bakery" is `partly` unless the
