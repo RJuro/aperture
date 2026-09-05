@@ -276,7 +276,8 @@ def rerun_material(request: Request, pid: str, mid: str, step: str = Form("read"
         raise HTTPException(status_code=404, detail="not here")
     fid = (store.add_feedback(conn, pid, "material_summary", mid, "note", note.strip())
            if note.strip() else None)
-    jobs.start(db.connect, pid, rerun.from_step(mid, step, fid))
+    jobs.start(db.connect, pid, rerun.from_step(
+        mid, step, fid, explore=store.project(conn, pid)["method"] == "explore"))
     return RedirectResponse(f"/p/{pid}/m/{mid}", status_code=303)
 
 

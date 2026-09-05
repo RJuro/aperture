@@ -48,16 +48,22 @@ CHAIN = ("frame", "angles", "read", "themes", "doc")
 PAGE_NAMES = {"structure": "frame", "coding": "read", "synthesis": "doc"}
 
 
-def from_step(mid: str, step: str, feedback_id: str | None = None) -> list[dict]:
+def from_step(mid: str, step: str, feedback_id: str | None = None, *,
+              explore: bool = False) -> list[dict]:
     """Everything that happens to one material from `step` onward, then the corpus level.
 
     A note rides on every run rather than only the first, so each step that takes the
     researcher's words verbatim is handed them, and the synthesis at the end still counts the
-    note among the material's open comments.
+    note among the material's open comments. A project that explores compares a reading's codes
+    with the project's before the themes are revised, so its chain carries `reconcile` after
+    `read` here as it does on upload.
     """
     if step not in CHAIN:
         raise KeyError(f"no such step {step!r}; expected one of {list(CHAIN)}")
-    return [_run(k, mid, feedback_id=feedback_id) for k in CHAIN[CHAIN.index(step):]] + [
+    chain = list(CHAIN[CHAIN.index(step):])
+    if explore and "read" in chain:
+        chain.insert(chain.index("read") + 1, "reconcile")
+    return [_run(k, mid, feedback_id=feedback_id) for k in chain] + [
         _run("accounts", feedback_id=feedback_id), _run("project", feedback_id=feedback_id)]
 
 

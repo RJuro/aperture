@@ -44,9 +44,11 @@ TAIL = ["accounts", "project"]
 # ---- the chain ----------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("sent,expected", [
-    ("structure", ["frame", "angles", "read", "themes", "doc"]),
-    ("angles", ["angles", "read", "themes", "doc"]),
-    ("coding", ["read", "themes", "doc"]),
+    # The fixture project explores (the default for a new project), so its chain compares the
+    # reading's codes with the project's before the themes are revised — on upload and here alike.
+    ("structure", ["frame", "angles", "read", "reconcile", "themes", "doc"]),
+    ("angles", ["angles", "read", "reconcile", "themes", "doc"]),
+    ("coding", ["read", "reconcile", "themes", "doc"]),
     ("themes", ["themes", "doc"]),
     ("synthesis", ["doc"]),
 ])
@@ -82,7 +84,10 @@ def test_from_the_beginning_is_the_chain_material_arrives_on(app, analysed):
     """"Reset" is not a separate path through the code: it is the upward chain, run again."""
     pid, mid = analysed["pid"], analysed["grande"]
     app.post(f"/p/{pid}/m/{mid}/rerun", data={"from": "structure"})
-    assert kinds(app.planned[-1]) == list(rerun.CHAIN) + TAIL
+    # An exploring project's upload chain: `rerun.CHAIN` with the comparison of codes after the
+    # reading — the same list `jobs.ingest_chain` plans for it.
+    upload = list(rerun.CHAIN); upload.insert(upload.index("read") + 1, "reconcile")
+    assert kinds(app.planned[-1]) == upload + TAIL
 
 
 # ---- the note -----------------------------------------------------------------------------------
@@ -224,3 +229,14 @@ def test_the_page_offers_every_step_the_verb_accepts(app, analysed):
     assert offered and all(rerun.PAGE_NAMES.get(v, v) in rerun.CHAIN for v in offered)
     assert len(offered) == len(rerun.CHAIN)
     assert 'name="note"' in html
+
+
+def test_a_project_that_explores_compares_its_codes_when_read_again():
+    """The upload chain carries `reconcile` after `read` for a project that explores; running a
+    material again from its coding must carry it too, or the rerun quietly reads the old way."""
+    from app import rerun
+    plain = [r["kind"] for r in rerun.from_step("m1", "read")]
+    explored = [r["kind"] for r in rerun.from_step("m1", "read", explore=True)]
+    assert plain[:2] == ["read", "themes"]
+    assert explored[:3] == ["read", "reconcile", "themes"]
+    assert [r["kind"] for r in rerun.from_step("m1", "themes", explore=True)][:1] == ["themes"]
