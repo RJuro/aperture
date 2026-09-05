@@ -15,6 +15,7 @@ make it true, or "not found in 397 passages". Nothing it claims is unquoted.
 made for you. Upload `.txt`, `.md`, `.docx`, `.pdf` or `.csv`.
 
 - `docs/PLAN.md` — the design, the five laws, the layers, and what each prompt sees.
+- `Astra-review.md` — the September 2026 review proposal: prioritized analysis fixes, document/project state, prompt changes, migration, evaluation, and further improvement ideas.
 - `docs/RESEARCH.md` — what three rounds of trials established before this repository existed.
 - `docs/MODELS.md` — the two providers and what a like-for-like comparison does and does not show.
 - `docs/DEPLOY.md` — the deployment, and the two things the first rollout taught.
