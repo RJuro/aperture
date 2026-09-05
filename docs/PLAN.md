@@ -362,3 +362,49 @@ Promote control. Theme page: hold, stable-for count, Freeze/Unfreeze, tension no
 material each came from. Material page: this material's candidates marked as such. Record:
 the hold printed with each theme; tension notes under the theme. Controls are the owner's and
 an invited editor's.
+
+## 13. Evidence first: the explore workflow after reading (R4)
+
+*Added 2026-09-05 after the audit (Astra-review §5, AR-10/11) and pass 5 of docs/EVAL.md, which
+showed that exploratory reading does not converge by itself: two materials coded on their own
+terms produced eight candidates and nothing across them.*
+
+Applies to projects whose `method` is `explore`; `iterative` projects keep the chain of §1–2.
+
+**The unit of expensive work becomes a reading of one material, and a question asked of the
+corpus** — not every theme × every material.
+
+Per material: FRAME → (DIARIZE) → ANGLES → READ → RECONCILE → **MEMO**. The memo (`memo.md`) is
+the material's account on its own terms, written over the passages the reading coded — never over
+theme lines, so it does not go stale when themes move. Every sentence cites passage ids; Python
+drops a sentence that cites nothing, and VERIFY-SUMMARY checks each sentence against the passages
+it cites. The memo also carries the material's questions and people (what DOC's summary carried).
+In an explore project the material page shows the memo as "what the reading found"; DOC writes
+no summary for it (its lines still get written, below).
+
+Per batch, once: **CROSS-CASE THEMES** (`themes_cross.md`) over an evidence packet instead of one
+material's text — for each code in the reconciled codebook, its definition and up to two verbatim
+passages from *different* materials, labelled by material; the batch's memos; the theme set
+partitioned frozen/open/candidates as in §12. Same answer shape as THEMES v4, same Python
+enforcement; no counts are shown (law 5 withholds spread on purpose — the passages are the
+evidence). One call per batch, not one per material, so the serial tail of §1 disappears here.
+
+Per material, after the themes: **targeted lines**. THREAD runs only for themes whose reconciled
+codes fired in the material — the gate of §3 law 2 is on for explore projects, because after
+RECONCILE "marked" means something across materials. Then **RESIDUAL** (`residual.md`), one call:
+the passages no code touched, the theme set and the memo; the reader says what the coding missed
+— an addition under a theme (a quote, a passage id, a claim; anchored and verified like any
+moment) — or that the unmarked passages hold nothing further. A theme the gate passed over whose
+residual pass found nothing gets the follow outcome **`residual`**: looked for in the unmarked
+passages and not found — a verified absence, cheaper than a THREAD call and stronger than
+"not looked for". The three silences of §3 become four, each printed as what it is.
+
+Then ACCOUNT and PROJECT as now. Per material this is FRAME + ANGLES + READ + RECONCILE + MEMO +
+VERIFY-SUMMARY + THREAD × marked + VERIFY + RESIDUAL, with THEMES once per batch, against the
+iterative chain's THREAD × every theme + THEMES per material + DOC + VERIFY-SUMMARY.
+
+**Evaluation before adoption** (Astra §8; docs/EVAL.md): four conditions on the same corpus and
+model — iterative (corrected) · iterative with the code-hit gate · explore-R4 without RESIDUAL ·
+explore-R4 with RESIDUAL — records judged blind on the seven faults plus coverage (what stayed
+unexamined), with `call` rows giving calls, cached and reasoning tokens and seconds per material.
+Thresholds fixed before unblinding. `explore` stays opt-in until that pass is written up.
