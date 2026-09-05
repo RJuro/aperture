@@ -34,7 +34,7 @@
                 <button class="btn btn-secondary">Reanalyse structure</button>
               </form>
             </details>
-            <details><summary>Run the analysis again</summary>
+            <details><summary>Run the analysis again <a class="help" href="/guide#rerun" title="What each starting point redoes">?</a></summary>
               <form method="post" action="/p/{{ project.id }}/m/{{ material.id }}/rerun" class="form-stack compact">
                 <label>Start again from
                   <select name="from">
@@ -69,14 +69,14 @@
     <div class="summary-copy">{{ summary_html }}</div>
     <form method="post" action="/p/{{ project.id }}/react" class="inline-response">
       <input type="hidden" name="material_id" value="{{ material.id }}">
-      <label>Feedback on this synthesis <textarea name="text" rows="2" placeholder="What does this miss or overstate?"></textarea></label>
+      <label><span>Feedback on this synthesis <a class="help" href="/guide#comments" title="Where a comment goes and what it rewrites">?</a></span><textarea name="text" rows="2" placeholder="What does this miss or overstate?"></textarea></label>
       <button class="btn btn-secondary">Revise synthesis</button>
     </form>
   </details>
 </div></section>{% endif %}
 
 {% if cards %}<section class="found-themes"><div class="container">
-  <h2 class="found-head">Themes in this material</h2>
+  <h2 class="found-head">Themes in this material <a class="help" href="/guide#lines" title="What a line of claims is, and what sparse means">?</a></h2>
   <ol class="found-list">
   {% for c in cards %}
     <li>
@@ -102,7 +102,7 @@
   <p class="theme-stats meta">{{ selected.moments | length }} {{ 'claim' | plural(selected.moments | length) }} · based on {{ selected.codes | length }} {{ 'code' | plural(selected.codes | length) }}</p></div>
 <div class="reading-grid">
   <section class="evidence-list">
-    <h3 class="evidence-head">Key claims</h3>
+    <h3 class="evidence-head">Key claims <a class="help" href="/guide#lines" title="What a line of claims is, and what sparse means">?</a></h3>
     <ol class="claims">
     {% for x in selected.moments %}
       <li>
@@ -141,7 +141,7 @@
   <div class="action-grid">
     <form method="post" action="/p/{{ project.id }}/check" class="action-card">
       <input type="hidden" name="material_id" value="{{ material.id }}">
-      <h3>Check against the material</h3><p>Search this material without changing the reading.</p>
+      <h3>Check against the material <a class="help" href="/guide#check" title="What a check does, and what its answer means">?</a></h3><p>Search this material without changing the reading.</p>
       <label>Question or claim <textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
       <fieldset class="scope-choice"><legend>What to search</legend>
         <label><input type="radio" name="scope" value="all" checked> Search everything</label>
@@ -152,7 +152,7 @@
     {% if selected %}
     <form method="post" action="/p/{{ project.id }}/react" class="action-card">
       <input type="hidden" name="theme_id" value="{{ selected.id }}"><input type="hidden" name="material_id" value="{{ material.id }}">
-      <h3>Respond to this theme</h3><p>Your words accompany the next revision of this material.</p>
+      <h3>Respond to this theme <a class="help" href="/guide#comments" title="Where a comment goes and what it rewrites">?</a></h3><p>Your words accompany the next revision of this material.</p>
       <label>Feedback <textarea name="text" rows="3" placeholder="What does this analysis miss or over-read?"></textarea></label>
       <button class="btn btn-primary">Reanalyse theme</button>
     </form>

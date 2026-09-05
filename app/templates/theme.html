@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main %}
 <section class="section project-head"><div class="container">
-<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }}</p>
+<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }} <a class="help" href="/guide#reach" title="How to read these counts">?</a></p>
 {# Where the researcher has taken this theme, and the one control that moves it. Freezing is not
    analysis and spends nothing: it fixes the name and the gist so new material is applied to the
    theme rather than allowed to rewrite it. #}
@@ -12,7 +12,7 @@
   {#- The count is passes of the grouping step, which includes rereading one material: calling it
       materials read as saturation across cases, which is a methodological claim nothing here made. #}
   {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
-  {%- endif %}</span>
+  {%- endif %}</span> <a class="help" href="/guide#themes" title="Candidate, open, frozen — and what freezing does">?</a>
   {%- if proposal %} <span class="meta">{{ proposal }}</span>{% endif %}
   {% if role in ('edit', 'owner') %}
   {% if theme.hold == 'candidate' %}
@@ -45,7 +45,7 @@ you send feedback below.</p>
 
 <form method="post" action="/p/{{ project.id }}/react" class="inline-response">
   <input type="hidden" name="theme_id" value="{{ theme.id }}">
-  <label>Feedback on this account <textarea name="text" rows="2" placeholder="What does this account miss or overstate?"></textarea></label>
+  <label><span>Feedback on this account <a class="help" href="/guide#comments" title="Where a comment goes and what it rewrites">?</a></span><textarea name="text" rows="2" placeholder="What does this account miss or overstate?"></textarea></label>
   <button class="btn btn-secondary">Revise account</button>
 </form>
 </div></section>
@@ -76,7 +76,7 @@ you send feedback below.</p>
 {% set unsearched = absent | selectattr('assessed', 'equalto', 'skipped') | list %}
 {% set residual = absent | selectattr('assessed', 'equalto', 'residual') | list %}
 {% set unassessed = absent | rejectattr('assessed') | list %}
-<section class="section"><div class="container"><h2>Materials with no claims under this theme</h2>
+<section class="section"><div class="container"><h2>Materials with no claims under this theme <a class="help" href="/guide#absence" title="What each kind of empty cell licenses you to say">?</a></h2>
 {% if searched %}
 <h3>Looked for and found too thin</h3>
 <p class="dim">This theme was read for in these materials and no claims under it held. Before

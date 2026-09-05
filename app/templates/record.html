@@ -5,7 +5,7 @@
     <p class="eyebrow">Reading record</p>
     <div class="head-row">
       <div><h1>{{ project.name | txt }}</h1>
-        <p class="lead">Everything the reading has arrived at, in one place.</p>
+        <p class="lead">Everything the reading has arrived at, in one place. <a class="help" href="/guide#record" title="What is in the record, and what to cite">?</a></p>
         <p class="meta head-stat">{{ materials | length }} {{ 'material' | plural(materials | length) }} · {{ themes | length }} {{ 'theme' | plural(themes | length) }} · started {{ project.created_at | when }}</p>
       </div>
       <div class="head-actions">
