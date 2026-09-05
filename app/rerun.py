@@ -72,35 +72,52 @@ def _check(conn, fb) -> list[dict]:
 
 
 def _doc_thread(conn, fb) -> list[dict]:
-    """A thread's target id is "<material_id>:<theme_id>" — that material, that theme only."""
+    """A thread's target id is "<material_id>:<theme_id>" — that material, that theme only, and
+    then everything written over the claims that line has just replaced.
+
+    The scoped run stays first and stays scoped: it is the only run that cannot pass this theme
+    over, whatever the codes say, and the researcher asked about this line. What follows is the
+    material whole, because its summary is written over its lines and `synth.doc` has no way to
+    write that summary alone — a corrected line used to leave the sentence above it standing over
+    claims that no longer exist. Then the accounts and the corpus summary, which are written from
+    those claims too; both steps skip what has not moved.
+    """
     mid, _, tid = fb["target_id"].partition(":")
-    return [_run("doc", mid, tid or None, fb["id"])]
+    return [_run("doc", mid, tid or None, fb["id"]), _run("doc", mid, None, fb["id"]),
+            _run("accounts", feedback_id=fb["id"]), _run("project", feedback_id=fb["id"])]
 
 
 def _doc_material(conn, fb) -> list[dict]:
-    return [_run("doc", fb["target_id"], None, fb["id"])]
+    """That material whole, and then what is written over its claims. Same reason as the row
+    above: this run supersedes claims, and the accounts and the corpus summary rest on them."""
+    return [_run("doc", fb["target_id"], None, fb["id"]),
+            _run("accounts", feedback_id=fb["id"]), _run("project", feedback_id=fb["id"])]
 
 
 def _account(conn, fb) -> list[dict]:
-    """One theme, rewritten across the corpus. Regrouping the whole codebook and re-reading every
-    material that carries the theme — which is what this used to plan — answers a comment about
-    one theme with work on all of them."""
-    return [_run("account", None, fb["target_id"], fb["id"])]
+    """One theme, rewritten across the corpus, and the corpus summary over it. Regrouping the
+    whole codebook and re-reading every material that carries the theme — which is what this used
+    to plan — answers a comment about one theme with work on all of them.
+
+    PROJECT is not optional here: it is written from the accounts, so a theme the researcher has
+    just corrected is quoted in the summary above it in the words it had before the correction.
+    """
+    return [_run("account", None, fb["target_id"], fb["id"]),
+            _run("project", feedback_id=fb["id"])]
 
 
-def _accounts_then_project(conn, fb) -> list[dict]:
-    """A comment on the corpus rewrites each theme's account, then the corpus summary over them.
+def _project_summary(conn, fb) -> list[dict]:
+    """A comment on the corpus is answered at the corpus, and nowhere else.
 
     It deliberately does NOT re-read every material. That is what it used to do, and a scaling
     review measured the cost on a fifty-material corpus: one comment planned fifty syntheses,
-    about seventeen hours and seven and a half million output tokens. The theme account exists
-    precisely so that a corpus-level correction can be answered at corpus level — twelve short
-    runs instead of fifty long ones. A comment that genuinely needs one material re-read belongs
-    on that material, where it is one run.
+    about seventeen hours and seven and a half million output tokens. It then rewrote every
+    theme's account instead, which is the same mistake one layer up: the correction went into
+    PROJECT's prompt alone, so twelve accounts were paid for and rewritten from evidence that had
+    not moved, none of them ever shown the words that planned them. A comment that is really
+    about one theme belongs on that theme, where it is one account and one summary.
     """
-    themes = store.live_themes(conn, fb["project_id"])
-    return [_run("account", None, t["id"], fb["id"]) for t in themes
-            ] + [_run("project", feedback_id=fb["id"])]
+    return [_run("project", feedback_id=fb["id"])]
 
 
 def _frame(conn, fb) -> list[dict]:
@@ -124,7 +141,7 @@ TABLE = [
     ("thread",           "*",        _doc_thread),       # DOC, that material, that theme
     ("material_summary", "*",        _doc_material),     # DOC, that material whole
     ("theme",            "*",        _account),          # that theme's account, rewritten
-    ("project_summary",  "*",        _accounts_then_project),
+    ("project_summary",  "*",        _project_summary),
     ("focus",            "*",        _nothing),          # shapes the next READ and every later DOC
     ("frame",            "*",        _frame),            # the only row that re-frames
 ]

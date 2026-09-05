@@ -187,7 +187,11 @@ def refresh(request: Request, pid: str, material_id: str = Form("")):
     stale = [m["id"] for m in store.out_of_date(conn, pid)]
     targets = [material_id] if material_id else stale
     if runs := [{"kind": "doc", "material_id": mid} for mid in targets if mid in stale]:
-        jobs.start(db.connect, pid, runs + [{"kind": "project"}])
+        # The accounts between the re-reading and the summary. A re-read supersedes the claims a
+        # theme's account was written from, and the corpus summary is written from the accounts —
+        # so this route used to end by summarising accounts that still cited claims it had just
+        # replaced. The step writes only the themes whose evidence actually moved.
+        jobs.start(db.connect, pid, runs + [{"kind": "accounts"}, {"kind": "project"}])
     return _back(request, f"/p/{pid}")
 
 

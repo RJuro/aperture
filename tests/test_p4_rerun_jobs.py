@@ -42,16 +42,21 @@ def test_a_comment_on_a_claim_runs_nothing_now(conn, state):
     assert _plan(conn, state["pid"], "moment", state["moment"], "agree", "") == []
 
 
-def test_feedback_on_a_thread_re_synthesises_only_that_material_and_that_theme(conn, state):
+def test_feedback_on_a_thread_rewrites_that_line_and_everything_written_over_it(conn, state):
+    """The line first, scoped to the theme the comment is about — the only run that cannot pass
+    that theme over. Then the material whose summary is written over that line, and the accounts
+    and corpus summary written over the claims it replaced: a corrected line used to leave every
+    sentence above it standing over claims that no longer existed."""
     tid = list(state["themes"].values())[0]
     plan = _plan(conn, state["pid"], "thread", f"{state['grande']}:{tid}")
-    assert kinds(plan) == ["doc"]
+    assert kinds(plan) == ["doc", "doc", "accounts", "project"]
     assert plan[0]["material_id"] == state["grande"] and plan[0]["theme_id"] == tid
+    assert plan[1]["material_id"] == state["grande"] and not plan[1]["theme_id"]
 
 
 def test_feedback_on_a_materials_summary_re_synthesises_that_material_whole(conn, state):
     plan = _plan(conn, state["pid"], "material_summary", state["grande"])
-    assert kinds(plan) == ["doc"]
+    assert kinds(plan) == ["doc", "accounts", "project"]
     assert plan[0]["material_id"] == state["grande"] and not plan[0].get("theme_id")
 
 
@@ -60,18 +65,18 @@ def test_a_comment_on_a_theme_is_answered_at_the_theme(conn, state):
     answering a comment about one theme with work on all of them. One account now."""
     tid = list(state["themes"].values())[0]
     plan = _plan(conn, state["pid"], "theme", tid)
-    assert kinds(plan) == ["account"]
+    assert kinds(plan) == ["account", "project"], "the summary is written from the accounts"
     assert plan[0]["theme_id"] == tid
 
 
 def test_a_comment_on_the_corpus_is_answered_at_the_corpus(conn, state):
     """This planned one synthesis per material, which a scaling review measured on fifty
-    materials at about seventeen hours. The theme account exists so a corpus-level correction is
-    answered at corpus level: one short run per theme, then the summary over them."""
+    materials at about seventeen hours. Then it rewrote every theme's account instead — the same
+    mistake one layer up, since the words went to PROJECT alone and no account was ever shown
+    them. A comment about one theme belongs on that theme."""
     plan = _plan(conn, state["pid"], "project_summary", state["pid"])
-    assert kinds(plan)[-1] == "project"
+    assert kinds(plan) == ["project"]
     assert "doc" not in kinds(plan), "a comment on the corpus must not re-read every material"
-    assert {p["theme_id"] for p in plan if p["kind"] == "account"} == set(state["themes"].values())
 
 
 def test_no_feedback_anywhere_ever_re_reads_or_re_frames(conn, state):

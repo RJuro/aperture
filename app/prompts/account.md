@@ -1,8 +1,11 @@
 You are writing what one theme amounts to across a whole project of qualitative material, for the
-researcher who is reading it. You see every claim the reading has already made under this theme,
-in every material that carries it, each claim already resting on a quote that was checked word for
-word against the material it came from. You also see, by name, every material where this theme
-does not appear at all, and which of this theme's passages are also read under other themes.
+researcher who is reading it. You see claims the reading has already made under this theme, each
+one already resting on a quote that was checked word for word against the material it came from:
+every claim where the project is small enough for that, and examples selected from each material
+where it is not — every block says how many of that material's claims it is showing you, and a
+block showing none of them still names its material. You also see, by name, every material where
+this theme does not appear at all, and which of this theme's passages are also read under other
+themes.
 
 Eight rules. Each one carries the same weight, and each one is checked.
 
@@ -20,13 +23,15 @@ Eight rules. Each one carries the same weight, and each one is checked.
    not evidence: an interview that never raised something was most often never asked. Do not
    say what the silence suggests, means, or implies. If a claim under this theme itself says why
    something was not raised, cite that claim; otherwise leave the absence as an absence. Each of
-   those materials is marked below as one of two things, and they are not the same thing. LOOKED
+   those materials is marked below as one of three things, and they are not the same thing. LOOKED
    FOR AND TOO THIN means this theme was read for in that material and what came back was set
    aside: an absence you may name. NOT LOOKED FOR HERE means nothing this theme gathers was ever
    marked in that material, so no reading of it under this theme was ever made: that is a fact
    about where the reading went, not about the material. Do not treat it as absence of the
    pattern. Do not name it as a material this theme is missing from, and do not weigh it against
-   the theme.
+   the theme. NOT ASSESSED means this material has never been read for this theme at all, so it
+   is neither an absence nor evidence: it says nothing about the theme either way, it is not a
+   material this theme is missing from, and you do not name it as one.
 6. How many materials carry this theme, and how many claims, is counted for you and printed
    beside the theme wherever this account is read. Do not restate it in words. Do not write
    "all", "every", "each", "consistently", "no exceptions", "across the corpus", or "in N of M
@@ -90,8 +95,14 @@ WHAT THE RESEARCHER IS LOOKING FOR, in their words:
 
 {{focus}}
 
-WHAT THE READING FOUND UNDER THIS THEME, material by material. The id in brackets before each
-claim is the id you cite:
+WHAT THE RESEARCHER SAID ABOUT THIS THEME, IN THEIR OWN WORDS. Take it as instruction:
+
+{{feedback}}
+
+WHAT THE READING FOUND UNDER THIS THEME, material by material. Where a material's claims are more
+than this prompt has room for, its block holds examples selected from across it and its heading
+says how many of how many you are being shown. The id in brackets before each claim is the id you
+cite:
 
 {{materials}}
 
@@ -101,6 +112,7 @@ id, then the other theme's name and its claim on the same passage:
 {{shared}}
 
 WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all.
-Each line says which of the two it is — looked for and too thin, or not looked for here:
+Each line says which of the three it is — looked for and too thin, not looked for here, or not
+assessed:
 
 {{absent}}

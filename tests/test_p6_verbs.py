@@ -81,7 +81,7 @@ def test_a_comment_is_a_comment_and_an_empty_one_does_nothing(app, analysed, con
     fb = store.project_feedback(conn, pid)[-1]
     assert (fb["target_kind"], fb["kind"], fb["text"]) == ("material_summary", "note",
                                                            "the crossing is underplayed")
-    assert kinds(app.planned) == [["doc"]]
+    assert kinds(app.planned) == [["doc", "accounts", "project"]]
 
 
 def test_no_page_offers_a_control_on_a_single_claim(app, analysed):
@@ -122,7 +122,7 @@ def test_a_comment_on_the_corpus_never_re_reads_a_material(app, analysed):
     app.post(f"/p/{analysed['pid']}/react",
              data={"text": "the crossing is the whole story"})
     chain = kinds(app.planned)[0]
-    assert chain.count("account") == 2 and chain[-1] == "project"
+    assert chain == ["project"], "a corpus comment is answered where it was made"
     assert "doc" not in chain and "read" not in chain and "frame" not in chain
 
 
@@ -175,7 +175,7 @@ def test_reading_again_is_work_not_something_the_researcher_said(app, analysed, 
     before = len(store.project_feedback(conn, pid))
 
     app.post(f"/p/{pid}/refresh", data={"material_id": mid})
-    assert kinds(app.planned) == [["doc", "project"]]
+    assert kinds(app.planned) == [["doc", "accounts", "project"]]
     assert len(store.project_feedback(conn, pid)) == before, "no feedback may be invented"
 
 

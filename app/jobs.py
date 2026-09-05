@@ -129,7 +129,12 @@ def _accounts(conn, pid, run):
     wrote = 0
     for i, t in enumerate(themes, 1):
         stored = store.get_summary(conn, "theme", t["id"], "reading")
-        if stored and stored["fingerprint"] == account.fingerprint(conn, pid, t["id"]):
+        # An open comment on the theme is an input the fingerprint cannot see: it is what the
+        # researcher said, not what the project holds. Skipped on the strength of unmoved
+        # evidence, a theme with one waiting would never be written again and the comment would
+        # never be answered.
+        if (stored and stored["fingerprint"] == account.fingerprint(conn, pid, t["id"])
+                and not store.feedback_for(conn, "theme", t["id"], open_only=True)):
             continue
         wrote += 1
         llm.report(f"theme {i} of {len(themes)}: {t['name']}")
@@ -316,7 +321,13 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
     # chain — and consumed at the first step, it would be gone from the open comments the
     # synthesis at the end of that same chain is written from.
     if not error and run.get("feedback_id") and last_feedback.get(run["feedback_id"]) == id(run):
-        store.consume_feedback(conn, run["feedback_id"], rid)
+        fb = rerun.feedback(conn, run["feedback_id"])
+        # A comment on a theme is honoured by `account.run` itself, at the moment it stores an
+        # account written with those words in front of the model. Honoured here instead, it was
+        # closed by the last step of the plan whether or not anything had read it — a theme left
+        # as it stood, or an account that came back empty, still marked the instruction answered.
+        if fb is None or fb["target_kind"] != "theme":
+            store.consume_feedback(conn, run["feedback_id"], rid)
     if not error and kind == "doc" and mid:
         # A rewrite answers every comment it was shown, not only the one that planned it.
         store.consume_material_feedback(conn, pid, mid, rid, run.get("theme_id"))

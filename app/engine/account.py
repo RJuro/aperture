@@ -40,10 +40,14 @@ import hashlib
 import sqlite3
 
 from .. import llm, store
-from . import synth
+from . import synth, themes
 
 ACCOUNT_WORDS_MIN, ACCOUNT_WORDS = 250, 350
 CLAIMS_SHOWN = 150
+# The claim budget bounds the blocks and nothing else, so the shared-passage list grew with the
+# corpus underneath it: on a corpus where every passage is read twice it is one line per claim in
+# the project, which is the unbounded prompt this level exists to prevent.
+SHARED_SHOWN = 40
 
 # One pass over every material in the project, with this theme's live claims counted against it.
 # A LEFT JOIN, not a loop: the materials with none are the ones this level most needs to name,
@@ -72,7 +76,8 @@ SELECT mo.id AS id, mo.material_id AS material_id, mo.sid AS sid, mo.claim AS cl
 """
 
 _CLAIMS = """
-SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor AS anchor
+SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor AS anchor,
+       mo.support AS support
   FROM moment mo
   JOIN material m ON m.id = mo.material_id
  WHERE m.project_id = ? AND m.removed_at IS NULL AND mo.theme_id = ? AND mo.status = 'live'
@@ -81,16 +86,27 @@ SELECT mo.id AS id, mo.material_id AS material_id, mo.claim AS claim, mo.anchor 
 
 
 def fingerprint(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
-    """Everything this level reads: the theme as it is defined, and which claims are live under it
-    right now. Stored with the account it produced, so the step that writes every theme's account
-    at the end of every chain can tell which of them would come back word for word.
+    """Everything this level reads. Stored with the account it produced, so the step that writes
+    every theme's account at the end of every chain can tell which of them would come back word
+    for word.
+
+    It has to be everything the prompt is built from, not only the claims: an input the
+    fingerprint cannot see is an input a cached account is written without. A material added to
+    the project is named in the absence block, the researcher's focus is a slot of its own, and a
+    claim marked `partly` supported is a claim the account may not rest its full weight on —
+    each of them changed what this level would write, and none of them changed the old
+    fingerprint, so the account went unwritten and the page called it current.
 
     Deliberately not the claims' text — a claim is never edited in place, it is superseded by a
     new row with a new id, so the ids alone move whenever the evidence does.
     """
     t = conn.execute("SELECT name, gist FROM theme WHERE id=?", (theme_id,)).fetchone()
+    proj = store.project(conn, pid)
     parts = [t["name"], t["gist"] or ""] if t else [""]
-    parts += sorted(r["id"] for r in conn.execute(_CLAIMS, (pid, theme_id)))
+    parts += [(proj["focus"] if proj else "") or ""]
+    parts += sorted(m["id"] for m in store.materials(conn, pid))
+    parts += sorted(f'{r["id"]}:{r["support"] or ""}'
+                    for r in conn.execute(_CLAIMS, (pid, theme_id)))
     return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()[:16]
 
 
@@ -111,7 +127,15 @@ def coverage(conn: sqlite3.Connection, pid: str, theme_id: str) -> dict:
 def _spread(rows: list, k: int) -> list:
     """`k` claims drawn evenly from across a material rather than the first `k` of them. The first
     three claims of a long line are all from its opening — the same defect the reading prompt
-    warns about, one level up."""
+    warns about, one level up.
+
+    `k` is zero once a corpus carries this theme in more materials than the budget has claims:
+    those materials are named and counted with no example under them, which is what the block
+    then says. It used to divide the material's claims by nothing, and the account of a theme
+    that had reached 151 materials died where the corpus had grown most.
+    """
+    if k <= 0:
+        return []
     if k >= len(rows):
         return rows
     step = len(rows) / k
@@ -155,26 +179,40 @@ def _shared_block(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
     out = [f'[{r["id"]}] {r["claim"]} — also under {o["theme"]}: {o["claim"]}'
            for r in rows if r["theme_id"] == theme_id
            for o in others.get((r["material_id"], r["sid"]), [])]
+    if len(out) > SHARED_SHOWN:
+        out = out[:SHARED_SHOWN] + [f"… and {len(out) - SHARED_SHOWN} more passages under this "
+                                    "theme that another theme also reads"]
     return "\n".join(out) or "None."
 
 
 def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: list[dict]) -> str:
     """The materials with no claim under this theme, each saying WHICH kind of nothing it is.
 
-    Two of them, and only one is a silence about the pattern. Where the theme was looked for, a
+    Three of them, and only one is a silence about the pattern. Where the theme was looked for, a
     reading of that material under it was made and set aside — thin, or its quotes did not survive
     the check. Where it was not looked for, nothing this theme gathers was ever marked there and no
     reading under it exists; that is a fact about where the reading went, and a model that cannot
     tell the two apart writes the second one up as absence (PLAN.md §3, law 2).
+
+    The third is a material this theme has never been through at all — uploaded after the theme's
+    last pass, or never revisited for a theme that grew up around it — and it has no row here to
+    say so. A missing row used to read as the first kind, which turned every unread material into
+    an absence the model was invited to interpret: the strongest of the three statements made
+    from the weakest of the three histories.
     """
     outcomes = store.followed(conn, pid)
     out = []
     for m in absent:
-        why = ("NOT LOOKED FOR HERE — none of this theme's codes marked this material, so no "
-               "reading of it under this theme was ever made"
-               if outcomes.get((theme_id, m["material_id"])) == "skipped" else
-               "LOOKED FOR AND TOO THIN — a reading of this material under this theme was made "
-               "and set aside")
+        outcome = outcomes.get((theme_id, m["material_id"]))
+        if outcome == "skipped":
+            why = ("NOT LOOKED FOR HERE — none of this theme's codes marked this material, so no "
+                   "reading of it under this theme was ever made")
+        elif outcome:
+            why = ("LOOKED FOR AND TOO THIN — a reading of this material under this theme was "
+                   "made and set aside")
+        else:
+            why = ("NOT ASSESSED — this material has not been read for this theme yet (no "
+                   "reading exists)")
         out.append(f'{m["title"] or m["name"]} — {m["kind"] or "kind not worked out"} — {why}')
     return "\n".join(out) or "None. Every material in this project carries this theme somewhere."
 
@@ -209,11 +247,19 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
     materials, held_back = _blocks(rows, carrying)
 
     proj = store.project(conn, pid)
+    # What the researcher said about this theme and no run has answered yet. A comment on a theme
+    # plans exactly this run, and this run had no slot to put it in: the comment was marked
+    # honoured by a rewrite that had never been shown it. Verbatim, all of it, because a model
+    # never paraphrases a researcher (PLAN.md §2) and their words are the instruction.
+    said = [f for f in store.feedback_for(conn, "theme", theme_id, open_only=True)
+            if (f["text"] or "").strip()]
 
     system, user = llm.prompt(
         "account",
         theme=f'"{theme["name"]}" — {theme["gist"] or "no gist yet"}',
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
+        feedback=themes._verbatim("\n\n".join(f["text"].strip() for f in said),
+                                  "The researcher has said nothing about this theme."),
         materials=materials,
         shared=_shared_block(conn, pid, theme_id),
         absent=_absent_block(conn, pid, theme_id, absent),
@@ -243,5 +289,12 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
     if text:
         store.save_summary(conn, "theme", theme_id, "reading", text, run_id,
                            fingerprint=fingerprint(conn, pid, theme_id))
+        # Honoured here and nowhere else: by the account that was written with those words in
+        # front of the model and came back with something to store. A failed call, an answer with
+        # no account in it, or a theme this step left as it stood leaves the comment open, and
+        # the next account is shown it again. Marking it honoured anywhere earlier says the
+        # instruction was considered when nothing had read it.
+        for f in said:
+            store.consume_feedback(conn, f["id"], run_id)
 
     return {"text": text, "dropped": dropped, "coverage": cover}
