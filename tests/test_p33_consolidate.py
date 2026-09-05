@@ -73,7 +73,7 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     """Not assessed and not looked for are the two cells a consolidation goes back for. A line
     that was looked for and found too thin is a finding and is left alone; a theme one case
     carries is one material's motif and does not send a reader through the corpus after it."""
-    cells = store.backfill_cells(conn, corpus["pid"])
+    cells = store.backfill_cells(conn, corpus["pid"], "all")
     mids = corpus["mids"]
     assert cells == [(corpus["wide"], mids[2]),      # skipped — never looked for
                      (corpus["wide"], mids[4]),      # no row at all
@@ -81,8 +81,12 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     assert not [c for c in cells if c[0] == corpus["narrow"]], "one case carries it"
     assert (corpus["wide"], mids[3]) not in cells, "thin is an answer, not a hole"
 
+    # Two of six cases is below half, so the default scope — the themes that could open — reads
+    # nothing here, and the wider scope prices the three cells with their checks.
+    assert store.backfill_cells(conn, corpus["pid"]) == []
     said = context.project_page(conn, corpus["pid"])["consolidate"]
-    assert said == "2 themes to compare · 3 cells to read (about 7 model calls)"
+    assert said["themes"] == 2 and said["opening_n"] == 0
+    assert said["all"] == "3 cells to read (about 7 model calls)"
 
 
 def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
@@ -91,13 +95,13 @@ def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
     mid = _material(conn, project, 0)
     tid = store.save_theme(conn, project, tid=None, name="Only", gist="g", code_ids=[])
     _line(conn, mid, tid)
-    assert context.project_page(conn, project)["consolidate"] == "", "nothing to do"
+    assert context.project_page(conn, project)["consolidate"] is None, "nothing to do"
 
     second = store.save_theme(conn, project, tid=None, name="Other", gist="g", code_ids=[])
     for t in (tid, second):
         store.set_hold(conn, t, "candidate")
     said = context.project_page(conn, project)["consolidate"]
-    assert said.startswith("2 themes to compare · 0 cells"), "two candidates are worth comparing"
+    assert said["themes"] == 2 and said["all_n"] == 0, "two candidates are worth comparing"
 
 
 # ---- the plan -----------------------------------------------------------------------------------
@@ -105,13 +109,13 @@ def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
 def test_the_plan_compares_reads_every_counted_cell_then_counts_and_writes_up(corpus, conn):
     """The shape of it, and the promise the preview made: the plan produces exactly the cells the
     page printed, each of them scoped to one theme."""
-    plan = rerun.consolidate_plan(conn, corpus["pid"], "the language themes are one")
+    plan = rerun.consolidate_plan(conn, corpus["pid"], "the language themes are one", "all")
     assert [r["kind"] for r in plan] == (
         ["consolidate"] + ["doc"] * 3 + ["summary"] * 3 + ["settle", "accounts", "project"])
     assert plan[0]["note"] == "the language themes are one"
     assert all(r["theme_id"] == corpus["wide"] for r in plan if r["kind"] == "doc")
     assert ([(r["theme_id"], r["material_id"]) for r in plan if r["kind"] == "doc"]
-            == store.backfill_cells(conn, corpus["pid"])), "the preview's count is this count"
+            == store.backfill_cells(conn, corpus["pid"], "all")), "the preview's count is this count"
     # A note is about the theme set; fifty line calls cannot fold anything, so none is shown it.
     assert not [r for r in plan[1:] if r.get("note")]
     # Every kind is an ordinary run kind, so a restart resumes this like any other chain.
@@ -122,7 +126,7 @@ def test_an_exploring_project_rewrites_no_material_summary(corpus, conn):
     """Its account of a material is the memo, written over passages rather than over lines, so a
     back-filled line does not go stale under it. An iterative project's summary does."""
     store.set_method(conn, corpus["pid"], "explore")
-    plan = rerun.consolidate_plan(conn, corpus["pid"])
+    plan = rerun.consolidate_plan(conn, corpus["pid"], scope="all")
     assert [r["kind"] for r in plan] == (
         ["consolidate"] + ["doc"] * 3 + ["settle", "accounts", "project"])
 
@@ -186,7 +190,7 @@ def test_a_cell_that_was_looked_for_and_held_nothing_is_thin_and_not_a_hole(corp
     model.queue({"moments": [], "summary": ""})
     synth.doc(conn, mid, only_theme=corpus["wide"])
     assert store.followed(conn, pid)[(corpus["wide"], mid)] == "thin"
-    assert (corpus["wide"], mid) not in store.backfill_cells(conn, pid)
+    assert (corpus["wide"], mid) not in store.backfill_cells(conn, pid, "all")
 
 
 # ---- the count rule ------------------------------------------------------------------------------
@@ -361,3 +365,20 @@ def test_nothing_here_ever_reaches_a_model_by_accident(corpus, conn):
     store.settle_holds(conn, corpus["pid"])
     rerun.consolidate_plan(conn, corpus["pid"], "")
     context.project_page(conn, corpus["pid"])
+
+
+def test_the_default_scope_reads_only_for_themes_that_could_open(corpus, conn):
+    """Ninety-one calls on eight materials, most of them on themes that would stay candidates
+    whatever came back. The default back-fill goes back only for a theme already carried by half
+    the cases — the reading that buys a decision — and the wider scope is asked for by name."""
+    mids = corpus["mids"]
+    assert store.opening_need(conn, corpus["pid"]) == 3, "six cases, half rounded up"
+    assert store.backfill_cells(conn, corpus["pid"], "opening") == []
+    _line(conn, mids[1], corpus["narrow"])           # still two cases: below half
+    assert store.backfill_cells(conn, corpus["pid"], "opening") == []
+    _line(conn, mids[3], corpus["wide"])              # three of six: could open
+    opening = store.backfill_cells(conn, corpus["pid"], "opening")
+    assert opening and all(t == corpus["wide"] for t, _ in opening)
+    assert set(opening) <= set(store.backfill_cells(conn, corpus["pid"], "all"))
+    plan = rerun.consolidate_plan(conn, corpus["pid"])
+    assert [r["kind"] for r in plan].count("doc") == len(opening)

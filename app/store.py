@@ -471,8 +471,7 @@ def settle_holds(conn: sqlite3.Connection, pid: str) -> dict[str, list[str]]:
     set is not undone by arithmetic.
     """
     carried = carried_cases(conn, pid)
-    total = len(set(case_of(conn, pid).values()))
-    need = max(2, math.ceil(total * OPEN_AT))
+    need = opening_need(conn, pid)
     opened = []
     for r in conn.execute("SELECT id FROM theme WHERE project_id=? AND status='live' "
                           "AND hold='candidate'", (pid,)).fetchall():
@@ -484,21 +483,35 @@ def settle_holds(conn: sqlite3.Connection, pid: str) -> dict[str, list[str]]:
     return {"opened": opened, "proposed": propose_by_recurrence(conn, pid)}
 
 
-def backfill_cells(conn: sqlite3.Connection, pid: str) -> list[tuple[str, str]]:
+def opening_need(conn: sqlite3.Connection, pid: str) -> int:
+    """How many cases a candidate must be carried by to open under the count rule: half of them,
+    rounded up, never fewer than two. One number, used by the count itself and by the preview of
+    what a consolidation would read, so the two cannot disagree."""
+    total = len(set(case_of(conn, pid).values()))
+    return max(2, math.ceil(total * OPEN_AT))
+
+
+def backfill_cells(conn: sqlite3.Connection, pid: str,
+                   scope: str = "opening") -> list[tuple[str, str]]:
     """The (theme, material) cells a consolidation would go back and read, in theme order.
 
     A theme born at material five is "not assessed yet" for materials one to four, and where the
     code gate passed it over it is "not looked for here" — and nothing in the chain ever went
-    back. These are those cells: a theme two cases already carry, in a material never read for it.
-    A theme one case carries is left out, so a consolidation cannot send a reader through the
-    whole corpus after one material's motif.
+    back. These are those cells, for the themes in `scope`: `opening`, the themes already carried
+    by enough cases to open if their empty cells came back as lines — the reading that buys a
+    decision — or `all`, every theme two cases carry. On an eight-material corpus `all` was
+    forty-five cells, ninety-one calls, most of them on themes that would stay candidates whatever
+    came back; `opening` is the default and the wider look is asked for with its price in view.
+    A theme one case carries is never read for, so a consolidation cannot send a reader through
+    the whole corpus after one material's motif.
     """
     carried = carried_cases(conn, pid)
+    need = opening_need(conn, pid) if scope == "opening" else 2
     mids = [m["id"] for m in materials(conn, pid)]
     outcomes = followed(conn, pid)
     return [(t["id"], mid)
             for t in list(live_themes(conn, pid)) + list(candidates(conn, pid))
-            if len(carried.get(t["id"], ())) >= 2
+            if len(carried.get(t["id"], ())) >= need
             for mid in mids if outcomes.get((t["id"], mid)) in (None, "skipped")]
 
 

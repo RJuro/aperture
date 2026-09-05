@@ -100,7 +100,8 @@ def from_step(mid: str, step: str, feedback_id: str | None = None, *,
 # correcting a piece of writing. What they are asking is the question the chain never asks — how do
 # these themes stand against each other, and against the material none of them was ever read in.
 
-def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "") -> list[dict]:
+def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "",
+                     scope: str = "opening") -> list[dict]:
     """Compare every theme across the corpus, read the cells nobody read, then count.
 
     Four movements. THEMES over the whole corpus at once, with the fold asked for in its ceiling
@@ -114,8 +115,13 @@ def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "") -> list
     The note rides on the THEMES call alone. It is about the theme set, and handing it to fifty
     line calls as well would put "fold the language themes together" in front of fifty readers who
     cannot fold anything.
+
+    `scope` is what the back-fill goes back for: `opening`, the themes that would open under the
+    count rule if the cells came back as lines — half the cases, so the calls buy a decision — or
+    `all`, every theme two cases carry. On an eight-material corpus the first was 91 calls as
+    `all`; a researcher who wants the wider look asks for it and sees its price first.
     """
-    cells = store.backfill_cells(conn, pid)
+    cells = store.backfill_cells(conn, pid, scope)
     proj = store.project(conn, pid)
     runs = [{**_run("consolidate"), "note": note.strip()}]
     runs += [_run("doc", mid, tid) for tid, mid in cells]

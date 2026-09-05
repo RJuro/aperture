@@ -95,7 +95,9 @@
 <details class="quiet-details">
 <summary>Compare every theme across the corpus</summary>
 <form method="post" action="/p/{{ project.id }}/compare">
-  <p class="dim small">{{ consolidate }}</p>
+  <p class="dim small">{{ consolidate.themes }} {{ 'theme' | plural(consolidate.themes) }} to compare. Then go back for:</p>
+  <label class="choice"><input type="radio" name="scope" value="opening" checked> <span>The themes that could open — carried by half the {{ consolidate.unit }} already: {{ consolidate.opening }}</span></label>
+  <label class="choice"><input type="radio" name="scope" value="all" {% if consolidate.all_n == consolidate.opening_n %}disabled{% endif %}> <span>Every theme two {{ consolidate.unit }} carry: {{ consolidate.all }}</span></label>
   <label class="small" for="compare-note">Anything you want said about the themes first (optional)</label>
   <input id="compare-note" type="text" name="note" placeholder="e.g. the three language themes are one">
   <button class="btn btn-small btn-secondary">Compare every theme</button>

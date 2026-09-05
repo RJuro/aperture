@@ -593,10 +593,16 @@ def project_page(conn, pid: str) -> dict:
     # AND the check of that line — two calls, not one; a preview that counted the lines alone said
     # half the price. Law 4 — the number is the rows it is over, and `store.backfill_cells` is
     # what the plan is built from too, so the estimate cannot drift from the work.
-    cells = store.backfill_cells(conn, pid)
-    consolidate = (f'{_n(len(themes), "theme")} to compare · {_n(len(cells), "cell")} to read '
-                   f'(about {_n(2 * len(cells) + 1, "model call")})'
-                   if cells or sum(t["hold"] == "candidate" for t in themes) > 1 else "")
+    opening, every = store.backfill_cells(conn, pid, "opening"), store.backfill_cells(conn, pid, "all")
+    def _cost(cells):
+        return f'{_n(len(cells), "cell")} to read (about {_n(2 * len(cells) + 1, "model call")})'
+    # The control counts in the unit the page counts reach in: cases once the researcher has
+    # grouped materials into any, materials until then — a project with no cases should not
+    # meet the word.
+    consolidate = ({"themes": len(themes), "opening": _cost(opening), "all": _cost(every),
+                    "opening_n": len(opening), "all_n": len(every),
+                    "unit": "cases" if store.cases(conn, pid) else "materials"}
+                   if every or sum(t["hold"] == "candidate" for t in themes) > 1 else None)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
     summary = _row(store.get_summary(conn, "project", pid))

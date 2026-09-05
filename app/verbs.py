@@ -244,7 +244,7 @@ def resynthesise(request: Request, pid: str):
 
 
 @router.post("/p/{pid}/compare")
-def compare(request: Request, pid: str, note: str = Form("")):
+def compare(request: Request, pid: str, note: str = Form(""), scope: str = Form("opening")):
     """Compare every theme across the whole corpus, and go back for the cells nobody read.
 
     The chain never asks this. It revises the theme set one material — or one batch — at a time,
@@ -261,7 +261,9 @@ def compare(request: Request, pid: str, note: str = Form("")):
     """
     conn = connection()
     _mine(request, conn, pid)
-    jobs.start(db.connect, pid, rerun.consolidate_plan(conn, pid, note))
+    if scope not in ("opening", "all"):
+        raise HTTPException(status_code=404, detail="not here")
+    jobs.start(db.connect, pid, rerun.consolidate_plan(conn, pid, note, scope))
     return RedirectResponse(f"/p/{pid}#themes", status_code=303)
 
 
