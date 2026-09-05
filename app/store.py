@@ -15,12 +15,16 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import logging
+import math
 import secrets
 import sqlite3
 from collections import Counter
 from datetime import datetime, timezone
 
 from . import db
+
+log = logging.getLogger("aperture")
 
 
 def now() -> str:
@@ -403,6 +407,25 @@ def theme_notes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
                         "rowid DESC", (tid,)).fetchall()
 
 
+def carried_cases(conn: sqlite3.Connection, pid: str) -> dict[str, set[str]]:
+    """Per live theme, the cases that hold a live claim under it — a material counting as its own
+    case where the researcher has grouped none.
+
+    One query for everything that counts recurrence: the proposal below, the consolidation's count
+    rule, and which themes a consolidation goes back and reads for. They have to agree, and three
+    copies of this join is how they would stop agreeing.
+    """
+    of = case_of(conn, pid)
+    carried: dict[str, set[str]] = {}
+    for r in conn.execute(
+            "SELECT t.id AS id, mo.material_id AS mid FROM theme t "
+            "JOIN moment mo ON mo.theme_id = t.id AND mo.status='live' "
+            "JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL "
+            "WHERE t.project_id=? AND t.status='live'", (pid,)):
+        carried.setdefault(r["id"], set()).add(of.get(r["mid"], r["mid"]))
+    return carried
+
+
 def propose_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
     """Candidates the corpus now carries in two cases or more, put to the researcher as a
     question. Returns the ids newly proposed.
@@ -414,14 +437,7 @@ def propose_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
     withdrawn again — `proposed_at` back to NULL — if the claims fall back under two cases, which
     a removed material or a rerun that dropped a line will do.
     """
-    of = case_of(conn, pid)
-    carried: dict[str, set[str]] = {}
-    for r in conn.execute(
-            "SELECT t.id AS id, mo.material_id AS mid FROM theme t "
-            "JOIN moment mo ON mo.theme_id = t.id AND mo.status='live' "
-            "JOIN material m ON m.id = mo.material_id AND m.removed_at IS NULL "
-            "WHERE t.project_id=? AND t.status='live' AND t.hold='candidate'", (pid,)):
-        carried.setdefault(r["id"], set()).add(of.get(r["mid"], r["mid"]))
+    carried = carried_cases(conn, pid)
     fresh = []
     for r in conn.execute("SELECT id, proposed_at FROM theme WHERE project_id=? AND status='live' "
                           "AND hold='candidate'", (pid,)).fetchall():
@@ -433,6 +449,57 @@ def propose_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
             conn.execute("UPDATE theme SET proposed_at=NULL WHERE id=?", (r["id"],))
     conn.commit()
     return fresh
+
+
+# What share of the cases a candidate has to be carried by before a consolidation opens it: half,
+# rounded up, and never fewer than two. Half is where reflexive TA puts the line between a pattern
+# the corpus repeats and one case's motif — a theme need not appear in every item and prevalence
+# is not importance, so this is deliberately not "in all of them".
+OPEN_AT = 0.5
+
+
+def settle_holds(conn: sqlite3.Connection, pid: str) -> dict[str, list[str]]:
+    """After a consolidation has read every theme against every material: let the count settle the
+    holds. Returns {opened, proposed}.
+
+    Ordinarily Python only proposes and the researcher promotes, because a count of cases is a
+    question asked of a reading that may never have looked (`propose_by_recurrence`). A
+    consolidation is what makes the count answerable: every theme has just been compared across
+    the whole corpus and every cell nobody had read has been read, so a candidate half the cases
+    carry is a pattern the corpus repeated rather than one material's motif. Below half it is
+    still only proposed, and an open or frozen theme is not touched at all — a hold the researcher
+    set is not undone by arithmetic.
+    """
+    carried = carried_cases(conn, pid)
+    total = len(set(case_of(conn, pid).values()))
+    need = max(2, math.ceil(total * OPEN_AT))
+    opened = []
+    for r in conn.execute("SELECT id FROM theme WHERE project_id=? AND status='live' "
+                          "AND hold='candidate'", (pid,)).fetchall():
+        if len(carried.get(r["id"], ())) >= need:
+            set_hold(conn, r["id"], "open")
+            log.info("theme id=%s opened by consolidation", r["id"])
+            opened.append(r["id"])
+    # Whatever did not reach the threshold is put to the researcher exactly as it always was.
+    return {"opened": opened, "proposed": propose_by_recurrence(conn, pid)}
+
+
+def backfill_cells(conn: sqlite3.Connection, pid: str) -> list[tuple[str, str]]:
+    """The (theme, material) cells a consolidation would go back and read, in theme order.
+
+    A theme born at material five is "not assessed yet" for materials one to four, and where the
+    code gate passed it over it is "not looked for here" — and nothing in the chain ever went
+    back. These are those cells: a theme two cases already carry, in a material never read for it.
+    A theme one case carries is left out, so a consolidation cannot send a reader through the
+    whole corpus after one material's motif.
+    """
+    carried = carried_cases(conn, pid)
+    mids = [m["id"] for m in materials(conn, pid)]
+    outcomes = followed(conn, pid)
+    return [(t["id"], mid)
+            for t in list(live_themes(conn, pid)) + list(candidates(conn, pid))
+            if len(carried.get(t["id"], ())) >= 2
+            for mid in mids if outcomes.get((t["id"], mid)) in (None, "skipped")]
 
 
 # ---- cases ------------------------------------------------------------------------------------

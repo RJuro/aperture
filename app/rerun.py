@@ -89,6 +89,36 @@ def from_step(mid: str, step: str, feedback_id: str | None = None, *,
                    _run("project", feedback_id=feedback_id)]
 
 
+# ---- consolidating the theme set ---------------------------------------------------------------
+# Also not feedback, and for the same reason as `from_step`: the researcher is asking for work, not
+# correcting a piece of writing. What they are asking is the question the chain never asks — how do
+# these themes stand against each other, and against the material none of them was ever read in.
+
+def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "") -> list[dict]:
+    """Compare every theme across the corpus, read the cells nobody read, then count.
+
+    Four movements. THEMES over the whole corpus at once, with the fold asked for in its ceiling
+    slot. Then one DOC per cell a theme two cases carry has never been assessed or was passed over
+    by the code gate — `only_theme`, so the gate is off and a person asked for the line
+    (PLAN.md §3, law 2). Then, for an iterative project only, the summary of each material the
+    back-fill touched: its summary is written over its lines and those lines have just moved,
+    where an exploratory project's memo is written over passages and has not. Then the count rule,
+    the accounts, and the corpus summary.
+
+    The note rides on the THEMES call alone. It is about the theme set, and handing it to fifty
+    line calls as well would put "fold the language themes together" in front of fifty readers who
+    cannot fold anything.
+    """
+    cells = store.backfill_cells(conn, pid)
+    proj = store.project(conn, pid)
+    runs = [{**_run("consolidate"), "note": note.strip()}]
+    runs += [_run("doc", mid, tid) for tid, mid in cells]
+    if proj is not None and proj["method"] != "explore":
+        # In the order the cells were planned, without repeats: one summary per material touched.
+        runs += [_run("summary", mid) for mid in dict.fromkeys(mid for _, mid in cells)]
+    return runs + [_run("settle"), _run("accounts"), _run("project")]
+
+
 # ---- what a row of the table does ---------------------------------------------------------------
 
 def _nothing(conn, fb) -> list[dict]:

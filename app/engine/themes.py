@@ -262,8 +262,18 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
     return _apply(conn, pid, out, material_id=material_id, run_id=run_id)
 
 
+# The one sentence a consolidation adds to the ceiling slot. The pass is otherwise the cross-case
+# pass exactly as PLAN.md §13 wrote it — the difference is that the researcher has asked for the
+# whole corpus to be compared at once, so the fold is what they are asking for rather than
+# something the cap is forcing, and a candidate's spread is not the question here (the count rule
+# settles that afterwards, in Python, over cells this run has not read yet).
+CONSOLIDATING = ("This is a consolidation over the whole corpus: where two themes define one "
+                 "pattern, fold one into the other with `merge_into`, keeping the better-defined "
+                 "one's words; a candidate seen in several materials is still a candidate here.")
+
+
 def run_cross(conn: sqlite3.Connection, pid: str, mids: list[str], *, feedback: str = "",
-              run_id: str | None = None) -> dict:
+              consolidating: bool = False, run_id: str | None = None) -> dict:
     """Revise the theme set over a whole batch at once, from evidence rather than from one text.
 
     One call per batch instead of one per material (PLAN.md §13). What replaces the material is a
@@ -272,9 +282,17 @@ def run_cross(conn: sqlite3.Connection, pid: str, mids: list[str], *, feedback: 
     at a time is how a batch of two produced eight candidates and nothing across them (EVAL pass
     5). Nothing else changes: the same answer shape, the same Python enforcement, the same
     stability count.
+
+    `consolidating` is the researcher asking for this over the whole corpus (PLAN.md §14). It adds
+    one sentence to the ceiling slot and changes nothing else — an iterative project consolidates
+    through this call too, and reads its evidence packet rather than its texts, which is why a
+    material with no memo says so rather than being left out.
     """
+    slots = _slots(conn, pid, feedback)
+    if consolidating:
+        slots["ceiling"] += " " + CONSOLIDATING
     system, user = llm.prompt("themes_cross", evidence=_evidence_block(conn, pid, mids),
-                              memos=_memos_block(conn, mids), **_slots(conn, pid, feedback))
+                              memos=_memos_block(conn, mids), **slots)
     out = llm.chat_json(system, user, label="themes")
     # No material_id: a tension raised here belongs to whichever material's passage raised it, and
     # the answer says which. `mids` is what that id is checked against.

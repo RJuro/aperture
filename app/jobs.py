@@ -40,10 +40,15 @@ log = logging.getLogger("aperture")
 # ---- the steps ----------------------------------------------------------------------------------
 
 def _text(conn: sqlite3.Connection, run: dict) -> str:
-    """The researcher's own words, verbatim, for the steps that take them as an argument."""
+    """The researcher's own words, verbatim, for the steps that take them as an argument.
+
+    Ordinarily those words are a comment on something — a claim, a line, a material — and the row
+    carries them. A consolidation is about no one block, so it has nothing to be a comment on and
+    its note rides on the planned run itself, where the job row keeps it across a restart.
+    """
     fid = run.get("feedback_id")
     fb = rerun.feedback(conn, fid) if fid else None
-    return fb["text"] if fb else ""
+    return (fb["text"] if fb else run.get("note")) or ""
 
 
 def _frame(conn, pid, run):
@@ -133,6 +138,43 @@ def _themes(conn, pid, run):
                    run_id=run.get("run_id"))
     if _theme_set(conn, pid) == before and run.get("run_id"):
         store.mark_unchanged(conn, run["run_id"])
+
+
+def _consolidate(conn, pid, run):
+    """Every theme of the project compared against the whole corpus at once, because the
+    researcher asked for it (PLAN.md §14).
+
+    `themes.run_cross` unchanged, over every live material rather than a batch: what it reads is
+    the codebook's own passages, so an iterative project consolidates through the same call and a
+    material with no memo simply says it has none. The one difference is a sentence in the ceiling
+    slot — this is a fold the researcher asked for, not one the cap is forcing.
+    """
+    from .engine import themes
+    mids = [m["id"] for m in store.materials(conn, pid)]
+    out = themes.run_cross(conn, pid, mids, feedback=_text(conn, run), consolidating=True,
+                           run_id=run.get("run_id"))
+    merged = len(out.get("merged") or [])
+    if merged and run.get("run_id"):
+        store.set_run_line(conn, run["run_id"],
+                           f"{merged} {'theme' if merged == 1 else 'themes'} folded into another")
+
+
+def _settle(conn, pid, run):
+    """The count rule, after the back-fill has read the cells nobody had read (PLAN.md §14).
+
+    No model call: this is arithmetic over the follow rows and the claims the back-fill just
+    wrote. It is a step of its own so that what it did lands on a run row a researcher can read,
+    and so that the accounts after it are written for the themes it has just opened.
+    """
+    said = store.settle_holds(conn, pid)
+    if run.get("run_id"):
+        store.set_run_line(conn, run["run_id"], settle_line(said))
+
+
+def settle_line(said: dict) -> str:
+    """What the count rule leaves on its row: what it opened, and what it only put as a question."""
+    return (f'{len(said["opened"])} {"theme" if len(said["opened"]) == 1 else "themes"} opened, '
+            f'{len(said["proposed"])} proposed')
 
 
 def _doc(conn, pid, run):
@@ -250,6 +292,8 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "reconcile": ("Comparing {name}'s codes with the project's", _reconcile),
     "memo":    ("Writing what {name} says on its own terms", _memo),
     "themes":  ("Finding themes",                     _themes),
+    "consolidate": ("Comparing every theme across the corpus", _consolidate),
+    "settle":  ("Counting where each theme now reaches", _settle),
     "doc":     ("Writing what stands out in {name}", _doc),
     "residual": ("Reading what the coding did not mark in {name}", _residual),
     "summary": ("Writing the summary of {name} again", _summary),

@@ -243,6 +243,28 @@ def resynthesise(request: Request, pid: str):
     return RedirectResponse(f"/p/{pid}", status_code=303)
 
 
+@router.post("/p/{pid}/compare")
+def compare(request: Request, pid: str, note: str = Form("")):
+    """Compare every theme across the whole corpus, and go back for the cells nobody read.
+
+    The chain never asks this. It revises the theme set one material — or one batch — at a time,
+    so a theme born at material five is "not assessed yet" for the four before it, and nothing
+    ever goes back; and since promotion became the researcher's alone, a corpus can stand at
+    twenty-five candidates and three open themes with the summary written over the three.
+
+    Deliberately not feedback, like `refresh` and the rerun verb: the researcher is asking for
+    work, not correcting a piece of writing. Their optional note is the one thing here in their
+    own words, and it goes verbatim into the THEMES call and nowhere else.
+
+    The path says `compare` and not what `rerun.consolidate_plan` is called, because the word is
+    ours (`context._BANNED`) and a form's action attribute is on the page like any other text.
+    """
+    conn = connection()
+    _mine(request, conn, pid)
+    jobs.start(db.connect, pid, rerun.consolidate_plan(conn, pid, note))
+    return RedirectResponse(f"/p/{pid}#themes", status_code=303)
+
+
 @router.post("/p/{pid}/focus")
 def focus(request: Request, pid: str, focus: str = Form("")):
     """What the researcher is looking for. Nothing re-runs: it shapes the next reading, and

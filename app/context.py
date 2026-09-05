@@ -575,6 +575,14 @@ def project_page(conn, pid: str) -> dict:
     # against, whatever its reach, and candidates come last because they are not yet themes.
     themes.sort(key=lambda r: (r["hold"] == "candidate", r["hold"] != "frozen",
                                -r["reach"], -r["claims"], r["name"]))
+    # What the consolidate control would cost, before it is pressed: every theme goes into one
+    # comparison, and one line call goes back to each cell a theme two cases carry has never been
+    # read in. Law 4 — the number is the rows it is over, and `store.backfill_cells` is what the
+    # plan is built from too, so the estimate cannot drift from the work.
+    cells = store.backfill_cells(conn, pid)
+    consolidate = (f'{_n(len(themes), "theme")} to compare · {_n(len(cells), "cell")} to read '
+                   f'(about {_n(len(cells) + 1, "model call")})'
+                   if cells or sum(t["hold"] == "candidate" for t in themes) > 1 else "")
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
     summary = _row(store.get_summary(conn, "project", pid))
@@ -587,7 +595,7 @@ def project_page(conn, pid: str) -> dict:
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
             "cases": [{**dict(c), "materials": by_case.get(c["id"], [])}
                       for c in store.cases(conn, pid)],
-            "single_group": _single_group(of),
+            "single_group": _single_group(of), "consolidate": consolidate,
             "page_section": "overview", "reading": reading,
             "summary": summary,
             "summary_html": cite(summary["text"], index, pid) if summary else "",
