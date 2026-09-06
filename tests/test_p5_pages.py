@@ -105,7 +105,7 @@ def test_a_theme_has_a_page_of_its_own(client, conn, analysed):
 
 def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, conn, analysed):
     """Absence at corpus level is a finding. An empty cell in a grid says nothing; a named
-    material under "looked for and found too thin" says the reading looked and claimed nothing."""
+    material under "no retained claims" says the reading looked and claimed nothing."""
     pid = analysed["pid"]
     tid = list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
@@ -116,7 +116,7 @@ def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, con
     store.save_follow(conn, analysed["rodwin"], tid, "thin", None)
     html = client.get(f"/p/{pid}/t/{tid}").text
     assert "Materials with no claims under this theme" in html
-    assert "Looked for and found too thin" in html
+    assert "No retained claims" in html
     row = store.material(conn, analysed["rodwin"])
     assert (row["title"] or row["name"]) in html
 
@@ -126,16 +126,13 @@ def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, c
     they would be read as one kind of sentence."""
     store.save_summary(conn, "project", analysed["pid"], "interpretation",
                        "Taken together, this suggests a single wage logic.")
-    # project.html gives these a real heading (F6); export.md, which another agent owns, still
-    # uses its own literal text for the same two movements.
-    headings = {f"/p/{analysed['pid']}": ("Project summary", "Possible interpretation"),
-                f"/p/{analysed['pid']}/export.md": ("What the material shows",
-                                                    "What this may mean, so far")}
-    for url, (shows, means) in headings.items():
+    # Both surfaces now name the two movements the same way (§5 of the review): each agent wrote
+    # its half expecting the other's file to still carry the old heading, and both were changed.
+    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/export.md"):
         text = client.get(url).text
         assert store.get_summary(conn, "project", analysed["pid"], "reading")["text"] in text
         assert "Taken together, this suggests a single wage logic." in text
-        assert shows in text and means in text
+        assert "Project summary" in text and "Possible interpretation" in text
 
 
 def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):

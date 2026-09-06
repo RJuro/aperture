@@ -170,7 +170,7 @@ def test_the_record_downloads_as_a_word_document(client, conn, rich):
     doc = docx.Document(io.BytesIO(r.content))
     paras = [p.text for p in doc.paragraphs]
     text = "\n".join(paras)
-    assert "Test project" in paras[0] and "Aperture reading record" in paras
+    assert "Test project" in paras[0] and "Aperture analysis record" in paras
     assert store.get_summary(conn, "project", pid)["text"] in paras
     first = store.moments(conn, rich["grande"])[0]
     assert any(first["claim"] in p for p in paras)

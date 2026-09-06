@@ -2,32 +2,37 @@
 {% block main %}
 <section class="section project-head"><div class="container">
 <h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }} <a class="help" href="/guide#reach" title="How to read these counts">?</a></p>
-{# Where the researcher has taken this theme, and the one control that moves it. Freezing is not
-   analysis and spends nothing: it fixes the name and the gist so new material is applied to the
-   theme rather than allowed to rewrite it. #}
+{# Where the researcher has taken this theme, and the one control that moves it. Locking a
+   theme's definition is not analysis and spends nothing: it fixes the name and the gist so new
+   material is applied to the theme rather than allowed to rewrite it. #}
 <div class="theme-hold">
   <span class="meta">
-  {%- if theme.hold == 'candidate' %}Candidate — found in one material so far
-  {%- elif theme.hold == 'frozen' %}Frozen
+  {#- A candidate can already carry claims in several materials — recurrence proposed it, but
+      nobody has added it to the project's themes yet. Saying "found in one material so far" was
+      false whenever that had happened, so the status now names what has not happened (inclusion)
+      rather than guessing at how much evidence exists; the derivation line above prints the
+      actual count. #}
+  {%- if theme.hold == 'candidate' %}Candidate — not yet included as a project theme
+  {%- elif theme.hold == 'frozen' %}Definition locked — new material is still analysed against it
   {#- The count is passes of the grouping step, which includes rereading one material: calling it
       materials read as saturation across cases, which is a methodological claim nothing here made. #}
-  {%- else %}Open{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
-  {%- endif %}</span> <a class="help" href="/guide#themes" title="Candidate, open, frozen — and what freezing does">?</a>
+  {%- else %}Definition can change{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
+  {%- endif %}</span> <a class="help" href="/guide#themes" title="Candidate, project theme, locked — and what locking a definition does">?</a>
   {%- if proposal %} <span class="meta">{{ proposal }}</span>{% endif %}
   {% if role in ('edit', 'owner') %}
   {% if theme.hold == 'candidate' %}
-  <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
+  <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/promote"><button class="btn btn-small btn-secondary">Add to project themes</button></form>
   {% else %}
   <form method="post" action="/p/{{ project.id }}/t/{{ theme.id }}/hold">
     <input type="hidden" name="hold" value="{{ 'open' if theme.hold == 'frozen' else 'frozen' }}">
-    <button class="btn btn-small btn-secondary">{{ 'Unfreeze' if theme.hold == 'frozen' else 'Freeze' }}</button>
+    <button class="btn btn-small btn-secondary">{{ 'Unlock definition' if theme.hold == 'frozen' else 'Lock definition' }}</button>
   </form>
   {% endif %}
   {% endif %}
 </div></div></section>
 
 <section class="section"><div class="container narrow-section">
-{% if summary %}<p class="eyebrow">Interpretive account</p><div class="summary-copy">{{ summary_html }}</div>
+{% if summary %}<h2>Theme summary</h2><div class="summary-copy">{{ summary_html }}</div>
 {% else %}
 <p class="provisional">No summary yet. One is written after a material is analysed, or after
 you send feedback below.</p>
@@ -35,9 +40,10 @@ you send feedback below.</p>
 {% endif %}
 
 {% if theme.hold == 'frozen' and notes %}
-{# The case for unfreezing, in the readings' own words. Never folded into the gist: a frozen
-   theme's definition is the researcher's, and what pulls against it is evidence, not an edit. #}
-<p class="eyebrow">What has pulled against this definition</p>
+{# The case for unlocking, in the readings' own words. Never folded into the gist: a theme whose
+   definition is locked is the researcher's to change, and what challenges it is evidence, not an
+   edit. #}
+<h2>Evidence that challenges this definition</h2>
 <ul class="mats tensions">
 {% for n in notes %}<li class="gist">{{ n.text | prose }} <span class="dim">{{ n.display_title | txt }} · {{ n.created_at | when }}</span></li>{% endfor %}
 </ul>
@@ -60,6 +66,10 @@ you send feedback below.</p>
     <li>
       <span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
       <p class="claim">{{ x.claim | txt }}</p>
+      {# F9: the material page and the record already showed this qualification beside the claim;
+         this loop rendered the same claim without it, so a partly-supported claim looked fully
+         supported here and only here. #}
+      {% if x.support == 'partly' %}<p class="dim small">Partially supported: {{ x.support_note | txt }}</p>{% endif %}
       <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.material_id }}?theme={{ theme.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
       </div>
     </li>
@@ -78,11 +88,13 @@ you send feedback below.</p>
 {% set residual = absent | selectattr('assessed', 'equalto', 'residual') | list %}
 {% set unassessed = absent | rejectattr('assessed') | list %}
 <section class="section"><div class="container"><h2>Materials with no claims under this theme <a class="help" href="/guide#absence" title="What each kind of empty cell licenses you to say">?</a></h2>
+{# F3/§4: five kinds of nothing were shown as one dash, or as headings a reader had to hover to
+   tell apart. These five labels and explanations are the ones the review specifies, and every
+   other surface that prints them (the record, the export) uses the same five. #}
 {% if searched %}
-<h3>Looked for and found too thin</h3>
-<p class="dim">This theme was read for in these materials and no claims under it held. Before
-reading that as absence, check what was excluded below — a set of claims too thin to keep is
-dropped whole and would look the same as absence here.</p>
+<h3>No retained claims</h3>
+<p class="dim">The theme was assessed in these materials, but no claims were retained. Review
+what was excluded below before interpreting this as absence.</p>
 <ul class="mats">
 {% for m in searched %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
@@ -91,11 +103,10 @@ dropped whole and would look the same as absence here.</p>
 </ul>
 {% endif %}
 {% if screened %}
-<h3>Looked at from this material's own account and its coding, and not pursued</h3>
-<p class="dim">One reading of what each of these materials was found to hold — its own account and
-every passage its coding marked — decided this theme was not worth going back to the material for,
-and said why. Nobody read the material itself under this theme. That is weaker than an absence and
-stronger than never having looked: it says where the reading was sent, and on what grounds.</p>
+<h3>Source check skipped</h3>
+<p class="dim">A preliminary review of each material's summary and codes did not select this
+theme for a source check here. Where recorded, the reason is shown below. Nobody read the
+material itself under this theme.</p>
 <ul class="mats">
 {% for m in screened %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
@@ -104,9 +115,9 @@ stronger than never having looked: it says where the reading was sent, and on wh
 </ul>
 {% endif %}
 {% if unsearched %}
-<h3>Not looked for here — none of this theme's codes marked these</h3>
-<p class="dim">Nothing this theme gathers was marked in these materials, so the reading never went
-looking for it in them. This says where the reading went, not what these materials do not say.</p>
+<h3>No matching codes</h3>
+<p class="dim">The initial coding did not trigger assessment for this theme in these materials, so
+the reading never went looking for it in them.</p>
 <ul class="mats">
 {% for m in unsearched %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
@@ -115,10 +126,9 @@ looking for it in them. This says where the reading went, not what these materia
 </ul>
 {% endif %}
 {% if residual %}
-<h3>Searched in the passages the coding did not mark — nothing found</h3>
-<p class="dim">No code of this theme fired in these materials, so the reading did not follow it
-through them; the passages no code marked at all were then read for it, and held nothing. This is
-an absence that was looked for.</p>
+<h3>No match in uncoded passages</h3>
+<p class="dim">No code for this theme fired in these materials, so the passages no code marked at
+all were searched for it instead. This is a limited search, and it found nothing to add.</p>
 <ul class="mats">
 {% for m in residual %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
@@ -127,10 +137,10 @@ an absence that was looked for.</p>
 </ul>
 {% endif %}
 {% if unassessed %}
-<h3>Not assessed yet — not read for this theme</h3>
-<p class="dim">Nothing has been read in these materials for this theme: either they were added
-after it was worked out, or the theme was worked out after they were read. This is a gap in the
-reading, not a finding about the materials.</p>
+<h3>Not assessed</h3>
+<p class="dim">This material has not been assessed for this theme: either it was added after the
+theme was defined, or the theme was defined after it was read. This is a gap in the reading, not
+a finding about the material.</p>
 <ul class="mats">
 {% for m in unassessed %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>

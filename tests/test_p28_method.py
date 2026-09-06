@@ -250,7 +250,7 @@ def login(client, name, pw):
 
 def test_the_new_project_form_carries_the_choice(client, conn, people):
     login(client, "ann", "battery staple")
-    assert "Explore the material" in client.get("/").text
+    assert "Analyse each material independently" in client.get("/").text
     r = client.post("/p/new", data={"name": "Built up", "focus": "", "method": "iterative"})
     assert r.status_code == 303
     pid = r.headers["location"].rsplit("/", 1)[-1]

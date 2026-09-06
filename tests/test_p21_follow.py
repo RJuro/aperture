@@ -139,14 +139,14 @@ def test_the_theme_page_puts_the_two_absences_under_their_own_headings(split, cl
     html = client.get(f'/p/{split["pid"]}/t/{split["elsewhere"]}').text
     grande, rodwin = store.material(conn, split["grande"]), store.material(conn, split["rodwin"])
     section = html.split("Materials with no claims under this theme")[-1]
-    under = section.split("Not looked for here — none of this theme's codes marked these")
+    under = section.split("No matching codes")
     assert len(under) == 2, "the heading a skip is named under"
     assert grande["title"] in under[1] and grande["title"] not in under[0]
     # Rodwin has not been read at all. A pair with no row is not assessed, and calling that
-    # "looked for and found too thin" asserts an absence over a reading that never happened.
-    assert "Not assessed yet — not read for this theme" in under[1]
-    assert rodwin["title"] in under[1].split("Not assessed yet")[1]
-    assert "Looked for and found too thin" not in section
+    # "no retained claims" asserts an absence over a reading that never happened.
+    assert "Not assessed" in under[1]
+    assert rodwin["title"] in under[1].split("Not assessed")[1]
+    assert "No retained claims" not in section
 
     from app import context
     absent = context.theme_page(conn, split["pid"], split["elsewhere"])["absent"]

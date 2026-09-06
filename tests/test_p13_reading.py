@@ -20,6 +20,7 @@ from app import ingest, jobs, store
 
 diarize = pytest.importorskip("app.engine.diarize")
 synth = pytest.importorskip("app.engine.synth")
+verify = pytest.importorskip("app.engine.verify")
 
 
 # A real exchange with nothing marking who speaks — the shape `turns.scan` cannot read.
@@ -209,6 +210,32 @@ def test_the_account_is_on_the_material_page_and_in_the_record(ready, conn, mode
     assert "The stall, not the land, is what fed this household." in html
     md = client.get(f'/p/{ready["pid"]}/export.md').text
     assert "The stall, not the land, is what fed this household." in md
+
+
+def test_a_partly_supported_claim_keeps_its_qualification_on_every_surface(ready, conn, model,
+                                                                          quote, client):
+    """F9: `theme.html`'s claim loop used to print the same claim and quote as the material page
+    and the record, but without the `partly` note beside it — so a claim looked more certain
+    simply because the researcher opened the theme instead of the material. The note must survive
+    on the material page, the theme page, the record, and the markdown export."""
+    model.queue({"moments": _moments(quote, ready["mid"], 5), "summary": "an account"})
+    model.queue({"verdicts": []})
+    model.queue({"summary": "what the reading found", "questions": "", "people": []})
+    model.queue({"verdicts": []})
+    synth.doc(conn, ready["mid"])
+
+    marked = store.thread(conn, ready["mid"], ready["tid"])[0]
+    model.queue({"verdicts": [{"id": marked["id"], "verdict": "partly",
+                              "why": "only part of it is said"}]}, {"verdicts": []})
+    verify.run(conn, ready["mid"])
+
+    material_html = client.get(f'/p/{ready["pid"]}/m/{ready["mid"]}?theme={ready["tid"]}').text
+    theme_html = client.get(f'/p/{ready["pid"]}/t/{ready["tid"]}').text
+    record_html = client.get(f'/p/{ready["pid"]}/record').text
+    export_md = client.get(f'/p/{ready["pid"]}/export.md').text
+    for surface, html in (("material", material_html), ("theme", theme_html),
+                          ("record", record_html), ("export", export_md)):
+        assert "Partially supported: only part of it is said" in html, surface
 
 
 # ---- 3. what the reading found, theme by theme --------------------------------------------------
