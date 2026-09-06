@@ -9,6 +9,20 @@
   <link rel="icon" href="data:,">
 </head>
 <body>
+<a class="skip-link" href="#content">Skip to content</a>
+{# Where the top bar's Help control returns to: built from the same variables the breadcrumb
+   above already has, so no route this agent does not own has to be changed to pass one. A page
+   that sets neither `material` nor `theme` nor `page_section == 'record'` still has `project`
+   alone, which is a fair return path — the Guide's "Back to ..." just lands on the overview. #}
+{% set origin = '' %}
+{% if project %}
+  {% set origin = '/p/' ~ project.id %}
+  {% if material %}{% set origin = origin ~ '/m/' ~ material.id %}
+  {% elif theme %}{% set origin = origin ~ '/t/' ~ theme.id %}
+  {% elif page_section == 'record' %}{% set origin = origin ~ '/record' %}
+  {% endif %}
+{% endif %}
+{% set guide_href = ('/guide?from=' ~ origin) if origin else '/guide' %}
 <header class="topnav">
   <div class="container topnav-inner">
     <a class="logo" href="/">{{ app_name }}</a>
@@ -19,10 +33,25 @@
       {% if theme %}<i aria-hidden="true">/</i><span>{{ theme.name | txt }}</span>{% endif %}
       {% endif %}
     </nav>
-    {# One wrapper, so the third grid column stays one child however many things sit in it.
-       Inside a project the rail carries the guide; here it is for the pages that have no rail. #}
+    {# One wrapper, so the third grid column stays one child however many things sit in it. Help
+       sits here on every page at every width — the rail's own copy of it, and the rest of the
+       rail, is project navigation and may disappear on a narrow screen; this may not. #}
     <div class="topnav-end">
-      {% if not project %}<a class="guide-link" href="/guide">Guide</a>{% endif %}
+      {% if project %}
+      {# Below 920px CSS hides the project rail entirely, so this is the only way left to reach
+         Materials, Themes or the record — a details element, because this app has one script and
+         it is not this. #}
+      <details class="project-menu">
+        <summary aria-label="Project sections">Sections</summary>
+        <div class="menu-sheet">
+          <a href="/p/{{ project.id }}#overview">Overview</a>
+          <a href="/p/{{ project.id }}#materials">Materials</a>
+          <a href="/p/{{ project.id }}#themes">Themes</a>
+          <a href="/p/{{ project.id }}/record">Analysis record</a>
+        </div>
+      </details>
+      {% endif %}
+      <a class="guide-link" href="{{ guide_href }}">Help</a>
       {% if user %}
       <details class="account-menu">
         <summary class="account" aria-label="Open account menu">{{ user.name[:2] | upper | txt }}</summary>
@@ -49,8 +78,8 @@
           <li><a href="/p/{{ project.id }}#overview"{% if page_section == 'overview' %} aria-current="page"{% endif %}><span>Overview</span></a></li>
           <li><a href="/p/{{ project.id }}#materials"{% if page_section == 'materials' %} aria-current="page"{% endif %}><span>Materials</span><span class="rail-count">{{ '%02d' | format(nav_materials | length) }}</span></a></li>
           <li><a href="/p/{{ project.id }}#themes"{% if page_section == 'themes' %} aria-current="page"{% endif %}><span>Themes</span><span class="rail-count">{{ '%02d' | format(nav_theme_count) }}</span></a></li>
-          <li><a href="/p/{{ project.id }}/record"{% if page_section == 'record' %} aria-current="page"{% endif %}><span>Reading record</span></a></li>
-          <li><a href="/guide"><span>Guide</span></a></li>
+          <li><a href="/p/{{ project.id }}/record"{% if page_section == 'record' %} aria-current="page"{% endif %}><span>Analysis record</span></a></li>
+          <li><a href="{{ guide_href }}"><span>Help</span></a></li>
         </ul>
       </nav>
       {% if nav_materials %}

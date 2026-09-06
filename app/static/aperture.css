@@ -27,6 +27,11 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body); text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 a { color: inherit; text-decoration: none; }
 a:hover { color: var(--fg); }
+/* First focusable element on every page. Off-screen until it has focus, so a sighted mouse user
+   never sees it and a keyboard or screen-reader user does not have to tab past the whole top bar
+   to reach the workspace. */
+.skip-link { position: absolute; top: -48px; left: 12px; z-index: 100; padding: 10px 16px; border-radius: var(--radius); background: var(--fg); color: var(--surface); font-size: 14px; font-weight: 650; transition: top var(--motion) var(--ease); }
+.skip-link:focus { top: 12px; }
 button, input, textarea, select { font: inherit; }
 button, summary { cursor: pointer; }
 /* Motion is interactional only: a fold the reader opens reveals its content rather than popping
@@ -60,6 +65,11 @@ h3 { margin: 0; font: 600 19px/1.3 var(--font-display); }
 .breadcrumbs { min-width: 0; display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
 .breadcrumbs a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .breadcrumbs span:last-child { overflow: hidden; color: var(--fg); text-overflow: ellipsis; white-space: nowrap; }
+/* The project name on its own, with no material or theme after it, is the first child rather
+   than `span:last-child` above — and on a narrow screen, now that the top bar's third column
+   also carries Help and the compact project menu, there is less room left for it than there used
+   to be. Without this it wraps onto a second and third line and doubles the bar's height. */
+.breadcrumbs a:first-child { overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
 .breadcrumbs i { color: var(--border); font-style: normal; }
 .account-menu { position: relative; }
 .account-menu > summary { list-style: none; }
@@ -68,6 +78,13 @@ h3 { margin: 0; font: 600 19px/1.3 var(--font-display); }
    material page, which shares the word. */
 .account-menu .account { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 700; }
 .account-menu[open] .account, .account-menu .account:hover { border-color: var(--fg); }
+/* The compact project menu that stands in for the rail below 920px, where CSS hides it. Same
+   `.menu-sheet` dropdown as the account menu; hidden above that width because the rail already
+   carries Materials, Themes and the record there. */
+.project-menu { position: relative; display: none; }
+.project-menu > summary { min-height: 24px; padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius); list-style: none; color: var(--muted); font-size: 14px; }
+.project-menu > summary::-webkit-details-marker { display: none; }
+.project-menu[open] > summary, .project-menu > summary:hover { border-color: var(--fg); color: var(--fg); }
 .menu-sheet { position: absolute; right: 0; top: calc(100% + 7px); z-index: 40; width: 230px; padding: 7px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: 0 14px 36px color-mix(in oklch, var(--fg) 12%, transparent); }
 .menu-sheet > a, .menu-sheet > button, .menu-sheet > details > summary { min-height: 42px; display: flex; align-items: center; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: var(--fg); font-size: 13px; text-align: left; list-style: none; }
 .menu-sheet > a:hover, .menu-sheet > button:hover, .menu-sheet > details > summary:hover { background: var(--fg-soft); }
@@ -406,6 +423,9 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 @media (max-width: 920px) {
   .app-shell { display: block; }
   .project-rail { display: none; }
+  /* The rail's own Materials/Themes/record navigation just disappeared with it; this is what
+     replaces it at this width. */
+  .project-menu { display: inline-block; }
   .topnav-inner { grid-template-columns: auto minmax(0, 1fr) auto; }
   .reading-grid, .overview-grid, .home-grid { grid-template-columns: 1fr; }
   .record-pane { position: static; max-height: 72vh; border-radius: var(--radius); }
@@ -417,6 +437,10 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
   .logo { font-size: 18px; }
   .breadcrumbs { font-size: 11px; }
   .breadcrumbs span:last-child, .breadcrumbs i { display: none; }
+  /* Sections, Help and the account circle now share this column at a width where every pixel of
+     it is scarce. */
+  .topnav-end { gap: 10px; }
+  .project-menu > summary { padding: 6px 9px; font-size: 13px; }
   .section { padding-block: 32px; }
   .head-row { grid-template-columns: 1fr; }
   .head-actions { position: absolute; top: 68px; right: var(--gutter); }
@@ -494,7 +518,11 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 /* Guide and help */
 /* A question mark beside a control, never a button: it goes to the guide's section on that
    control, and it has to be small enough that a page full of them is still quiet. */
-.help { display: inline-grid; place-items: center; width: 15px; height: 15px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font: 10px/1 var(--font-mono); vertical-align: 1px; }
+/* 24x24 is WCAG's minimum comfortable pointer target; the visible ring stayed 15px on a screen
+   full of these and was too small to hit reliably as well as too small to read. The accessible
+   name still has to come from the link itself — an `aria-label` beside the `?`, e.g. "Help: what
+   a theme is" — because a screen reader reads this circle's only text node, which is "?". */
+.help { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font: 11px/1 var(--font-mono); vertical-align: middle; }
 .help:hover { border-color: var(--fg); color: var(--fg); }
 /* Two or three sentences folded beside the few controls that are read wrong most often. Quieter
    than a caption, and closed it is one line. */
@@ -506,8 +534,13 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 /* The guide itself: contents beside the text, as a reference page rather than a document to read
    through. Below the two-column width the contents become a header list. */
 .guide-head { padding-bottom: clamp(24px, 3vw, 40px); }
+/* The application-level return path F2 asks for, so opening Help never costs a researcher their
+   place: named to the project or material it left from, or "All projects" when there is none or
+   the visitor cannot see it. */
+.guide-back { margin: 0 0 16px; font-size: 14px; }
+.guide-back a { text-decoration: underline; text-underline-offset: 3px; }
 .guide-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; padding-bottom: clamp(48px, 7vw, 96px); }
-.guide-contents li { padding: 4px 0; font-size: 13px; }
+.guide-contents li { padding: 4px 0; font-size: 14px; }
 .guide-contents a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .guide-sections section { max-width: 74ch; padding-top: 26px; border-top: 1px solid var(--border); }
 .guide-sections section + section { margin-top: 26px; }
@@ -515,6 +548,11 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .guide-sections h2 code { font: 400 .62em var(--font-mono); }
 .guide-sections p { margin: 14px 0 0; }
 .guide-sections ul { margin: 14px 0 0; }
+/* The developer-reference section's module list: genuinely secondary metadata, not ordinary
+   help, so it is the one place in the guide that keeps small type. */
+.guide-sections dl { margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.guide-sections dt { margin-top: 10px; font-weight: 600; color: var(--fg); }
+.guide-sections dd { margin: 2px 0 0; }
 .guide-sections li + li { margin-top: 9px; }
 .guide-sections code { font: 12px var(--font-mono); }
 .where { color: var(--muted); font-size: 12px; }
@@ -527,7 +565,7 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 }
 /* The top nav's third column holds whatever a page without a rail needs beside the account. */
 .topnav-end { display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
-.guide-link { color: var(--muted); font-size: 13px; }
+.guide-link { color: var(--muted); font-size: 14px; }
 .guide-link:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
 
 /* Compare */
