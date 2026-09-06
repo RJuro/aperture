@@ -122,6 +122,12 @@ def test_a_prompt_template_carries_no_corpus_specific_text():
         text = f.read_text()
         for word in ("Grande", "Rodwin", "Trieste", "Ellis Island", "packing house", "Denver"):
             assert word not in text, f"{f.name} carries corpus text: {word!r}"
+        # A leading underscore is a FRAGMENT — a block a scaffold includes through a reserved
+        # slot, not a prompt anything calls. It has no slots of its own by definition, and the
+        # rule above is the one that matters for it: a fragment goes into every prompt that
+        # includes it, so corpus text in one would reach further than corpus text anywhere else.
+        if f.name.startswith("_"):
+            continue
         # a slot the engine does not fill would be caught at compile time; a slot-free block of
         # prose longer than a worked example is the shape a leaked finding takes
         assert len(re.findall(r"\{\{\w+\}\}", text)) >= 3, f"{f.name} has too few slots to be a scaffold"

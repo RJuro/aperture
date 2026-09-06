@@ -392,12 +392,19 @@ def set_hold(conn: sqlite3.Connection, tid: str, hold: str) -> None:
 
 
 def add_theme_note(conn: sqlite3.Connection, tid: str, mid: str | None, run_id: str | None,
-                   text: str) -> str:
-    """A tension: what one material pulled against a frozen theme's definition. Kept beside the
-    theme, never folded into the gist — it is the case for unfreezing, not a rewrite."""
+                   text: str, kind: str = "tension") -> str:
+    """What one material had to say about a theme's definition, kept beside the theme and never
+    folded into the gist.
+
+    Two kinds, and the difference is which way the reading was going. A `tension` comes from
+    THEMES: this material pulls against a FROZEN definition, and the note is the case for
+    unfreezing it. A `fit` comes from THREAD: the line was written, and this material carries the
+    theme in a way the definition did not foresee — a different kind of case, actor, setting or
+    time. Neither rewrites anything. A definition changes when the researcher changes it.
+    """
     nid = db.new_id("tn")
-    conn.execute("INSERT INTO theme_note (id, theme_id, material_id, run_id, text, created_at) "
-                 "VALUES (?,?,?,?,?,?)", (nid, tid, mid, run_id, text, now()))
+    conn.execute("INSERT INTO theme_note (id, theme_id, material_id, run_id, text, created_at, "
+                 "kind) VALUES (?,?,?,?,?,?,?)", (nid, tid, mid, run_id, text, now(), kind))
     conn.commit()
     return nid
 
@@ -405,6 +412,16 @@ def add_theme_note(conn: sqlite3.Connection, tid: str, mid: str | None, run_id: 
 def theme_notes(conn: sqlite3.Connection, tid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM theme_note WHERE theme_id=? ORDER BY created_at DESC, "
                         "rowid DESC", (tid,)).fetchall()
+
+
+def set_nearest(conn: sqlite3.Connection, tid: str, nearest_id: str | None, note: str) -> None:
+    """What this theme is most easily confused with, and what sorts a passage into it rather than
+    that one. Written by THEMES beside the definition it belongs to; read by the theme page and by
+    the duplicate check that runs before a consolidation, which is arithmetic over these and costs
+    no call. A theme nothing is close to keeps `None`, and that is an answer."""
+    conn.execute("UPDATE theme SET nearest_id=?, nearest_note=? WHERE id=?",
+                 (nearest_id, note, tid))
+    conn.commit()
 
 
 def carried_cases(conn: sqlite3.Connection, pid: str) -> dict[str, set[str]]:
