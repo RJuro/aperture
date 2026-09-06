@@ -27,12 +27,14 @@ Return JSON in exactly this shape and nothing else:
 
 {
   "additions": [
-    {"theme": "t9f2c1", "claim": "The stall, not the land, is what fed them.",
-     "anchor": "we had a stall in the market", "sid": "S118"}
+    {"theme": "t9f2c1", "claim": "The night coordinator holds the only key to the drug cupboard.",
+     "anchor": "only the coordinator has that key", "sid": "S118"}
   ],
   "none_for": ["t44ab0", "t0aa41"],
-  "note": "Mostly the interviewer's questions about dates, and a passage on the weather at sea."
+  "note": "Mostly the facilitator's questions about dates, and a passage on parking at the hospital."
 }
+
+{{style_short}}
 ---
 THE THEMES, each with its id and definition:
 

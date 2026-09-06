@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import re
 
-from .. import llm, store
+from .. import llm, prose, store
 from . import synth, verify_summary
 
 # What the memo may cost the reader. Shorter than DOC's summary (320) because it is prose over
@@ -152,6 +152,10 @@ def run(conn, mid: str, *, run_id: str | None = None) -> dict:
     dropped += said
 
     questions = synth.words(data.get("questions"), synth.BRIEF_WORDS)
+    # Both pieces of prose a researcher reads from this step, counted together against the rules
+    # the prompt now carries. A count on the run row, never a rejection: a retry is a whole call.
+    if style := prose.note(memo, questions):
+        dropped.append(style)
     with store.atomic(conn) as tx:
         if memo:
             store.save_summary(tx, "material", mid, "memo", memo, run_id)

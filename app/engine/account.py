@@ -39,7 +39,7 @@ from __future__ import annotations
 import hashlib
 import sqlite3
 
-from .. import llm, store
+from .. import llm, prose, store
 from . import synth, themes
 
 ACCOUNT_WORDS_MIN, ACCOUNT_WORDS = 250, 350
@@ -107,6 +107,10 @@ def fingerprint(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
     parts += sorted(m["id"] for m in store.materials(conn, pid))
     parts += sorted(f'{r["id"]}:{r["support"] or ""}'
                     for r in conn.execute(_CLAIMS, (pid, theme_id)))
+    # A note from the reading is an input to the prompt now, so an account written before one was
+    # left is an account written without it — the same way a new material or a changed support
+    # used to leave the page calling a stale account current.
+    parts += sorted(n["id"] for n in store.theme_notes(conn, theme_id) if n["kind"] == "fit")
     return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()[:16]
 
 
@@ -142,8 +146,19 @@ def _spread(rows: list, k: int) -> list:
     return [rows[int(i * step)] for i in range(k)]
 
 
-def _blocks(rows: list, carrying: list[dict]) -> tuple[str, int]:
-    """One block per material that carries the theme, each headed by its own derivation."""
+def _blocks(rows: list, carrying: list[dict],
+            notes: dict[str, list[str]] | None = None) -> tuple[str, int]:
+    """One block per material that carries the theme, each headed by its own derivation and by
+    whatever the reading of that material had to say about how it sits under this theme's
+    definition.
+
+    The note belongs under the material's own heading and nowhere else. A model shown the notes
+    in a list of their own reads them as a second finding about the theme and writes the noted
+    material up with the rest of them anyway — a participant the definition excludes folded in as
+    an ordinary instance, which is the reading this level was given the notes to prevent. A
+    material the reading left no note on prints no label at all: an empty "note from the reading:"
+    reads as a reading that looked and found nothing, and none was ever made.
+    """
     by_material: dict[str, list] = {}
     for r in rows:
         by_material.setdefault(r["material_id"], []).append(r)
@@ -159,9 +174,10 @@ def _blocks(rows: list, carrying: list[dict]) -> tuple[str, int]:
         count = (f'{len(shown)} of {m["claims"]} claims shown' if len(shown) < m["claims"]
                  else f'{m["claims"]} claims')
         head = f'## {m["title"] or m["name"]} — {m["kind"] or "kind not worked out"} — {count}'
+        said = [f"note from the reading: {n}" for n in (notes or {}).get(m["material_id"], [])]
         # A claim the check found only partly carried says so here, or the account rests its
         # full weight on a qualification the reader of the page can see and the model cannot.
-        out.append("\n".join([head] + [
+        out.append("\n".join([head] + said + [
             f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"'
             + (f' — partly carried: {dict(r).get("support_note") or ""}'
                if dict(r).get("support") == "partly" else "")
@@ -264,7 +280,15 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
                             "there is nothing to write an account from"]}
 
     rows = [dict(r) for r in conn.execute(_CLAIMS, (pid, theme_id))]
-    materials, held_back = _blocks(rows, carrying)
+    # What THREAD said about a material that carries this theme in a way its definition did not
+    # foresee, under the material it was written from. A `tension` note is THEMES's case for
+    # unfreezing a definition and is addressed to the researcher, not to this level; oldest first,
+    # because two notes on one material are two passes over it in the order they happened.
+    fit: dict[str, list[str]] = {}
+    for n in reversed(store.theme_notes(conn, theme_id)):
+        if n["kind"] == "fit" and n["material_id"]:
+            fit.setdefault(n["material_id"], []).append(n["text"])
+    materials, held_back = _blocks(rows, carrying, fit)
 
     proj = store.project(conn, pid)
     # What the researcher said about this theme and no run has answered yet. A comment on a theme
@@ -300,6 +324,10 @@ def run(conn: sqlite3.Connection, pid: str, theme_id: str, *,
         dropped.append(f"{held_back} of {cover['claims']} claims were not shown to the model: "
                        f"{CLAIMS_SHOWN} is the most it reads at once, divided evenly over the "
                        f"{len(carrying)} materials that carry this theme")
+    # The prose rules the prompt now carries, counted in what came back. A count, never a gate:
+    # nothing here rejects an account or asks for it again.
+    if style := prose.note(text):
+        dropped.append(style)
     if not text:
         dropped.append("the account came back empty and nothing was stored")
     elif len(text.split()) < ACCOUNT_WORDS_MIN:

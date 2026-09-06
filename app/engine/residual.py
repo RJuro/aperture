@@ -19,7 +19,7 @@ reader was already sent to find and did not.
 """
 from __future__ import annotations
 
-from .. import anchor, llm, store
+from .. import anchor, llm, prose, store
 from . import check, synth, verify
 
 # What the note may cost the reader. The prompt asks for 40 words and this is the guard.
@@ -127,6 +127,11 @@ def _apply(conn, mid: str, additions: list[dict], none_for: set[str], note: str,
         # than the reader who looked already did.
         if outcomes.get((tid, mid)) == "skipped":
             store.save_follow(conn, mid, tid, "residual", run_id)
+    # The note and the claims this pass wrote, counted against the prose rules the prompt carries.
+    # The additions are counted before VERIFY has ruled on them: the rules govern how a claim is
+    # written, and a claim the check later sets aside was still written this way.
+    if style := prose.note(note, *(a["claim"] for a in additions)):
+        dropped.append(style)
     if note:
         store.save_summary(conn, "material", mid, "residual", note, run_id)
     return {"additions": additions, "none_for": sorted(none_for), "note": note,
