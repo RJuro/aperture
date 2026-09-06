@@ -39,11 +39,17 @@ MEMO_WORDS = 250
 _CITE = re.compile(r"\[([^\[\]]+)\]")
 
 
-def coded_block(conn, mid: str) -> str:
+def coded_block(conn, mid: str, *, per_code: int | None = None,
+                codes: int | None = None) -> str:
     """The passages the reading marked, each under its code with the code's definition.
 
     Grouped by code and printed with the passage's own text, because the memo rests on these and
     cites their ids: a list of ids under a label is not evidence anyone can write from.
+
+    `per_code` and `codes` cap it, and what is left out is counted rather than dropped silently —
+    MEMO is written FROM these and takes them whole, while SCREEN only decides where to look and
+    would be paying to re-send half a material otherwise. A reader of the capped block can still
+    see that a code has forty passages under it and not four.
     """
     text = dict(store.sentences(conn, mid))
     by_code: dict[tuple[str, str], list[str]] = {}
@@ -52,9 +58,15 @@ def coded_block(conn, mid: str) -> str:
     if not by_code:
         return "The reading marked nothing in this material."
     out = []
-    for (name, definition), sids in sorted(by_code.items()):
+    shown = sorted(by_code.items())
+    left = len(shown) - codes if codes is not None else 0
+    for (name, definition), sids in (shown[:codes] if codes is not None else shown):
         out.append(f"## {name} — {definition or 'no definition recorded'}")
-        out += [f"{sid}  {text.get(sid, '')}" for sid in sids]
+        out += [f"{sid}  {text.get(sid, '')}" for sid in (sids[:per_code] if per_code else sids)]
+        if per_code and len(sids) > per_code:
+            out.append(f"… and {len(sids) - per_code} more passages under this code")
+    if left > 0:
+        out.append(f"… and {left} more codes marked in this material")
     return "\n".join(out)
 
 

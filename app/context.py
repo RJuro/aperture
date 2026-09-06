@@ -18,7 +18,7 @@ import re
 
 from markupsafe import Markup
 
-from . import store, titles
+from . import rerun, store, titles
 
 APP_NAME = "Aperture"
 
@@ -475,10 +475,11 @@ def _shell(conn, pid: str) -> dict:
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
 
-# What an empty cell means, in the four states `_assessed` tells apart. The page and the record
+# What an empty cell means, in the five states `_assessed` tells apart. The page and the record
 # name them in their own headings; this is for a cell that has room for nothing but a dash.
 ASSESSED_SAID = {
     "thin": "Looked for and found too thin",
+    "screened": "Looked at from this material's own account and its coding, and not pursued",
     "skipped": "Not looked for here — none of this theme's codes marked this material",
     "residual": "Searched in the passages the coding did not mark — nothing found",
     None: "Not assessed yet — this material was not read for this theme",
@@ -487,18 +488,24 @@ ASSESSED_SAID = {
 
 def _assessed(outcomes: dict, tid: str, mid: str) -> str | None:
     """Which kind of nothing this material is for this theme: 'thin' where a reading under it was
-    made and set aside, 'skipped' where none of the theme's codes marked the material and it was
-    never looked for, 'residual' where the skip was then searched in the passages no code marked
-    and nothing was found, and None where the pair was never assessed at all.
+    made and set aside, 'screened' where one call read this material's own account and its coding
+    and did not send a reader to the material, 'skipped' where none of the theme's codes marked
+    the material and it was never looked for, 'residual' where the skip was then searched in the
+    passages no code marked and nothing was found, and None where the pair was never assessed at
+    all.
 
-    A missing row is the third state and not the first. A material uploaded and not yet read, and
+    A missing row is the last state and not the first. A material uploaded and not yet read, and
     an older material never revisited for a theme developed since, both have no row — and both
     were shown as "looked for and found too thin", which asserts an absence over a reading that
     never happened. 'line' with no live claims left reads as thin: it was looked for, and what it
     found is no longer there.
+
+    'screened' sits between 'thin' and 'skipped' and is neither of them. Something did look, so it
+    is not a blank where nothing ever went; what it looked at was the account and the coding
+    rather than the material, so it is not an absence in the material either.
     """
     outcome = outcomes.get((tid, mid))
-    if outcome in (None, "skipped", "residual"):
+    if outcome in (None, "skipped", "residual", "screened"):
         return outcome
     return "thin"
 
@@ -588,14 +595,24 @@ def project_page(conn, pid: str) -> dict:
     # against, whatever its reach, and candidates come last because they are not yet themes.
     themes.sort(key=lambda r: (r["hold"] == "candidate", r["hold"] != "frozen",
                                -r["reach"], -r["claims"], r["name"]))
-    # What the consolidate control would cost, before it is pressed: every theme goes into one
-    # comparison, and each cell a theme two cases carry has never been read in costs a line call
-    # AND the check of that line — two calls, not one; a preview that counted the lines alone said
-    # half the price. Law 4 — the number is the rows it is over, and `store.backfill_cells` is
-    # what the plan is built from too, so the estimate cannot drift from the work.
+    # What the consolidate control would cost, before it is pressed. It is a RANGE and it is
+    # printed as one, because what separates the floor from the ceiling is the one thing nobody
+    # can know yet. Certain: one comparison, one look per material with cells, one check per
+    # material with cells. Uncertain: between none and all of the cells themselves, depending on
+    # how many of them the look sends a reader to. Law 4 — the numbers are the rows they are over,
+    # and `store.backfill_cells` is what the plan is built from too, so the estimate cannot drift
+    # from the work.
     opening, every = store.backfill_cells(conn, pid, "opening"), store.backfill_cells(conn, pid, "all")
     def _cost(cells):
-        return f'{_n(len(cells), "cell")} to read (about {_n(2 * len(cells) + 1, "model call")})'
+        mats = len({mid for _, mid in cells})
+        # With the look turned off every planned cell is read, so the floor IS the ceiling and the
+        # page must not offer a range the plan cannot deliver.
+        looking = rerun.screen_planned()
+        floor = 1 + 2 * mats if looking else 1 + mats + len(cells)
+        ceiling = floor + len(cells) if looking else floor
+        said = f'{_n(len(cells), "cell")} to look at (about {_n(floor, "model call")}'
+        return said + (")" if ceiling == floor else
+                       f", up to {ceiling} if every look finds something)")
     # The control counts in the unit the page counts reach in: cases once the researcher has
     # grouped materials into any, materials until then — a project with no cases should not
     # meet the word.
@@ -692,7 +709,7 @@ def theme_page(conn, pid: str, tid: str) -> dict:
     if p is None or t is None:
         return {}
     cover = account.coverage(conn, pid, tid)
-    outcomes = store.followed(conn, pid)
+    outcomes, whys = store.followed(conn, pid), store.follow_notes(conn, pid)
     carrying, absent = [], []
     for m in cover["per_material"]:
         row = dict(m)
@@ -701,8 +718,10 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             row["moments"] = [dict(x) for x in store.thread(conn, m["material_id"], tid)]
             carrying.append(row)
         else:
-            # Which kind of nothing this is — set aside, never looked for, or never assessed.
+            # Which kind of nothing this is — set aside, passed over by the look, never looked
+            # for, or never assessed — and, where the look said why, its words.
             row["assessed"] = _assessed(outcomes, tid, m["material_id"])
+            row["screened_why"] = whys.get((tid, m["material_id"]), "")
             absent.append(row)
     summary = _row(store.get_summary(conn, "theme", tid))
     of = _cases(conn, pid)
@@ -875,7 +894,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
 
     out = []
     evidence = store.theme_evidence(conn, pid)
-    outcomes = store.followed(conn, pid)
+    outcomes, whys = store.followed(conn, pid), store.follow_notes(conn, pid)
     of = _cases(conn, pid)
     for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         cover = account.coverage(conn, pid, t["id"])
@@ -888,9 +907,10 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                     conn, "thread", f'{m["material_id"]}:{t["id"]}', "reading"))
                 carrying.append(row)
             else:
-                # As on the theme page: 'thin', 'skipped', or None where the theme and this
-                # material were never assessed against each other at all.
+                # As on the theme page: 'thin', 'screened', 'skipped', 'residual', or None where
+                # the theme and this material were never assessed against each other at all.
                 row["assessed"] = _assessed(outcomes, t["id"], m["material_id"])
+                row["screened_why"] = whys.get((t["id"], m["material_id"]), "")
                 absent.append(row)
         carried, _, said = _reach([m["material_id"] for m in cover["per_material"] if m["claims"]],
                                   [m["material_id"] for m in cover["per_material"]], of,

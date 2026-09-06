@@ -726,19 +726,24 @@ def set_aside_by_check(conn: sqlite3.Connection, mid: str) -> int:
 
 
 def save_follow(conn: sqlite3.Connection, mid: str, theme_id: str, outcome: str,
-                run_id: str | None = None) -> None:
-    """Record what became of one theme in one material: 'line', 'thin', 'skipped' or 'residual'.
+                run_id: str | None = None, note: str = "") -> None:
+    """Record what became of one theme in one material: 'line', 'thin', 'skipped', 'residual' or
+    'screened'.
 
-    The four are what a researcher has to be able to tell apart, and nothing else in the database
+    The five are what a researcher has to be able to tell apart, and nothing else in the database
     tells them apart: a line set aside for being too thin and a line never written both leave the
     same nothing. Keyed by theme id rather than by name, because a note in the run's own words —
     the only place this used to be said at all — stops naming the theme the moment it is renamed.
+
+    `note` is why, in the words of whatever made the decision, and only 'screened' has one: a
+    theme passed over from this material's own account and its coding is the one outcome a
+    researcher cannot reconstruct from the rows, because nothing else records what was looked at.
     """
     conn.execute("UPDATE follow SET status='superseded' WHERE material_id=? AND theme_id=? "
                  "AND status='live'", (mid, theme_id))
-    conn.execute("INSERT INTO follow (id, material_id, theme_id, outcome, run_id, status) "
-                 "VALUES (?,?,?,?,?,'live')",
-                 (db.new_id("fo"), mid, theme_id, outcome, run_id))
+    conn.execute("INSERT INTO follow (id, material_id, theme_id, outcome, run_id, status, note) "
+                 "VALUES (?,?,?,?,?,'live',?)",
+                 (db.new_id("fo"), mid, theme_id, outcome, run_id, note))
     conn.commit()
 
 
@@ -756,6 +761,20 @@ def followed(conn: sqlite3.Connection, pid: str) -> dict[tuple[str, str], str]:
         "SELECT f.theme_id AS theme_id, f.material_id AS material_id, f.outcome AS outcome "
         "FROM follow f JOIN material m ON m.id = f.material_id "
         "WHERE m.project_id=? AND m.removed_at IS NULL AND f.status='live'", (pid,))}
+
+
+def follow_notes(conn: sqlite3.Connection, pid: str) -> dict[tuple[str, str], str]:
+    """(theme id, material id) -> why that outcome, where whatever decided it said why.
+
+    Only 'screened' writes one. Kept apart from `followed` so that every caller that only wants
+    to know WHICH kind of nothing a cell is keeps paying for one column; a page that prints the
+    reason asks for it.
+    """
+    return {(r["theme_id"], r["material_id"]): r["note"] for r in conn.execute(
+        "SELECT f.theme_id AS theme_id, f.material_id AS material_id, f.note AS note "
+        "FROM follow f JOIN material m ON m.id = f.material_id "
+        "WHERE m.project_id=? AND m.removed_at IS NULL AND f.status='live' AND f.note<>''",
+        (pid,))}
 
 
 def followed_in_run(conn: sqlite3.Connection, mid: str, run_id: str) -> set[str]:

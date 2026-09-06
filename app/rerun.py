@@ -35,6 +35,17 @@ def residual_planned() -> bool:
     return os.environ.get("APERTURE_RESIDUAL") != "off"
 
 
+def screen_planned() -> bool:
+    """Whether the back-fill looks before it reads (PLAN.md §14).
+
+    SCREEN is one call per material that decides a batch of cells from that material's own account
+    and its coding, and a cell it passes over is never read. Off only when the variable says
+    exactly `off`, which puts every planned cell through the reading exactly as it went before —
+    the evaluation needs both chains to compare what the looking cost and what it missed.
+    """
+    return os.environ.get("APERTURE_SCREEN") != "off"
+
+
 def feedback(conn: sqlite3.Connection, fid: str) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM feedback WHERE id=?", (fid,)).fetchone()
 
@@ -105,12 +116,17 @@ def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "",
     """Compare every theme across the corpus, read the cells nobody read, then count.
 
     Four movements. THEMES over the whole corpus at once, with the fold asked for in its ceiling
-    slot. Then one DOC per cell a theme two cases carry has never been assessed or was passed over
-    by the code gate — `only_theme`, so the gate is off and a person asked for the line
-    (PLAN.md §3, law 2). Then, for an iterative project only, the summary of each material the
-    back-fill touched: its summary is written over its lines and those lines have just moved,
-    where an exploratory project's memo is written over passages and has not. Then the count rule,
-    the accounts, and the corpus summary.
+    slot. Then, per material with cells: ONE SCREEN, which reads that material's own account and
+    its coding and says which of its cells are worth a reading; one DOC per cell it did not pass
+    over — `only_theme`, so the code gate is off and a person asked for the line (PLAN.md §3, law
+    2); and ONE check over the material afterwards, instead of one after each line. Then, for an
+    iterative project only, the summary of each material the back-fill touched: its summary is
+    written over its lines and those lines have just moved, where an exploratory project's memo is
+    written over passages and has not. Then the count rule, the accounts, and the corpus summary.
+
+    Every cell is still PLANNED. A cell the look passed over is cancelled by `jobs`, on its own run
+    row, in words a researcher can read — a plan that quietly dropped the rows would leave nothing
+    saying that this cell was decided rather than never considered.
 
     The note rides on the THEMES call alone. It is about the theme set, and handing it to fifty
     line calls as well would put "fold the language themes together" in front of fifty readers who
@@ -118,16 +134,32 @@ def consolidate_plan(conn: sqlite3.Connection, pid: str, note: str = "",
 
     `scope` is what the back-fill goes back for: `opening`, the themes that would open under the
     count rule if the cells came back as lines — half the cases, so the calls buy a decision — or
-    `all`, every theme two cases carry. On an eight-material corpus the first was 91 calls as
-    `all`; a researcher who wants the wider look asks for it and sees its price first.
+    `all`, every theme two cases carry. On an eight-material corpus `all` was 45 cells and 91
+    calls before the look existed; it is now 17 if every look passes its cells over and 62 if none
+    of them does. A researcher who wants the wider look asks for it and sees its price first.
     """
     cells = store.backfill_cells(conn, pid, scope)
     proj = store.project(conn, pid)
     runs = [{**_run("consolidate"), "note": note.strip()}]
-    runs += [_run("doc", mid, tid) for tid, mid in cells]
+    # Material by material, because both of the calls that were being paid for per CELL are really
+    # per material. SCREEN reads this material's account and its coding once and decides every one
+    # of its cells; the check that follows reads each of its passages once, whether one line was
+    # written into the material or nine. In between, the cells themselves, in the order
+    # `backfill_cells` put them.
+    by_material: dict[str, list[str]] = {}
+    for tid, mid in cells:
+        by_material.setdefault(mid, []).append(tid)
+    for mid, tids in by_material.items():
+        if screen_planned():
+            # The batch rides on the run row the way the cross-case pass carries its materials:
+            # what this call has to decide is known when the plan is made, and a restart must be
+            # able to run the step again from the row alone.
+            runs.append({**_run("screen", mid), "themes": tids})
+        runs += [_run("doc", mid, tid) for tid in tids]
+        runs.append(_run("verify", mid))
     if proj is not None and proj["method"] != "explore":
         # In the order the cells were planned, without repeats: one summary per material touched.
-        runs += [_run("summary", mid) for mid in dict.fromkeys(mid for _, mid in cells)]
+        runs += [_run("summary", mid) for mid in by_material]
     return runs + [_run("settle"), _run("accounts"), _run("project")]
 
 

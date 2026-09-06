@@ -23,15 +23,22 @@ Eight rules. Each one carries the same weight, and each one is checked.
    not evidence: an interview that never raised something was most often never asked. Do not
    say what the silence suggests, means, or implies. If a claim under this theme itself says why
    something was not raised, cite that claim; otherwise leave the absence as an absence. Each of
-   those materials is marked below as one of three things, and they are not the same thing. LOOKED
-   FOR AND TOO THIN means this theme was read for in that material and what came back was set
-   aside: an absence you may name. NOT LOOKED FOR HERE means nothing this theme gathers was ever
-   marked in that material, so no reading of it under this theme was ever made: that is a fact
-   about where the reading went, not about the material. Do not treat it as absence of the
-   pattern. Do not name it as a material this theme is missing from, and do not weigh it against
-   the theme. NOT ASSESSED means this material has never been read for this theme at all, so it
-   is neither an absence nor evidence: it says nothing about the theme either way, it is not a
-   material this theme is missing from, and you do not name it as one.
+   those materials is marked below as one of several things, and they are not the same thing.
+   LOOKED FOR AND TOO THIN means this theme was read for in that material and what came back was
+   set aside: an absence you may name. LOOKED AT FROM THIS MATERIAL'S OWN ACCOUNT AND ITS CODING
+   AND NOT PURSUED means a reading of what that material was found to hold decided this theme was
+   not worth going back to the material for — nobody read the material under this theme, so there
+   is no absence in it to name. You may not read it as absence, you do not name that material as
+   one this theme is missing from, and you do not weigh it against the theme. NOT LOOKED FOR HERE
+   means nothing this theme gathers was ever marked in that material, so no reading of it under
+   this theme was ever made: that is a fact about where the reading went, not about the material.
+   Do not treat it as absence of the pattern. Do not name it as a material this theme is missing
+   from, and do not weigh it against the theme. SEARCHED IN THE PASSAGES THE CODING DID NOT MARK
+   AND NOT FOUND is the one of those that was then tested against the material's unmarked
+   passages and held nothing: an absence somebody went and looked for, which you may name.
+   NOT ASSESSED means this material has never been read for this theme at all, so it is neither
+   an absence nor evidence: it says nothing about the theme either way, it is not a material this
+   theme is missing from, and you do not name it as one.
 6. How many materials carry this theme, and how many claims, is counted for you and printed
    beside the theme wherever this account is read. Do not restate it in words. Do not write
    "all", "every", "each", "consistently", "no exceptions", "across the corpus", or "in N of M
@@ -112,7 +119,8 @@ id, then the other theme's name and its claim on the same passage:
 {{shared}}
 
 WHERE THIS THEME DOES NOT APPEAR. The reading of these materials made no claim under it at all.
-Each line says which of the three it is — looked for and too thin, not looked for here, or not
-assessed:
+Each line says which kind of nothing it is — looked for and too thin, looked at from the
+material's own account and its coding and not pursued, not looked for here, searched in the
+passages the coding did not mark and not found, or not assessed:
 
 {{absent}}

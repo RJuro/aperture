@@ -73,6 +73,7 @@ you send feedback below.</p>
 
 {% if absent %}
 {% set searched = absent | selectattr('assessed', 'equalto', 'thin') | list %}
+{% set screened = absent | selectattr('assessed', 'equalto', 'screened') | list %}
 {% set unsearched = absent | selectattr('assessed', 'equalto', 'skipped') | list %}
 {% set residual = absent | selectattr('assessed', 'equalto', 'residual') | list %}
 {% set unassessed = absent | rejectattr('assessed') | list %}
@@ -86,6 +87,19 @@ dropped whole and would look the same as absence here.</p>
 {% for m in searched %}
   <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
       <span class="dim">{{ m.kind | replace('_', ' ') }}</span></li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if screened %}
+<h3>Looked at from this material's own account and its coding, and not pursued</h3>
+<p class="dim">One reading of what each of these materials was found to hold — its own account and
+every passage its coding marked — decided this theme was not worth going back to the material for,
+and said why. Nobody read the material itself under this theme. That is weaker than an absence and
+stronger than never having looked: it says where the reading was sent, and on what grounds.</p>
+<ul class="mats">
+{% for m in screened %}
+  <li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a>
+      <span class="dim">{{ m.kind | replace('_', ' ') }}</span>{% if m.screened_why %} <span class="dim">— {{ m.screened_why | txt }}</span>{% endif %}</li>
 {% endfor %}
 </ul>
 {% endif %}

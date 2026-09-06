@@ -468,7 +468,8 @@ def _thread(conn, mid: str, tid: str, *,
 
 
 def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = False,
-        run_id: str | None = None, skip_done: str | None = None, stop=None) -> dict:
+        check: bool = True, run_id: str | None = None, skip_done: str | None = None,
+        stop=None) -> dict:
     """Write this material's lines, then its summary over them.
 
     `only_theme` re-makes one line and leaves the summary, the questions and the people exactly as
@@ -486,6 +487,14 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
     to be checked between planned STEPS only, so a stop pressed as this began waited out every
     line, the check and the summary before it took effect — none of which can be taken back once
     sent (AR-09).
+
+    `check=False` writes the line and its follow row and stops there: no VERIFY and no rewritten
+    line summary. It is only for `only_theme`, and only for a caller that will check the whole
+    material once afterwards — the back-fill of PLAN.md §14 writes several lines into one material
+    and used to pay for a check and a re-summary after each of them, over the same passages. What
+    that caller must then do is exactly what this does: VERIFY, and `line_summary` for every theme
+    it returns in `lost`. The chain material arrives on does not use it; DOC still verifies inside
+    itself there.
     """
     from . import verify, verify_summary   # they read this module; imported here so neither waits on the other
     row = store.material(conn, mid)
@@ -533,7 +542,7 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
             # finding about the material.
             kept = [dict(m) for m in store.thread(conn, mid, only_theme)]
         else:
-            if kept:
+            if kept and check:
                 checked = verify.run(conn, mid, theme_id=only_theme, run_id=run_id)
                 dropped += checked["dropped"]
                 # Over what stands: the summary was written with the answer above, before any of

@@ -86,7 +86,10 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     assert store.backfill_cells(conn, corpus["pid"]) == []
     said = context.project_page(conn, corpus["pid"])["consolidate"]
     assert said["themes"] == 2 and said["opening_n"] == 0
-    assert said["all"] == "3 cells to read (about 7 model calls)"
+    # Three cells over three materials: the comparison, a look at each material and a check of
+    # each material are certain; the three readings themselves depend on what the looks find.
+    assert said["all"] == ("3 cells to look at (about 7 model calls, up to 10 if every look "
+                           "finds something)")
 
 
 def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
@@ -110,12 +113,20 @@ def test_the_plan_compares_reads_every_counted_cell_then_counts_and_writes_up(co
     """The shape of it, and the promise the preview made: the plan produces exactly the cells the
     page printed, each of them scoped to one theme."""
     plan = rerun.consolidate_plan(conn, corpus["pid"], "the language themes are one", "all")
+    # One look and one check per material with cells, and the cells between them: the three cells
+    # here fall in three different materials, so each block is a look, a reading and a check.
     assert [r["kind"] for r in plan] == (
-        ["consolidate"] + ["doc"] * 3 + ["summary"] * 3 + ["settle", "accounts", "project"])
+        ["consolidate"] + ["screen", "doc", "verify"] * 3 + ["summary"] * 3
+        + ["settle", "accounts", "project"])
     assert plan[0]["note"] == "the language themes are one"
     assert all(r["theme_id"] == corpus["wide"] for r in plan if r["kind"] == "doc")
-    assert ([(r["theme_id"], r["material_id"]) for r in plan if r["kind"] == "doc"]
-            == store.backfill_cells(conn, corpus["pid"], "all")), "the preview's count is this count"
+    assert (sorted((r["theme_id"], r["material_id"]) for r in plan if r["kind"] == "doc")
+            == sorted(store.backfill_cells(conn, corpus["pid"], "all"))), \
+        "the preview's count is this count"
+    # And the look is told exactly which themes it has to decide for its material.
+    assert [(r["material_id"], r["themes"]) for r in plan if r["kind"] == "screen"] == \
+        [(mid, [corpus["wide"]]) for mid in (corpus["mids"][2], corpus["mids"][4],
+                                             corpus["mids"][5])]
     # A note is about the theme set; fifty line calls cannot fold anything, so none is shown it.
     assert not [r for r in plan[1:] if r.get("note")]
     # Every kind is an ordinary run kind, so a restart resumes this like any other chain.
@@ -128,7 +139,7 @@ def test_an_exploring_project_rewrites_no_material_summary(corpus, conn):
     store.set_method(conn, corpus["pid"], "explore")
     plan = rerun.consolidate_plan(conn, corpus["pid"], scope="all")
     assert [r["kind"] for r in plan] == (
-        ["consolidate"] + ["doc"] * 3 + ["settle", "accounts", "project"])
+        ["consolidate"] + ["screen", "doc", "verify"] * 3 + ["settle", "accounts", "project"])
 
 
 # ---- the pass itself ---------------------------------------------------------------------------
@@ -353,7 +364,7 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
 
     html = client.get(f"/p/{pid}").text
     assert "Compare every theme across the corpus" in html
-    assert "1 cell to read (about 3 model calls)" in html
+    assert "1 cell to look at (about 3 model calls, up to 4 if every look finds something)" in html
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"
