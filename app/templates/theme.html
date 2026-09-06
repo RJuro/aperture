@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main %}
 <section class="section project-head"><div class="container">
-<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }} <a class="help" href="/guide#reach" title="How to read these counts">?</a></p>
+<h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }} <a class="help" href="/guide?from=/p/{{ project.id }}/t/{{ theme.id }}#reach" title="How to read these counts" aria-label="Help: How to read these counts">?</a></p>
 {# Where the researcher has taken this theme, and the one control that moves it. Locking a
    theme's definition is not analysis and spends nothing: it fixes the name and the gist so new
    material is applied to the theme rather than allowed to rewrite it. #}
@@ -17,7 +17,7 @@
   {#- The count is passes of the grouping step, which includes rereading one material: calling it
       materials read as saturation across cases, which is a methodological claim nothing here made. #}
   {%- else %}Definition can change{% if theme.stable_passes and theme.stable_passes >= 3 %} · unchanged for {{ theme.stable_passes }} passes{% endif %}
-  {%- endif %}</span> <a class="help" href="/guide#themes" title="Candidate, project theme, locked — and what locking a definition does">?</a>
+  {%- endif %}</span> <a class="help" href="/guide?from=/p/{{ project.id }}/t/{{ theme.id }}#themes" title="Candidate, project theme, locked — and what locking a definition does" aria-label="Help: Candidate, project theme, locked — and what locking a definition does">?</a>
   {%- if proposal %} <span class="meta">{{ proposal }}</span>{% endif %}
   {% if role in ('edit', 'owner') %}
   {% if theme.hold == 'candidate' %}
@@ -51,7 +51,7 @@ you send feedback below.</p>
 
 <form method="post" action="/p/{{ project.id }}/react" class="inline-response">
   <input type="hidden" name="theme_id" value="{{ theme.id }}">
-  <label><span>Feedback on this account <a class="help" href="/guide#comments" title="Where a comment goes and what it rewrites">?</a></span><textarea name="text" rows="2" placeholder="What does this account miss or overstate?"></textarea></label>
+  <label><span>Feedback on this account <a class="help" href="/guide?from=/p/{{ project.id }}/t/{{ theme.id }}#comments" title="Where a comment goes and what it rewrites" aria-label="Help: Where a comment goes and what it rewrites">?</a></span><textarea name="text" rows="2" placeholder="What does this account miss or overstate?"></textarea></label>
   <button class="btn btn-secondary">Revise account</button>
 </form>
 </div></section>
@@ -87,7 +87,7 @@ you send feedback below.</p>
 {% set unsearched = absent | selectattr('assessed', 'equalto', 'skipped') | list %}
 {% set residual = absent | selectattr('assessed', 'equalto', 'residual') | list %}
 {% set unassessed = absent | rejectattr('assessed') | list %}
-<section class="section"><div class="container"><h2>Materials with no claims under this theme <a class="help" href="/guide#absence" title="What each kind of empty cell licenses you to say">?</a></h2>
+<section class="section"><div class="container"><h2>Materials with no claims under this theme <a class="help" href="/guide?from=/p/{{ project.id }}/t/{{ theme.id }}#absence" title="What each kind of empty cell licenses you to say" aria-label="Help: What each kind of empty cell licenses you to say">?</a></h2>
 {# F3/§4: five kinds of nothing were shown as one dash, or as headings a reader had to hover to
    tell apart. These five labels and explanations are the ones the review specifies, and every
    other surface that prints them (the record, the export) uses the same five. #}

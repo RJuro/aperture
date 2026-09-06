@@ -22,8 +22,8 @@
       <label>Project name <input name="name" required placeholder="Migration and work"></label>
       {# The label's own text and its help link are one grid child, or `form label`'s single
          column puts the question mark on a line of its own under the words. #}
-      <label><span>Research question or focus <a class="help" href="/guide#focus" title="What the research focus does">?</a></span><textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
-      <fieldset class="scope-choice"><legend>How each material is read <a class="help" href="/guide#method" title="Analyse independently, or using existing project codes">?</a></legend>
+      <label><span>Research question or focus <a class="help" href="/guide#focus" title="What the research focus does" aria-label="Help: What the research focus does">?</a></span><textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
+      <fieldset class="scope-choice"><legend>How each material is read <a class="help" href="/guide#method" title="Analyse independently, or using existing project codes" aria-label="Help: Analyse independently, or using existing project codes">?</a></legend>
         <label class="choice"><input type="radio" name="method" value="explore" checked> <span>Analyse each material independently — each material is first read on its own terms; the project's codes and themes are compared with it afterwards</span></label>
         <label class="choice"><input type="radio" name="method" value="iterative"> <span>Analyse using existing project codes — each material is read with the project's codes and themes in view, the way projects have worked so far; lock a theme's definition to apply it as a framework</span></label>
       </fieldset>

@@ -172,3 +172,21 @@ def test_the_guide_does_not_speak_our_vocabulary(client):
                                  flags=re.S)).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} in the guide"
+
+
+def test_every_help_link_carries_where_it_came_from_and_says_what_it_opens(client, conn, analysed):
+    """A question mark is not an accessible name, and a Guide opened without an origin can only
+    offer "All projects" — the researcher who pressed it from a theme wants that theme back."""
+    import re
+    pid, mid = analysed["pid"], analysed["grande"]
+    tid = list(analysed["themes"].values())[0]
+    for url, origin in ((f"/p/{pid}", f"/p/{pid}"),
+                        (f"/p/{pid}/m/{mid}", f"/p/{pid}/m/{mid}"),
+                        (f"/p/{pid}/t/{tid}", f"/p/{pid}/t/{tid}"),
+                        (f"/p/{pid}/record", f"/p/{pid}/record")):
+        html = client.get(url).text
+        links = re.findall(r'<a class="help"[^>]*>', html)
+        assert links, url
+        for a in links:
+            assert f'href="/guide?from={origin}#' in a, (url, a)
+            assert 'aria-label="Help: ' in a, (url, a)
