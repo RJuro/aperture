@@ -17,7 +17,26 @@
 
 {{ summary.text }}
 {% else %}No project summary yet.
-{% endif %}{% if interpretation and interpretation.text %}
+{% endif %}{% if overarching or ungathered %}
+### Overarching themes
+
+{% for o in overarching %}#### {{ o.name }}
+
+{% if o.organising_idea %}{{ o.organising_idea }}
+
+{% endif %}Gathers {% for g in o.gathers %}{{ g.name }}{% if not loop.last %}, {% endif %}{% else %}no theme this project still holds{% endfor %}.
+{% if o.boundary %}
+What sorts a theme into this one rather than the nearest other: {{ o.boundary }}
+{% endif %}{% if o.exceptions %}
+Exceptions: {{ o.exceptions }}
+{% endif %}{% if o.argument %}
+{{ o.argument }}
+{% endif %}
+{% endfor %}{% if ungathered %}**Themes no overarching theme gathers**
+
+{% for u in ungathered %}- {{ u.name }}{% if u.why %} — {{ u.why }}{% endif %}
+{% endfor %}
+{% endif %}{% endif %}{% if interpretation and interpretation.text %}
 **Possible interpretation**
 
 {{ interpretation.text }}
@@ -42,12 +61,20 @@
 {{ t.gist }}
 
 {{ t.derivation }} · {{ t.hold }}
-{% if t.account %}
+{% if t.nearest %}
+Most easily confused with {{ t.nearest.name }}{% if t.nearest.note %} — {{ t.nearest.note }}{% endif %}
+{% endif %}{% if t.account %}
 {{ t.account.text }}
-{% endif %}{% if t.hold == 'frozen' and t.notes %}
+{% endif %}{% set tensions = t.notes | selectattr('kind', 'equalto', 'tension') | list %}
+{% set fits = t.notes | selectattr('kind', 'equalto', 'fit') | list %}{% if tensions %}
 ##### Evidence that challenges this definition
 
-{% for n in t.notes %}- {{ n.created_at[:10] }} — {{ n.text }}{% if n.display_title %} — {{ n.display_title }}{% endif %}
+{% for n in tensions %}- {{ n.created_at[:10] }} — {{ n.text }}{% if n.display_title %} — {{ n.display_title }}{% endif %}
+{% endfor %}
+{% endif %}{% if fits %}
+##### Materials this definition did not foresee
+
+{% for n in fits %}- {{ n.created_at[:10] }} — From the reading of {{ n.display_title }}: {{ n.text }}
 {% endfor %}
 {% endif %}
 ##### Materials where this theme appears

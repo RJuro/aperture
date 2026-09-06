@@ -362,17 +362,115 @@ def _material_title(row) -> str:
     return titles.standardize(row["title"] or row["name"])
 
 
-def _tension_notes(conn, tid: str) -> list[dict]:
-    """What has pulled against a frozen theme's definition, each with the material it came from.
+def _notes(conn, tid: str) -> list[dict]:
+    """What the readings wrote beside a theme's definition, each with the material it came from
+    and the `kind` that says which way the reading was going.
+
+    A `tension` is what one material pulled against a FROZEN definition, and the tensions are the
+    whole case for unfreezing it. A `fit` is where a material carries an OPEN theme in a way the
+    definition did not foresee — a different kind of case, actor, setting or time. The page shows
+    both, under separate headings: they are read for opposite reasons, and the pages gated the
+    whole section on `hold == 'frozen'`, so the only note written about a definition that can
+    still change was never printed anywhere at all.
 
     A note reads as an objection to the theme, so the material it was raised in is half of it: at
-    twenty materials a note nobody can trace back to a reading cannot be followed up, and the notes
-    are the whole case for unfreezing.
+    twenty materials a note nobody can trace back to a reading cannot be followed up.
     """
     out = []
     for n in store.theme_notes(conn, tid):
         m = store.material(conn, n["material_id"])
         out.append({**dict(n), "display_title": _material_title(m) if m else ""})
+    return out
+
+
+def _nearest(conn, t) -> dict | None:
+    """The live theme this one is most easily confused with, and what sorts a passage into this
+    one rather than that (`store.set_nearest`).
+
+    None where THEMES has not said — which is every theme named before the field existed, and
+    every theme nothing is close to. A label with nothing after it tells a reader less than no
+    label, so nothing is rendered there.
+    """
+    if not t["nearest_id"]:
+        return None
+    near = conn.execute("SELECT id, name FROM theme WHERE id=? AND status='live'",
+                        (t["nearest_id"],)).fetchone()
+    return {**dict(near), "note": t["nearest_note"] or ""} if near else None
+
+
+def _overarching(conn, pid: str) -> dict:
+    """The tier PROJECT wrote over the theme set: higher-order themes, each naming what it
+    gathers and why, and every live theme the summary did not place.
+
+    Three states are ordinary and none of them is an error. A project written before the tier
+    existed has no row; a project whose themes would not group holds an empty list; and the row
+    is the model's own JSON, which has failed to parse before now. A page that raised on any of
+    them would take the whole project down for the sake of one section under the summary, so each
+    is nothing rendered.
+
+    `ungathered` is printed rather than hidden, for the reason the empty matrix cells are: a
+    theme the summary could not place is a fact about the summary, and a researcher who cannot
+    see it cannot ask why.
+    """
+    row = store.get_summary(conn, "project", pid, "overarching")
+    try:
+        got = json.loads(row["text"]) if row else {}
+    except ValueError:
+        got = {}
+    if not isinstance(got, dict):
+        got = {}
+    names = {t["id"]: t["name"] for t in
+             list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid))}
+
+    def entries(key) -> list[dict]:
+        got_list = got.get(key)
+        return [e for e in got_list if isinstance(e, dict)] if isinstance(got_list, list) else []
+
+    def gathered(ids) -> list[dict]:
+        # An id no live theme answers to is dropped rather than printed. The writer validates
+        # these first; this is the second line, for a row whose themes have since been merged
+        # away — and a link to a theme that is not there is worse than a shorter list.
+        ids = ids if isinstance(ids, list) else []
+        return [{"id": i, "name": names[i]} for i in ids if isinstance(i, str) and i in names]
+
+    return {"overarching": [{**e, "gathers": gathered(e.get("gathers"))}
+                            for e in entries("overarching")],
+            "ungathered": [{**e, "name": names[e["id"]]} for e in entries("ungathered")
+                           if isinstance(e.get("id"), str) and e["id"] in names]}
+
+
+def _duplicates(conn, pid: str) -> list[dict]:
+    """Pairs of project themes that may be one theme, worked out from the columns at no cost.
+
+    Two ways a pair gets here. Each theme names the other as the one it is most easily confused
+    with — the reading said twice that it could only just tell them apart. Or half or more of the
+    codes the two gather are the same codes, which is the shape a split theme has: one pattern
+    read under two names.
+
+    This proposes and nothing else: no theme is merged here, and the page says which control
+    does merge, because a list of pairs printed beside a button that merges reads as a queue.
+
+    ponytail: every pair of live themes, which is a few dozen comparisons at a dozen themes. If a
+    project ever holds hundreds, index the pairs by shared code instead.
+    """
+    themes = [dict(t) for t in store.live_themes(conn, pid)]
+    codes: dict[str, set[str]] = {t["id"]: set() for t in themes}
+    for r in conn.execute("SELECT theme_id, code_id FROM theme_code"):
+        if r["theme_id"] in codes:
+            codes[r["theme_id"]].add(r["code_id"])
+    out = []
+    for i, a in enumerate(themes):
+        for b in themes[i + 1:]:
+            why = []
+            if a["nearest_id"] == b["id"] and b["nearest_id"] == a["id"]:
+                why.append("each names the other as the theme it is most easily confused with")
+            both, either = codes[a["id"]] & codes[b["id"]], codes[a["id"]] | codes[b["id"]]
+            if either and len(both) / len(either) >= 0.5:
+                # Law 4: the number is printed as what it was counted over, so a researcher can
+                # see that a pair of one-code themes sharing that code is what fired the rule.
+                why.append(f'{len(both)} of the {len(either)} codes the two gather are the same')
+            if why:
+                out.append({"a": a, "b": b, "why": " · ".join(why)})
     return out
 
 
@@ -702,8 +800,13 @@ def project_page(conn, pid: str) -> dict:
                       for c in store.cases(conn, pid)],
             "single_group": _single_group(), "consolidate": consolidate,
             "assessed_legend": assessed_legend,
+            "duplicates": _duplicates(conn, pid),
+            **_overarching(conn, pid),
             "page_section": "overview", "reading": reading,
             "summary": summary,
+            # The tier's own prose cites claims as the summary does, and the page turns each into
+            # a link the same way — so the index travels whole rather than as one more `_html`.
+            "cites": index,
             "summary_html": cite(summary["text"], index, pid) if summary else "",
             "interpretation": reading_of,
             "interpretation_html": cite(reading_of["text"], index, pid) if reading_of else "",
@@ -804,7 +907,12 @@ def theme_page(conn, pid: str, tid: str) -> dict:
             "derivation": f'{said} · {_evidence(store.theme_evidence(conn, pid).get(tid))}',
             "proposal": _proposal(dict(t), carried, of),
             "codes": [dict(c) for c in store.theme_codes(conn, tid)],
-            "notes": _tension_notes(conn, tid),
+            "notes": _notes(conn, tid),
+            "nearest": _nearest(conn, t),
+            # Which overarching themes gather this one. A theme reads differently under an
+            # argument that uses it, and the tier is otherwise only visible from the project page.
+            "gathered_under": [o.get("name", "") for o in _overarching(conn, pid)["overarching"]
+                               if any(g["id"] == tid for g in o["gathers"])],
             "set_aside": store.set_aside(conn, pid)}
 
 
@@ -859,6 +967,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     ctx = {"app_name": APP_NAME, "project": dict(p), "materials": mats,
             "questions": store.open_questions(conn, pid),
             "summary": _row(store.get_summary(conn, "project", pid)),
+            **_overarching(conn, pid),
             "interpretation": _row(store.get_summary(conn, "project", pid, "interpretation")),
             "themes": _export_themes(conn, pid, aside),
             "single_group": _single_group(),
@@ -986,7 +1095,7 @@ def _export_themes(conn, pid: str, aside: list[dict]) -> list[dict]:
                                   {m["material_id"]: m["claims"] for m in cover["per_material"]})
         out.append({**dict(t), "account": _row(store.get_summary(conn, "theme", t["id"])),
                     "carrying": carrying, "absent": absent,
-                    "notes": _tension_notes(conn, t["id"]),
+                    "notes": _notes(conn, t["id"]), "nearest": _nearest(conn, t),
                     "single": carried < 2,
                     "derivation": f'in {said} · {_evidence(evidence.get(t["id"]))}',
                     "proposal": _proposal(dict(t), carried, of),
