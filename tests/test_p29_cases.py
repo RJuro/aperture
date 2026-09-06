@@ -176,7 +176,7 @@ def test_a_candidate_two_cases_carry_is_proposed_and_not_promoted(client, conn, 
     assert conn.execute("SELECT hold FROM theme WHERE id=?", (tid,)).fetchone()[0] == "candidate"
     for url in (f"/p/{pid}", f"/p/{pid}/t/{tid}"):
         page = client.get(url).text
-        assert "Found in 2 materials — promote?" in page, url
+        assert "Found in 2 materials — add it to the project themes?" in page, url
         assert f'action="/p/{pid}/t/{tid}/promote"' in page, url
 
 
@@ -185,7 +185,7 @@ def test_the_proposal_counts_cases_where_the_researcher_has_defined_them(client,
     tid = _candidate(conn, corpus, [corpus["grande"], corpus["note"]])
     store.add_case(conn, pid, "Participant 1", [corpus["grande"], corpus["rodwin"]])
     assert store.propose_by_recurrence(conn, pid) == [tid]
-    assert "Found in 2 cases — promote?" in client.get(f"/p/{pid}/t/{tid}").text
+    assert "Found in 2 cases — add it to the project themes?" in client.get(f"/p/{pid}/t/{tid}").text
 
 
 def test_two_materials_of_one_case_do_not_propose_anything(conn, corpus):

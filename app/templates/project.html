@@ -157,20 +157,19 @@
   <fieldset class="scope-choice">
   <legend>Which themes should receive these additional checks?</legend>
   <label class="choice"><input type="radio" name="scope" value="opening" checked>
-    <span>Themes with claims in at least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }}</span></label>
+    <span>Themes with claims in at least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }}<br>
+      <span class="dim small">{{ consolidate.opening_said }}</span></span></label>
   {% if not consolidate.same %}
   <label class="choice"><input type="radio" name="scope" value="all">
-    <span>Themes with claims in at least 2 {{ consolidate.unit }}</span></label>
+    <span>Themes with claims in at least 2 {{ consolidate.unit }}<br>
+      <span class="dim small">{{ consolidate.all_said }}</span></span></label>
   {% endif %}
   </fieldset>
   {% if consolidate.same %}
   <p class="dim small">Both scopes currently select the same {{ consolidate.opening_n }} checks.</p>
-  {% else %}
-  <p class="dim small">Additional checks: {{ consolidate.opening_n }} theme/material pairs. Each
-    pair is one theme checked in one material. A preliminary review may skip a source check; the
-    result will say why.</p>
   {% endif %}
-  <p class="dim small">{{ consolidate.calls_said }}</p>
+  <p class="dim small">Each pair is one theme checked in one material. A preliminary review may
+    skip a source check; the result will say why. A model call is not a measure of time or cost.</p>
   <p class="dim small">Theme status: after the comparison, candidate themes with claims in at
     least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }} become project
     themes automatically.</p>

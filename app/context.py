@@ -350,7 +350,8 @@ def _proposal(t: dict, carried: int, of: dict | None) -> str:
     """
     if t["hold"] != "candidate" or not t["proposed_at"]:
         return ""
-    return f'Found in {_n(carried, "case" if of else "material")} — promote?'
+    return (f'Found in {_n(carried, "case" if of else "material")} — '
+            f'add it to the project themes?')
 
 
 def _row(r) -> dict | None:
@@ -594,12 +595,19 @@ def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str,
     need = store.opening_need(conn, pid)
     total = len(set(store.case_of(conn, pid).values()))
     unit = "cases" if store.cases(conn, pid) else "materials"
-    floor, ceiling = _consolidate_estimate(conn, pid, opening)
-    calls = (f"Estimated model calls for the whole update: {floor}." if floor == ceiling else
-             f"Estimated model calls for the whole update: {floor}–{ceiling}.")
+
+    def said(cells: list[tuple[str, str]]) -> str:
+        """One scope's own price, printed in its own radio. Without a script the page cannot
+        recompute when the choice changes, and a number beside the option that does not produce
+        it is exactly the misdirection this control was rewritten to remove."""
+        floor, ceiling = _consolidate_estimate(conn, pid, cells)
+        calls = f"{floor}" if floor == ceiling else f"{floor}–{ceiling}"
+        return f'{_n(len(cells), "theme/material pair")} to check · about {calls} model calls'
+
     return {"themes": n_themes, "unit": unit, "need": need, "total": total,
             "opening_n": len(opening), "all_n": len(every),
-            "same": len(opening) == len(every), "calls_said": calls}
+            "opening_said": said(opening), "all_said": said(every),
+            "same": len(opening) == len(every)}
 
 
 # ---- the pages ----------------------------------------------------------------------------------

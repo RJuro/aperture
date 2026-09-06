@@ -325,7 +325,7 @@ def test_the_preview_prints_the_range_the_plan_would_actually_build(corpus, conn
     assert said["opening_n"] == said["all_n"] == len(cells) == 4 and said["same"]
     # 2 (comparison + project summary) + 2 (a look and a check for each of the two materials) = 6;
     # + the 4 cells + 2 material summaries (iterative, one per touched material) + 0 live themes.
-    assert said["calls_said"] == "Estimated model calls for the whole update: 6–12."
+    assert said["opening_said"] == "4 theme/material pairs to check · about 6–12 model calls"
 
 
 def test_with_the_look_off_the_preview_offers_no_range_it_cannot_deliver(corpus, conn, monkeypatch):
@@ -336,7 +336,7 @@ def test_with_the_look_off_the_preview_offers_no_range_it_cannot_deliver(corpus,
 
     # 2 + 2 materials read + the 4 cells (all certain, with no look to defer any of them) + the 2
     # material summaries + 0 live themes = 10, and nothing here is left uncertain.
-    assert said["calls_said"] == "Estimated model calls for the whole update: 10."
+    assert said["opening_said"] == "4 theme/material pairs to check · about 10 model calls"
     assert len([r for r in plan if r["kind"] in ("consolidate", "doc", "verify")]) == 7
 
 

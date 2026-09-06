@@ -58,8 +58,10 @@ def test_an_editor_meets_it_open_under_the_table_with_both_prices(client, conn, 
     assert f"Themes with claims in at least {said['need']} of {said['total']} materials" in field
     assert 'value="all"' in field
     assert "Themes with claims in at least 2 materials" in field
-    assert f"Additional checks: {said['opening_n']} theme/material pairs." in field
-    assert said["calls_said"] in field
+    # Each scope prices itself: without a script the page cannot recompute when the choice
+    # changes, so a count may only stand beside the option that produces it.
+    assert said["opening_said"] in field and said["all_said"] in field
+    assert "Each pair is one theme checked in one material." in field
     assert 'name="note"' in field
     assert "btn-primary" in field, "the button carries primary weight"
     # Under the table, not in the section head: the themes it would change are read first.

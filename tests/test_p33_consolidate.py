@@ -88,7 +88,7 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     said = context.project_page(conn, corpus["pid"])["consolidate"]
     assert said["themes"] == 2 and said["opening_n"] == 0
     assert said["all_n"] == 3 and not said["same"]
-    assert said["calls_said"] == "Estimated model calls for the whole update: 2."
+    assert said["all_said"] == "3 theme/material pairs to check · about 8–14 model calls"
 
 
 def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
@@ -366,7 +366,7 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
     # Three materials, so the opening threshold is two — the same as the wider scope's fixed two —
     # and the one cell nobody read for this theme is what both scopes select here alike.
     assert "Both scopes currently select the same 1 checks." in html
-    assert "Estimated model calls for the whole update: 4–6." in html
+    assert "1 theme/material pair to check · about 4–6 model calls" in html
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"
