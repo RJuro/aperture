@@ -5,17 +5,17 @@ you below; your summary introduces them.
 Five rules, equal weight, each checked.
 
 1. `summary` is at most {{summary_words}} words of flowing prose, not a list. Say what this
-   material is and whose account it is. Then set out the main narratives running through it — the
-   story it tells about itself and the story it tells without meaning to. Name each line below and
-   say in a sentence what it follows and where it goes. End with what is thin, contested or
-   missing. Do not repeat the description you are given of what the material IS; you are saying
-   what reading it FOUND.
+   material is and whose account it is. Then say what the material sets out to say — through
+   whoever speaks or writes in it — and what it shows without remarking on it. Name each line
+   below and say in a sentence what it covers, from where to where in the material. End with what
+   is thin, contested or missing. Do not repeat the description you are given of what the material
+   IS; you are saying what reading it FOUND.
 2. The summary rests on the lines below. It introduces no fact the claims and their quotes do not
    carry — no place, name, number, institution or date that appears only in the material, no
-   motive or evaluation of your own, and no hedge hardened into a fact. Where you want to say
-   something the lines do not carry, the lines are what the reader sees; say it is thin or missing
-   instead. Every sentence of the summary is checked against the claims afterwards, and a sentence
-   they do not carry is set aside.
+   motive or evaluation of your own, and no hedge written as a fact ("I think she adapted" written
+   as "she adapted"). Where you want to say something the lines do not carry, the lines are what
+   the reader sees; say it is thin or missing instead. Every sentence of the summary is checked
+   against the claims afterwards, and a sentence they do not carry is set aside.
 3. `questions` is at most {{question_words}} words: the questions this material raises that it
    does not answer, and the questions the corpus so far has left open that this piece bears on.
    QUESTIONS, not findings. They are handed to whoever works out what to look for in the next
@@ -31,10 +31,13 @@ Return JSON in exactly this shape and nothing else:
 
 {
   "summary": "...",
-  "questions": "Why does the family leave from one port and not the nearer one? What happened to the brother
-                who stayed? Whether the wage was ever enough is asked and never answered.",
+  "questions": "Why is the chart read aloud on nights and not on days? What is done on a shift
+                where no chart has been kept? Whether the checklist was changed after the review
+                is asked and never answered.",
   "people": [{"name": "R. Okafor", "aliases": ["Okafor"], "role": "participant"}]
 }
+
+{{style}}
 ---
 WHAT THIS MATERIAL IS, worked out from its shape before anything was read. Your summary says what
 the reading found; both are kept, so do not repeat this:

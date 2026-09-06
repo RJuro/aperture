@@ -25,13 +25,14 @@ from __future__ import annotations
 
 import os
 import contextvars
+import json
 import logging
 import re
 import textwrap
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 
-from .. import anchor, llm, store
+from .. import anchor, llm, prose, store
 
 log = logging.getLogger("aperture")
 
@@ -40,9 +41,16 @@ SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 300, 1
 # What the corpus may mean, as against what it shows: shorter, because it is the movement a
 # researcher argues with rather than the one they cite.
 INTERPRETATION_WORDS = 150
+# The tier above the themes: at most four of them, a name of at most eight words, an argument of a
+# hundred and twenty. The prompt states all three as numbers as well — a cap only in Python is a
+# surprise, and a cap only in the prompt is a request.
+OVERARCHING_WORDS, OVERARCHING_MAX, OVERARCHING_NAME_WORDS = 120, 4, 8
 # What one theme amounts to in one material. Short, because the claims below it are the finding
 # and this only says how they hang together.
 THREAD_WORDS = 90
+# Where this material sits at the edge of a theme's definition. A note, not a paragraph: it goes
+# beside the theme for a researcher to act on or ignore, and a long one is a second account.
+FIT_WORDS = 25
 
 # How many of a material's lines are written at once (see `doc`). Three, not all of them: a line is
 # shown what the waves before it claimed here, and a wave of ten would show the tenth line nothing.
@@ -390,8 +398,20 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
     # finding, not a shortfall (AR-06).
     summary, odd = foreign(words(data.get("summary"), THREAD_WORDS), allowed_text(conn, pid, mid))
     dropped += script_notes(odd)
+    # Where this material carries the theme in a way the definition did not foresee — a different
+    # kind of case, actor, setting or time. It is written by the call that has just read the
+    # material under that definition, which is the only place in the chain where both are in front
+    # of one reader at once, and it is kept as a note beside the theme rather than folded into the
+    # gist: a definition changes when the researcher changes it.
+    #
+    # Only where a line was actually written. A `fit` under an empty line is a note about a reading
+    # that found nothing, filed against a theme, where the researcher will read it as a finding
+    # about a material this theme holds in.
+    fit = words(data.get("fit"), FIT_WORDS) if kept else ""
     with store.atomic(conn) as tx:
         store.save_moments(tx, mid, tid, kept, run_id)   # ordered by position in the material
+        if fit:
+            store.add_theme_note(tx, tid, mid, run_id, fit, kind="fit")
         # Superseded outright where the line now holds nothing: an account of claims that are no
         # longer there is a reading with nothing under it, and the page cannot tell the two apart.
         # Where the line holds and the answer wrote no summary, the one before it stands — a
@@ -399,6 +419,8 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
         if summary or not kept:
             store.save_summary(tx, "thread", f"{mid}:{tid}", "reading",
                                summary if kept else "", run_id)
+    if note := prose.note(*[m["claim"] for m in kept], summary, fit):
+        dropped.append(note)
     return kept, dropped, stats
 
 
@@ -720,6 +742,8 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
     if "people" in data:
         store.save_people(conn, mid, [p for p in (data.get("people") or [])
                                       if isinstance(p, dict) and p.get("name")])
+    if note := prose.note(summary, questions):
+        dropped.append(note)
     return {"summary": summary, "threads": threads, "dropped": dropped,
             "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
 
@@ -737,9 +761,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
 PROJECT_CLAIMS = 200
 
 
-def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dict[str, list[str]]:
+def _candidate_claims(conn, pid: str, live_moments: dict,
+                      evidenced: set) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     """Live candidate claims, per material: every proposed candidate's, and elsewhere the ones for
-    materials no theme account carries.
+    materials no theme account carries. Twice over — the lines as the material blocks print them,
+    and the ids each candidate contributed, which is what the candidate block beside them lists.
 
     The corpus summary reads what the layer below it concluded, and its prompt requires every
     statement to cite a claim id. A project whose themes are all candidates — a single case, or a
@@ -758,6 +784,7 @@ def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dic
     """
     cands = {t["id"]: bool(t["proposed_at"]) for t in store.candidates(conn, pid)}
     out: dict[str, list[str]] = {}
+    shown: dict[str, list[str]] = {}
     left = PROJECT_CLAIMS
     # Proposed first, then the gap-fillers; `sorted` is stable, so within each half this is still
     # material order and the same corpus composes the same prompt twice.
@@ -767,16 +794,41 @@ def _candidate_claims(conn, pid: str, live_moments: dict, evidenced: set) -> dic
         if r["theme_id"] in cands and (cands[r["theme_id"]] or r["material_id"] not in evidenced):
             out.setdefault(r["material_id"], []).append(
                 f'[{r["id"]}] {r["claim"]} — quoted: "{r["anchor"]}"')
+            shown.setdefault(r["theme_id"], []).append(r["id"])
             left -= 1
-    return out
+    return out, shown
+
+
+def _candidates_block(cands: list, shown: dict[str, list[str]]) -> str:
+    """The live candidates by id, name and definition, with the claims of theirs the material
+    blocks are printing.
+
+    A candidate's evidence already reaches this level (`_candidate_claims`); the candidate itself
+    did not. Nothing in the prompt said which id a claim belonged to or what that id was called, so
+    an overarching theme could only ever gather the open and frozen themes — and a corpus early in
+    its reading has none of those, only the eighteen patterns each seen in one material. That is
+    the state where a tier is worth most, and it was the state where it could not be written.
+    """
+    if not cands:
+        return "No candidate stands in this project."
+    out = []
+    for t in cands:
+        ids = shown.get(t["id"]) or []
+        out.append(f'{t["id"]}  {t["name"]} — {t["gist"] or "no gist yet"} — '
+                   + (f'claims: {", ".join(ids)}' if ids else "none of its claims are shown below"))
+    return "\n".join(out)
 
 
 def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     """The corpus summary, written over the theme accounts and the material summaries.
 
-    In two movements, stored as two rows. What the corpus shows is what the researcher will cite;
-    what it may mean is offered for them to argue with, and a page that ran the two together
-    invited them to take the second on the authority of the first.
+    In three movements, stored as three rows. What the corpus shows is what the researcher will
+    cite; what it may mean is offered for them to argue with, and a page that ran the two together
+    invited them to take the second on the authority of the first. Between them stands the
+    overarching tier: two to four higher-order themes, each naming what it gathers and what
+    separates it from its neighbour. Three human coders reading the same corpus produced that tier
+    and this level did not, because nothing asked for it — a list of twenty-eight themes, eighteen
+    of them seen in one material each, has nowhere to go but a list.
 
     It used to read every claim in every material — 210k tokens at fifty materials. It now reads
     what the layer below it concluded, which is what the account layer exists for. No new quotes
@@ -801,7 +853,8 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
                         f'{acc["text"] if acc else "no account written yet"}')
         if acc:
             evidenced |= {r["material_id"] for r in live_moments.values() if r["theme_id"] == tid}
-    claims = _candidate_claims(conn, pid, live_moments, evidenced)
+    claims, cand_ids = _candidate_claims(conn, pid, live_moments, evidenced)
+    cands = store.candidates(conn, pid)
     mats = []
     for m in store.materials(conn, pid):
         summary = store.get_summary(conn, "material", m["id"])
@@ -817,22 +870,28 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
         "project",
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
         accounts="\n\n".join(accounts) or "No theme has an account yet.",
+        candidates=_candidates_block(cands, cand_ids),
         materials="\n\n".join(mats) or "No material has been read yet.",
         feedback="\n\n".join(fb) or "The researcher has not said anything about the project yet.",
         summary_words=PROJECT_WORDS, interpretation_words=INTERPRETATION_WORDS,
+        overarching_words=OVERARCHING_WORDS,
     )
     data = llm.chat_json(system, user, label="project")
 
-    # Two movements, two rows: what the corpus shows, and what it may mean. Kept apart because a
-    # researcher must be able to cite the first while still arguing with the second.
+    # Three movements, three rows: what the corpus shows, what gathers it, and what it may mean.
+    # Kept apart because a researcher must be able to cite the first while still arguing with the
+    # last.
     allowed = allowed_text(conn, pid)
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
     reading_of, more = _strip_dangling(words(data.get("interpretation"), INTERPRETATION_WORDS),
                                        live_moments)
     dangling += more
+    tier, said, tier_dangling = _overarching(data, live_themes, {t["id"] for t in cands},
+                                             live_moments)
+    dangling += tier_dangling
     summary, odd = foreign(summary, allowed)
     reading_of, more_odd = foreign(reading_of, allowed)
-    dropped = script_notes(odd + more_odd)
+    dropped = script_notes(odd + more_odd) + said
     if dangling:
         dropped.append(f"the summary cited {len(dangling)} claim(s) that do not exist or are no "
                        f"longer live — {', '.join(sorted(set(dangling)))} — and those citations "
@@ -840,7 +899,83 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
     # Written even when it is empty, so a fresh summary never sits over an older reading of it.
     store.save_summary(conn, "project", pid, "interpretation", reading_of, run_id)
-    return {"summary": summary, "interpretation": reading_of, "dropped": dropped}
+    # And the tier for the same reason, even where the answer carried none: an empty tier is a
+    # finding the page can print, while a tier left standing from an earlier run gathers a theme
+    # set that has since moved and says so with an authority nothing behind it has any more.
+    store.save_summary(conn, "project", pid, "overarching",
+                       json.dumps(tier, ensure_ascii=False), run_id)
+    if note := prose.note(summary, reading_of,
+                          *[e[k] for e in tier["overarching"] for k in
+                            ("name", "organising_idea", "boundary", "exceptions", "argument")]):
+        dropped.append(note)
+    return {"summary": summary, "interpretation": reading_of, "overarching": tier,
+            "dropped": dropped}
+
+
+def _overarching(data, live: dict, candidate_ids: set,
+                 live_moments: dict) -> tuple[dict, list, list]:
+    """The higher-order tier, checked against the theme set it says it gathers.
+
+    Returns what is stored — `{"overarching": [...], "ungathered": [...]}` — the notes for the run
+    row, and the dangling citations for the caller to report with the summary's own, since a
+    researcher reading two notes about missing claim ids cannot tell they came from one answer.
+
+    Three checks, and every one of them reports rather than repairs.
+
+    An id no live theme or candidate has is dropped and said so. A tier that gathers a theme which
+    does not exist gathers nothing, and an id printed on the page sends the researcher looking for
+    a theme they will not find.
+
+    A live theme — open or frozen — in neither `gathers` nor `ungathered` is appended to
+    `ungathered` with "not placed by the summary". A theme silently missing from both lists reads
+    on the page as a theme the analysis had nothing to say about, when what happened is that the
+    summary did not get to it, and those are opposite findings.
+
+    Citations inside `argument` and `exceptions` go through `_strip_dangling` exactly as the
+    summary's do. The tier is another set of paragraphs a researcher must be able to open, and a
+    claim they cannot open is a claim they must take on trust (D15).
+
+    Nothing here invents an entry to reach the two the prompt asks for, or writes a reason where
+    the answer gave none. A corpus that gathers into nothing is a real answer about the corpus,
+    and it is worth more on the page than a tier this function made up to look complete.
+    """
+    known = set(live) | candidate_ids
+    given = [e for e in (data.get("overarching") or []) if isinstance(e, dict)]
+    unknown, dangling, tier = [], [], []
+    for e in given[:OVERARCHING_MAX]:
+        named = e.get("gathers") if isinstance(e.get("gathers"), list) else []
+        gathers = [str(i).strip() for i in named if str(i).strip()]
+        unknown += [i for i in gathers if i not in known]
+        argument, gone = _strip_dangling(words(e.get("argument"), OVERARCHING_WORDS), live_moments)
+        exceptions, more = _strip_dangling(str(e.get("exceptions") or "").strip(), live_moments)
+        dangling += gone + more
+        tier.append({"name": words(e.get("name"), OVERARCHING_NAME_WORDS),
+                     "gathers": [i for i in gathers if i in known],
+                     "organising_idea": str(e.get("organising_idea") or "").strip(),
+                     "boundary": str(e.get("boundary") or "").strip(),
+                     "exceptions": exceptions,
+                     "argument": argument})
+    ungathered = []
+    for u in (data.get("ungathered") or []):
+        if not isinstance(u, dict):
+            continue
+        tid = str(u.get("id") or "").strip()
+        if tid not in known:
+            unknown.append(tid or "(no id)")
+            continue
+        ungathered.append({"id": tid, "why": str(u.get("why") or "").strip()})
+    placed = {i for e in tier for i in e["gathers"]} | {u["id"] for u in ungathered}
+    ungathered += [{"id": tid, "why": "not placed by the summary"}
+                   for tid in live if tid not in placed]
+
+    said = []
+    if len(given) > OVERARCHING_MAX:
+        said.append(f"the summary returned {len(given)} overarching themes and the first "
+                    f"{OVERARCHING_MAX} were kept")
+    if unknown:
+        said.append(f"the overarching set named {len(unknown)} theme(s) that do not exist or are "
+                    f"no longer live — {', '.join(sorted(set(unknown)))} — and those were dropped")
+    return {"overarching": tier, "ungathered": ungathered}, said, dangling
 
 
 def _strip_dangling(text: str, live: dict) -> tuple[str, list[str]]:
