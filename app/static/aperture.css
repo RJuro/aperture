@@ -529,3 +529,16 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .topnav-end { display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
 .guide-link { color: var(--muted); font-size: 13px; }
 .guide-link:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
+
+/* Compare */
+/* The one action that reads the whole corpus at once, and the most expensive thing on the page.
+   Folded into the section heading it was a line nobody opened; bordered under the table it is
+   read after the themes it would change. It stays on the surface with a hairline and no fill —
+   the price is what a researcher is meant to read here, not the button. */
+.compare { max-width: 78ch; margin-top: 30px; padding: 20px 22px; display: grid; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.compare > p, .compare > h3 { margin: 0; max-width: 72ch; }
+/* Each choice carries an estimate whose length is not ours to fix — it grows a clause when every
+   look could find something — so the sentence keeps its own column beside the radio and wraps
+   inside the field rather than pushing it wider. */
+.compare .choice { font-size: 13px; }
+.compare .btn { margin-top: 4px; justify-self: start; }
