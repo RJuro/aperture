@@ -412,7 +412,7 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
             continue
         # Over a batch nobody knows which material pulled but the answer, so it says — and the id
         # it says is only believed where it is one of the materials this pass actually read. A
-        # note whose material cannot be traced is half a note (`context._tension_notes`).
+        # note whose material cannot be traced is half a note (`context._notes`).
         mid = material_id
         if mid is None and mids is not None:
             said = str(t.get("material") or "")
