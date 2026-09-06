@@ -1,22 +1,25 @@
 {% extends "base.html" %}
 {#
-  The guide. One page, fourteen sections, each with an id a `?` beside a control can jump to.
+  The guide. One page, each section with an id a `?` beside a control can jump to. Renamed or
+  reorganised sections keep their old id as an anchor, because a `?` link elsewhere in the app
+  points at that id and not at this file.
 
-  It is written from the code and it must stay written from the code: a sentence here that the
-  chain does not do is worse than no sentence, because a researcher will cite it. Every section
-  ends by naming the module that decides the behaviour — the people who use this instrument are
-  also the people who maintain it, and "where is this decided" is the question they ask next.
+  "Where this is decided in the code" used to end every section. It now lives once, in the
+  developer-reference section at the end: a researcher reading how to use the instrument should
+  not be handed a module name as if it were ordinary help.
 
   No JavaScript: the contents list is anchors, and the browser does the rest.
 #}
 {% block main %}
 <section class="section guide-head">
   <div class="container">
+    {% if back_href == '/' %}
+    <p class="guide-back"><a href="/">All projects</a></p>
+    {% else %}
+    <p class="guide-back"><a href="{{ back_href }}">Back to {{ back_label | txt }}</a></p>
+    {% endif %}
     <p class="eyebrow">Guide</p>
     <h1>What each action does, and what it lets you say</h1>
-    <p class="lead">Fourteen questions, in the order you meet them. Each answer says what the
-      instrument actually does, not what a reading method recommends — and ends with the file
-      where that behaviour is decided.</p>
   </div>
 </section>
 
@@ -25,9 +28,10 @@
   <p class="eyebrow">Contents</p>
   <ol class="mats">
     <li><a href="#what-happens">Adding material</a></li>
-    <li><a href="#method">Explore or build iteratively</a></li>
+    <li><a href="#pipeline">How analysis works</a></li>
+    <li><a href="#method">Choosing an analysis method</a></li>
     <li><a href="#focus">The research focus</a></li>
-    <li><a href="#themes">Themes, promoting, freezing</a></li>
+    <li><a href="#themes">Themes, adding to the project, locking</a></li>
     <li><a href="#reach">Reading the numbers</a></li>
     <li><a href="#lines">Claims and their quotes</a></li>
     <li><a href="#absence">Empty cells</a></li>
@@ -35,54 +39,55 @@
     <li><a href="#rerun">Running a material again</a></li>
     <li><a href="#check">Checking against the material</a></li>
     <li><a href="#cases">Cases, not files</a></li>
-    <li><a href="#record">The reading record</a></li>
+    <li><a href="#record">The analysis record</a></li>
     <li><a href="#sharing">Sharing a project</a></li>
     <li><a href="#method-notes">Where this sits in method</a></li>
+    <li><a href="#developer-notes">Developer reference</a></li>
   </ol>
 </nav>
 
 <div class="guide-sections">
 
 <section id="what-happens">
-<h2>What happens when you add material?</h2>
-<p>One upload starts one job in the background, however many files it carried. Each material is
-  taken through the same order: working out how it is laid out, working out what to look for in
-  it, and coding it. From there the two methods part. In a project that <em>builds iteratively</em>,
-  themes are revised after each material, a line of claims is written for each theme in each
-  material, every claim is checked against the passage it rests on, and the material's summary is
-  written over the claims that survived. In a project that <em>explores</em>, the material's codes
-  are first compared with the project's vocabulary, then a memo is written on the material's own
-  terms — every sentence citing the passages it rests on, and checked against them; themes are found
-  once for the whole upload over passages drawn from several materials; lines are written only
-  where a theme's codes marked the material; and a last pass reads the passages no code touched,
-  adding what the coding missed or recording that the unmarked passages hold nothing. Last comes
-  the corpus level in both: an account of each theme across everything, then the project summary.</p>
-<p>The line at the top of the page says which step is running. You can leave the page; the work
-  does not stop and nothing is lost by navigating away. Stop halts it between steps.</p>
-<p>It costs model calls, and takes minutes rather than seconds. One measured two-material run made
-  24 calls end to end, of which the writing-up alone took over twenty minutes. Input and output
-  tokens per step are printed in the reading record.</p>
-<p class="where">Where this is decided in the code: <code>app/jobs.py</code>.</p>
+<h2>Add materials</h2>
+<p>Open a project and select <strong>Add material</strong>. Choose one or more files, or paste
+  text and give it a name. Select <strong>Add material</strong> to start the analysis.</p>
+<p>Each file becomes one material. Aperture identifies its structure, assigns codes, and produces
+  themes and summaries with links to the source text. Processing continues if you leave the page;
+  check the progress message to see which step is running. Stop halts it between steps.</p>
+<p>Supported files: TXT, Markdown, Word (.docx), PDF, and CSV.</p>
+<p><a href="#pipeline">How analysis works</a> · <a href="#method">Choosing an analysis
+  method</a></p>
+</section>
+
+<section id="pipeline">
+<h2>How analysis works</h2>
+<p>Each material is taken through the same order: working out how it is laid out, working out
+  what to look for in it, and coding it. From there the two methods part — see <a
+  href="#method">Choosing an analysis method</a> for what changes between them. Last comes the
+  corpus level in both: a summary of each theme across everything, then the project summary.</p>
+<p>It costs model calls and takes minutes rather than seconds. Input and output tokens per step
+  are printed in the analysis record.</p>
 </section>
 
 <section id="method">
-<h2>Explore the material, or build iteratively?</h2>
-<p><strong>Explore</strong> shows the reading no project codes at all — only the material, how it
-  is laid out, what to look for in it, and your focus in your own words. It names codes for what
-  this material says. Afterwards a separate step compares those codes with the project's
-  vocabulary, saying of each that it is the same as an existing code, narrower, wider, or
-  distinct; only then do themes move. This resembles inductive first coding in reflexive thematic
-  analysis.</p>
-<p><strong>Build iteratively</strong> shows each reading the project's live codebook and theme set,
-  so later material is read against a developing framework. This resembles template analysis and
-  framework analysis.</p>
-<p>Neither is the correct one. Exploring costs a further call per material, coins many more codes,
-  and converges more slowly — in the one measured run two materials read this way produced eight
-  candidates and nothing across them. Building iteratively settles the vocabulary from the first
-  file, which is cumulative comparison and is also lock-in.</p>
+<h2>Analyse each material independently, or using existing project codes?</h2>
+<p><strong>Analyse each material independently</strong> shows the reading no project codes at all
+  — only the material, how it is laid out, what to look for in it, and your focus in your own
+  words. It names codes for what this material says. Afterwards a separate step compares those
+  codes with the project's vocabulary, saying of each that it is the same as an existing code,
+  narrower, wider, or distinct; only then do themes move. This resembles inductive first coding in
+  reflexive thematic analysis.</p>
+<p><strong>Analyse using existing project codes</strong> shows each reading the project's live
+  codebook and theme set, so later material is read against a developing framework — the
+  framework itself can still change as more material arrives; it is not fixed at the first file.
+  This resembles template analysis and framework analysis.</p>
+<p>Neither is the correct one. Analysing each material independently costs a further call per
+  material, coins many more codes, and converges more slowly — in the one measured run two
+  materials read this way produced eight candidates and nothing across them. Analysing using
+  existing project codes settles the vocabulary from the first file, which is cumulative
+  comparison and is also lock-in.</p>
 <p>Changing this applies to material read from then on. Nothing already read changes.</p>
-<p class="where">Where this is decided in the code: <code>app/jobs.py</code>,
-  <code>app/engine/read.py</code>, <code>app/engine/reconcile.py</code>.</p>
 </section>
 
 <section id="focus">
@@ -98,29 +103,29 @@
 <p>Angles are the one thing the focus is kept away from. They are worked out before a reading, to
   say where to look, and are shown the questions earlier material raised rather than your focus —
   so they can disagree with it.</p>
-<p class="where">Where this is decided in the code: <code>app/verbs.py</code>,
-  <code>app/rerun.py</code>, <code>app/engine/read.py</code>.</p>
 </section>
 
 <section id="themes">
-<h2>What is a theme here, and what does freezing one do?</h2>
+<h2>What is a theme here, and what does locking a definition do?</h2>
 <p>A theme is a <em>definition</em> — one that would still be true if fifty more materials arrived
   — and never a finding. What a theme amounts to across the corpus is a separate object, its
-  account, written over the claims. The instrument will not let one become the other.</p>
-<p>A theme is held in one of three ways. <strong>Candidate</strong>: found in one material so far.
-  It is not counted against the ceiling and gets no account. <strong>Open</strong>: a project theme
-  still developing, which the grouping step may reword, regroup or merge. <strong>Frozen</strong>:
-  you have declared the definition final.</p>
-<p><em>Found in 2 cases — promote?</em> is a count and a question, nothing more. Recurrence
-  proposes; you promote. Prevalence is not importance.</p>
-<p>Freezing fixes the name and definition in code, not by asking the model nicely. New material is
-  applied to a frozen theme, and what pulls against the definition comes back as a note on its
-  page rather than being written into it. Unfreezing is one click, and those notes are the case
-  for it.</p>
+  theme summary, written over the claims. The instrument will not let one become the other.</p>
+<p>A theme is held in one of three ways. <strong>Candidate</strong>: found in one material so far,
+  not yet added to the project's themes. It is not counted against the ceiling and gets no theme
+  summary. <strong>Open</strong>: a project theme still developing — its definition can change,
+  and the grouping step may reword, regroup or merge it. <strong>Locked</strong>: you have
+  declared the definition final.</p>
+<p><em>Found in 2 cases — becomes a project theme?</em> is a count. A comparison automatically
+  adds a candidate to the project's themes once it has claims in at least half of the project's
+  counting units, rounded up, with a minimum of two. Below that threshold, a comparison leaves it
+  a candidate; outside a comparison, you add it to the project's themes by hand, using <strong>Add
+  to project themes</strong> on its own page. Prevalence is not importance.</p>
+<p>Locking a definition fixes the name and definition in code. New material is still analysed
+  against a locked definition; what pulls against it comes back as a note on its page rather than
+  being written into the definition. Unlocking is one click, and those notes are the case for
+  it.</p>
 <p><em>Unchanged for 3 passes</em> counts grouping passes in which nothing about the theme moved.
   It is bookkeeping, not saturation.</p>
-<p class="where">Where this is decided in the code: <code>app/engine/themes.py</code>,
-  <code>app/verbs.py</code>, <code>app/context.py</code>.</p>
 </section>
 
 <section id="reach">
@@ -137,8 +142,8 @@
   on few passages is thinner than its claim count suggests.</p>
 <p><strong>3 passages shared with other themes</strong> — evidence two themes are dividing between
   them. Passages are not owned by one theme.</p>
-<p>A dash in a cell is not a zero. It carries which kind of silence it is.</p>
-<p class="where">Where this is decided in the code: <code>app/context.py</code>.</p>
+<p>A dash in a cell is not a zero. It carries which kind of assessment status it is; see <a
+  href="#absence">Empty cells</a>.</p>
 </section>
 
 <section id="lines">
@@ -156,34 +161,35 @@
   finding about this material, not a failure of the reading.</p>
 <p><strong>Also read under</strong> means the same passage carries a claim under another theme.
   That is ordinary, and worth reading: it is where two themes overlap.</p>
-<p class="where">Where this is decided in the code: <code>app/engine/synth.py</code>,
-  <code>app/engine/verify.py</code>, <code>app/anchor.py</code>.</p>
 </section>
 
 <section id="absence">
 <h2>What does an empty cell mean?</h2>
-<p>Four different things, recorded separately, because reading them alike is how a corpus comes to
-  say that eleven themes run through all four interviews.</p>
-<p><strong>Looked for and found too thin.</strong> A reading under this theme was made in this
-  material and what came back did not hold. Check the Excluded list before reading it as absence: a
-  set of claims too thin to keep is dropped whole.</p>
-<p><strong>Not looked for here.</strong> None of the codes this theme gathers marked this material,
-  so nothing went looking. This is a fact about where the reading went, not about what the material
-  says.</p>
-<p><strong>Not assessed yet.</strong> Nothing has been read here for this theme — the material
-  arrived after the theme was worked out, or the theme after the material was read. A gap in the
-  reading.</p>
-<p><strong>Searched in the passages the coding did not mark — nothing found.</strong> Only in a
-  project that explores: none of the theme's codes marked this material, so no line was written,
-  and the last pass then read every passage no code had touched with this theme in view and found
-  nothing to add. The nearest thing to a searched absence the instrument produces on its own; it
-  is still a statement about what was searched.</p>
+<p>Numbers count claims. Cells without a count show the assessment status, one of five, recorded
+  separately, because reading them alike is how a corpus comes to say that eleven themes run
+  through all four interviews.</p>
+<ul class="mats">
+  <li><strong>No retained claims.</strong> The theme was assessed in this material, but no claims
+    were retained. Check the Excluded list before reading this as absence: a set of claims too
+    thin to keep is dropped whole.</li>
+  <li><strong>Source check skipped.</strong> A preliminary review of the summary and codes did not
+    select this theme for a source check in this material. Its reason is shown with the status.</li>
+  <li><strong>No matching codes.</strong> None of the codes this theme gathers marked this
+    material, so the initial coding did not trigger an assessment. This is a fact about where the
+    coding went, not about what the material says.</li>
+  <li><strong>No match in uncoded passages.</strong> Only in a project that analyses each material
+    independently: none of the theme's codes marked this material, so no line was written, and a
+    last pass then read every passage no code had touched with this theme in view and found
+    nothing to add. This is the nearest thing to a searched absence the instrument produces on its
+    own, and it is still a statement about what was searched, over the passages the coding did not
+    mark.</li>
+  <li><strong>Not assessed.</strong> This material has not been assessed for this theme — it
+    arrived after the theme was worked out, or the theme after the material was read.</li>
+</ul>
 <p>The instrument never writes <em>absent</em> as a conclusion of its own. A negative statement is
-  something you run: Check against the material, over the passages no claim rests on yet, answers
-  <em>nothing found — searched 41 passages not yet cited</em>. That is a statement about what was
-  searched, and it is as far as the evidence goes.</p>
-<p class="where">Where this is decided in the code: <code>app/store.py</code>,
-  <code>app/context.py</code>, <code>app/engine/check.py</code>.</p>
+  something you run: <a href="#check">Check against the material</a>, over the passages no claim
+  rests on yet, answers <em>nothing found — searched 41 passages not yet cited</em>. That is a
+  statement about what was searched, and it is as far as the evidence goes.</p>
 </section>
 
 <section id="comments">
@@ -191,12 +197,12 @@
 <p>Where you leave it decides what runs. Your words reach the model verbatim in every case.</p>
 <ul class="mats">
   <li><strong>On a line of claims</strong> — that line again, for that material and that theme
-    only; then the material's summary over the claims that now stand; then every theme's account;
+    only; then the material summary over the claims that now stand; then every theme summary;
     then the project summary.</li>
-  <li><strong>On a material's summary</strong> — the summary again over the claims that stand, then
-    the accounts and the project summary. It does not rewrite any line.</li>
-  <li><strong>On a theme's account</strong> — that account across the corpus, then the project
-    summary above it.</li>
+  <li><strong>On a material summary</strong> — the summary again over the claims that stand, then
+    the theme summaries and the project summary. It does not rewrite any line.</li>
+  <li><strong>On a theme summary</strong> — that theme summary across the corpus, then the
+    project summary above it.</li>
   <li><strong>On the project summary</strong> — the project summary, and nothing else. It does not
     re-read a single material. A comment that is really about one theme belongs on that theme.</li>
   <li><strong>On one claim</strong> — nothing runs now. It is stored, shown and exported, and the
@@ -206,7 +212,6 @@
   opinion is exactly what the quote rule exists to prevent; if you want a re-reading, ask for one
   (below). A comment is marked <em>honoured by a rewrite</em> only by a run that was actually shown
   it; until then the record says <em>open</em>.</p>
-<p class="where">Where this is decided in the code: <code>app/rerun.py</code>.</p>
 </section>
 
 <section id="rerun">
@@ -228,8 +233,6 @@
 <p>The optional note is stored once as a comment on the material and shown to every step in the
   chain, so the summary at the end is still holding it. Cost is roughly what a fresh upload costs
   from that step on.</p>
-<p class="where">Where this is decided in the code: <code>app/rerun.py</code>,
-  <code>app/verbs.py</code>.</p>
 </section>
 
 <section id="check">
@@ -241,14 +244,12 @@
   reading passed over — which is the question <em>did the reading miss this?</em> rather than
   <em>is this in here?</em></p>
 <p>The verdict is Python's, not the model's: quotes that can be found in the text mean found, and
-  none means <em>nothing found — searched 41 passages not yet cited</em>. Read that sentence
-  exactly as it is written. It is not <em>the material contains none of this</em>; searching the
-  uncited remainder and finding nothing says nothing about the passages a claim already rests on.
-  The model's opinion can only lower confidence, never raise it.</p>
+  none means <em>nothing found — searched 41 passages not yet cited</em>. That is not <em>the
+  material contains none of this</em>; searching the uncited remainder and finding nothing says
+  nothing about the passages a claim already rests on. The model's opinion can only lower
+  confidence, never raise it.</p>
 <p>Every check keeps its question, its verdict, its quotes and the number of passages searched, on
   the page and in the record.</p>
-<p class="where">Where this is decided in the code: <code>app/engine/check.py</code>,
-  <code>app/context.py</code>.</p>
 </section>
 
 <section id="cases">
@@ -264,27 +265,23 @@
   far</em>. A material in no case counts as its own.</p>
 <p>Grouping costs nothing and runs nothing. It changes what the numbers are counted over, not what
   was read.</p>
-<p class="where">Where this is decided in the code: <code>app/context.py</code>,
-  <code>app/verbs.py</code>.</p>
 </section>
 
 <section id="record">
-<h2>What is in the reading record, and what should I cite?</h2>
+<h2>What is in the analysis record, and what should I cite?</h2>
 <p>Everything the reading arrived at, on one page and in two downloads — Word and Markdown, the
   same content.</p>
-<p>Each theme has a section that cuts across the corpus: its definition, its account, the materials
-  that carry it and the materials that do not, with which kind of silence each one is. Each
-  material has a section with its description, its summary, and its claims printed once with their
-  quotes and passage ids. A claim appears under its material and is cross-referenced from the
-  theme, so nothing is counted twice by being printed twice.</p>
+<p>Each theme has a section that cuts across the corpus: its definition, its theme summary, the
+  materials that carry it and the materials that do not, with which kind of assessment status each
+  one carries. Each material has a section with its description, its material summary, and its
+  claims printed once with their quotes and passage ids. A claim appears under its material and is
+  cross-referenced from the theme, so nothing is counted twice by being printed twice.</p>
 <p>Then: every question you checked with its verdict and the number of passages searched; what the
   reading excluded and why; every comment you left, with the thing it was about named and whether a
   rewrite has honoured it; how each theme's wording changed over time; and the processing history —
   runs, input and output tokens, provider and model per step.</p>
 <p>Cite a claim by its material and passage id. The quote is what it rests on, and the record
   carries both.</p>
-<p class="where">Where this is decided in the code: <code>app/context.py</code>,
-  <code>app/pages.py</code>.</p>
 </section>
 
 <section id="sharing">
@@ -294,14 +291,12 @@
   new people joining; people who already joined stay members until you remove them, which is a
   separate control on the same page.</p>
 <p>A member who may only read opens every page and both downloads, and can run nothing. Comments,
-  checks, adding material, promoting, freezing, running again, editing the focus and grouping cases
-  all answer them as if the project were not there. It is the same answer a stranger gets, on
-  purpose: telling someone a project exists but is shut to them is still telling them it
-  exists.</p>
+  checks, adding material, adding a theme to the project, locking a definition, running again,
+  editing the focus and grouping cases all answer them as if the project were not there. It is the
+  same answer a stranger gets, on purpose: telling someone a project exists but is shut to them is
+  still telling them it exists.</p>
 <p>An administrator of the instance sees project names and owners and nothing of what is in them.
   Administering the instance is not a way into anyone's material.</p>
-<p class="where">Where this is decided in the code: <code>app/store.py</code>,
-  <code>app/pages.py</code>.</p>
 </section>
 
 <section id="method-notes">
@@ -313,23 +308,51 @@
   <li><strong>Reflexive thematic analysis</strong> (Braun &amp; Clarke 2006; their 2019 answers to
     frequently asked questions; 2021 on saturation) — a theme is an analytic output the researcher
     develops, not a category certified by appearing twice; prevalence is not importance; an
-    unchanged definition is operational stability and not exhausted interpretation. Hence the
-    promote control, the count printed as a question, and <em>unchanged for N passes</em> printed
-    as bookkeeping.</li>
+    unchanged definition is operational stability and not exhausted interpretation. Hence
+    automatic promotion inside a comparison and researcher-initiated promotion outside one, the
+    count printed as a question, and <em>unchanged for N passes</em> printed as bookkeeping.</li>
   <li><strong>Template analysis</strong> (King 2012; Brooks and colleagues 2015) — a working
     template that the analyst declares final, after which material is applied to it. Hence
-    freezing, and tension notes kept outside the definition.</li>
+    locking a definition, and tension notes kept outside it.</li>
   <li><strong>Framework analysis</strong> (Ritchie &amp; Spencer 1994; Gale and colleagues 2013) —
     the case-by-theme matrix, with cells that say what is actually known rather than a bare count.
-    Hence the four silences.</li>
+    Hence the five assessment statuses.</li>
   <li><strong>Constant comparison and negative cases</strong> (Glaser &amp; Strauss 1967; Charmaz
     2006) — comparing each new case with the developing account, and looking for what does not fit.
     Hence the code comparison step, and searching the uncited remainder.</li>
 </ul>
 <p>What it does not claim: that its themes are yours, that its counts are evidence of importance,
   or that anything it could not find is not there.</p>
-<p class="where">Where this is decided in the code: <code>docs/PLAN.md</code> and the modules named
-  above.</p>
+</section>
+
+<section id="developer-notes">
+<h2>Developer reference</h2>
+<p>Where each answer above is decided in the code — for whoever maintains this instrument, not for
+  ordinary use of it.</p>
+<dl>
+  <dt>Adding material, how analysis works</dt><dd><code>app/jobs.py</code></dd>
+  <dt>Choosing an analysis method</dt><dd><code>app/jobs.py</code>, <code>app/engine/read.py</code>,
+    <code>app/engine/reconcile.py</code></dd>
+  <dt>The research focus</dt><dd><code>app/verbs.py</code>, <code>app/rerun.py</code>,
+    <code>app/engine/read.py</code></dd>
+  <dt>Themes, adding to the project, locking</dt><dd><code>app/engine/themes.py</code>,
+    <code>app/verbs.py</code>, <code>app/context.py</code></dd>
+  <dt>Reading the numbers</dt><dd><code>app/context.py</code></dd>
+  <dt>Claims and their quotes</dt><dd><code>app/engine/synth.py</code>,
+    <code>app/engine/verify.py</code>, <code>app/anchor.py</code></dd>
+  <dt>Empty cells</dt><dd><code>app/store.py</code>, <code>app/context.py</code>,
+    <code>app/engine/check.py</code></dd>
+  <dt>Where a comment goes</dt><dd><code>app/rerun.py</code></dd>
+  <dt>Running a material again</dt><dd><code>app/rerun.py</code>, <code>app/verbs.py</code></dd>
+  <dt>Checking against the material</dt><dd><code>app/engine/check.py</code>,
+    <code>app/context.py</code></dd>
+  <dt>Cases, not files</dt><dd><code>app/context.py</code>, <code>app/verbs.py</code></dd>
+  <dt>The analysis record</dt><dd><code>app/context.py</code>, <code>app/pages.py</code></dd>
+  <dt>Sharing a project</dt><dd><code>app/store.py</code>, <code>app/pages.py</code></dd>
+  <dt>Where this sits in method</dt><dd><code>docs/PLAN.md</code> and the modules named above</dd>
+</dl>
+<p>A measured two-material run once made 24 calls end to end, recorded September 2026; treat that
+  as one dated illustration, not a bound on any other project's cost.</p>
 </section>
 
 </div>

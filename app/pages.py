@@ -9,11 +9,11 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 
-from . import context, db, store, word
+from . import accounts, context, db, store, word
 
 router = APIRouter()
 
@@ -113,14 +113,52 @@ def home(request: Request) -> str:
     return _env.get_template("home.html").render(**context.home(connection(), user))
 
 
+# Which of the app's own project routes a Guide "Back to ..." link may point at. Loose enough to
+# match every page a `?` link can carry `from` from (the project overview, a material, a theme,
+# the record, the share page), tight enough that the id inside it is definitely a project id and
+# not an arbitrary path `accounts._local` would otherwise wave through.
+_ORIGIN = re.compile(r"/p/(?P<pid>[A-Za-z0-9]+)(?:/m/(?P<mid>[A-Za-z0-9]+)|/t/[A-Za-z0-9]+"
+                     r"|/record|/share)?")
+
+
+def _guide_origin(conn, user, origin: str) -> dict:
+    """Where the Guide's "Back to ..." control returns to, and what to call it.
+
+    `origin` is the `from` query parameter a page's link to Help carries, so a researcher reading
+    the Guide does not have to fall back on the browser's Back button to find their place again.
+    It gets the same test `accounts._local` gives the sign-in page's `next` — a path, and not
+    another site — and, on top of that, has to match one of the app's own project routes, because
+    a project id is read out of it to print a name. A visitor who cannot see that project, or no
+    usable `from` at all, gets the plain fallback: the Guide must never confirm to someone that a
+    project exists when `store.access` says it does not.
+    """
+    match = origin and accounts._local(origin) == origin and _ORIGIN.fullmatch(origin)
+    if not match:
+        return {"href": "/", "label": "All projects"}
+    pid = match.group("pid")
+    if store.access(conn, pid, user) is None:
+        return {"href": "/", "label": "All projects"}
+    mid = match.group("mid")
+    mat = mid and store.material(conn, mid)
+    if mat and mat["project_id"] == pid:
+        return {"href": origin, "label": context._material_title(mat)}
+    proj = store.project(conn, pid)
+    if proj is None:
+        return {"href": "/", "label": "All projects"}
+    return {"href": origin, "label": proj["name"]}
+
+
 @router.get("/guide", response_class=HTMLResponse)
-def guide(request: Request) -> str:
+def guide(request: Request, from_: str = Query("", alias="from")) -> str:
     """What each control does and what it lets a researcher say. No project: the guide is about
     the instrument, is reached from inside a project and from outside one, and must render either
-    way — so it is given the two things `base.html` needs of every page and nothing else."""
+    way — so it is given the two things `base.html` needs of every page, plus wherever `from`
+    says to return to."""
     user = getattr(request.state, "user", None)
+    back = _guide_origin(connection(), user, from_)
     return _render("guide.html", {"app_name": context.APP_NAME,
-                                  "css_v": context._css_version()}, user)
+                                  "css_v": context._css_version(),
+                                  "back_href": back["href"], "back_label": back["label"]}, user)
 
 
 @router.get("/p/{pid}", response_class=HTMLResponse)
