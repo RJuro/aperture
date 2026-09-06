@@ -6,8 +6,10 @@ what belongs to one interview only — the researcher's focus, and any feedback 
 the researcher's own words.
 
 Python rules on what comes back: a code name that is not in the codebook is ignored, no more
-themes stay live than the corpus can populate (`ceiling`), and a theme the model wants folded into
-another is *merged*, never deleted — a moment that cited it must still resolve to something.
+themes stay live than the corpus can populate (`ceiling`), a theme the model wants folded into
+another is *merged*, never deleted — a moment that cited it must still resolve to something — and
+a `nearest` naming a theme this project does not have is stored as no nearest at all, because a
+pointer to nothing renders as a boundary the researcher can neither read nor check.
 
 Since PLAN.md §12 the set stands in three holds and the rules differ per hold, which is why the
 enforcement below runs in one fixed order — merges, then the project themes, then the candidates,
@@ -30,6 +32,12 @@ MAX_NEW = 4
 
 # A tension is a pointer, not an argument: enough to say what pulled and which way.
 TENSION_WORDS = 25
+
+# What sorts a passage into this theme rather than into the one beside it. A sentence at most: the
+# researcher reads it under the definition and applies it to a passage, and a paragraph there is a
+# second gist. Three of the twelve themes of one record were about language and no reader could
+# say from the definitions which passage belonged where.
+NEAREST_WORDS = 20
 
 # The prompt asks for a name of at most eight words. This is the guard, and it sits above what is
 # asked so an obedient answer is never touched: a blind reader of a real record met the heading
@@ -254,8 +262,8 @@ def _slots(conn: sqlite3.Connection, pid: str, feedback: str) -> dict:
 def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         material_id: str | None = None, run_id: str | None = None) -> dict:
     """Revise the theme set in the light of one newly read material. Returns
-    {themes: [tid], merged: [tid]} — `themes` being every theme this pass wrote, candidates
-    included."""
+    {themes: [tid], merged: [tid], dropped: [note]} — `themes` being every theme this pass wrote,
+    candidates included, and `dropped` what it set aside, for the run row."""
     system, user = llm.prompt("themes", material=_material_block(conn, material_id),
                               **_slots(conn, pid, feedback))
     out = llm.chat_json(system, user, label="themes")
@@ -267,9 +275,18 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
 # whole corpus to be compared at once, so the fold is what they are asking for rather than
 # something the cap is forcing, and a candidate's spread is not the question here (the count rule
 # settles that afterwards, in Python, over cells this run has not read yet).
+#
+# The criterion for a fold is the calibration session's own, and it is here rather than in the
+# numbered rules because it is only ever asked of a consolidation: a pass that is merely over its
+# cap is folding to a number, and this is folding to a definition. Told only to look for overlap,
+# a reader folds two themes that speak about the same thing — which is how a distinction the
+# materials do carry is lost between two passes and never comes back.
 CONSOLIDATING = ("This is a consolidation over the whole corpus: where two themes define one "
                  "pattern, fold one into the other with `merge_into`, keeping the better-defined "
-                 "one's words; a candidate seen in several materials is still a candidate here.")
+                 "one's words; a candidate seen in several materials is still a candidate here. "
+                 "Two themes are folded only when one definition would sort every passage of the "
+                 "other. A shared subject is not a shared pattern, and similar wording is not a "
+                 "reason to fold.")
 
 
 def run_cross(conn: sqlite3.Connection, pid: str, mids: list[str], *, feedback: str = "",
@@ -305,13 +322,18 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
 
     Shared by both passes, because the rules are about the holds and not about what the model was
     shown — merges first, then the project themes, then the candidates, then the tensions, then
-    the stability count.
+    what each theme is nearest to, then the stability count.
     """
     project_themes = store.live_themes(conn, pid)
     cands = store.candidates(conn, pid)
     by_name = {r["name"]: r["id"] for r in store.codebook(conn, pid)}
     rows = {t["id"]: t for t in list(project_themes) + list(cands)}
     payload = [t for t in (out.get("themes") or []) if isinstance(t, dict)]
+    dropped: list[str] = []
+    # (theme, what the answer said it is nearest to), collected as the themes are saved and
+    # written at the end: a nearest is only checkable against the set this answer leaves behind,
+    # and a theme folded away above is not something to be nearest to.
+    near: list[tuple[str, object]] = []
 
     # Merges first. With the set at its cap, 'merge A into B and add C' used to drop C —
     # the cap was checked before A had gone — so a full theme set could only ever shrink,
@@ -350,6 +372,10 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
         store.save_theme(conn, pid, tid=tid, name=name, gist=gist, run_id=run_id,
                          code_ids=_code_ids(t, by_name))
         saved.append(tid)
+        # A frozen theme is not asked what it is nearest to (rule 17), and anything that comes
+        # back for one is left where its name and its gist are: unread.
+        if not frozen and "nearest" in t:
+            near.append((tid, t["nearest"]))
 
     coined = 0
     for t in leftover + [t for t in (out.get("candidates") or []) if isinstance(t, dict)]:
@@ -365,6 +391,8 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
                              run_id=run_id,
                              code_ids=sorted(have | set(_code_ids(t, by_name))))
             saved.append(row["id"])
+            if "nearest" in t:
+                near.append((row["id"], t["nearest"]))
         elif coined < MAX_NEW and (name := name_of(t.get("name"))):
             tid = store.save_theme(conn, pid, tid=None, name=name, run_id=run_id,
                                    gist=str(t.get("gist") or "").strip(),
@@ -372,6 +400,8 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
             store.set_hold(conn, tid, "candidate")
             coined += 1
             saved.append(tid)
+            if "nearest" in t:
+                near.append((tid, t["nearest"]))
 
     # Tensions, for frozen themes only: they are the one hold whose definition Python refuses to
     # move, so they are also the one hold that needs somewhere for the pull to go.
@@ -390,6 +420,24 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
         if note := synth.words(t.get("note"), TENSION_WORDS):
             store.add_theme_note(conn, row["id"], mid, run_id, note)
 
+    # What each open theme and candidate is most easily confused with, written against the set as
+    # this pass leaves it — after the merges, so a theme folded away is not something to be
+    # nearest to. An id that is not another live theme or candidate of this project points at
+    # nothing the researcher could go and compare it against, so it is stored as no nearest at all
+    # and said on the run. `null` is not that: a theme with nothing close to it has answered, and
+    # the answer is kept.
+    live = ({t["id"] for t in store.live_themes(conn, pid)}
+            | {c["id"] for c in store.candidates(conn, pid)})
+    for tid, answer in near:
+        said = answer if isinstance(answer, dict) else {}
+        nid = str(said.get("id") or "").strip() or None
+        if nid is not None and (nid not in live or nid == tid):
+            dropped.append(f"theme {tid} is nearest to {nid}, which is not another live theme of "
+                           "this project; the boundary was not stored")
+            nid = None
+        store.set_nearest(conn, tid, nid,
+                          synth.words(said.get("differs"), NEAREST_WORDS) if nid else "")
+
     # The saturation signal (PLAN.md §12), bookkeeping only: how many passes in a row this theme's
     # words and codes stood still. The researcher reads it and freezes; the instrument only counts.
     # Candidates are not counted — a pattern seen once cannot be stable.
@@ -399,4 +447,4 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
                      (t["stable_passes"] + 1 if fp == t["pass_fingerprint"] else 0, fp, t["id"]))
     conn.commit()
 
-    return {"themes": saved, "merged": merged}
+    return {"themes": saved, "merged": merged, "dropped": dropped}
