@@ -246,7 +246,9 @@ def test_read_md_compiles_with_its_new_slot_and_states_the_rule():
 
 def test_angles_md_compiles_with_exactly_the_slots_the_engine_fills(conn, grande, model):
     text = (PROMPTS / "angles.md").read_text()
-    slots = sorted(set(re.findall(r"\{\{(\w+)\}\}", text)))
+    # The style block is a slot the file beside it fills, never one the engine passes — a caller
+    # that passed it would raise. This is about what `angles.run` and the template agree on.
+    slots = sorted(set(re.findall(r"\{\{(\w+)\}\}", text)) - set(llm.RESERVED))
     assert slots == ["feedback", "frame", "material", "max_angles", "max_questions",
                      "orientation", "questions", "themes"]
     _framed(conn, grande)

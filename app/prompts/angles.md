@@ -9,9 +9,11 @@ Every rule below carries the same weight and every field is required.
 1. Return one JSON object and nothing else, shaped exactly like the worked answer at the end of
    this message.
 
-2. An angle decides WHERE TO LOOK, never WHAT IS FOUND. "Whether work is spoken of as a choice"
-   is an angle; "work is spoken of as a necessity" is a finding, and findings are not yours to
-   make here. No name, reason or question may state a conclusion about this material.
+2. An angle decides WHERE TO LOOK, never WHAT IS FOUND. "Whether handover is spoken of as a
+   safeguard" is an angle; "handover is spoken of as a formality" is a finding, and findings are
+   not yours to make here. Name the ground, not the verdict: "How staffing is spoken of on
+   nights" is an angle; "Understaffing on the night shift" is a finding. No name, reason or
+   question may state a conclusion about this material.
 
 3. Return between 5 and {{max_angles}} angles. Fewer than 5 leaves the reading as narrow as it
    already is; only the first {{max_angles}} are kept, so put the strongest first.
@@ -47,33 +49,35 @@ A worked answer, with the exact shape:
 
 ```json
 {
-  "field": "Social history of postwar labour migration",
+  "field": "Organisation of clinical work on hospital wards",
   "subareas": [
-    "Household economies",
-    "Documents and legal status",
-    "Return visits and belonging"
+    "Shift handover",
+    "Staffing and rostering",
+    "Record-keeping on the ward"
   ],
   "angles": [
     {
-      "name": "How work and staying are spoken of together",
-      "why": "Work is named in several stretches of this material, and it appears alongside housing and papers.",
+      "name": "How staffing is spoken of on nights",
+      "why": "Nights are named in several stretches of this material, and staffing numbers appear alongside them.",
       "questions": [
-        "Which kinds of work are named, and which are passed over in silence?",
-        "Where is work spoken of as a choice, and where as the price of remaining?",
-        "What is said to happen when the work stops?"
+        "Which shifts are named, and which are passed over in silence?",
+        "Where is a staffing level given as a number, and where as an impression of the ward?",
+        "What is said to happen on a night when someone does not arrive?"
       ]
     },
     {
-      "name": "Who is allowed to speak for the household",
-      "why": "Decisions are reported in the plural, and the material does not say who made them.",
+      "name": "Who is answerable at a handover",
+      "why": "Handovers are reported in the plural, and the material does not say who signed one off.",
       "questions": [
-        "Whose account of a decision is given, and whose is reported second-hand?",
+        "Whose account of a handover is given, and whose is reported second-hand?",
         "Where does the plural give way to a single person deciding?"
       ]
     }
   ]
 }
 ```
+
+{{style_short}}
 
 ---
 WHAT THIS MATERIAL IS

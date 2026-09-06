@@ -14,7 +14,8 @@ Three verdicts, and every sentence gets exactly one:
                them; that is still supported.
   `partly`     Part of the sentence rests on the claims and part is added — a detail no claim or
                quote contains (a place, a name, a number, an institution, a date), a motive, an
-               evaluation, or a hedge hardened into a fact. Say in `why` which words are added.
+               evaluation, or a hedge written as a fact ("I think she adapted" written as "she
+               adapted"). Say in `why` which words are added.
   `not`        Nothing in the claims and quotes carries this sentence, or they say otherwise.
 
 Rules. Each one carries the same weight.

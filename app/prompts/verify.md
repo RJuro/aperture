@@ -16,9 +16,9 @@ Three verdicts, and every claim gets exactly one:
                a cause; a frequency ("always", "repeatedly", "routinely"); a comparison ("more
                than", "unlike", "exceptional for a woman"); an evaluation or an intensifier
                ("immediate", "explicitly", "deliberately", "a standard that became a family
-               anecdote"); a consequence the passage does not state; or a hedge hardened into a
-               fact — "I don't remember much talk" read as "there was no conversation", "I think
-               she adapted well" read as "she adapted well". Say in `why` which words are added.
+               anecdote"); a consequence the passage does not state; or a hedge written as a
+               fact — "I think she adapted" written as "she adapted", "I don't remember much
+               talk" written as "there was no conversation". Say in `why` which words are added.
   `not`        The passage does not say this, or says otherwise. A claim that reverses what the
                passage says, or rests on a reading of one word against the sense of the sentence,
                is `not`.
@@ -35,9 +35,9 @@ Rules. Each one carries the same weight.
 4. Be exact, not severe. Compression is not addition; naming what the words amount to is not
    addition. "The family ran a bakery" is supported by a passage about the mother baking and
    selling bread from the front room; "the family prospered from a bakery" is `partly` unless the
-   passage speaks of prospering. "Finding the town is described as an immediate belonging" is
-   supported by "they just felt very much at home" only if the passage carries the immediacy;
-   otherwise `partly`, with "immediate" in `why`.
+   passage speaks of prospering. "The ward is described as welcoming a new nurse immediately" is
+   supported by "they just made me feel at home" only if the passage carries the immediacy;
+   otherwise `partly`, with "immediately" in `why`.
 5. Every word is your own and assumes no speaker. This may be an interview, a focus group, field
    notes, a document, or answers to an open question.
 
