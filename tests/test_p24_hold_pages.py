@@ -122,7 +122,7 @@ def test_a_reader_is_shown_no_controls_and_cannot_post_one(client, conn, holds, 
     theme = r.text
     assert "Definition can change" in theme, "the hold itself is part of the reading, and everyone sees it"
     assert "Lock definition" not in theme and "/hold" not in theme
-    assert "Promote" not in client.get(f"/p/{pid}").text
+    assert "Add to project themes" not in client.get(f"/p/{pid}").text
     assert client.post(f"/p/{pid}/t/{tid}/hold", data={"hold": "frozen"}).status_code == 404
     assert client.post(f"/p/{pid}/t/{cand}/promote").status_code == 404
     assert _hold(conn, tid) == "open"
@@ -133,7 +133,7 @@ def test_an_invited_editor_is_shown_them_and_may_press_them(client, conn, holds,
     login(client, "cat")
     assert client.get(f"/p/{pid}/t/{tid}").status_code == 200
     assert "Lock definition" in client.get(f"/p/{pid}/t/{tid}").text
-    assert "Promote" in client.get(f"/p/{pid}").text
+    assert "Add to project themes" in client.get(f"/p/{pid}").text
     assert client.post(f"/p/{pid}/t/{tid}/hold", data={"hold": "frozen"}).status_code == 303
     assert client.post(f"/p/{pid}/t/{cand}/promote").status_code == 303
     assert (_hold(conn, tid), _hold(conn, cand)) == ("frozen", "open")

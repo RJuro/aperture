@@ -255,7 +255,7 @@ def test_the_new_project_form_carries_the_choice(client, conn, people):
     assert r.status_code == 303
     pid = r.headers["location"].rsplit("/", 1)[-1]
     assert store.project(conn, pid)["method"] == "iterative"
-    assert "Built iteratively" in client.get(f"/p/{pid}").text
+    assert "Analyse using existing project codes" in client.get(f"/p/{pid}").text
 
 
 def test_the_owner_changes_the_method_and_a_collaborator_cannot(client, conn, people):
@@ -263,7 +263,7 @@ def test_the_owner_changes_the_method_and_a_collaborator_cannot(client, conn, pe
     pid = store.create_project(conn, "Ann's study", "", owner_id=people["ann"])
     assert client.post(f"/p/{pid}/method", data={"method": "iterative"}).status_code == 303
     assert store.project(conn, pid)["method"] == "iterative"
-    assert "Built iteratively" in client.get(f"/p/{pid}").text
+    assert "Analyse using existing project codes" in client.get(f"/p/{pid}").text
 
     assert client.post(f"/p/{pid}/share/link", data={"role": "edit"}).status_code == 303
     token = client.get(f"/p/{pid}/share").text.split("/join/")[-1].split('"')[0]

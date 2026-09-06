@@ -10,7 +10,7 @@
       <p class="lead">{{ reading.done }} of {{ materials | length }} {{ 'material' | plural(materials | length) }} fully read{% if reading.active %} · {{ reading.active }} being read{% endif %}{% if reading.failed %} · {{ reading.failed }} stopped{% endif %}{% if reading.waiting %} · {{ reading.waiting }} not read yet{% endif %}.</p>
       {% else %}<p class="lead">No material added yet.</p>{% endif %}</div>
       <div class="head-actions">
-      <a class="btn btn-secondary" href="/p/{{ project.id }}/record">Reading record</a>
+      <a class="btn btn-secondary" href="/p/{{ project.id }}/record">Analysis record</a>
       {% if role == 'owner' %}<a class="btn btn-secondary" href="/p/{{ project.id }}/share">Share</a>
         <details class="head-menu"><summary aria-label="More project options">•••</summary>
           <div class="menu-sheet wide-menu">
@@ -67,12 +67,12 @@
           <button class="btn btn-secondary">Save focus</button>
         </form>
       </details>
-      <p class="dim small">Method: {% if project.method == 'explore' %}Read exploratively — each material is read on its own terms first.{% else %}Built iteratively — each material is read with the project's codes and themes in view.{% endif %} <a class="help" href="/guide?from=/p/{{ project.id }}#method" title="Explore or build iteratively" aria-label="Help: Explore or build iteratively">?</a></p>
+      <p class="dim small">Method: {% if project.method == 'explore' %}Analyse each material independently — its codes are compared with the project's afterwards.{% else %}Analyse using existing project codes — the codebook and themes are in view while reading.{% endif %} <a class="help" href="/guide?from=/p/{{ project.id }}#method" title="Explore or build iteratively" aria-label="Help: Explore or build iteratively">?</a></p>
       {% if role == 'owner' %}<details><summary>Change how material is read</summary>
         <form method="post" action="/p/{{ project.id }}/method" class="form-stack compact">
           <fieldset class="scope-choice"><legend>Applies to material read from here on; nothing already read changes</legend>
-            <label class="choice"><input type="radio" name="method" value="explore" {{ 'checked' if project.method == 'explore' }}> <span>Explore the material — read on its own terms, its codes compared with the project's afterwards</span></label>
-            <label class="choice"><input type="radio" name="method" value="iterative" {{ 'checked' if project.method != 'explore' }}> <span>Build iteratively — read with the project's codes and themes in view</span></label>
+            <label class="choice"><input type="radio" name="method" value="explore" {{ 'checked' if project.method == 'explore' }}> <span>Analyse each material independently — read on its own terms, its codes compared with the project's afterwards</span></label>
+            <label class="choice"><input type="radio" name="method" value="iterative" {{ 'checked' if project.method != 'explore' }}> <span>Analyse using existing project codes — read with the project's codes and themes in view</span></label>
           </fieldset>
           <details class="info"><summary>What changes if I switch?</summary>
             <p>Only what later readings are shown. Material already read keeps the codes it was
@@ -117,7 +117,7 @@
         {# The count is the question, never the answer: recurrence proposes, the researcher promotes
            — except in the comparison above, which is disclosed there because it decides differently. #}
         {% if t.proposal %}<br><span class="dim">{{ t.proposal }}</span>{% endif %}
-        <form method="post" action="/p/{{ project.id }}/t/{{ t.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
+        <form method="post" action="/p/{{ project.id }}/t/{{ t.id }}/promote"><button class="btn btn-small btn-secondary">Add to project themes</button></form>
         {% endif %}</th>
   {% for col in t.columns %}
     <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim">{{ col.abbr }}</span>{% endif %}</td>
@@ -268,7 +268,7 @@
 <section class="section research-actions">
 <div class="container">
 <details class="action-drawer">
-  <summary><span><strong>Research actions</strong></span></summary>
+  <summary><span><strong>Revise the summary or check a claim</strong></span></summary>
   <div class="action-grid">
     <form method="post" action="/p/{{ project.id }}/react" class="action-card">
       <h3>Respond to the project synthesis <a class="help" href="/guide?from=/p/{{ project.id }}#comments" title="Where a comment goes and what it rewrites" aria-label="Help: Where a comment goes and what it rewrites">?</a></h3><p>Your words guide the next corpus-level revision.</p>
