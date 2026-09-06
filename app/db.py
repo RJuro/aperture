@@ -125,15 +125,19 @@ CREATE TABLE IF NOT EXISTS moment (
 -- looked for and what came back was set aside, 'skipped' where none of the codes the theme
 -- gathers marked this material and it was therefore never looked for, 'residual' where the gate
 -- passed it over and the pass over the unmarked passages then found nothing under it either —
--- a searched absence rather than a fact about where the reading went (PLAN.md §13). Written by
--- DOC and RESIDUAL and superseded per run the way a moment is. It exists because the four cannot
--- be told apart from anything else in the database — a line set aside and a line never written
--- both leave no live moment — and because a note in the run's own words would say the wrong
--- thing the moment a researcher renamed the theme.
+-- a searched absence rather than a fact about where the reading went (PLAN.md §13) — and
+-- 'screened' where one call read this material's own account and its coding and did not send a
+-- reader to the material for this theme. The fifth is weaker than 'thin' and stronger than
+-- 'skipped': something looked, but not at the material. `note` is what that look said in its own
+-- words, stored so a page can print WHY it passed the theme over; it is empty for every other
+-- outcome. Written by DOC, RESIDUAL and SCREEN and superseded per run the way a moment is. It
+-- exists because the five cannot be told apart from anything else in the database — a line set
+-- aside and a line never written both leave no live moment — and because a note in the run's own
+-- words would say the wrong thing the moment a researcher renamed the theme.
 CREATE TABLE IF NOT EXISTS follow (
     id TEXT PRIMARY KEY, material_id TEXT NOT NULL, theme_id TEXT NOT NULL,
-    outcome TEXT NOT NULL CHECK (outcome IN ('line','thin','skipped','residual')),
-    run_id TEXT, status TEXT NOT NULL DEFAULT 'live');
+    outcome TEXT NOT NULL CHECK (outcome IN ('line','thin','skipped','residual','screened')),
+    run_id TEXT, status TEXT NOT NULL DEFAULT 'live', note TEXT DEFAULT '');
 
 CREATE TABLE IF NOT EXISTS summary (
     id TEXT PRIMARY KEY, scope TEXT NOT NULL, ref_id TEXT NOT NULL, stage TEXT NOT NULL,
@@ -297,18 +301,21 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE check_ ADD COLUMN searched_scope TEXT DEFAULT 'unused'")
     # A CHECK constraint cannot be altered in place, and `CREATE TABLE IF NOT EXISTS` leaves a
     # table that already exists exactly as it was — so a database made before RESIDUAL had a
-    # fourth outcome would refuse to write one. The rows are copied into a table with the new
-    # constraint and nothing else changes; the old rows all satisfy it.
+    # fourth outcome, or before SCREEN had a fifth, would refuse to write one. The rows are copied
+    # into a table with the new constraint and the note column, and nothing else changes; the old
+    # rows all satisfy it and take an empty note, which is what they are — nothing looked at them
+    # and said why. One rebuild covers both steps: the six columns named here exist in every
+    # version this instrument has ever written.
     said = conn.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='follow'"
                         ).fetchone()
-    if said and "residual" not in (said[0] or ""):
+    if said and "screened" not in (said[0] or ""):
         conn.executescript(
             "CREATE TABLE follow_new (id TEXT PRIMARY KEY, material_id TEXT NOT NULL, "
             "theme_id TEXT NOT NULL, outcome TEXT NOT NULL CHECK (outcome IN "
-            "('line','thin','skipped','residual')), run_id TEXT, "
-            "status TEXT NOT NULL DEFAULT 'live');"
-            "INSERT INTO follow_new SELECT id, material_id, theme_id, outcome, run_id, status "
-            "FROM follow;"
+            "('line','thin','skipped','residual','screened')), run_id TEXT, "
+            "status TEXT NOT NULL DEFAULT 'live', note TEXT DEFAULT '');"
+            "INSERT INTO follow_new (id, material_id, theme_id, outcome, run_id, status) "
+            "SELECT id, material_id, theme_id, outcome, run_id, status FROM follow;"
             "DROP TABLE follow;"
             "ALTER TABLE follow_new RENAME TO follow;")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}

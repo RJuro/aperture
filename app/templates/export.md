@@ -61,10 +61,14 @@
 {% else %}No material contains claims for this theme yet.
 {% endfor %}{% if t.absent %}{% for head, mats in
    ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
+     ("Looked at from this material's own account and its coding, and not pursued",
+      t.absent | selectattr("assessed", "equalto", "screened") | list),
      ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
+     ("Searched in the passages the coding did not mark — nothing found",
+      t.absent | selectattr("assessed", "equalto", "residual") | list),
      ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}{% if mats %}##### {{ head }}
 
-{% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}
+{% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}{% if m.screened_why %} — {{ m.screened_why }}{% endif %}
 {% endfor %}
 {% endif %}{% endfor %}{% if t.set_aside %}
 Before reading that as absence, check what was excluded below — a set of claims too thin to keep

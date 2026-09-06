@@ -417,12 +417,15 @@ def test_a_database_made_before_the_fourth_outcome_learns_to_hold_it(tmp_path):
     old.close()
 
     conn = db.connect(path)
+    # Every row, every column, and the note column the fifth outcome added — empty on all of them,
+    # which is what they are: nothing looked at these cells and said why (P35).
     assert [tuple(r) for r in conn.execute("SELECT * FROM follow ORDER BY id")] == \
-        [("f1", "m1", "t1", "skipped", "r1", "live"),
-         ("f2", "m1", "t2", "line", None, "superseded")], "every row, every column"
-    conn.execute("INSERT INTO follow VALUES ('f3','m1','t3','residual',NULL,'live')")
+        [("f1", "m1", "t1", "skipped", "r1", "live", ""),
+         ("f2", "m1", "t2", "line", None, "superseded", "")], "every row, every column"
+    conn.execute("INSERT INTO follow VALUES ('f3','m1','t3','residual',NULL,'live','')")
+    conn.execute("INSERT INTO follow VALUES ('f5','m1','t5','screened',NULL,'live','no codes)')")
     with pytest.raises(sqlite3.IntegrityError):
-        conn.execute("INSERT INTO follow VALUES ('f4','m1','t4','whatever',NULL,'live')")
+        conn.execute("INSERT INTO follow VALUES ('f4','m1','t4','whatever',NULL,'live','')")
     conn.close()
 
 

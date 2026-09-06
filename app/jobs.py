@@ -184,12 +184,89 @@ def settle_line(said: dict) -> str:
             f'{len(said["proposed"])} proposed')
 
 
+def _screen(conn, pid, run):
+    """One look at this material's account and its coding, deciding a batch of planned cells.
+
+    The batch rides on the run row (`themes`), the way the cross-case pass carries its materials:
+    what this call must decide is known when the chain is planned, and a step that had to work it
+    out again would work it out from a corpus the earlier steps of the same chain had moved.
+    """
+    from .engine import screen
+    out = screen.run(conn, run["material_id"], run.get("themes") or [],
+                     run_id=run.get("run_id"))
+    if run.get("run_id"):
+        store.set_run_line(conn, run["run_id"], screen_line(len(out["look"]), len(out["pass"])))
+    return out["dropped"]
+
+
+def screen_line(look: int, passed: int) -> str:
+    """What the look leaves on its row: where it is sending a reader, and what it is not."""
+    return (f'{look} {"theme" if look == 1 else "themes"} to read this material for, '
+            f'{passed} passed over')
+
+
+def _passed_over(conn: sqlite3.Connection, run: dict) -> bool:
+    """Whether the look in THIS job has already decided this planned cell, and decided against it.
+
+    Written by this same job and no other: a `screened` row from a consolidation last week says
+    what was decided then, and a researcher who has asked for the corpus to be compared again is
+    asking for that decision to be made again. So the row has to come from a run of this job.
+    """
+    if not run.get("job_id") or not run.get("theme_id"):
+        return False
+    row = conn.execute(
+        "SELECT f.outcome FROM follow f JOIN run r ON r.id = f.run_id "
+        "WHERE f.material_id=? AND f.theme_id=? AND f.status='live' AND r.job_id=?",
+        (run.get("material_id"), run["theme_id"], run["job_id"])).fetchone()
+    return row is not None and row["outcome"] == "screened"
+
+
 def _doc(conn, pid, run):
     from .engine import synth
+    # A cell the look in this same chain passed over. The run row still exists and still says what
+    # it was for — a plan that deleted the row would leave a researcher unable to tell a cell that
+    # was decided from one nobody ever planned — and it says, in place of a line, why nothing ran.
+    if _passed_over(conn, run):
+        store.set_run_line(conn, run["run_id"],
+                           f'Passed over by the look at {_name(conn, run["material_id"])}')
+        return None
     out = synth.doc(conn, run["material_id"], only_theme=run.get("theme_id"),
+                    # The back-fill checks the whole material once, after its lines are written,
+                    # rather than once per line over the same passages. Nothing else splits them:
+                    # the chain material arrives on has DOC verify inside itself as it always has.
+                    check=not run.get("job_id") or not _has_check(conn, run),
                     run_id=run.get("run_id"), skip_done=_resuming(conn, run),
                     stop=_stopping(conn, run))
     return (out or {}).get("dropped")
+
+
+def _has_check(conn: sqlite3.Connection, run: dict) -> bool:
+    """Whether a `verify` step of this job is still to run over this material.
+
+    Asked of the job's own plan rather than of a flag on the run, so a `doc` row planned by
+    anything else — a rerun, a comment on one line — checks itself exactly as it always did.
+    """
+    row = store.job(conn, run["job_id"])
+    return row is not None and any(
+        r["kind"] == "verify" and r.get("material_id") == run.get("material_id")
+        for r in json.loads(row["runs_json"]))
+
+
+def _verify(conn, pid, run):
+    """One check over this material's claims, once its back-filled lines are all written.
+
+    VERIFY reads each passage once for the whole material, so a material that gained nine lines
+    was paying nine times for one pass over the same text. What follows it is what DOC does with
+    the same answer: a line whose claims the check took away is summarised again over the ones
+    that stand — its paragraph was written with the THREAD answer, before any of this.
+    """
+    from .engine import synth, verify
+    mid = run["material_id"]
+    out = verify.run(conn, mid, run_id=run.get("run_id"))
+    notes = list(out["dropped"])
+    for tid in out["lost"]:
+        notes += synth.line_summary(conn, mid, tid, run_id=run.get("run_id"))
+    return notes
 
 
 def _summary(conn, pid, run):
@@ -300,6 +377,8 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "memo":    ("Writing what {name} says on its own terms", _memo),
     "themes":  ("Finding themes",                     _themes),
     "consolidate": ("Comparing every theme across the corpus", _consolidate),
+    "screen":  ("Deciding where to look in {name}",   _screen),
+    "verify":  ("Checking the new lines in {name} against the material", _verify),
     "settle":  ("Counting where each theme now reaches", _settle),
     "doc":     ("Writing what stands out in {name}", _doc),
     "tighten": ("Tightening claims the check found only partly carried in {name}", _tighten),
@@ -388,7 +467,7 @@ CALLS = threading.Semaphore(PARALLEL)
 # material's synthesis and the passes that follow it are one sequence that runs beside another
 # material's.
 SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile", "memo"},
-                {"doc", "tighten", "residual"})
+                {"screen", "doc", "tighten", "residual", "verify"})
 
 # ...and inside such a stage, these still take their turn, in the order the chain planned them.
 # READ is SHOWN the project codebook and `store.save_codes` reuses a code by name: two readings at

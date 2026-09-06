@@ -193,13 +193,16 @@ def _shared_block(conn: sqlite3.Connection, pid: str, theme_id: str) -> str:
 def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: list[dict]) -> str:
     """The materials with no claim under this theme, each saying WHICH kind of nothing it is.
 
-    Four of them, and only two are a silence about the pattern. Where the theme was looked for, a
+    Five of them, and only two are a silence about the pattern. Where the theme was looked for, a
     reading of that material under it was made and set aside — thin, or its quotes did not survive
     the check. Where it was not looked for, nothing this theme gathers was ever marked there and no
     reading under it exists; that is a fact about where the reading went, and a model that cannot
     tell the two apart writes the second one up as absence (PLAN.md §3, law 2). Where it was not
     looked for AND the passages no code marked were then searched for it and held nothing, the
-    absence is one somebody actually went and tested (PLAN.md §13).
+    absence is one somebody actually went and tested (PLAN.md §13). Where a look at the material's
+    own account and its coding decided the theme was not worth a reading, nothing read the
+    material under it at all — weaker than the first, stronger than the second, and an absence in
+    neither direction (PLAN.md §14).
 
     The last is a material this theme has never been through at all — uploaded after the theme's
     last pass, or never revisited for a theme that grew up around it — and it has no row here to
@@ -207,11 +210,18 @@ def _absent_block(conn: sqlite3.Connection, pid: str, theme_id: str, absent: lis
     an absence the model was invited to interpret: the strongest of the three statements made
     from the weakest of the three histories.
     """
-    outcomes = store.followed(conn, pid)
+    outcomes, whys = store.followed(conn, pid), store.follow_notes(conn, pid)
     out = []
     for m in absent:
         outcome = outcomes.get((theme_id, m["material_id"]))
-        if outcome == "skipped":
+        if outcome == "screened":
+            why = ("LOOKED AT FROM THIS MATERIAL'S OWN ACCOUNT AND ITS CODING AND NOT PURSUED — "
+                   "one reading of what this material was found to hold decided this theme was "
+                   "not worth going back to the material for. Nobody read the material under this "
+                   "theme, so this is not an absence in it")
+            if said := whys.get((theme_id, m["material_id"]), ""):
+                why += f" (it said: {said})"
+        elif outcome == "skipped":
             why = ("NOT LOOKED FOR HERE — none of this theme's codes marked this material, so no "
                    "reading of it under this theme was ever made")
         elif outcome == "residual":
