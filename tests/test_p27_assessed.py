@@ -98,17 +98,22 @@ def test_the_three_silences_have_their_own_headings_on_every_surface(client, con
 
 
 def test_an_empty_cell_in_the_overview_says_which_kind_of_nothing_it_is(client, conn, analysed):
-    """A dash has no room for a sentence, so it carries one: three different findings looked
-    identical in that column."""
+    """A hover title answers nobody using a keyboard or a touch screen (F3), so an empty cell
+    prints a short word in visible text instead, and the legend under the table spells it out."""
     pid, tid = analysed["pid"], list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
                  (analysed["rodwin"], tid))
     conn.commit()
-    assert 'title="Not assessed yet — this material was not read for this theme">—' \
-        in client.get(f"/p/{pid}").text
+    page = client.get(f"/p/{pid}").text
+    assert "<span class=\"dim\">not assessed</span>" in page
+    assert "<strong>not assessed</strong> — Not assessed. This material has not been assessed " \
+        "for this theme." in page
+
     store.save_follow(conn, analysed["rodwin"], tid, "skipped", None)
-    assert 'title="Not looked for here — none of this theme&#39;s codes marked this material">—' \
-        in client.get(f"/p/{pid}").text
+    page = client.get(f"/p/{pid}").text
+    assert "<span class=\"dim\">skipped</span>" in page
+    assert "<strong>skipped</strong> — No matching codes. The initial coding did not trigger " \
+        "an assessment for this theme." in page
 
 
 # ---- a check searches what it was asked to -------------------------------------------------------

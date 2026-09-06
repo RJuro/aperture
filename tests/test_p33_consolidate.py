@@ -82,14 +82,13 @@ def test_the_preview_counts_the_cells_nobody_read_for_a_theme_two_cases_carry(co
     assert (corpus["wide"], mids[3]) not in cells, "thin is an answer, not a hole"
 
     # Two of six cases is below half, so the default scope — the themes that could open — reads
-    # nothing here, and the wider scope prices the three cells with their checks.
+    # nothing here: no pairs, so its own estimate is just the comparison and the project summary.
+    # The wider scope, its own radio on the page, is the one that would read the three cells above.
     assert store.backfill_cells(conn, corpus["pid"]) == []
     said = context.project_page(conn, corpus["pid"])["consolidate"]
     assert said["themes"] == 2 and said["opening_n"] == 0
-    # Three cells over three materials: the comparison, a look at each material and a check of
-    # each material are certain; the three readings themselves depend on what the looks find.
-    assert said["all"] == ("3 cells to look at (about 7 model calls, up to 10 if every look "
-                           "finds something)")
+    assert said["all_n"] == 3 and not said["same"]
+    assert said["calls_said"] == "Estimated model calls for the whole update: 2."
 
 
 def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
@@ -363,8 +362,11 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
     _login(client, "ann", "battery staple")
 
     html = client.get(f"/p/{pid}").text
-    assert "Compare every theme across the corpus" in html
-    assert "1 cell to look at (about 3 model calls, up to 4 if every look finds something)" in html
+    assert "Compare and update themes" in html
+    # Three materials, so the opening threshold is two — the same as the wider scope's fixed two —
+    # and the one cell nobody read for this theme is what both scopes select here alike.
+    assert "Both scopes currently select the same 1 checks." in html
+    assert "Estimated model calls for the whole update: 4–6." in html
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"

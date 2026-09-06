@@ -36,10 +36,10 @@
 <section class="section summary-section">
   <div class="container overview-grid">
     <div>
-      <p class="eyebrow">{% if summary %}What the material shows{% else %}What the project adds up to{% endif %}</p>
+      <h2>Project summary</h2>
       {% if summary %}<div class="summary-copy">{{ summary_html }}</div>
       {% if interpretation and interpretation.text %}
-      <p class="eyebrow">What this may mean, so far</p>
+      <h3>Possible interpretation</h3>
       <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}
       {% elif working %}<p class="lead">The project synthesis will appear when the background reading is complete.</p>
       {% else %}<p class="lead">Add material to begin a project-wide synthesis.</p>{% endif %}
@@ -50,7 +50,7 @@
       {%- elif summary_state.behind %}{{ summary_state.behind }} {{ 'material' | plural(summary_state.behind) }} {{ 'has' if summary_state.behind == 1 else 'have' }} been read since this was written{% if summary_state.working %} — being updated now{% endif %}.
       {%- elif unread %}{{ unread }} {{ 'material' | plural(unread) }} {{ 'has' if unread == 1 else 'have' }} not been read yet{% if summary_state.working %} — being read now{% endif %}.
       {%- elif summary_state.working %}Being updated now.
-      {%- else %}Written over all {{ materials | length }} {{ 'material' | plural(materials | length) }}.{% endif %}</p>
+      {%- else %}Based on the analysis of all {{ materials | length }} {{ 'material' | plural(materials | length) }}.{% endif %}</p>
       {% if summary_state.error or (summary_state.behind and not summary_state.working) %}<form method="post" action="/p/{{ project.id }}/resynthesise">
         <button class="btn btn-small btn-secondary">Write the project summary again</button>
       </form>{% endif %}
@@ -91,18 +91,18 @@
 </div>
 {% if themes %}
 {% set most = themes | map(attribute='claims') | max or 1 %}{# themes are named before any claim is read #}
-<p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. A dash means none.{% if themes | selectattr("hold", "equalto", "frozen") | first %} A theme you have frozen leads its group.{% endif %} <a class="help" href="/guide#reach" title="How to read the counts under each theme">?</a></p>
+<p class="dim small">Ordered by how many materials carry a theme, then by claims; each bar is that theme's claims against the largest. Numbers count claims. Cells without a count show the assessment status.{% if themes | selectattr("hold", "equalto", "frozen") | first %} A theme you have frozen leads its group.{% endif %} <a class="help" href="/guide#reach" title="How to read the counts under each theme">?</a></p>
 {% if materials | length == 1 %}<p class="dim small">With one material, a theme cannot yet run across materials.</p>{% endif %}
-{# The second group is the candidates: a pattern found in one material is not yet a theme. It is
-   the same set the reach rule used to pick out, except that a project theme left in one material
-   by a removal stays a theme, with its reach, in the first group. #}
-{% for group, rows in [("Across materials", themes | rejectattr("hold", "equalto", "candidate") | list), (single_group, themes | selectattr("hold", "equalto", "candidate") | list)] %}
+{# The second group is the candidates: a pattern found in one material is not yet a project theme.
+   It is the same set the reach rule used to pick out, except that a project theme left in one
+   material by a removal stays a theme, with its reach, in the first group. #}
+{% for group, rows in [("Project themes", themes | rejectattr("hold", "equalto", "candidate") | list), (single_group, themes | selectattr("hold", "equalto", "candidate") | list)] %}
 {% if rows %}
 {# Nine themes each resting on one material took most of the page and told the reader least.
    Folded they are one line, still open to anyone who wants them, and still in the page's text. #}
 {% set fold = rows[0].hold == 'candidate' and rows | length > 3 %}
 <details class="theme-fold{% if fold %} folds{% endif %}"{% if not fold %} open{% endif %}>
-<summary><h3 class="theme-group">{{ group }} · {{ rows | length }} {{ 'theme' | plural(rows | length) }}</h3></summary>
+<summary><h3 class="theme-group">{{ group }} · {{ rows | length }} {{ 'theme' | plural(rows | length) }}</h3>{% if group == single_group %}<p class="dim small">Not yet included as a project theme.</p>{% endif %}</summary>
 {% if materials | length > 5 and loop.first %}<p class="dim small">{{ materials | length }} materials across — the table scrolls sideways; the theme column stays.</p>{% endif %}
 <div class="scroller">
 <table class="themes">
@@ -114,12 +114,13 @@
         <br><span>{{ t.gist | prose }}</span>
         <br><span class="dim">{{ t.derivation }}</span>
         {% if t.hold == 'candidate' and role in ('edit', 'owner') %}
-        {# The count is the question, never the answer: recurrence proposes, the researcher promotes. #}
+        {# The count is the question, never the answer: recurrence proposes, the researcher promotes
+           — except in the comparison above, which is disclosed there because it decides differently. #}
         {% if t.proposal %}<br><span class="dim">{{ t.proposal }}</span>{% endif %}
         <form method="post" action="/p/{{ project.id }}/t/{{ t.id }}/promote"><button class="btn btn-small btn-secondary">Promote</button></form>
         {% endif %}</th>
   {% for col in t.columns %}
-    <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim" title="{{ col.assessed_said }}">—</span>{% endif %}</td>
+    <td>{% if col.moments %}<a href="/p/{{ project.id }}/m/{{ col.material_id }}?theme={{ t.id }}">{{ col.moments | length }}</a>{% else %}<span class="dim">{{ col.abbr }}</span>{% endif %}</td>
   {% endfor %}
   </tr>
 {% endfor %}
@@ -129,6 +130,16 @@
 </details>
 {% endif %}
 {% endfor %}
+{% if assessed_legend %}
+{# A short word in a cell still needs saying in full somewhere, and a hover title answers nobody
+   using a keyboard or a touch screen (F3) — so it is said once here for whichever of the five
+   states this project actually has. #}
+<div class="status-legend">
+<ul>
+{% for s in assessed_legend %}<li><strong>{{ s.abbr }}</strong> — {{ s.label }}. {{ s.explain }}</li>{% endfor %}
+</ul>
+</div>
+{% endif %}
 {% else %}
 <p class="empty-state">Themes will gather here as material is read.</p>
 {% endif %}
@@ -139,13 +150,33 @@
    just read, and it is decided after reading them, not before. #}
 {% if consolidate and role in ('edit', 'owner') %}
 <form class="compare" method="post" action="/p/{{ project.id }}/compare">
-  <h3>Compare every theme across the corpus</h3>
-  <p class="dim small">Fold themes that define one pattern, go back for the materials nobody read for a theme, then settle which candidates are project themes. {{ consolidate.themes }} {{ 'theme' | plural(consolidate.themes) }} go into the comparison. Then go back for:</p>
-  <label class="choice"><input type="radio" name="scope" value="opening" checked> <span>The themes that could open — carried by half the {{ consolidate.unit }} already: {{ consolidate.opening }}</span></label>
-  <label class="choice"><input type="radio" name="scope" value="all" {% if consolidate.all_n == consolidate.opening_n %}disabled{% endif %}> <span>Every theme two {{ consolidate.unit }} carry: {{ consolidate.all }}</span></label>
-  <label class="small" for="compare-note">Anything you want said about the themes first (optional)</label>
+  <h3>Compare and update themes</h3>
+  <p class="dim small">Compare the project's theme definitions and merge overlapping themes where
+    appropriate. Additionally check selected themes in materials where they were previously
+    unassessed or skipped. This updates the analysis and summaries.</p>
+  <fieldset class="scope-choice">
+  <legend>Which themes should receive these additional checks?</legend>
+  <label class="choice"><input type="radio" name="scope" value="opening" checked>
+    <span>Themes with claims in at least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }}</span></label>
+  {% if not consolidate.same %}
+  <label class="choice"><input type="radio" name="scope" value="all">
+    <span>Themes with claims in at least 2 {{ consolidate.unit }}</span></label>
+  {% endif %}
+  </fieldset>
+  {% if consolidate.same %}
+  <p class="dim small">Both scopes currently select the same {{ consolidate.opening_n }} checks.</p>
+  {% else %}
+  <p class="dim small">Additional checks: {{ consolidate.opening_n }} theme/material pairs. Each
+    pair is one theme checked in one material. A preliminary review may skip a source check; the
+    result will say why.</p>
+  {% endif %}
+  <p class="dim small">{{ consolidate.calls_said }}</p>
+  <p class="dim small">Theme status: after the comparison, candidate themes with claims in at
+    least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }} become project
+    themes automatically.</p>
+  <label class="small" for="compare-note">Instructions for comparing themes (optional)</label>
   <input id="compare-note" type="text" name="note" placeholder="e.g. the three language themes are one">
-  <button class="btn btn-primary">Compare every theme</button>
+  <button class="btn btn-primary">Compare and update themes</button>
 </form>
 {% endif %}
 </div>
@@ -221,8 +252,8 @@
   <details class="info"><summary>What will this start?</summary>
     <p>One job for the whole upload. Each file is laid out, read, coded and written up; then the
       themes are grouped over everything, a line of claims is written per theme per material, and
-      the theme accounts and project summary are written last. It takes minutes and costs model
-      calls — a measured two-material run made 24. You can leave the page.
+      the theme accounts and project summary are written last. The number of model calls grows
+      with how much you add, and you can leave the page while it runs.
       <a href="/guide#what-happens">More in the guide</a>.</p>
   </details>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
@@ -250,7 +281,7 @@
       <label><span>Question or claim</span><textarea name="question" rows="3" placeholder="What should be checked?"></textarea></label>
       <fieldset class="scope-choice"><legend>What to search</legend>
         <label class="choice"><input type="radio" name="scope" value="all" checked> <span>Search everything</span></label>
-        <label class="choice"><input type="radio" name="scope" value="unused"> <span>Only passages no claim rests on yet</span></label>
+        <label class="choice"><input type="radio" name="scope" value="unused"> <span>Passages not cited by any claim</span></label>
       </fieldset>
       <details class="info"><summary>What will the answer mean?</summary>
         <p>Nothing is rewritten either way. Searching the uncited passages asks whether the reading

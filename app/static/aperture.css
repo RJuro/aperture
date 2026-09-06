@@ -542,3 +542,10 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
    inside the field rather than pushing it wider. */
 .compare .choice { font-size: 13px; }
 .compare .btn { margin-top: 4px; justify-self: start; }
+
+/* Assessment status */
+/* A no-count cell prints a short word instead of a dash, so what it means is legible without a
+   hover, a click, or a screen reader guessing at a title attribute on a plain span (F3). */
+.status-legend { margin-top: 10px; font-size: 13px; }
+.status-legend ul { margin: 4px 0 0; padding-left: 20px; }
+.status-legend li { margin: 3px 0; }

@@ -451,10 +451,10 @@ def propose_by_recurrence(conn: sqlite3.Connection, pid: str) -> list[str]:
     return fresh
 
 
-# What share of the cases a candidate has to be carried by before a consolidation opens it: half,
-# rounded up, and never fewer than two. Half is where reflexive TA puts the line between a pattern
-# the corpus repeats and one case's motif — a theme need not appear in every item and prevalence
-# is not importance, so this is deliberately not "in all of them".
+# What share of the counting units a candidate has to be carried by before a consolidation opens
+# it: half, rounded up, and never fewer than two. This is a product rule, not a methodological
+# one — no source in reflexive thematic analysis or any other method is claimed for this number.
+# It is chosen so that a candidate carried by most of the corpus is not left waiting on a click.
 OPEN_AT = 0.5
 
 
@@ -484,8 +484,10 @@ def settle_holds(conn: sqlite3.Connection, pid: str) -> dict[str, list[str]]:
 
 
 def opening_need(conn: sqlite3.Connection, pid: str) -> int:
-    """How many cases a candidate must be carried by to open under the count rule: half of them,
-    rounded up, never fewer than two. One number, used by the count itself and by the preview of
+    """How many counting units a candidate must be carried by to open under the count rule: half
+    of them, rounded up, never fewer than two — a product rule, not a methodological one, chosen
+    so a candidate carried by most of the corpus is not left waiting on a click; no source in any
+    method is claimed for the number. One number, used by the count itself and by the preview of
     what a consolidation would read, so the two cannot disagree."""
     total = len(set(case_of(conn, pid).values()))
     return max(2, math.ceil(total * OPEN_AT))

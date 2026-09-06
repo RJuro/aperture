@@ -126,11 +126,16 @@ def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, c
     they would be read as one kind of sentence."""
     store.save_summary(conn, "project", analysed["pid"], "interpretation",
                        "Taken together, this suggests a single wage logic.")
-    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/export.md"):
+    # project.html gives these a real heading (F6); export.md, which another agent owns, still
+    # uses its own literal text for the same two movements.
+    headings = {f"/p/{analysed['pid']}": ("Project summary", "Possible interpretation"),
+                f"/p/{analysed['pid']}/export.md": ("What the material shows",
+                                                    "What this may mean, so far")}
+    for url, (shows, means) in headings.items():
         text = client.get(url).text
         assert store.get_summary(conn, "project", analysed["pid"], "reading")["text"] in text
         assert "Taken together, this suggests a single wage logic." in text
-        assert "What the material shows" in text and "What this may mean, so far" in text
+        assert shows in text and means in text
 
 
 def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):
@@ -143,7 +148,7 @@ def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):
 
 def test_a_summary_that_is_behind_or_broken_says_so_under_itself(client, conn, analysed):
     pid = analysed["pid"]
-    assert "Written over all 2 materials" in client.get(f"/p/{pid}").text
+    assert "Based on the analysis of all 2 materials" in client.get(f"/p/{pid}").text
     # A material read again after the summary counts as read since, added or not.
     store.save_summary(conn, "material", analysed["grande"], "reading", "read once more")
     html = client.get(f"/p/{pid}").text

@@ -230,15 +230,15 @@ def test_the_mark_is_shown_where_the_claim_is_read(ready, conn, model, quote, cl
 
 def test_the_derivation_says_how_many_claims_were_set_aside(ready, conn, model, quote):
     run_doc(model, conn, ready, quote)
-    assert "set aside" not in context.derivation(conn, ready["mid"])
+    assert "excluded" not in context.derivation(conn, ready["mid"])
 
     doomed = claims(conn, ready)[0]
     model.queue({"verdicts": [{"id": doomed["id"], "verdict": "not", "why": "not said here"}]},
                 {"verdicts": []})
     verify.run(conn, ready["mid"])
     said = context.derivation(conn, ready["mid"])
-    assert said.endswith(", 1 set aside as not carried by their passages")
-    assert "claims rest on" in said
+    assert said.endswith(", 1 claim excluded because its cited passage did not support it")
+    assert "Claims cite" in said
     assert not [w for w in context._BANNED if w in said.lower()]
 
 

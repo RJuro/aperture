@@ -289,7 +289,8 @@ def test_a_reach_says_how_many_of_its_lines_are_sparse(conn, project, grande, ro
 
     _line(conn, project, rodwin, tid, quote, synth.MIN_MOMENTS - 1)
     said = context.theme_page(conn, project, tid)["derivation"]
-    assert said.startswith("2 of 2 materials (1 sparse) ·"), said
+    assert said.startswith(f"2 of 2 materials (1 with fewer than {synth.MIN_MOMENTS} claims) ·"), \
+        said
 
 
 # ---- open questions, cut at a question ----------------------------------------------------------
