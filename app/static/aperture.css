@@ -581,6 +581,23 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .compare .choice { font-size: 13px; }
 .compare .btn { margin-top: 4px; justify-self: start; }
 
+/* Possible duplicates */
+/* Two definitions read against each other, which is the only way the question can be answered —
+   side by side where there is room for two columns, stacked where there is not. It sits above the
+   compare form and outside it: nothing here submits anything. */
+.duplicates { max-width: 78ch; margin-top: 30px; }
+.duplicates > h3 { margin: 0 0 6px; }
+.pair { display: grid; gap: 16px; margin-top: 6px; }
+.pair p { margin: 4px 0 0; }
+@media (min-width: 700px) { .pair { grid-template-columns: 1fr 1fr; gap: 28px; } }
+
+/* Overarching themes */
+/* The tier reads as one argument each, so an entry keeps a measure and a rule down its left to
+   separate it from the next; it is prose under the summary, not a card. */
+.overarching { max-width: 72ch; margin-top: 18px; padding-left: 16px; border-left: 2px solid var(--border); }
+.overarching h4 { margin: 0; }
+.overarching > p { margin: 6px 0 0; }
+
 /* Assessment status */
 /* A no-count cell prints a short word instead of a dash, so what it means is legible without a
    hover, a click, or a screen reader guessing at a title attribute on a plain span (F3). */
