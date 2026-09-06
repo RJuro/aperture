@@ -1,0 +1,223 @@
+ROW 111 [Unique coding] covered=True
+we were all ready to go and my sister, oldest sister, came down with scarlet fever.  So it was just touch and go, practically out of the hospital she went, we went to the train.
+{'C1_Nirosha': None, 'C2_Arnisha': None, 'C3_Karolina': 'Health barriers in immigration process'}
+
+ROW 112 [Divergence] covered=True
+My brother was left there… the fact that he was almost military age, they would not let him go for another six months.
+{'C1_Nirosha': 'Family separation/ Migration restrictions', 'C2_Arnisha': 'family left behind', 'C3_Karolina': 'Separation from family; Losing family after migration'}
+
+ROW 113 [Divergence] covered=True
+All the terrible wrenching goodbyes between my brother and mother and father was heart breaking
+{'C1_Nirosha': 'Family separation', 'C2_Arnisha': None, 'C3_Karolina': 'Separation from family; Feeling heartbroken'}
+
+ROW 114 [Divergence] covered=True
+Mother and father arranged for a cabin which was at least private, you know.  And we could eat there, and stay there.  I guess it took quite a lot of money because that was really meant to be for living expenses here.  But that's, that was forgotten, because it was terrible, really terrible.
+{'C1_Nirosha': 'Difficulties during migration/ Financial sarifice', 'C2_Arnisha': 'drianed resources', 'C3_Karolina': 'Difficult travel conditions'}
+
+ROW 115 [Divergence] covered=False
+Mother and my sister Sarah and I were the worst… Mother was very, very bad. In fact, the ship's doctor came down a few times
+{'C1_Nirosha': 'Seasickness', 'C2_Arnisha': None, 'C3_Karolina': 'Traumatic travel experience; Lasting impact of migration/Trauma'}
+
+ROW 116 [Divergence] covered=False
+And there was no toilet.  Or, if there was, God knows where it was.  And one of my sisters got just terribly sick.  I think her stomach was affected the rest of her life because she, you know, we were all brought up in, not snobbish, but more genteel, intellectual atmosphere
+{'C1_Nirosha': None, 'C2_Arnisha': 'lasting harm', 'C3_Karolina': 'Difficult travel conditions; Lasting health impact'}
+
+ROW 117 [Divergence] covered=True
+they let us through, first exam, I think it was the eyes, and we all passed.  And then they examined our heads and that passed.
+{'C1_Nirosha': 'Health checks at arrival/ Immigration procedures', 'C2_Arnisha': None, 'C3_Karolina': 'Relief and happiness on arrival'}
+
+ROW 118 [Divergence] covered=True
+My father knew some German.  He knew some German because 		he, at one time he went to Berlin to get, to have his appendectomy.  Even at that time they didn't trust the Russian doctors too much.  So he learned some there
+{'C1_Nirosha': None, 'C2_Arnisha': 'language advantage', 'C3_Karolina': 'Having resources eased migration'}
+
+ROW 119 [Divergence] covered=True
+There were some that were sent back. It was terrible… Children… separated from their parents… it was an awful experience to live through to see them crying
+{'C1_Nirosha': 'Family separation/ Fear/ Uncertainity', 'C2_Arnisha': "winessing others' sufferings", 'C3_Karolina': 'Traumatic immigration experience'}
+
+ROW 120 [Divergence] covered=True
+We'd have to learn a new language and there would be more opportunities to go to school and be accepted without any reservation… it was difficult to get into university. A Jew is a Jew.”
+{'C1_Nirosha': 'Educational opportunities/ Migration motivations', 'C2_Arnisha': 'america as opportunity', 'C3_Karolina': 'Anticipating language challenges; Expecting better opportunities'}
+
+ROW 121 [Unique coding] covered=True
+But, um, then my cousin met and we spent many hours with him and I don't know where we spent the night, but I think it was on Ellis Island.  I think that we went to a hotel.  And the next day we took a train and they gave us boxes, lunch boxes.  We didn't know what it was.  I saw a man, I was, he took a banana out and he threw the banana away and ate the peeling.  He thought, you know, there were some that never saw an orange or a banana.
+{'C1_Nirosha': None, 'C2_Arnisha': None, 'C3_Karolina': 'Encountering unfamiliar things'}
+
+ROW 122 [Divergence] covered=True
+Everything… New York… people seemed a little quicker, more sure of themselves somehow… they didn't have to look to see if anybody was following
+{'C1_Nirosha': 'New experiences/ Perceived freedom', 'C2_Arnisha': None, 'C3_Karolina': 'Discovering new experiences; Feeling safer than at home'}
+
+ROW 123 [Divergence] covered=True
+All of a sudden we see this great big fellow hugging my mother and… crying and kissing each other… our first introduction to an uncle in America.
+{'C1_Nirosha': 'Family reunion/ Family connections in host country', 'C2_Arnisha': 'unexpected family reunion', 'C3_Karolina': 'Reuniting with family'}
+
+ROW 124 [Divergence] covered=True
+We came to my aunt's house, and there was a lot of crying, hugging and kissing and everything was so new.”
+{'C1_Nirosha': 'Family support after arrival', 'C2_Arnisha': 'family reunion', 'C3_Karolina': 'Happiness reuniting with family; Starting a new life'}
+
+ROW 125 [Divergence] covered=True
+Mary Jane shoes.  And that was my ambition to get.  And mother said, "When you come to America, you'll get them, too."  So white socks and that.  And that was one of my ambitions to have.
+{'C1_Nirosha': None, 'C2_Arnisha': 'childhood dream of America', 'C3_Karolina': 'Expectations about life in America'}
+
+ROW 126 [Unique coding] covered=True
+And she took with her once and she came to say goodbye to her, because she was leaving for America.  And I, the lady was very generous and kind of sad to see mother go.  She was glad for her, but she knew that circumstances were such.  And I remember she gave me something.  I just don't remember what, to remember the auntie that she met.
+{'C1_Nirosha': None, 'C2_Arnisha': None, 'C3_Karolina': 'Leaving close people behind'}
+
+ROW 127 [Divergence] covered=True
+Father started looking for work… [his partner] kept the money. And here we needed the money so bad… after a while, the money just runs out… with seven children. And it really got bad.
+{'C1_Nirosha': 'Economic challenges', 'C2_Arnisha': 'betrayal from partner', 'C3_Karolina': 'Being taken advantage of at work; Financial struggles after migration'}
+
+ROW 128 [Divergence] covered=True
+A lot of hardship… something that you just don't forget no matter how easy life becomes later on. It just remains with you.
+{'C1_Nirosha': 'Impact of settlement hardship', 'C2_Arnisha': None, 'C3_Karolina': 'Financial hardship; Lasting impact of hardship; Hardship was worth it'}
+
+ROW 129 [Unique coding] covered=True
+Uh, it was mixed.  It was mixed.  The Jewish community was further down south.  But they were the ones that later moved in the suburbs and all that, because they made money there.  But it was a nice community.
+{'C1_Nirosha': None, 'C2_Arnisha': None, 'C3_Karolina': 'Friendships across communities'}
+
+ROW 130 [Divergence] covered=True
+And with the Jewish girls too, but they were more settled here.  And, you know, they were Americanized.  And unlike the Gentile girls, they felt a little superior.
+{'C1_Nirosha': None, 'C2_Arnisha': 'acculturation hierarchy', 'C3_Karolina': 'Feeling different from Americanized immigrants'}
+
+ROW 131 [Divergence] covered=True
+Their customs were different, their values were different… I had to learn all that… had to get used to a different culture
+{'C1_Nirosha': 'Cultural adaptation', 'C2_Arnisha': None, 'C3_Karolina': 'Unable to take part in social activities; Fitting in with American peers; Adjusting to a different culture'}
+
+ROW 132 [Divergence] covered=True
+I never got them [Mary Janes shoes], because times were hard and I just had shoes that took me to school and back, did a lot of walking, and nor much partying.  It was , there were many things that I missed as a girl, as a child.  Something that, you know, we, the children here take for granted that it's got to be
+{'C1_Nirosha': 'Loss of childhood dreams', 'C2_Arnisha': 'dreams unfulfilled', 'C3_Karolina': 'Hard times after migration'}
+
+ROW 133 [Divergence] covered=True
+It just, just by, um, perseverance, hard work, and patience, we had to go through that.  I wish it was a bit, it would have been easier for my father.
+{'C1_Nirosha': 'Perseverance during settlement', 'C2_Arnisha': None, 'C3_Karolina': 'Luck of support after migration; Persevering through hardship'}
+
+ROW 134 [Divergence] covered=True
+We weren't rich, but we were in comfortable circumstances… But the conditions in Russia were… not very pleasant, not a climate where you could feel free… And being Jewish was one of the worst things that could happen to you.”
+{'C1_Nirosha': 'Insecurity due to Jewish identity', 'C2_Arnisha': 'Identity as a risk', 'C3_Karolina': None}
+
+ROW 135 [Divergence] covered=True
+And it was very pleasant.  It was nothing doing, but there was always a feeling of insecurity.
+{'C1_Nirosha': 'Fear prior to migration', 'C2_Arnisha': 'constant fear or unknows', 'C3_Karolina': None}
+
+ROW 136 [Divergence] covered=True
+And father and mother started talking about going to America.
+{'C1_Nirosha': 'Migration aspirations', 'C2_Arnisha': 'leaving as safety', 'C3_Karolina': None}
+
+ROW 137 [Unique coding] covered=True
+There were families that my father and mother helped to leave to go to America… father arranged papers for them…”
+{'C1_Nirosha': 'Community support', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 138 [Divergence] covered=True
+Every time we were ready to go, one of the children would come down with a serious illness… the passport would expire. And that kept on for years.”
+{'C1_Nirosha': 'Barriers delaying migration', 'C2_Arnisha': 'repeated failed attempts', 'C3_Karolina': None}
+
+ROW 139 [Unique coding] covered=True
+But father had a status there, so we were allowed to live there and without any police or anybody coming in and checking up on us
+{'C1_Nirosha': None, 'C2_Arnisha': 'wealth privilege', 'C3_Karolina': None}
+
+ROW 140 [Divergence] covered=True
+So we, when we got on it and closer to Ellis Island, we saw the Statue of Liberty.  And we just hugged each and cried.
+{'C1_Nirosha': 'Hope for the future', 'C2_Arnisha': 'relief at arrival', 'C3_Karolina': None}
+
+ROW 141 [Unique coding] covered=True
+By that time the war started, and he never came. He was killed during that time.
+{'C1_Nirosha': 'Family loss/ war', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 142 [Unique coding] covered=True
+But in the meantime there was a pogrom and I remember father helping a woman, he brought her into the house.  She was bleeding.  Her hair was loose, came out, you know.  And they placed her on the couch and administered first aid.  And then they took her to the hospital.  So father and mother took care of her.
+{'C1_Nirosha': None, 'C2_Arnisha': 'helping others while being at risk', 'C3_Karolina': None}
+
+ROW 143 [Unique coding] covered=True
+And when they started going down the street and breaking into the home of Jews, she took an icon from her bedroom and she stood in front of our house holding the icon saying I am, you know, crossing herself and saying, "This is my house."  So she saved us, really, anyway, from getting hurt, or destruction, whatever
+{'C1_Nirosha': None, 'C2_Arnisha': 'unexpcted protection', 'C3_Karolina': None}
+
+ROW 144 [Divergence] covered=False
+I couldn't look at [Christmas ornaments] for years afterward, I would get nauseated just remembering the rocking.
+{'C1_Nirosha': 'Impact of difficult memories', 'C2_Arnisha': 'trauma', 'C3_Karolina': None}
+
+ROW 145 [Unique coding] covered=False
+There were no niceties like that on the boat. It was awful.
+{'C1_Nirosha': 'Difficult migration conditions', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 146 [Unique coding] covered=True
+We were holding on to each other. Mother always said, ‘Hold on to.’ We were together, and they kept us together
+{'C1_Nirosha': 'Family solidarity', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 147 [Unique coding] covered=True
+It looked like cattles were separated.
+{'C1_Nirosha': 'Dehumanising experience', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 148 [Unique coding] covered=True
+Before that, all the, one of the doctors said, "Hooray for Milovsky family."  So when we came down, the others said it too.
+{'C1_Nirosha': None, 'C2_Arnisha': 'intact family', 'C3_Karolina': None}
+
+ROW 149 [Divergence] covered=True
+Just the idea that it was America made it right away special, different.
+{'C1_Nirosha': 'Idealisation of the host country/ arrival expectations', 'C2_Arnisha': 'America feels safe', 'C3_Karolina': None}
+
+ROW 150 [Unique coding] covered=False
+We waved to them and they waved to us, and it was a thrill to see children
+{'C1_Nirosha': 'Early social encounters/ New experiences', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 151 [Unique coding] covered=False
+Then father rented a place… [we] were registered at Fourth Street School… And… father started looking for work.”
+{'C1_Nirosha': 'Early settlement/ Rebuilding life', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 152 [Divergence] covered=False
+There was no question of differences. I didn't know that she was any different, and she didn't know that I had a different religion. And we were very close friends
+{'C1_Nirosha': 'New experiences/ New friendships/ religious differences', 'C2_Arnisha': 'childhood friendship across difference', 'C3_Karolina': None}
+
+ROW 153 [Unique coding] covered=True
+Even the children could feel the tension… But otherwise we lived… in a nice, big house… we had playmates, we had friends
+{'C1_Nirosha': 'Comparison before and after migration', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 154 [Divergence] covered=True
+Children pick up English very quickly and I did that… I know I never caught up to mathematics, because you miss the beginning…
+{'C1_Nirosha': 'Language adaptation/ Educational challenges', 'C2_Arnisha': 'missed foundation', 'C3_Karolina': None}
+
+ROW 155 [Unique coding] covered=True
+My sister who's an artist… had to go to work… she did commercial art which she didn't like doing but she had to
+{'C1_Nirosha': 'Compromises for living', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 156 [Divergence] covered=True
+I took up stenographic work because father became ill and he died soon after. So only mother and I were able to work
+{'C1_Nirosha': 'Compromises for living/ Family responsibility', 'C2_Arnisha': 'female headed survival', 'C3_Karolina': None}
+
+ROW 157 [Divergence] covered=True
+There were so many advantages being in America that you just felt that it was worth it, it's going to be better later on
+{'C1_Nirosha': 'Hope for the future', 'C2_Arnisha': 'hardship worth it', 'C3_Karolina': None}
+
+ROW 158 [Divergence] covered=True
+I started spending more time volunteering… for the past thirty-three years… with the Russian newcomers
+{'C1_Nirosha': 'Giving back to migrant community', 'C2_Arnisha': 'Volunteering as healing', 'C3_Karolina': None}
+
+ROW 159 [Unique coding] covered=False
+It did become better and much better for the children, our children.
+{'C1_Nirosha': 'Better conditions for future generations', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 160 [Unique coding] covered=False
+That's what makes us feel that all that hardship that we went through was worth it
+{'C1_Nirosha': 'Sensemaking of migration hardships', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 161 [Unique coding] covered=True
+From school I had girls that were not Jewish and we were very good friends, going back and forth.
+{'C1_Nirosha': 'Social integration/ long term belonging', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 162 [Unique coding] covered=True
+We'd speak English between ourselves. In no time, there was no Russian spoken except to mother
+{'C1_Nirosha': 'Language adaptation/ loss of home language use', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 163 [Unique coding] covered=True
+She was in the house and when we'd come… she'd learn from us… But she learned… she listened to the radio… And that way she learned
+{'C1_Nirosha': 'Family support to learn language', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 164 [Unique coding] covered=True
+As a translator.  See, I never forgot my Russian, so I was able to do work in that department.  And also with the outreach, with the elderly.  And sometimes the American Red Cross call me to do some translating for them.
+{'C1_Nirosha': 'Bilingual ability as a ressource', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 165 [Unique coding] covered=True
+But our children got all those things, and that's all right.  We learned from experience, and I think that stays with us.  We learned a lot.
+{'C1_Nirosha': 'Better conditions for future generations', 'C2_Arnisha': None, 'C3_Karolina': None}
+
+ROW 166 [Unique coding] covered=True
+And I have no regrets.  It's, it's been a wonderful life.
+{'C1_Nirosha': 'Positive evaluation of migration outcome', 'C2_Arnisha': None, 'C3_Karolina': None}

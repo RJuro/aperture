@@ -161,8 +161,15 @@ def test_only_a_themes_pass_that_moved_the_themes_dates_the_material_before_it(
                                  {"kind": "themes", "material_id": rodwin}])
     assert store.out_of_date(conn, project) == []
 
-    monkeypatch.setattr(engine, "run", lambda c, p, **k: store.save_theme(
-        c, p, tid=tid, name="Work and trade", gist="how a living is made", code_ids=[]))
+    def moved(c, p, **k):
+        # Shaped like the real `themes.run`, which is annotated `-> dict` and whose `dropped` the
+        # chain writes on the run row. A stub returning `save_theme`'s id said the pass had set
+        # nothing aside by handing back a string, and the step that reads it fell over.
+        saved = store.save_theme(c, p, tid=tid, name="Work and trade",
+                                 gist="how a living is made", code_ids=[])
+        return {"themes": [saved], "merged": [], "dropped": []}
+
+    monkeypatch.setattr(engine, "run", moved)
     jobs.run_now(conn, project, [{"kind": "themes", "material_id": rodwin}])
     assert [m["id"] for m in store.out_of_date(conn, project)] == [grande]
 

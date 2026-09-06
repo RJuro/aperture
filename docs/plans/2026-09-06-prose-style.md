@@ -54,7 +54,9 @@ The audit's own `_BANNED` finding applies here too: a word list produces substit
 
 ## 2. The style block
 
-One fragment, `app/prompts/_style.md`, included verbatim into every prompt that produces prose a researcher reads. Under 180 words, so it does not compete with the evidence rules.
+One fragment, `app/prompts/_style.md`, included verbatim into every prompt that produces prose a researcher reads.
+
+**As built it is 331 words, not the 180 this plan first budgeted** (`_style_short.md` is 92). The seven rules each do distinct work, and the two worked pairs are the part a model imitates most faithfully, so trimming to the budget meant dropping a rule. The plan's own risk row already fixes what to do if the block crowds the evidence rules — cut 5, then 7, never 1–4 — and the blind read is what decides that, so the rules stay whole until it does. At roughly 430 tokens against a 30k-token prompt the cost is not the issue; attention is, and that is what the eval measures.
 
 ```
 HOW TO WRITE. Every sentence outside a quotation follows these; each is checked.
