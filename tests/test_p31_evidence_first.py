@@ -382,8 +382,7 @@ def test_the_theme_page_prints_the_searched_absence_as_its_own_kind_of_nothing(u
     assert len(under) == 2, "the heading a searched absence is named under"
     assert store.material(conn, unread["grande"])["title"] in under[1]
     assert "Not looked for here" not in section, "it is no longer that kind of nothing"
-    assert context.ASSESSED_SAID["residual"] == \
-        "Searched in the passages the coding did not mark — nothing found"
+    assert context.ASSESSED_SAID["residual"]["label"] == "No match in uncoded passages"
 
 
 def test_the_account_is_told_that_this_absence_was_searched(unread, conn):

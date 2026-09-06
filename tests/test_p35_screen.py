@@ -272,7 +272,7 @@ def test_the_fifth_state_is_said_on_the_page_the_record_and_the_account(corpus, 
     store.save_follow(conn, mid, corpus["wide"], "screened", note="the code is about a wedding")
 
     assert context._assessed(store.followed(conn, pid), corpus["wide"], mid) == "screened"
-    assert context.ASSESSED_SAID["screened"] == SAID
+    assert context.ASSESSED_SAID["screened"]["label"] == "Source check skipped"
 
     page = context.theme_page(conn, pid, corpus["wide"])
     said = [m for m in page["absent"] if m["material_id"] == mid][0]
@@ -311,9 +311,9 @@ def test_the_page_and_the_record_print_it_where_an_absence_would_go(corpus, conn
 # ---- what the preview promises -------------------------------------------------------------------
 
 def test_the_preview_prints_the_range_the_plan_would_actually_build(corpus, conn):
-    """Law 4: the number is the rows it is over. The floor is the comparison plus a look and a
-    check for each material with cells — certain — and the ceiling adds every cell, which is what
-    it costs if no look passes anything over."""
+    """Law 4: the number is the rows it is over. The floor is the comparison, a look and a check
+    for each material with cells, and the project summary — certain — and the ceiling adds every
+    cell, a summary of each touched material, and every live theme's account (F5)."""
     pid = corpus["pid"]
     cells = store.backfill_cells(conn, pid, "all")
     plan = rerun.consolidate_plan(conn, pid, scope="all")
@@ -321,9 +321,12 @@ def test_the_preview_prints_the_range_the_plan_would_actually_build(corpus, conn
     assert (floor, len(cells)) == (5, 4), "one comparison, two looks, two checks, four cells"
 
     said = context.project_page(conn, pid)["consolidate"]
-    assert said["all"] == ("4 cells to look at (about 5 model calls, up to 9 if every look "
-                           "finds something)")
-    assert said["all_n"] == len(cells)
+    # Both candidates are carried by exactly two of the four materials — the wider scope's own
+    # threshold — so the default scope reads the same cells the wider one would.
+    assert said["opening_n"] == said["all_n"] == len(cells) == 4 and said["same"]
+    # 2 (comparison + project summary) + 2 (a look and a check for each of the two materials) = 6;
+    # + the 4 cells + 2 material summaries (iterative, one per touched material) + 0 live themes.
+    assert said["calls_said"] == "Estimated model calls for the whole update: 6–12."
 
 
 def test_with_the_look_off_the_preview_offers_no_range_it_cannot_deliver(corpus, conn, monkeypatch):
@@ -332,7 +335,9 @@ def test_with_the_look_off_the_preview_offers_no_range_it_cannot_deliver(corpus,
     plan = rerun.consolidate_plan(conn, corpus["pid"], scope="all")
     said = context.project_page(conn, corpus["pid"])["consolidate"]
 
-    assert said["all"] == "4 cells to look at (about 7 model calls)"
+    # 2 + 2 materials read + the 4 cells (all certain, with no look to defer any of them) + the 2
+    # material summaries + 0 live themes = 10, and nothing here is left uncertain.
+    assert said["calls_said"] == "Estimated model calls for the whole update: 10."
     assert len([r for r in plan if r["kind"] in ("consolidate", "doc", "verify")]) == 7
 
 

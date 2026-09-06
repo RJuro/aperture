@@ -17,15 +17,20 @@ from tests.test_p5_pages import strip_material
 
 @pytest.fixture
 def study(conn):                                                    # noqa: F811
-    """Two materials carrying one candidate and a third never read for it, which is what makes
-    `consolidate` a dict rather than None."""
+    """Five materials; one candidate carried by two of them, and three never read for it.
+
+    Two of five is below the opening threshold (three, half of five rounded up) but still meets
+    the wider scope's fixed two — so the two scopes select different pairs, and both radios in
+    the control actually mean something different to press.
+    """
     ann = store.create_user(conn, "ann", "battery staple")
     pid = store.create_project(conn, "Ann's study", owner_id=ann, method="iterative")
     wide = store.save_theme(conn, pid, tid=None, name="Wide", gist="g", code_ids=[])
     store.set_hold(conn, wide, "candidate")
     _line(conn, _material(conn, pid, 0), wide)
     _line(conn, _material(conn, pid, 1), wide)
-    _material(conn, pid, 2)                     # never read for this theme: one cell to fill
+    for n in (2, 3, 4):
+        _material(conn, pid, n)                 # never read for this theme: cells to fill
     return {"pid": pid, "ann": ann}
 
 
@@ -38,7 +43,8 @@ def _field(html: str) -> str:
 
 def test_an_editor_meets_it_open_under_the_table_with_both_prices(client, conn, study):  # noqa: F811
     """Visible markup, not a `<details>`: the point of the change is that it is read without
-    being opened. Both scopes are there with what each would cost."""
+    being opened. Both scopes are there, each in its own words, with the additional checks and
+    the whole operation's model-call estimate printed before it is pressed (F1, F5)."""
     _login(client, "ann", "battery staple")
 
     html = client.get(f"/p/{study['pid']}").text
@@ -47,8 +53,13 @@ def test_an_editor_meets_it_open_under_the_table_with_both_prices(client, conn, 
 
     assert "<details" not in field, "the control is open, not folded"
     assert f'action="/p/{study["pid"]}/compare"' in field and 'method="post"' in field
-    assert 'value="opening"' in field and said["opening"] in field
-    assert 'value="all"' in field and said["all"] in field
+    assert not said["same"], "the fixture is built so the two scopes select different pairs"
+    assert 'value="opening"' in field
+    assert f"Themes with claims in at least {said['need']} of {said['total']} materials" in field
+    assert 'value="all"' in field
+    assert "Themes with claims in at least 2 materials" in field
+    assert f"Additional checks: {said['opening_n']} theme/material pairs." in field
+    assert said["calls_said"] in field
     assert 'name="note"' in field
     assert "btn-primary" in field, "the button carries primary weight"
     # Under the table, not in the section head: the themes it would change are read first.
@@ -82,11 +93,12 @@ def test_with_nothing_to_compare_the_page_says_nothing(client, conn):        # n
 
 def test_the_field_speaks_the_researchers_language(client, conn, study):      # noqa: F811
     """Our design words would be jargon here, and a class name is on the page like any other
-    text. The sentence says what the action decides, in the words the guide uses."""
+    text. The paragraph says what the action does, in plain, complete sentences (F1)."""
     _login(client, "ann", "battery staple")
 
     field = _field(client.get(f"/p/{study['pid']}").text)
-    assert "Fold themes that define one pattern" in field
+    assert ("Compare the project's theme definitions and merge overlapping themes where "
+            "appropriate.") in " ".join(field.split())
     said = strip_material(field).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} in the compare field"

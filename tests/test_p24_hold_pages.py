@@ -158,7 +158,7 @@ def test_the_overview_leads_with_the_frozen_and_ends_with_the_candidates(client,
     assert sect.index("Leaving and arriving") < sect.index("Work and trade"), \
         "frozen first, though the open theme carries more claims"
     assert "Frozen</span>" in sect
-    across, single = sect.index("Across materials"), sect.index("In one material so far")
+    across, single = sect.index("Project themes"), sect.index("Candidate themes")
     assert across < sect.index("Leaving and arriving") < single
     assert single < sect.index("Only in Grande") and single < sect.index("Only in Rodwin")
     assert f'action="/p/{pid}/t/{holds["here"]}/promote"' in sect

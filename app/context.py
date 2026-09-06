@@ -6,10 +6,14 @@ Two rules hold this file together.
 the old engine an explicit key list on the way to a template silently dropped a validated quote
 and the suite stayed green, so there are no key lists here: if a column exists, the page has it.
 
-**Our vocabulary stays in the code.** `_BANNED` is the design language — it names things
-precisely for us and would be jargon on the page. Variables, keys and comments may say *moment*,
-*thread*, *frame*; the rendered page says *material*, *what this is*, *what the reading found*,
-*Check this against the material*, *Reading record*.
+**Our vocabulary stays in the code.** `_BANNED` is the design language — words that are genuinely
+ours for a thing the page already names some other way, never a page's own ordinary English. It
+is checked against `APP_AUTHORED` strings and against a rendered page's *visible text only* — an
+attribute value, a URL or an element name is not a sentence a researcher reads, and forcing one of
+those to dodge a banned word (a form's `action` once had to say `/compare` rather than
+`/consolidate` for exactly this reason) fixed nothing a researcher could see. Variables, keys and
+comments may say *moment*, *thread*, *frame*; the rendered page says *material*, *what this is*,
+*what the reading found*, *Check this against the material*, *Reading record*.
 """
 from __future__ import annotations
 
@@ -22,13 +26,16 @@ from . import rerun, store, titles
 
 APP_NAME = "Aperture"
 
-# Words the app must never say in its own voice. Checked against APP_AUTHORED strings and against
-# rendered pages with quoted material, marks and model prose stripped out.
+# Words the app must never say in its own voice, in visible text. Narrowed from a longer list that
+# reached into attribute values and element names, and that banned some perfectly ordinary English
+# ("door", "frame", "gate", "slot", "weakest", "territory", "register lane", "exposure", "residue",
+# "ledger", "roster", "steer", "delta", "friction", "panel", "consolidate") a page may legitimately
+# need — while saying nothing at all about the confusing metaphors an actual review found ("carry",
+# "fold", "hold", "open" for a theme's status). What is left is our own private word for something
+# the page already names another way, so a researcher who reads it here would be reading jargon.
 _BANNED = [
-    "panel", "standard coding", "friction", "merge proposal", "consolidate", "weakest", "door",
-    "anchor", "exposure", "ledger", "residue", "territory", "territories", "register lane",
-    "roster", "slot", "steer", "gate", "check-back", "checkback", "delta", "fact panel",
-    "absence check", "defensible account", "frame", "moment", "thread",
+    "anchor", "standard coding", "absence check", "defensible account", "fact panel",
+    "check-back", "checkback", "merge proposal", "moment", "thread",
 ]
 
 # Context keys whose strings this app wrote, as opposed to the researcher's, the material's or the
@@ -256,10 +263,15 @@ def blocks(conn, mid: str, display: str, quotes_by_sid: dict[str, list[str]]) ->
 
 def derivation(conn, mid: str) -> str:
     """Law 4: a number is printed as the derivation it came from, never as a bare figure."""
-    said = (f"claims rest on {len(store.cited_sids(conn, mid))} "
+    said = (f"Claims cite {len(store.cited_sids(conn, mid))} "
             f"of {len(store.sentences(conn, mid))} passages")
     aside = store.set_aside_by_check(conn, mid)
-    return said + (f", {aside} set aside as not carried by their passages" if aside else "")
+    if not aside:
+        return said
+    one = aside == 1
+    return (said + f", {_n(aside, 'claim')} excluded because "
+            f"{'its' if one else 'their'} cited {'passage' if one else 'passages'} "
+            f"did not support {'it' if one else 'them'}")
 
 
 def _n(n: int, noun: str) -> str:
@@ -310,19 +322,24 @@ def _reach(carrying: list[str], mids: list[str], of: dict | None,
     from .engine import synth
 
     thin = sum(1 for m in carrying if (claims or {}).get(m, synth.MIN_MOMENTS) < synth.MIN_MOMENTS)
+    # "Sparse" named the count without saying against what; a reader had no way to tell four claims
+    # short of a floor they had never been told either. The floor itself says it.
+    note = f"{thin} with fewer than {synth.MIN_MOMENTS} claims"
     if of is None:
         said = f"{len(carrying)} of {len(mids)} materials"
-        return len(carrying), len(mids), f"{said} ({thin} sparse)" if thin else said
+        return len(carrying), len(mids), f"{said} ({note})" if thin else said
     n, total = len({of[m] for m in carrying}), len({of[m] for m in mids})
-    inside = _n(len(carrying), "material") + (f", {thin} sparse" if thin else "")
+    inside = _n(len(carrying), "material") + (f", {note}" if thin else "")
     return n, total, f"{n} of {total} cases ({inside})"
 
 
-def _single_group(of: dict | None) -> str:
-    """The heading over the themes nothing has yet repeated. It follows what reach is counted in,
-    because a theme two materials of one case carry is now in this group and calling that group
-    "in one material so far" would be false about the rows underneath it."""
-    return "In one case so far" if of else "In one material so far"
+def _single_group() -> str:
+    """The heading over the themes not yet a project theme. "In one material so far" and "in one
+    case so far" were both false about some of the rows under them — a candidate can hold claims
+    in several materials, or several cases, while it is still awaiting promotion — so the heading
+    says what candidate status actually is and each row's own derivation line says how far it
+    reaches (F4, `_reach`)."""
+    return "Candidate themes"
 
 
 def _proposal(t: dict, carried: int, of: dict | None) -> str:
@@ -475,15 +492,30 @@ def _shell(conn, pid: str) -> dict:
             "nav_theme_count": len(store.live_themes(conn, pid))}
 
 
-# What an empty cell means, in the five states `_assessed` tells apart. The page and the record
-# name them in their own headings; this is for a cell that has room for nothing but a dash.
+# What an empty cell means, in the five states `_assessed` tells apart. A hover title on a
+# non-interactive span answers nobody using a keyboard or a touch screen, so the matrix instead
+# prints `abbr` in the cell itself — plain visible text, needing no interaction to be read — and
+# the page's legend spells out `label`/`explain` for whichever of these actually occur in it. The
+# record and the theme page name these states in their own headings and keep their own words.
 ASSESSED_SAID = {
-    "thin": "Looked for and found too thin",
-    "screened": "Looked at from this material's own account and its coding, and not pursued",
-    "skipped": "Not looked for here — none of this theme's codes marked this material",
-    "residual": "Searched in the passages the coding did not mark — nothing found",
-    None: "Not assessed yet — this material was not read for this theme",
+    "thin": {"abbr": "thin", "label": "No retained claims",
+             "explain": "The theme was assessed, but no claims were retained; review exclusions "
+                        "before reading this as absence."},
+    "screened": {"abbr": "screened", "label": "Source check skipped",
+                 "explain": "A preliminary review of the summary and codes did not select this "
+                            "theme for a source check."},
+    "skipped": {"abbr": "skipped", "label": "No matching codes",
+                "explain": "The initial coding did not trigger an assessment for this theme."},
+    "residual": {"abbr": "residual", "label": "No match in uncoded passages",
+                 "explain": "A search of passages without codes found nothing to add; this was "
+                            "a limited search."},
+    None: {"abbr": "not assessed", "label": "Not assessed",
+           "explain": "This material has not been assessed for this theme."},
 }
+
+# The fixed order the review's own table uses, so the legend under the matrix reads as one list
+# rather than in whatever order a dict happened to see the outcomes first.
+_STATUS_ORDER = ("thin", "screened", "skipped", "residual", None)
 
 
 def _assessed(outcomes: dict, tid: str, mid: str) -> str | None:
@@ -524,6 +556,50 @@ def _threads(conn, mid: str, themes: dict) -> list[dict]:
              "sparse": len(ms) < synth.MIN_MOMENTS,
              "summary": _row(store.get_summary(conn, "thread", f"{mid}:{t}", "reading"))}
             for t, ms in by.items()]
+
+
+# ---- the comparison control (F1, F5) -------------------------------------------------------------
+
+def _consolidate_estimate(conn, pid: str, cells: list[tuple[str, str]]) -> tuple[int, int]:
+    """Every model call the whole planned operation makes (F5), not only the reading of the cells
+    themselves. Certain: the comparison, one preliminary review and one verification per material
+    with cells, and the project summary written last. Uncertain, because it depends on what the
+    preliminary review sends a reader to: the cells themselves, one summary per touched material
+    in an iterative project (an exploratory project's memo is written over passages and is not
+    rewritten by this, PLAN.md §14), and every live theme's account — a consolidation ends by
+    writing the theme set up as it now stands, whether or not a given theme's own cells changed.
+    """
+    mats = len({mid for _, mid in cells})
+    proj = store.project(conn, pid)
+    iterative = proj is not None and proj["method"] != "explore"
+    extra = len(store.live_themes(conn, pid)) + (mats if iterative else 0)
+    if rerun.screen_planned():
+        floor = 2 + 2 * mats                     # comparison + a look and a verify per material + the project summary
+        ceiling = floor + len(cells) + extra
+    else:
+        # Every planned cell is read for certain with the look off, so nothing here is uncertain.
+        floor = ceiling = 2 + mats + len(cells) + extra
+    return floor, ceiling
+
+
+def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str, str]],
+                         every: list[tuple[str, str]]) -> dict:
+    """Everything the comparison control prints, generated from current state (F1).
+
+    `opening`'s threshold is never below two, so its pairs are always a subset of `every`'s — a
+    researcher who switches to the wider scope is told its own threshold in the radio's own
+    words, and the page shows the default (opening) scope's numbers beside the choice that
+    produces them rather than a count that would have to update itself without a script.
+    """
+    need = store.opening_need(conn, pid)
+    total = len(set(store.case_of(conn, pid).values()))
+    unit = "cases" if store.cases(conn, pid) else "materials"
+    floor, ceiling = _consolidate_estimate(conn, pid, opening)
+    calls = (f"Estimated model calls for the whole update: {floor}." if floor == ceiling else
+             f"Estimated model calls for the whole update: {floor}–{ceiling}.")
+    return {"themes": n_themes, "unit": unit, "need": need, "total": total,
+            "opening_n": len(opening), "all_n": len(every),
+            "same": len(opening) == len(every), "calls_said": calls}
 
 
 # ---- the pages ----------------------------------------------------------------------------------
@@ -569,11 +645,13 @@ def project_page(conn, pid: str) -> dict:
     # headings, at the bottom, with the control that makes one a theme.
     for t in list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid)):
         row = dict(t)
-        # An empty cell is a dash, and the three reasons a cell is empty are not the same finding
-        # — so the dash carries which one, where the table has no room to print it.
+        # An empty cell has no room for a sentence, so it carries a short word instead — the five
+        # reasons a cell is empty are not the same finding, and the legend under the table spells
+        # out whichever of them this project actually has (F3).
         row["columns"] = [{"material_id": m["id"], "material": m,
                            "moments": [None] * counts.get((t["id"], m["id"]), 0),
-                           "assessed_said": ASSESSED_SAID[_assessed(outcomes, t["id"], m["id"])]}
+                           "status": _assessed(outcomes, t["id"], m["id"]),
+                           "abbr": ASSESSED_SAID[_assessed(outcomes, t["id"], m["id"])]["abbr"]}
                           for m in mats]
         carried, whole, said = _reach([c["material_id"] for c in row["columns"] if c["moments"]],
                                       [m["id"] for m in mats], of,
@@ -595,30 +673,12 @@ def project_page(conn, pid: str) -> dict:
     # against, whatever its reach, and candidates come last because they are not yet themes.
     themes.sort(key=lambda r: (r["hold"] == "candidate", r["hold"] != "frozen",
                                -r["reach"], -r["claims"], r["name"]))
-    # What the consolidate control would cost, before it is pressed. It is a RANGE and it is
-    # printed as one, because what separates the floor from the ceiling is the one thing nobody
-    # can know yet. Certain: one comparison, one look per material with cells, one check per
-    # material with cells. Uncertain: between none and all of the cells themselves, depending on
-    # how many of them the look sends a reader to. Law 4 — the numbers are the rows they are over,
-    # and `store.backfill_cells` is what the plan is built from too, so the estimate cannot drift
-    # from the work.
+    # The legend under the matrix names only the statuses this project actually has — a project
+    # with no screened cell need not explain what "screened" would have meant.
+    present = {c["status"] for row in themes for c in row["columns"] if not c["moments"]}
+    assessed_legend = [ASSESSED_SAID[k] for k in _STATUS_ORDER if k in present]
     opening, every = store.backfill_cells(conn, pid, "opening"), store.backfill_cells(conn, pid, "all")
-    def _cost(cells):
-        mats = len({mid for _, mid in cells})
-        # With the look turned off every planned cell is read, so the floor IS the ceiling and the
-        # page must not offer a range the plan cannot deliver.
-        looking = rerun.screen_planned()
-        floor = 1 + 2 * mats if looking else 1 + mats + len(cells)
-        ceiling = floor + len(cells) if looking else floor
-        said = f'{_n(len(cells), "cell")} to look at (about {_n(floor, "model call")}'
-        return said + (")" if ceiling == floor else
-                       f", up to {ceiling} if every look finds something)")
-    # The control counts in the unit the page counts reach in: cases once the researcher has
-    # grouped materials into any, materials until then — a project with no cases should not
-    # meet the word.
-    consolidate = ({"themes": len(themes), "opening": _cost(opening), "all": _cost(every),
-                    "opening_n": len(opening), "all_n": len(every),
-                    "unit": "cases" if store.cases(conn, pid) else "materials"}
+    consolidate = (_consolidate_control(conn, pid, len(themes), opening, every)
                    if every or sum(t["hold"] == "candidate" for t in themes) > 1 else None)
     fb = [dict(f) for f in store.project_feedback(conn, pid)]
     index = _cite_index(conn, pid)
@@ -632,7 +692,8 @@ def project_page(conn, pid: str) -> dict:
     return {**_shell(conn, pid), "project": dict(p), "materials": mats, "themes": themes,
             "cases": [{**dict(c), "materials": by_case.get(c["id"], [])}
                       for c in store.cases(conn, pid)],
-            "single_group": _single_group(of), "consolidate": consolidate,
+            "single_group": _single_group(), "consolidate": consolidate,
+            "assessed_legend": assessed_legend,
             "page_section": "overview", "reading": reading,
             "summary": summary,
             "summary_html": cite(summary["text"], index, pid) if summary else "",
@@ -792,7 +853,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
             "summary": _row(store.get_summary(conn, "project", pid)),
             "interpretation": _row(store.get_summary(conn, "project", pid, "interpretation")),
             "themes": _export_themes(conn, pid, aside),
-            "single_group": _single_group(_cases(conn, pid)),
+            "single_group": _single_group(),
             "checks": _checks(conn, pid),
             "set_aside": aside,
             "feedback": said,

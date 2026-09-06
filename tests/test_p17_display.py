@@ -71,9 +71,14 @@ def test_themes_across_materials_are_listed_apart_from_single_material_ones(clie
     sid = store.moments(conn, analysed["grande"])[0]["sid"]
     store.save_moments(conn, analysed["grande"], solo,
                        [{"claim": "said once", "anchor": "x", "sid": sid}])
-    for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md"):
+    # project.html says "Project themes" for the first group (F4); record.html and export.md,
+    # which another agent owns, still say "Across materials" — both share the same second-group
+    # heading, "Candidate themes", since that comes from the same context value either way.
+    headings = {f"/p/{pid}": "Project themes", f"/p/{pid}/record": "Across materials",
+                f"/p/{pid}/export.md": "Across materials"}
+    for url, first in headings.items():
         sect = _themes(client.get(url).text)
-        across, single = sect.index("Across materials"), sect.index("In one material so far")
+        across, single = sect.index(first), sect.index("Candidate themes")
         assert across < single, f"the corpus themes come first on {url}"
         assert single < sect.index("Only here"), f"a one-material theme is in the second group ({url})"
         for name in analysed["themes"]:
@@ -86,10 +91,12 @@ def test_a_project_with_one_material_shows_only_the_second_group(client, conn, o
     # which is what leaves the first group empty.
     for tid in (one_material["first"], one_material["second"]):
         store.set_hold(conn, tid, "candidate")
-    for url in (f"/p/{pid}", f"/p/{pid}/record", f"/p/{pid}/export.md"):
+    headings = {f"/p/{pid}": "Project themes", f"/p/{pid}/record": "Across materials",
+                f"/p/{pid}/export.md": "Across materials"}
+    for url, first in headings.items():
         sect = _themes(client.get(url).text)
-        assert "Across materials" not in sect, f"nothing can span one material ({url})"
-        assert "In one material so far" in sect
+        assert first not in sect, f"nothing can span one material ({url})"
+        assert "Candidate themes" in sect
         assert "With one material, a theme cannot yet run across materials." in sect
 
 
