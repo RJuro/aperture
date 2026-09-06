@@ -6,11 +6,12 @@ The researcher reads your claims down one side of the screen with the material o
 A claim must say something a person could not have guessed from the theme's name: who does what,
 what changed, what is at stake, what is refused.
 
-  Good:  "The stall, not the land, is what fed them; the farm is described as a place they left."
-  Bad:   "Work shapes what is said here."          (a label, not a finding)
-  Bad:   "The speaker discusses employment."       (true of half the material)
+  Good:  "She reads the previous shift's chart before handover starts, and says that is where
+          she finds what was left out."
+  Bad:   "Handover shapes what is said here."      (a label, not a finding)
+  Bad:   "The speaker discusses her shift."        (true of half the material)
 
-Nine rules. Each carries the same weight, and each is checked.
+Ten rules. Each carries the same weight, and each is checked.
 
 1. Every claim rests on a quote. A moment without a quote is not a moment.
 2. Every quote is copied EXACTLY from the material below, word for word, at most 12 words. A quote
@@ -26,10 +27,10 @@ Nine rules. Each carries the same weight, and each is checked.
    focus group, field notes, a document, or answers to an open question.
 6. A claim says no more than its passage says. It may compress and it may name what the words
    amount to, but it may not add a motive, a manner, a feeling, a cause, a frequency, an
-   evaluation, or a comparison that the passage does not contain. "He took factory work without
-   complaint" when the passage says only that he got a job in a factory is an invention; so is
-   "her literacy was exceptional" when the passage says she could read and write; so is "the
-   cleaning became a family anecdote" when the passage says the doghouses were made clean. A hedge
+   evaluation, or a comparison that the passage does not contain. "She took the night shift
+   without complaint" when the passage says only that she worked nights is an invention; so is
+   "her handover was exceptionally thorough" when the passage says she read the whole chart; so is
+   "the missed dose became a story on the ward" when the passage says it was recorded. A hedge
    stays a hedge: "I don't remember much talk about it" is not "no conversation surrounded it".
    Say "is described as" only where the passage describes it so. Every claim is checked against
    its passage afterwards and a claim the passage does not carry is set aside.
@@ -42,23 +43,35 @@ Nine rules. Each carries the same weight, and each is checked.
    what; a passage that would carry the same finding under a second name is left to the theme that
    has it.
 9. `summary` is at most {{summary_words}} words: what THIS material says on THIS theme, taken
-   across the moments you have just listed and read as one. Say what the line amounts to — the
-   shape of it, what holds and what pulls against it — not that a line exists. Your own words: no
-   new quotes, and rules 5 and 6 hold here too. If the moments are too few to make a line, write it
+   across the moments you have just listed and read as one. Say what the claims have in common
+   and which claim differs from the rest. Do not say that a line exists. Your own words: no new
+   quotes, and rules 5 and 6 hold here too. If the moments are too few to make a line, write it
    anyway of what you found; it is thrown away with them.
+10. `fit` is empty, or at most 25 words naming where THIS material carries the theme in a way its
+    definition does not foresee: a different kind of case, actor, setting, time or direction than
+    the definition names. Not a finding about the material, and not a rewrite of the definition —
+    a note to the researcher that this material sits at the edge of it. Write it when it is small;
+    write nothing when there is nothing. It assumes no speaker: the case may be an organisation, a
+    site, a document's subject. It is kept beside the theme as a note from this reading, and only
+    where this line holds a moment: a note about how a material carries a theme, filed against a
+    line that came back with nothing in it, is a note about nothing.
 
 Return JSON in exactly this shape and nothing else:
 
 {
   "moments": [
-    {"claim": "The stall, not the land, is what fed them; the farm is a place they left.",
-     "anchor": "we had a stall in the market",
+    {"claim": "She reads the previous shift's chart before handover starts, and says that is
+               where she finds what was left out.",
+     "anchor": "I read the chart before she even starts talking",
      "sid": "S118"}
   ],
-  "summary": "Making a living here is trade rather than land. The farm is named twice and both
-              times as somewhere already left; the stall is where the family's days, and the
-              children's labour, are placed."
+  "summary": "In this material the chart is read before the spoken handover twice, and both times
+              what it turns up is something the previous shift did not say aloud. One turn
+              describes a handover with no chart to hand and does not say what was done instead.",
+  "fit": ""
 }
+
+{{style}}
 ---
 THE MATERIAL. Each line starts with the id a quote from that line must cite:
 
