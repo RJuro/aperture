@@ -378,10 +378,12 @@ def test_the_theme_page_prints_the_searched_absence_as_its_own_kind_of_nothing(u
 
     html = TestClient(main.app).get(f'/p/{unread["pid"]}/t/{unread["papers"]}').text
     section = html.split("Materials with no claims under this theme")[-1]
-    under = section.split("Searched in the passages the coding did not mark — nothing found")
+    under = section.split("No match in uncoded passages")
     assert len(under) == 2, "the heading a searched absence is named under"
     assert store.material(conn, unread["grande"])["title"] in under[1]
-    assert "Not looked for here" not in section, "it is no longer that kind of nothing"
+    assert "No matching codes" not in section, "it is no longer that kind of nothing"
+    # `ASSESSED_SAID` (app/context.py) still carries its own, longer wording — it feeds the
+    # matrix's hover titles on the project page, a surface this template does not touch.
     assert context.ASSESSED_SAID["residual"] == \
         "Searched in the passages the coding did not mark — nothing found"
 

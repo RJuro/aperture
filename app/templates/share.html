@@ -5,7 +5,6 @@
    there is to say and no more: which project it was for is not the visitor's to learn. #}
 <section class="section narrow-section">
   <div class="container">
-    <p class="eyebrow">Invitation</p>
     <h1>{{ problem }}</h1>
     <p class="lead">Ask whoever sent it for a new one.</p>
     <p><a class="btn btn-secondary" href="/">Your projects</a></p>
@@ -14,13 +13,12 @@
 {% else %}
 <section class="section narrow-section">
   <div class="container">
-    <p class="eyebrow">Sharing</p>
     <h1>Who can open {{ project.name | txt }}</h1>
     <p class="lead">A link is a standing invitation. Anyone signed in who opens it joins this
       project with the role the link carries, until you revoke it.</p>
     {% if problem %}<p class="problem">{{ problem }}</p>{% endif %}
 
-    <div class="section-heading share-head"><div><p class="eyebrow">People</p><h2>Members</h2></div>
+    <div class="section-heading share-head"><div><h2>Members</h2></div>
       {% if members %}<span class="meta">{{ members | length }} besides you</span>{% endif %}</div>
     <ul class="mats">
     {% for m in members %}
@@ -38,7 +36,7 @@
     {% endfor %}
     </ul>
 
-    <div class="section-heading share-head"><div><p class="eyebrow">Invitations</p><h2>Links</h2></div></div>
+    <div class="section-heading share-head"><div><h2>Links</h2></div></div>
     <ul class="mats">
     {% for i in invites %}
       <li>

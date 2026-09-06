@@ -71,8 +71,8 @@ def test_a_pair_with_no_examination_row_is_not_assessed_rather_than_looked_for(c
     assert [m["assessed"] for m in context.theme_page(conn, pid, tid)["absent"]] == ["skipped"]
 
 
-HEADS = {None: "Not assessed yet", "thin": "Looked for and found too thin",
-         "skipped": "Not looked for here"}
+HEADS = {None: "Not assessed", "thin": "No retained claims",
+         "skipped": "No matching codes"}
 
 
 @pytest.mark.parametrize("outcome", list(HEADS))
@@ -94,7 +94,8 @@ def test_the_three_silences_have_their_own_headings_on_every_surface(client, con
         for other in others:
             assert other not in section, f"{other!r} beside {head!r} on {url}"
     if outcome is None:
-        assert "Not assessed yet — not read for this theme" in client.get(f"/p/{pid}/t/{tid}").text
+        assert "This material has not been assessed for this theme" in \
+            client.get(f"/p/{pid}/t/{tid}").text
 
 
 def test_an_empty_cell_in_the_overview_says_which_kind_of_nothing_it_is(client, conn, analysed):
@@ -281,16 +282,19 @@ def test_the_register_is_capped_and_says_so_in_whole_questions(conn, project, gr
 
 # ---- a sparse line is shown as one ---------------------------------------------------------------
 
-def test_a_line_under_the_floor_is_rendered_as_sparse(client, conn, analysed):
-    """The reading keeps a line of one to three claims rather than dropping it whole, so the page
-    has to say it is short: three claims and thirty read the same otherwise."""
+def test_a_line_under_the_floor_is_still_shown_with_its_count(client, conn, analysed):
+    """The reading keeps a line of one to three claims rather than dropping it whole. §5 of the
+    review drops the word "sparse" from the visible count — "2 claims" says as much as "sparse ·
+    2 claims" did — while `cards[...]["sparse"]` still marks the line for any page that needs to
+    reason about it."""
     pid, mid = analysed["pid"], analysed["grande"]
     tid = list(analysed["themes"].values())[0]
     assert len(store.thread(conn, mid, tid)) < synth.MIN_MOMENTS
     cards = context.material_page(conn, pid, mid)["cards"]
     assert [c["sparse"] for c in cards if c["id"] == tid] == [True]
-    assert "sparse · 3 claims" in client.get(f"/p/{pid}/m/{mid}").text
-    assert "sparse · 3 claims" in client.get(f"/p/{pid}/record").text
+    assert "3 claims" in client.get(f"/p/{pid}/m/{mid}").text
+    assert "sparse" not in client.get(f"/p/{pid}/m/{mid}").text
+    assert "3 claims" in client.get(f"/p/{pid}/record").text
 
     store.save_moments(conn, mid, tid, [{"claim": f"claim {i}", "sid": m["sid"],
                                          "anchor": m["anchor"]}

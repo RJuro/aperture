@@ -13,12 +13,12 @@
 
 ## Across the corpus
 
-{% if summary %}**What the material shows**
+{% if summary %}**Project summary**
 
 {{ summary.text }}
 {% else %}No project summary yet.
 {% endif %}{% if interpretation and interpretation.text %}
-**What this may mean, so far**
+**Possible interpretation**
 
 {{ interpretation.text }}
 {% endif %}
@@ -45,7 +45,7 @@
 {% if t.account %}
 {{ t.account.text }}
 {% endif %}{% if t.hold == 'frozen' and t.notes %}
-##### What has pulled against this definition
+##### Evidence that challenges this definition
 
 {% for n in t.notes %}- {{ n.created_at[:10] }} — {{ n.text }}{% if n.display_title %} — {{ n.display_title }}{% endif %}
 {% endfor %}
@@ -59,14 +59,24 @@
 [{{ m.claims }} {{ 'claim' | plural(m.claims) }} · printed in full under {{ m.display_title }} below](#{{ m.display_title | slug }})
 
 {% else %}No material contains claims for this theme yet.
-{% endfor %}{% if t.absent %}{% for head, mats in
-   ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
-     ("Looked at from this material's own account and its coding, and not pursued",
+{% endfor %}{% if t.absent %}{% for head, note, mats in
+   ([("No retained claims",
+      "The theme was assessed here, but no claims were retained.",
+      t.absent | selectattr("assessed", "equalto", "thin") | list),
+     ("Source check skipped",
+      "A preliminary review of the summary and codes did not select this theme for a source check.",
       t.absent | selectattr("assessed", "equalto", "screened") | list),
-     ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
-     ("Searched in the passages the coding did not mark — nothing found",
+     ("No matching codes",
+      "The initial coding did not trigger assessment for this theme.",
+      t.absent | selectattr("assessed", "equalto", "skipped") | list),
+     ("No match in uncoded passages",
+      "A search of passages without codes found nothing to add for this theme. This was a limited search.",
       t.absent | selectattr("assessed", "equalto", "residual") | list),
-     ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}{% if mats %}##### {{ head }}
+     ("Not assessed",
+      "This material has not been assessed for this theme.",
+      t.absent | rejectattr("assessed") | list)]) %}{% if mats %}##### {{ head }}
+
+{{ note }}
 
 {% for m in mats %}- {{ m.display_title }} — {{ (m.kind or "material") | replace("_", " ") }}{% if m.screened_why %} — {{ m.screened_why }}{% endif %}
 {% endfor %}
@@ -91,11 +101,11 @@ People: {% for p in m.people %}{{ p.name }}{% if p.aliases %} ({{ p.aliases }}){
 {% endif %}{% if m.speakers %}
 Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {{ s.name }}{% endif %}{% if s.role %} ({{ s.role }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}
 {% endif %}{% if m.orientation %}
-#### Before reading
+#### Material overview
 
 {{ m.orientation.text }}
 {% endif %}{% if m.reading %}
-#### After reading
+#### Material summary
 
 {{ m.reading.text }}
 {% endif %}{% if m.angles %}
@@ -106,12 +116,11 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 {% for th in m.threads %}#### {{ th.theme.name }}
 
 {{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}
-{% if th.sparse %}sparse · fewer claims than a full line, kept and marked as short
-{% endif %}{% if th.summary %}
+{% if th.summary %}
 {{ th.summary.text }}
 {% endif %}
 {% for x in th.moments %}{{ loop.index }}. {{ x.claim }}
-{% if x.support == 'partly' %}   The passage carries part of this: {{ x.support_note }}
+{% if x.support == 'partly' %}   Partially supported: {{ x.support_note }}
 {% endif %}   > {{ x.anchor }}  [{{ x.sid }}]
 {% endfor %}
 {% else %}No analysis yet.

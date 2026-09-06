@@ -120,8 +120,8 @@ def test_a_reader_is_shown_no_controls_and_cannot_post_one(client, conn, holds, 
     r = client.get(f"/p/{pid}/t/{tid}")
     assert r.status_code == 200, "a reader still reads everything"
     theme = r.text
-    assert "Open" in theme, "the hold itself is part of the reading, and everyone sees it"
-    assert "Freeze" not in theme and "/hold" not in theme
+    assert "Definition can change" in theme, "the hold itself is part of the reading, and everyone sees it"
+    assert "Lock definition" not in theme and "/hold" not in theme
     assert "Promote" not in client.get(f"/p/{pid}").text
     assert client.post(f"/p/{pid}/t/{tid}/hold", data={"hold": "frozen"}).status_code == 404
     assert client.post(f"/p/{pid}/t/{cand}/promote").status_code == 404
@@ -132,7 +132,7 @@ def test_an_invited_editor_is_shown_them_and_may_press_them(client, conn, holds,
     pid, tid, cand = holds["pid"], holds["work"], holds["here"]
     login(client, "cat")
     assert client.get(f"/p/{pid}/t/{tid}").status_code == 200
-    assert "Freeze" in client.get(f"/p/{pid}/t/{tid}").text
+    assert "Lock definition" in client.get(f"/p/{pid}/t/{tid}").text
     assert "Promote" in client.get(f"/p/{pid}").text
     assert client.post(f"/p/{pid}/t/{tid}/hold", data={"hold": "frozen"}).status_code == 303
     assert client.post(f"/p/{pid}/t/{cand}/promote").status_code == 303
@@ -192,13 +192,13 @@ def test_unchanged_for_is_said_at_three_passes_and_only_while_the_theme_is_open(
     store.set_hold(conn, tid, "frozen")
     page = client.get(url).text
     assert "unchanged for" not in page, "a frozen theme is not still steadying"
-    assert "Frozen" in page and "Unfreeze" in page
+    assert "Definition locked" in page and "Unlock definition" in page
 
 
 def test_a_candidates_page_says_so_and_offers_the_one_way_out(client, holds):
     page = client.get(f"/p/{holds['pid']}/t/{holds['here']}").text
-    assert "Candidate — found in one material so far" in page
-    assert "Promote" in page and "Freeze" not in page
+    assert "Candidate — not yet included as a project theme" in page
+    assert "Add to project themes" in page and "Lock definition" not in page
 
 
 def test_a_frozen_theme_shows_what_has_pulled_against_it_and_where_from(client, conn, holds):
@@ -209,7 +209,7 @@ def test_a_frozen_theme_shows_what_has_pulled_against_it_and_where_from(client, 
     assert "pulled against" not in client.get(url).text, "an open theme is still being written"
     store.set_hold(conn, tid, "frozen")
     page = client.get(url).text
-    assert "What has pulled against this definition" in page
+    assert "Evidence that challenges this definition" in page
     assert "Here the trade is unpaid and family, not work." in page
     row = re.search(r"<li[^>]*>((?:(?!</li>).)*unpaid and family(?:(?!</li>).)*)</li>", page, re.S)
     assert row and "Rodwin" in row.group(1), "the material the note came from, beside the note"
@@ -229,6 +229,6 @@ def test_the_record_prints_each_hold_and_the_notes_under_the_theme(client, conn,
     for url in (f"/p/{pid}/record", f"/p/{pid}/export.md"):
         text = _themes(client.get(url).text) if "record" in url else client.get(url).text
         assert "· frozen" in text and "· open" in text and "· candidate" in text, url
-        assert "What has pulled against this definition" in text, url
+        assert "Evidence that challenges this definition" in text, url
         assert "The arrival is not spoken of as leaving." in text, url
         assert "Grande" in text

@@ -118,8 +118,8 @@ def test_a_claim_whose_passage_another_theme_reads_says_which(client, one_materi
     assert f'href="?theme={d["second"]}#reading">Money at home</a>' in html
 
 
-@pytest.mark.parametrize("looked_for, head", [(True, "Looked for and found too thin"),
-                                              (False, "Not looked for here")])
+@pytest.mark.parametrize("looked_for, head", [(True, "No retained claims"),
+                                              (False, "No matching codes")])
 def test_a_material_a_theme_never_reached_says_whether_it_was_looked_through(
         client, conn, analysed, looked_for, head):
     """Absence is two different findings — the theme was followed here and the line was too thin
@@ -130,7 +130,7 @@ def test_a_material_a_theme_never_reached_says_whether_it_was_looked_through(
                  (analysed["rodwin"], tid))
     conn.commit()
     store.save_follow(conn, analysed["rodwin"], tid, "thin" if looked_for else "skipped", None)
-    other = "Not looked for here" if looked_for else "Looked for and found too thin"
+    other = "No matching codes" if looked_for else "No retained claims"
     for url in (f"/p/{pid}/record", f"/p/{pid}/export.md"):
         sect = _themes(client.get(url).text)
         assert head in sect and other not in sect, url

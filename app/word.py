@@ -1,4 +1,4 @@
-"""The reading record as a Word file.
+"""The analysis record as a Word file.
 
 The record's structure lives in one place, `app/templates/export.md`, and it stays there: this
 module takes that rendered markdown and walks it into a document. Duplicating the structure in a
@@ -32,7 +32,7 @@ def document(markdown: str, title: str, when: str) -> bytes:
     doc = docx.Document()
     doc.add_heading(title, 0)
     doc.add_paragraph(when)
-    doc.add_paragraph("Aperture reading record")
+    doc.add_paragraph("Aperture analysis record")
     doc.add_page_break()
 
     for line in markdown.splitlines():

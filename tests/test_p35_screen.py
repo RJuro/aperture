@@ -297,15 +297,14 @@ def test_the_page_and_the_record_print_it_where_an_absence_would_go(corpus, conn
         monkeypatch.setattr(mod, "connection", lambda: conn, raising=False)
     client = TestClient(main.app, follow_redirects=False)
 
-    # The apostrophe reaches the record and the export through Jinja's escaping, so what is
-    # asserted there is the half of the sentence that carries the meaning.
-    tail = "account and its coding, and not pursued"
+    # The theme page, the record and the export all use the same short label for this state
+    # (§4 F3 of the review); the reason recorded for this pair is what tells them apart.
     theme = client.get(f"/p/{pid}/t/{corpus['wide']}").text
-    assert SAID in theme and "nothing about official papers" in theme
+    assert "Source check skipped" in theme and "nothing about official papers" in theme
     record = client.get(f"/p/{pid}/record").text
-    assert tail in record and "nothing about official papers" in record
+    assert "Source check skipped" in record and "nothing about official papers" in record
     export = client.get(f"/p/{pid}/export.md").text
-    assert tail in export and "nothing about official papers" in export
+    assert "Source check skipped" in export and "nothing about official papers" in export
 
 
 # ---- what the preview promises -------------------------------------------------------------------

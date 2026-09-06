@@ -224,7 +224,7 @@ def test_the_mark_is_shown_where_the_claim_is_read(ready, conn, model, quote, cl
     page = client.get(f'/p/{ready["pid"]}/m/{ready["mid"]}?theme={ready["tid"]}').text
     record = client.get(f'/p/{ready["pid"]}/record').text
     for html in (page, record):
-        assert ("The passage carries part of this: the passage does not say it was steady"
+        assert ("Partially supported: the passage does not say it was steady"
                 in html)
 
 

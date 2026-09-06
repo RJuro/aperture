@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% block main %}
-<section class="home-hero">
-  <h1>Read across the evidence,<br>without losing sight of it.</h1>
-  <p class="lead">Aperture turns interviews, field notes, documents and open responses into a traceable thematic reading.</p>
-</section>
+{# F8/§4: a slogan headline used to stand above the project list on every visit, so a returning
+   researcher scrolled past marketing copy to reach their own work. The list now leads the page;
+   the one sentence introducing Aperture moves beside the creation form, where it cannot push the
+   list down. #}
 <div class="home-grid">
   <section>
-    <div class="section-heading"><div><p class="eyebrow">Your work</p><h2>Projects</h2></div><span class="meta">{{ projects | length }} total</span></div>
+    <div class="section-heading"><div><h2>Projects</h2></div><span class="meta">{{ projects | length }} total</span></div>
     <ul class="project-list">
     {% for p in projects %}
       <li><a href="/p/{{ p.id }}"><span>{{ p.name | txt }}</span><small>Created {{ p.created_at | when }} <b aria-hidden="true">↗</b></small>{% if p.role and p.role != 'owner' %}<small>Shared by {{ p.owner_name | txt }} · {{ 'can edit' if p.role == 'edit' else 'read only' }}</small>{% endif %}</a></li>
@@ -16,23 +16,24 @@
     </ul>
   </section>
   <section class="new-project">
-    <p class="eyebrow">Begin a reading</p>
     <h2>New project</h2>
+    <p class="lead">Aperture turns interviews, field notes, documents and open responses into a traceable thematic reading.</p>
     <form method="post" action="/p/new" class="form-stack">
       <label>Project name <input name="name" required placeholder="Migration and work"></label>
       {# The label's own text and its help link are one grid child, or `form label`'s single
          column puts the question mark on a line of its own under the words. #}
       <label><span>Research question or focus <a class="help" href="/guide#focus" title="What the research focus does">?</a></span><textarea name="focus" rows="4" placeholder="What are you looking for across the material?"></textarea></label>
-      <fieldset class="scope-choice"><legend>How each material is read <a class="help" href="/guide#method" title="Explore or build iteratively">?</a></legend>
-        <label class="choice"><input type="radio" name="method" value="explore" checked> <span>Explore the material — each material is first read on its own terms; the project's vocabulary and themes are compared with it afterwards</span></label>
-        <label class="choice"><input type="radio" name="method" value="iterative"> <span>Build iteratively — each material is read with the project's codes and themes in view, the way projects have worked so far; freeze themes to apply them as a framework</span></label>
+      <fieldset class="scope-choice"><legend>How each material is read <a class="help" href="/guide#method" title="Analyse independently, or using existing project codes">?</a></legend>
+        <label class="choice"><input type="radio" name="method" value="explore" checked> <span>Analyse each material independently — each material is first read on its own terms; the project's codes and themes are compared with it afterwards</span></label>
+        <label class="choice"><input type="radio" name="method" value="iterative"> <span>Analyse using existing project codes — each material is read with the project's codes and themes in view, the way projects have worked so far; lock a theme's definition to apply it as a framework</span></label>
       </fieldset>
       <details class="info"><summary>Which should I choose?</summary>
-        <p>Exploring shows the reading no project codes, so a later material cannot be read into the
-          vocabulary of the first — but it converges more slowly and costs a further call per
-          material. Building iteratively reads each material against the codes and themes so far,
-          which is cumulative comparison and is also lock-in. Either can be changed later, and the
-          change applies to material read from then on. <a href="/guide#method">More in the guide</a>.</p>
+        <p>Analysing each material independently shows the reading no project codes, so a later
+          material cannot be read into the vocabulary of the first — but it converges more slowly
+          and costs a further call per material. Analysing using existing project codes reads each
+          material against the codes and themes so far, which is cumulative comparison and is also
+          lock-in. Either can be changed later, and the change applies to material read from then
+          on. <a href="/guide#method">More in the guide</a>.</p>
       </details>
       <button class="btn btn-primary">Start project</button>
     </form>

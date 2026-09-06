@@ -105,7 +105,7 @@ def test_a_theme_has_a_page_of_its_own(client, conn, analysed):
 
 def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, conn, analysed):
     """Absence at corpus level is a finding. An empty cell in a grid says nothing; a named
-    material under "looked for and found too thin" says the reading looked and claimed nothing."""
+    material under "no retained claims" says the reading looked and claimed nothing."""
     pid = analysed["pid"]
     tid = list(analysed["themes"].values())[0]
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND theme_id=?",
@@ -116,7 +116,7 @@ def test_the_theme_page_names_the_materials_the_theme_is_absent_from(client, con
     store.save_follow(conn, analysed["rodwin"], tid, "thin", None)
     html = client.get(f"/p/{pid}/t/{tid}").text
     assert "Materials with no claims under this theme" in html
-    assert "Looked for and found too thin" in html
+    assert "No retained claims" in html
     row = store.material(conn, analysed["rodwin"])
     assert (row["title"] or row["name"]) in html
 
@@ -126,11 +126,16 @@ def test_both_movements_of_the_corpus_summary_are_shown_and_told_apart(client, c
     they would be read as one kind of sentence."""
     store.save_summary(conn, "project", analysed["pid"], "interpretation",
                        "Taken together, this suggests a single wage logic.")
-    for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/export.md"):
+    # The record and export renamed this heading to "Project summary" / "Possible interpretation"
+    # (§5 of the review); the project overview (app/templates/project.html) is a different
+    # agent's file and still carries the old heading pending that change.
+    for url, summary_head, interp_head in (
+            (f"/p/{analysed['pid']}", "What the material shows", "What this may mean, so far"),
+            (f"/p/{analysed['pid']}/export.md", "Project summary", "Possible interpretation")):
         text = client.get(url).text
         assert store.get_summary(conn, "project", analysed["pid"], "reading")["text"] in text
         assert "Taken together, this suggests a single wage logic." in text
-        assert "What the material shows" in text and "What this may mean, so far" in text
+        assert summary_head in text and interp_head in text
 
 
 def test_a_step_that_failed_says_what_stopped_it(client, conn, analysed):

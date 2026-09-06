@@ -2,10 +2,10 @@
 {% block main %}
 <section class="section project-head" id="top">
   <div class="container">
-    <p class="eyebrow">Reading record</p>
+    <p class="eyebrow">Analysis record</p>
     <div class="head-row">
       <div><h1>{{ project.name | txt }}</h1>
-        <p class="lead">Everything the reading has arrived at, in one place. <a class="help" href="/guide#record" title="What is in the record, and what to cite">?</a></p>
+        <p class="lead">Everything the analysis has produced, in one place. <a class="help" href="/guide#record" title="What is in the record, and what to cite">?</a></p>
         <p class="meta head-stat">{{ materials | length }} {{ 'material' | plural(materials | length) }} · {{ themes | length }} {{ 'theme' | plural(themes | length) }} · started {{ project.created_at | when }}</p>
       </div>
       <div class="head-actions">
@@ -17,7 +17,7 @@
 </section>
 
 <section class="section"><div class="container">
-<p class="eyebrow">Contents</p>
+<h2>Contents</h2>
 <nav class="contents-list" aria-label="Contents">
   <div>
     <p class="contents-head"><a href="#themes">Themes</a></p>
@@ -50,16 +50,16 @@
 </div></section>
 
 <section class="section" id="corpus"><div class="container narrow-section">
-<div class="section-heading"><div><p class="eyebrow">The corpus</p><h2>Across the corpus</h2></div></div>
+<div class="section-heading"><div><h2>Across the corpus</h2></div></div>
 {% if summary %}
-<p class="eyebrow">What the material shows</p>
+<h3>Project summary</h3>
 <div class="summary-copy">{{ summary.text | cite(cites, project.id) }}</div>
 {% else %}<p class="dim">No project summary yet.</p>{% endif %}
 {% if interpretation and interpretation.text %}
-<p class="eyebrow">What this may mean, so far</p>
+<h3>Possible interpretation</h3>
 <div class="summary-copy">{{ interpretation.text | cite(cites, project.id) }}</div>
 {% endif %}
-<p class="eyebrow">Research focus</p>
+<h3>Research focus</h3>
 {% if project.focus %}<blockquote>{{ project.focus | txt }}</blockquote>{% else %}<p class="dim">Not set.</p>{% endif %}
 {% if focus_history %}
 <ul class="mats">{% for f in focus_history %}<li><span class="num">{{ f.created_at[:10] }}</span> <q>{{ f.text | txt }}</q></li>{% endfor %}</ul>
@@ -72,7 +72,7 @@
 </div></section>
 
 <section class="section" id="themes"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">Each theme across the corpus</p><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its material</span></div>
+<div class="section-heading"><div><h2>Themes</h2></div><span class="meta">Each claim is printed once, under its material</span></div>
 {% if materials | length == 1 %}<p class="dim">With one material, a theme cannot yet run across materials.</p>{% endif %}
 {% for group, rows in [("Across materials", themes | rejectattr("single") | list), (single_group, themes | selectattr("single") | list)] %}
 {% if rows %}<h3 class="theme-group">{{ group }}</h3>{% endif %}
@@ -83,7 +83,7 @@
   <p class="meta">{{ t.derivation }} · {{ t.hold }}</p>
   {% if t.account %}<div class="summary-copy">{{ t.account.text | cite(cites, project.id) }}</div>{% endif %}
   {% if t.hold == 'frozen' and t.notes %}
-  <h4>What has pulled against this definition</h4>
+  <h4>Evidence that challenges this definition</h4>
   <ul class="mats tensions">
   {% for n in t.notes %}<li class="gist"><span class="num">{{ n.created_at[:10] }}</span> {{ n.text | prose }} <span class="dim">{{ n.display_title | txt }}</span></li>{% endfor %}
   </ul>
@@ -96,16 +96,27 @@
   <p class="dim">No material contains claims for this theme yet.</p>
   {% endfor %}
   {% if t.absent %}
-  {% for head, mats in
-     ([("Looked for and found too thin", t.absent | selectattr("assessed", "equalto", "thin") | list),
-       ("Looked at from this material's own account and its coding, and not pursued",
+  {# F3/§4: the same five labels and explanations as the theme page, so a reader who has learned
+     what one dash means there does not have to learn a second vocabulary for the record. #}
+  {% for head, note, mats in
+     ([("No retained claims",
+        "The theme was assessed here, but no claims were retained.",
+        t.absent | selectattr("assessed", "equalto", "thin") | list),
+       ("Source check skipped",
+        "A preliminary review of the summary and codes did not select this theme for a source check.",
         t.absent | selectattr("assessed", "equalto", "screened") | list),
-       ("Not looked for here", t.absent | selectattr("assessed", "equalto", "skipped") | list),
-       ("Searched in the passages the coding did not mark — nothing found",
+       ("No matching codes",
+        "The initial coding did not trigger assessment for this theme.",
+        t.absent | selectattr("assessed", "equalto", "skipped") | list),
+       ("No match in uncoded passages",
+        "A search of passages without codes found nothing to add for this theme. This was a limited search.",
         t.absent | selectattr("assessed", "equalto", "residual") | list),
-       ("Not assessed yet — not read for this theme", t.absent | rejectattr("assessed") | list)]) %}
+       ("Not assessed",
+        "This material has not been assessed for this theme.",
+        t.absent | rejectattr("assessed") | list)]) %}
   {% if mats %}
   <h4>{{ head }}</h4>
+  <p class="dim small">{{ note }}</p>
   <ul class="mats">
   {% for m in mats %}<li><a class="material" href="/p/{{ project.id }}/m/{{ m.material_id }}">{{ m.display_title | txt }}</a> <span class="dim">{{ (m.kind or 'material') | replace('_', ' ') }}</span>{% if m.screened_why %} <span class="dim">— {{ m.screened_why | txt }}</span>{% endif %}</li>{% endfor %}
   </ul>
@@ -124,25 +135,25 @@
 </div></section>
 
 <section class="section" id="materials"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">Source material</p><h2>Materials</h2></div></div>
+<div class="section-heading"><div><h2>Materials</h2></div></div>
 {% for m in materials %}
 <section class="record-entry" id="m-{{ m.id }}">
   <h3><a class="material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a></h3>
   <p class="meta">{{ (m.kind or 'material') | replace('_', ' ') }} · {{ m.derivation }}</p>
   {% if m.people %}<p class="dim small">People: {% for p in m.people %}{{ p.name | txt }}{% if p.aliases %} ({{ p.aliases | txt }}){% endif %}{% if p.role %} — {{ p.role | txt }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
   {% if m.speakers %}<p class="dim small">Speakers: {% for s in m.speakers %}{{ s.label | txt }}{% if s.name %}, identified as {{ s.name | txt }}{% endif %}{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
-  {% if m.orientation %}<p class="eyebrow">Before reading</p><div class="summary-copy">{{ m.orientation.text | cite(cites, project.id) }}</div>{% endif %}
-  {% if m.reading %}<p class="eyebrow">After reading</p><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
+  {% if m.orientation %}<h4>Material overview</h4><div class="summary-copy">{{ m.orientation.text | cite(cites, project.id) }}</div>{% endif %}
+  {% if m.reading %}<h4>Material summary</h4><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.residual %}<p class="dim small">What the coding did not mark, read afterwards: {{ m.residual.text | txt }}</p>{% endif %}
   {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
   {% for th in m.threads %}
-  <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{% if th.sparse %}sparse · {% endif %}{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
+  <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
   {% if th.summary %}<div class="summary-copy">{{ th.summary.text | cite(cites, project.id) }}</div>{% endif %}
   <ol class="claims">
   {% for x in th.moments %}
     <li><span class="claim-index">{{ '%02d' | format(loop.index) }}</span><div>
       <p class="claim">{{ x.claim | txt }}</p>
-      {% if x.support == 'partly' %}<p class="dim small">The passage carries part of this: {{ x.support_note | txt }}</p>{% endif %}
+      {% if x.support == 'partly' %}<p class="dim small">Partially supported: {{ x.support_note | txt }}</p>{% endif %}
       <a class="quote-link quote" title="Open this passage in the material" href="/p/{{ project.id }}/m/{{ m.id }}?theme={{ th.theme.id }}#{{ x.sid }}">{{ x.anchor | txt }}</a>
       <span class="num">{{ x.sid }}</span>
     </div></li>
@@ -158,7 +169,7 @@
 </div></section>
 
 <section class="section" id="checks"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">Doubt</p><h2>Questions checked against the materials</h2></div></div>
+<div class="section-heading"><div><h2>Questions checked against the materials</h2></div></div>
 <ul class="check-list">
 {% for k in checks %}
   <li><span class="num">{{ k.created_at[:10] }}</span> <q>{{ k.question | txt }}</q> — {{ k.said }}{% if k.material_name %} in {{ k.material_name | txt }}{% endif %}
@@ -170,7 +181,7 @@
 </div></section>
 
 <section class="section" id="excluded"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">What the reading dropped</p><h2>Excluded from the analysis</h2></div></div>
+<div class="section-heading"><div><h2>Excluded from the analysis</h2></div></div>
 {% for name, notes in set_aside | groupby("material") %}
 <h3>{{ (name or "The project") | txt }}</h3>
 <ul class="mats">{% for n in notes %}<li>{{ n.note | txt }}</li>{% endfor %}</ul>
@@ -180,7 +191,7 @@
 </div></section>
 
 <section class="section" id="feedback"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">What the researcher said</p><h2>Researcher feedback</h2></div></div>
+<div class="section-heading"><div><h2>Researcher feedback</h2></div></div>
 <ul class="mats">
 {% for f in feedback %}<li><span class="num">{{ f.created_at[:10] }}</span> {{ f.kind }} on {{ f.about | txt }}{% if f.text %}: <q>{{ f.text | txt }}</q>{% endif %} <span class="dim">— {{ f.outcome }}</span></li>
 {% else %}<li class="dim">No researcher feedback yet.</li>
@@ -189,7 +200,7 @@
 </div></section>
 
 <section class="section" id="history"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">What it cost</p><h2>Processing history</h2></div></div>
+<div class="section-heading"><div><h2>Processing history</h2></div></div>
 <ul class="mats">
 {% for kind, rs in history | groupby("kind") %}
   {% set ti = rs | sum(attribute="tokens_in") %}{% set to = rs | sum(attribute="tokens_out") %}
@@ -200,7 +211,7 @@
 </div></section>
 
 <section class="section" id="renamed"><div class="container">
-<div class="section-heading"><div><p class="eyebrow">How the themes changed</p><h2>Theme history</h2></div></div>
+<div class="section-heading"><div><h2>Theme history</h2></div></div>
 {% for t in theme_history %}
 <details class="quiet-details"><summary>{{ t.name | txt }}{% if t.status != 'live' %} — merged into another theme{% endif %}</summary>
 <ul class="mats">
