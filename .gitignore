@@ -13,3 +13,5 @@ law5-data/
 .claude/
 .DS_Store
 bench/
+output/
+tmp/
