@@ -636,14 +636,23 @@ def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str,
                          every: list[tuple[str, str]]) -> dict:
     """Everything the comparison control prints, generated from current state (F1).
 
-    `opening`'s threshold is never below two, so its pairs are always a subset of `every`'s — a
-    researcher who switches to the wider scope is told its own threshold in the radio's own
-    words, and the page shows the default (opening) scope's numbers beside the choice that
-    produces them rather than a count that would have to update itself without a script.
+    `opening`'s threshold is never below two, and a theme no case carries at all is read for under
+    both — so its pairs are always a subset of `every`'s, and equal counts mean equal sets. A
+    researcher who switches to the wider scope is told its own threshold in the radio's own words,
+    and the page shows each scope's numbers beside the choice that produces them rather than a
+    count that would have to update itself without a script. Where the two coincide there is no
+    choice to offer and the page says so in a sentence instead — `same`.
     """
     need = store.opening_need(conn, pid)
     total = len(set(store.case_of(conn, pid).values()))
     unit = "cases" if store.cases(conn, pid) else "materials"
+    # A theme no case carries is read for under either threshold — it is the one theme that has to
+    # be, because nothing has ever been read for it anywhere. Counted separately because the radio
+    # labels describe thresholds in claims, and a theme with claims in nothing is described by
+    # neither of them: on an eight-material corpus every remaining pair was one of these, so the
+    # page offered a single radio saying "at least 4 of 8" over pairs that were nothing of the kind.
+    held = store.carried_cases(conn, pid)
+    never = len({tid for tid, _ in every if not held.get(tid)})
 
     def said(cells: list[tuple[str, str]]) -> str:
         """One scope's own price, printed in its own radio. Without a script the page cannot
@@ -654,7 +663,7 @@ def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str,
         return f'{_n(len(cells), "theme/material pair")} to check · about {calls} model calls'
 
     return {"themes": n_themes, "unit": unit, "need": need, "total": total,
-            "opening_n": len(opening), "all_n": len(every),
+            "opening_n": len(opening), "all_n": len(every), "never": never,
             "opening_said": said(opening), "all_said": said(every),
             "same": len(opening) == len(every)}
 

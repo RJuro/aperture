@@ -108,6 +108,34 @@ def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
     assert said["all_n"] == 1
 
 
+def test_the_control_says_how_many_of_the_pairs_are_themes_nobody_read_for(conn, client):
+    """Both radios describe a threshold in claims — "at least 4 of 8 materials" — and a theme with
+    claims in nothing answers to neither. On a real corpus every remaining pair was one of those,
+    so the page offered a single radio, over pairs its own label did not describe."""
+    ann = store.create_user(conn, "ann", "battery staple")
+    pid = store.create_project(conn, "Ann's study", owner_id=ann, method="iterative")
+    mids = [_material(conn, pid, n) for n in range(3)]
+    carried = store.save_theme(conn, pid, tid=None, name="Carried", gist="g", code_ids=[])
+    _line(conn, mids[0], carried)
+    _line(conn, mids[1], carried)
+    coined = store.save_theme(conn, pid, tid=None, name="Coined over the corpus", gist="g",
+                              code_ids=[])
+    store.set_hold(conn, coined, "candidate")
+    _login(client, "ann", "battery staple")
+
+    said = context.project_page(conn, pid)["consolidate"]
+    assert said["never"] == 1 and said["all_n"] == 4, "one unread cell, and three for the new one"
+    html = " ".join(client.get(f"/p/{pid}").text.split())
+    assert "1 theme here has no claims in any material yet" in html
+
+    # And it says nothing at all where every pair is a theme the corpus does carry.
+    store.save_follow(conn, mids[0], coined, "thin")
+    store.save_follow(conn, mids[1], coined, "thin")
+    store.save_follow(conn, mids[2], coined, "thin")
+    assert context.project_page(conn, pid)["consolidate"]["never"] == 0
+    assert "no claims in any material yet" not in client.get(f"/p/{pid}").text
+
+
 def test_a_theme_nothing_was_ever_read_for_is_read_for_somewhere(conn, project):
     """The hole a researcher found on the matrix: a row of "not assessed" all the way across.
 
@@ -429,9 +457,13 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
     html = client.get(f"/p/{pid}").text
     assert "Compare and update themes" in html
     # Three materials, so the opening threshold is two — the same as the wider scope's fixed two —
-    # and the one cell nobody read for this theme is what both scopes select here alike.
-    assert "Both scopes currently select the same 1 checks." in html
+    # and the one cell nobody read for this theme is what both scopes select here alike. A radio
+    # group with one radio in it is not a question, so where they coincide there is no group: one
+    # sentence saying what will be checked, and the default carried on the form.
     assert "1 theme/material pair to check · about 4–6 model calls" in html
+    form = re.search(r'<form class="compare".*?</form>', html, re.S).group(0)
+    assert 'type="radio"' not in form and "would select the same pairs" in form
+    assert '<input type="hidden" name="scope" value="opening">' in form
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"
