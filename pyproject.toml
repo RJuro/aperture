@@ -3,6 +3,8 @@ name = "aperture"
 version = "0.1.0"
 description = "A reading companion for qualitative material"
 requires-python = ">=3.12"
+# Transcription adds no Python dependency: the audio work is stdlib `wave` plus ffmpeg, called as
+# a subprocess, and the Dockerfile installs it (docs/DEPLOY.md → Coolify).
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",

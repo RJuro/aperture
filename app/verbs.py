@@ -18,7 +18,7 @@ from urllib.parse import quote_plus
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import RedirectResponse
 
-from . import db, ingest, intake, jobs, rerun, store
+from . import audio, db, ingest, intake, jobs, rerun, store
 from .pages import _mine as pages_mine, connection
 
 router = APIRouter()
@@ -74,12 +74,21 @@ def new_project(request: Request, name: str = Form(...), focus: str = Form(""),
 
 @router.post("/p/{pid}/material")
 def add_material(request: Request, pid: str, files: list[UploadFile] = File(default=[]),
-                 name: str = Form(""), text: str = Form("")):
+                 name: str = Form(""), text: str = Form(""),
+                 audio_note: str = Form(""), audio_clean: str = Form("")):
     """Files and/or pasted text in, sentences out, and one reading over all of them.
 
     Extraction is synchronous and so is the sentence cut: ids are the spine every code and claim
     cites, so they exist before anything can cite them, and the chain that follows is the only
     part slow enough to be worth backgrounding.
+
+    A recording is the exception, and has to be. Transcribing an hour takes minutes, which is not
+    something a browser can be asked to hold open, so the file is put on the volume, the material
+    is created saying in words that it has not been transcribed yet, and no sentence is cut until
+    the transcribing step has written the real text. `audio_note` is what the researcher says
+    about the recording — how many people, who talked about what — and `audio_clean` is whether
+    they want the pass that names the voices and repunctuates. Both ride on the material rather
+    than on the run, because a rerun from the recording has to be able to read them back.
 
     A file that cannot be read stops the whole submission. Half an upload landing is worse than
     none of it — the researcher dropped in a folder and has no way of knowing which four of five
@@ -87,10 +96,16 @@ def add_material(request: Request, pid: str, files: list[UploadFile] = File(defa
     """
     conn = connection()
     _mine(request, conn, pid)
-    pieces = []
+    pieces, recordings = [], []
     try:
         for f in files:
-            if f.filename:
+            if not f.filename:
+                continue
+            # Checked before extraction, or an .m4a would be refused as "not a kind of material
+            # this reads" by a reader that was never asked to open it.
+            if audio.is_audio(f.filename):
+                recordings.append(f)
+            else:
                 pieces.append((f.filename, intake.extract(f.filename, f.file.read())))
     except intake.IntakeError as e:
         return RedirectResponse(f"/p/{pid}?problem={quote_plus(str(e))}", status_code=303)
@@ -103,6 +118,13 @@ def add_material(request: Request, pid: str, files: list[UploadFile] = File(defa
             continue
         mid = store.add_material(conn, pid, piece_name, body)
         store.save_sentences(conn, mid, ingest.sentences(body))
+        mids.append(mid)
+    for f in recordings:
+        # No duplicate check: every recording starts with the same placeholder text, so comparing
+        # text would call the second interview of the afternoon a copy of the first.
+        mid = store.add_material(conn, pid, f.filename, audio.NOT_YET)
+        store.save_audio(conn, mid, f.filename, f.file, note=audio_note.strip(),
+                         clean=bool(audio_clean.strip()))
         mids.append(mid)
     said = (f"{', '.join(again)} {'is' if len(again) == 1 else 'are'} already in this project."
             if again else "")
@@ -296,12 +318,14 @@ def rerun_material(request: Request, pid: str, mid: str, step: str = Form("read"
     _mine(request, conn, pid)
     m = store.material(conn, mid)
     step = rerun.PAGE_NAMES.get(step, step)
-    if m is None or m["project_id"] != pid or step not in rerun.CHAIN:
+    recorded = m is not None and bool(m["audio_file"])
+    if m is None or m["project_id"] != pid or step not in rerun.chain_for(recorded):
         raise HTTPException(status_code=404, detail="not here")
     fid = (store.add_feedback(conn, pid, "material_summary", mid, "note", note.strip())
            if note.strip() else None)
     jobs.start(db.connect, pid, rerun.from_step(
-        mid, step, fid, explore=store.project(conn, pid)["method"] == "explore"))
+        mid, step, fid, explore=store.project(conn, pid)["method"] == "explore",
+        recorded=recorded))
     return RedirectResponse(f"/p/{pid}/m/{mid}", status_code=303)
 
 
