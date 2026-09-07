@@ -102,25 +102,32 @@ def context_bias(note: str) -> list[str]:
     seen: set[str] = set()
 
     def add(term: str) -> bool:
-        term = " ".join((term or "").split())
-        if not (2 <= len(term) <= 60) or term.lower() in seen:
+        """One word, or nothing. A phrase is added by its caller word by word.
+
+        The API takes these as repeated form fields and reads them as a comma-separated list, so
+        it refuses a term with a space in it — `Context bias item 'Paul Sigrist' must not contain
+        commas or whitespace`, a 400 that fails the whole recording. Found by transcribing a real
+        recording, not by a stub. Biasing towards *Sigrist* and *Rockaway* separately is the half
+        of a name that was ever at risk of being mis-heard anyway.
+        """
+        term = (term or "").strip().strip(",;:")
+        if " " in term or "," in term or not (2 <= len(term) <= 60) or term.lower() in seen:
             return False
         seen.add(term.lower())
         out.append(term)
         return True
 
+    def add_all(phrase: str) -> None:
+        for word in (phrase or "").split():
+            add(word)
+
     for m in _QUOTED.finditer(note or ""):
-        add(m.group(1))
+        add_all(m.group(1))
     for m in _PROPER.finditer(note or ""):
         term = m.group(0)
-        words = term.split()
-        if len(words) == 1 and term.lower() in _OPENERS:
+        if len(term.split()) == 1 and term.lower() in _OPENERS:
             continue
-        # A run of capitals longer than a term — a list of names, a sentence in title case —
-        # goes in as its parts rather than not at all.
-        if not add(term) and len(words) > 1:
-            for word in words:
-                add(word)
+        add_all(term)
     return out[:BIAS_MAX]
 
 

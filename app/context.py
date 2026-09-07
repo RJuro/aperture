@@ -386,9 +386,11 @@ def _recording(row) -> dict:
     d = dict(row)
     seconds = d.get("audio_seconds") or 0
     return {"from_recording": bool(d.get("audio_file") or seconds),
-            # The file is kept only until it has been transcribed, so its presence is what says
-            # the transcript is not there yet.
-            "waiting": bool(d.get("audio_file")),
+            # The recording is kept after it has been transcribed — "run again from the
+            # recording" is at the head of the chain and would fail on every recorded material
+            # without it — so the file's presence cannot be what says the transcript is missing.
+            # Its length is: `audio_seconds` is written only when a transcription has succeeded.
+            "waiting": bool(d.get("audio_file")) and not seconds,
             "note": d.get("audio_note") or "",
             "cleaned": bool(d.get("audio_clean")),
             "length": _length(seconds)}

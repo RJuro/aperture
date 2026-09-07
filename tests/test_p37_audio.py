@@ -163,13 +163,21 @@ def test_a_stereo_recording_becomes_mono_16k_and_much_smaller(tmp_path):
 # ---- the terms the transcriber is told to expect ---------------------------------------------
 
 def test_the_note_becomes_context_bias_without_a_model(model):
-    terms = asr.context_bias(NOTE)
-    assert "L. Byrne" in terms and "R. Okafor" in terms and "Tilbury" in terms
-    assert "packing shed" in terms, "a quoted phrase is a term the researcher meant"
-    assert "Two" not in terms, "a word that only starts a sentence is not a name"
-    assert len(terms) == len(set(terms))
-    assert model.calls == [], "finding capital letters is not worth a model call"
+    """The names in the researcher's note are what the transcriber is told to expect, found by a
+    regular expression rather than a call.
 
+    Every term is one word. The API takes these as repeated form fields and reads them as a
+    comma-separated list, so it refuses a term with a space in it — `Context bias item
+    'Paul Sigrist' must not contain commas or whitespace`, a 400 that fails the whole recording.
+    A name therefore goes in as its parts, which is where the mis-hearing was anyway.
+    """
+    note = ('Two people, R. Okafor and the interviewer L. Byrne, about the move to the coast. '
+            'She calls it the "packing shed".')
+    bias = asr.context_bias(note)
+    assert "Okafor" in bias and "Byrne" in bias and "packing" in bias and "shed" in bias
+    assert not [t for t in bias if " " in t or "," in t], bias
+    assert not model.calls, "capital letters are not worth a model call"
+    assert len(asr.context_bias(" ".join(f"Name{i}" for i in range(200)))) <= asr.BIAS_MAX
 
 def test_context_bias_stops_at_the_api_ceiling():
     note = ", ".join(f"Name{i}" for i in range(300))
@@ -201,7 +209,9 @@ def test_the_form_fields_are_the_documented_ones(conn, project, transcriber):
     assert sent["data"]["model"] == "voxtral-mini-latest"
     assert sent["data"]["diarize"] == "true"
     assert sent["data"]["timestamp_granularities"] == ["segment"]
-    assert "R. Okafor" in sent["data"]["context_bias"]
+    # One word per term, never a phrase: the API refuses a bias item containing a space.
+    assert "Okafor" in sent["data"]["context_bias"]
+    assert not [t for t in sent["data"]["context_bias"] if " " in t]
     assert "language" not in sent["data"], "the model detects it; the host's locale must not"
 
 
