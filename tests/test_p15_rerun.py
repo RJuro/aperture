@@ -66,11 +66,14 @@ def test_it_runs_everything_from_the_chosen_step_to_the_end(app, analysed, sent,
 
 def test_the_names_the_engine_uses_work_too(app, analysed):
     """The page sends what the page calls each step, because two of ours it may not print. The
-    engine's own names are the same five steps and are accepted unchanged."""
+    engine's own names are the same steps and are accepted unchanged — every step, that is, that
+    this material has: `transcribe` belongs to material that arrived as a recording (P37)."""
     pid, mid = analysed["pid"], analysed["grande"]
-    for sent in rerun.CHAIN:
+    for sent in rerun.TEXT_CHAIN:
         app.post(f"/p/{pid}/m/{mid}/rerun", data={"from": sent})
-    assert [kinds(c)[0] for c in app.planned] == list(rerun.CHAIN)
+    assert [kinds(c)[0] for c in app.planned] == list(rerun.TEXT_CHAIN)
+    # And the one it does not have is refused rather than planned against a file that is not here.
+    assert app.post(f"/p/{pid}/m/{mid}/rerun", data={"from": "transcribe"}).status_code == 404
 
 
 def test_a_step_nobody_has_is_not_a_chain(app, analysed):
@@ -86,7 +89,7 @@ def test_from_the_beginning_is_the_chain_material_arrives_on(app, analysed):
     app.post(f"/p/{pid}/m/{mid}/rerun", data={"from": "structure"})
     # An iteratively built project's upload chain is `rerun.CHAIN` with the tightening of
     # partly-carried claims after the lines — the same list `jobs.ingest_chain` plans for it.
-    upload = list(rerun.CHAIN); upload.insert(upload.index("doc") + 1, "tighten")
+    upload = list(rerun.TEXT_CHAIN); upload.insert(upload.index("doc") + 1, "tighten")
     assert kinds(app.planned[-1]) == upload + TAIL
 
 
@@ -227,7 +230,8 @@ def test_the_page_offers_every_step_the_verb_accepts(app, analysed):
     assert f"/m/{analysed['grande']}/rerun" in html
     offered = re.findall(r'<option value="([^"]+)"', html)
     assert offered and all(rerun.PAGE_NAMES.get(v, v) in rerun.CHAIN for v in offered)
-    assert len(offered) == len(rerun.CHAIN)
+    # This material arrived as text, so the step that goes back to a recording is not among them.
+    assert len(offered) == len(rerun.TEXT_CHAIN)
     assert 'name="note"' in html
 
 

@@ -17,10 +17,13 @@ import hashlib
 import json
 import logging
 import math
+import os
 import secrets
+import shutil
 import sqlite3
 from collections import Counter
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import db
 
@@ -113,6 +116,79 @@ def add_material(conn: sqlite3.Connection, pid: str, name: str, text: str) -> st
     return mid
 
 
+def save_audio(conn: sqlite3.Connection, mid: str, filename: str, fileobj,
+               *, note: str = "", clean: bool = False) -> str:
+    """Put the uploaded recording on the volume and say on the material where it went.
+
+    Streamed rather than read into memory: the API takes a gigabyte, and a researcher who uploads
+    an hour of stereo WAV should not need a gigabyte of RAM on the host to do it. The name is the
+    material's own id, so two files called `interview.m4a` cannot land on each other.
+
+    Returns the path relative to the data directory, which is what the column holds — an absolute
+    path stored in a row is a row that breaks the day the volume moves.
+    """
+    rel = f"audio/{mid}{os.path.splitext(filename or '')[1].lower()}"
+    dest = db.data_dir() / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with dest.open("wb") as out:
+        shutil.copyfileobj(fileobj, out)
+    conn.execute("UPDATE material SET audio_file=?, audio_note=?, audio_clean=? WHERE id=?",
+                 (rel, note, int(bool(clean)), mid))
+    conn.commit()
+    return rel
+
+
+def set_audio_file(conn: sqlite3.Connection, mid: str, rel: str) -> None:
+    """Which recording this material now has — or none, where it has been deleted."""
+    conn.execute("UPDATE material SET audio_file=? WHERE id=?", (rel, mid))
+    conn.commit()
+
+
+def audio_path(conn: sqlite3.Connection, mid: str) -> Path | None:
+    """Where this material's recording is, or None where it never had one."""
+    row = material(conn, mid)
+    rel = row["audio_file"] if row is not None else ""
+    return db.data_dir() / rel if rel else None
+
+
+def update_text(conn: sqlite3.Connection, mid: str, text: str,
+                *, audio_seconds: float | None = None) -> None:
+    """Replace a material's text — which only transcription does.
+
+    Sentence ids are the spine everything cites, so the old ones go with the old text: a
+    transcription writes text that never had sentences (the placeholder had none) or replaces a
+    transcript the researcher has asked for again, and in both cases the ids that follow are cut
+    from what is here now. The caller writes the new sentences inside the same transaction.
+    """
+    conn.execute("UPDATE material SET text=?, audio_seconds=COALESCE(?, audio_seconds) "
+                 "WHERE id=?", (text, audio_seconds, mid))
+    conn.execute("DELETE FROM sentence WHERE material_id=?", (mid,))
+    conn.commit()
+
+
+def save_voices(conn: sqlite3.Connection, mid: str, speakers: list[dict],
+                segments: list[dict]) -> None:
+    """Who spoke in a recording, and where each turn starts. Not a frame: it says nothing about
+    what kind of material this is or how it should be laid out, which FRAME works out next from
+    the transcript this wrote.
+
+    `speakers_estimated` is cleared rather than set. The word is for the guessing path — DIARIZE,
+    reading a transcript that never says who is speaking — and these speakers were separated by
+    the transcriber from the recording itself.
+    """
+    conn.execute("UPDATE material SET speakers_estimated=0 WHERE id=?", (mid,))
+    conn.execute("DELETE FROM speaker WHERE material_id=?", (mid,))
+    conn.executemany("INSERT OR REPLACE INTO speaker (material_id, label, name, role) "
+                     "VALUES (?,?,?,?)",
+                     [(mid, s["label"], s.get("name", ""), s.get("role", "other"))
+                      for s in speakers])
+    conn.execute("DELETE FROM segment WHERE material_id=?", (mid,))
+    conn.executemany("INSERT OR REPLACE INTO segment (material_id, idx, sid, label) "
+                     "VALUES (?,?,?,?)",
+                     [(mid, i, s["sid"], s["label"]) for i, s in enumerate(segments)])
+    conn.commit()
+
+
 def set_state(conn: sqlite3.Connection, mid: str, state: str) -> None:
     conn.execute("UPDATE material SET state=? WHERE id=? AND removed_at IS NULL", (state, mid))
     conn.commit()
@@ -136,11 +212,18 @@ def remove_material(conn: sqlite3.Connection, pid: str, mid: str) -> bool:
     Evidence derived from it is taken out of every live calculation immediately. Orphaned codes
     are removed from the live codebook; old run rows remain as the audit record of what happened.
     """
-    row = conn.execute("SELECT id FROM material WHERE id=? AND project_id=? AND removed_at IS NULL",
+    row = conn.execute("SELECT id, audio_file FROM material "
+                       "WHERE id=? AND project_id=? AND removed_at IS NULL",
                        (mid, pid)).fetchone()
     if row is None:
         return False
     at = now()
+    if row["audio_file"]:
+        # The row stays, recoverable, as every other removed material's does; the recording does
+        # not. It is the one thing here measured in hundreds of megabytes, the researcher has
+        # their own copy of it, and the transcript it produced is what the analysis ever read.
+        (db.data_dir() / row["audio_file"]).unlink(missing_ok=True)
+        conn.execute("UPDATE material SET audio_file='' WHERE id=?", (mid,))
     conn.execute("UPDATE material SET removed_at=?, state='removed' WHERE id=?", (at, mid))
     conn.execute("UPDATE moment SET status='superseded' WHERE material_id=? AND status='live'", (mid,))
     conn.execute("UPDATE summary SET status='superseded' WHERE scope='material' AND ref_id=? "

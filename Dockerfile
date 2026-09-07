@@ -3,7 +3,11 @@ WORKDIR /srv
 COPY pyproject.toml ./
 # Coolify's rollout healthcheck shells out to curl inside the container; without it a
 # perfectly healthy start is judged unhealthy and rolled back. Three megabytes, well spent.
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# ffmpeg is how a recording becomes something the transcriber will take: an hour of stereo 48 kHz
+# WAV is ~690 MB and re-encodes to around a tenth of that as mono 16 kHz FLAC, which is what makes
+# large uploads work at all, and it is also what cuts a very long recording into pieces. Without it
+# in the image only an already-mono-16 kHz WAV could be transcribed.
+RUN apt-get update && apt-get install -y --no-install-recommends curl ffmpeg && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir fastapi "uvicorn[standard]" jinja2 httpx python-multipart python-docx pypdf
 COPY app/ ./app/
 COPY seed/ ./seed/
