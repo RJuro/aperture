@@ -168,7 +168,7 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
    One segment per material, each filled by how many of its own four steps have landed. */
 .reading-bar { max-width: 300px; margin-top: 20px; display: flex; gap: 5px; }
 .reading-bar .seg { position: relative; height: 3px; flex: 1; background: var(--border); }
-.reading-bar .seg::after { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(var(--f) * 25%); background: var(--fg); }
+.reading-bar .seg::after { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(var(--f) * 100%); background: var(--fg); }
 .reading-bar .seg.active::after { background: var(--accent); box-shadow: 0 0 0 0 var(--accent-soft); animation: pulse 1.7s ease-out infinite; }
 .reading-bar .seg.failed::after { background: var(--danger); }
 .overview-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, .55fr); gap: clamp(42px, 7vw, 90px); align-items: start; }
@@ -587,3 +587,16 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
 .status-legend { margin-top: 10px; font-size: 13px; }
 .status-legend ul { margin: 4px 0 0; padding-left: 20px; }
 .status-legend li { margin: 3px 0; }
+
+/* Recordings */
+/* The two questions a transcript needs answered run across the foot of the upload grid rather
+   than beside the file field: they are about the file chosen above them, and in a column of
+   their own they would read as an alternative to it, the way the paste fields do. */
+.recording-fields { grid-column: 1 / -1; display: grid; gap: 12px; padding: 20px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.recording-fields h3 { font-size: 17px; }
+.recording-fields > p { margin: 0; max-width: 76ch; }
+.recording-fields .choice { gap: 10px; }
+/* Where the material's text came from, said once under the head. It is a fact about the
+   material rather than a warning about it, so it stays the size of the meta line above it. */
+.recording-note { margin: 10px 0 0; max-width: 74ch; color: var(--muted); font-size: 13px; }
+.recording-note-fold { margin-top: 8px; padding-top: 8px; }

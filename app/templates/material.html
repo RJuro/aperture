@@ -20,6 +20,17 @@
             <ul class="mats">{% for p in people %}<li><span class="material">{{ p.name | txt }}</span>{% if p.role %} <span class="dim">({{ p.role | txt }})</span>{% endif %}</li>{% endfor %}</ul>
           </details>{% endif %}
         </div>
+        {# Where a transcript came from is part of reading it: a mis-heard word is a mis-heard
+           quote, and whether the voices were named by a second reading or numbered by the
+           transcriber decides how much of the speaker attribution is the machine's. The
+           researcher's own description is theirs, unedited, and is folded because it was written
+           for the transcriber rather than for this page. #}
+        {% if material.recording.transcribed %}
+        <p class="recording-note">Transcribed from a recording{% if material.recording.length %} of {{ material.recording.length }}{% endif %}. {% if material.recording.cleaned %}A second reading named each voice from your description of the recording.{% else %}The voices are numbered as the transcriber separated them.{% endif %}</p>
+        {% if material.recording.note %}<details class="quiet-details recording-note-fold"><summary>Your description of the recording</summary>
+          <p class="material">{{ material.recording.note | txt }}</p>
+        </details>{% endif %}
+        {% endif %}
         <div class="analysis-receipt material-receipt" aria-label="Analysis completed for this material">
           {% for step in material.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% endfor %}
         </div>
@@ -140,7 +151,7 @@
   </section>
 </div>
 {% else %}
-<div class="empty-state">{% if working %}This material is being read in the background. You can leave this page.{% else %}No analysis yet.{% endif %}</div>
+<div class="empty-state">{% if material.recording.waiting %}This recording is being transcribed. The analysis starts when it is done, and you can leave this page.{% elif material.recording.error %}The transcription stopped: {{ material.recording.error | txt }}. Nothing has been read in this material, and nothing is running for it. Remove it and add the recording again, or correct the material and run the analysis again.{% elif working %}This material is being read in the background. You can leave this page.{% else %}No analysis yet.{% endif %}</div>
 {% endif %}
 </div></section>
 

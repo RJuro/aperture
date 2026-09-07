@@ -4,8 +4,8 @@
   <div class="container">
     <div class="head-row"><div><h1>{{ project.name | txt }}</h1>
       {% if materials %}
-      <div class="reading-bar" role="img" aria-label="One segment per material, each filled by how many of its four analysis steps are done">
-        {% for m in materials %}<span class="seg {{ m.reading }}" style="--f: {{ m.analysis_done }}"></span>{% endfor %}
+      <div class="reading-bar" role="img" aria-label="One segment per material, each filled by how many of its analysis steps are done">
+        {% for m in materials %}<span class="seg {{ m.reading }}" style="--f: {{ (m.analysis_done / (m.analysis | length)) | round(3) }}"></span>{% endfor %}
       </div>
       <p class="lead">{{ reading.done }} of {{ materials | length }} {{ 'material' | plural(materials | length) }} fully read{% if reading.active %} · {{ reading.active }} being read{% endif %}{% if reading.failed %} · {{ reading.failed }} stopped{% endif %}{% if reading.waiting %} · {{ reading.waiting }} not read yet{% endif %}.</p>
       {% else %}<p class="lead">No material added yet.</p>{% endif %}</div>
@@ -190,7 +190,7 @@
     <div class="material-main"><a class="material-name material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
       <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}</span>
     </div>
-    <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of 4 analysis steps complete">
+    <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of {{ m.analysis | length }} analysis steps complete">
       {% for step in m.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% if step.error %}<span class="dim small">{{ step.error | txt }}</span>{% endif %}{% endfor %}
     </div>
     <details class="row-menu"><summary aria-label="Options for {{ m.display_title | txt }}">•••</summary>
@@ -256,9 +256,23 @@
       <a href="/guide#what-happens">More in the guide</a>.</p>
   </details>
   <form method="post" action="/p/{{ project.id }}/material" enctype="multipart/form-data" class="upload-grid">
-    <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv"><small>.txt, .md, .docx, .pdf, or .csv · each file becomes one material</small></label>
+    <label class="upload-field">Files <input type="file" name="files" multiple accept=".txt,.md,.docx,.pdf,.csv,.mp3,.wav,.m4a,.flac,.ogg,.mp4,.m4v,.mov,.aac,.opus,.webm"><small>Documents — .txt, .md, .docx, .pdf, .csv — and recordings — .mp3, .wav, .m4a, .flac, .ogg, .aac, .opus, .mp4, .m4v, .mov, .webm. Each file becomes one material, and one upload may mix the two. A recording is transcribed before it is read, which takes a few minutes for an interview of an hour; the analysis then runs on the transcript without you starting it again.</small></label>
     <div class="paste-fields"><label>Or paste text — material name <input name="name" placeholder="Material name"></label>
     <label>Text <textarea name="text" rows="6" placeholder="Paste source material here"></textarea></label></div>
+    {# The two fields a transcript needs from the researcher, and nowhere else to put them: the
+       transcriber is shown the description as typed, and the optional second reading has nothing
+       to name the voices from without it. They stand open rather than folded away, because a
+       researcher who never opens the fold uploads an interview and gets SPEAKER 1 and SPEAKER 2. #}
+    <div class="recording-fields">
+      <h3>If you are uploading a recording <a class="help" href="/guide?from=/p/{{ project.id }}#recordings" title="What happens to a recording" aria-label="Help: What happens to a recording">?</a></h3>
+      <label><span>Who is in the recording, and what each of them talked about</span>
+        <textarea name="audio_note" rows="3" placeholder="Two people: Paul Sigrist asking the questions, Mary Grande answering. She talks about the crossing in 1921 and her father&#39;s bakery in Brooklyn."></textarea></label>
+      <p class="dim small">This is sent to the transcriber exactly as you type it, so that it spells the names it hears the way you wrote them. If you also ask for the second reading below, this description is what lets each voice be named rather than numbered.</p>
+      <label class="choice"><input type="checkbox" name="audio_clean" value="1">
+        <span>Name the voices and repair the transcript<br>
+        <span class="dim small">The transcript is read back with your description in view: each voice is named instead of numbered, and punctuation and mis-heard names are repaired. It costs two model calls for each stretch of recording, and it may not reword what was said — a stretch changed past a threshold is put back as it was transcribed.</span></span></label>
+      <p class="dim small">Both are optional, and both are ignored when the upload contains no recording.</p>
+    </div>
     <button class="btn btn-primary">Add material</button>
   </form>
 </details>

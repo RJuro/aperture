@@ -15,8 +15,9 @@ pytest.importorskip("app.pages")
 pytest.importorskip("app.context")
 
 # The ids `docs/GUIDE.md` promises and the templates link to.
-SECTIONS = ("what-happens", "method", "focus", "themes", "reach", "lines", "absence", "comments",
-            "rerun", "check", "cases", "record", "sharing", "method-notes")
+SECTIONS = ("what-happens", "recordings", "method", "focus", "themes", "reach", "lines",
+            "absence", "comments", "rerun", "check", "cases", "record", "sharing",
+            "method-notes")
 
 
 @pytest.fixture

@@ -28,6 +28,7 @@
   <p class="eyebrow">Contents</p>
   <ol class="mats">
     <li><a href="#what-happens">Adding material</a></li>
+    <li><a href="#recordings">Uploading a recording</a></li>
     <li><a href="#pipeline">How analysis works</a></li>
     <li><a href="#method">Choosing an analysis method</a></li>
     <li><a href="#focus">The research focus</a></li>
@@ -55,9 +56,49 @@
 <p>Each file becomes one material. Aperture identifies its structure, assigns codes, and produces
   themes and summaries with links to the source text. Processing continues if you leave the page;
   check the progress message to see which step is running. Stop halts it between steps.</p>
-<p>Supported files: TXT, Markdown, Word (.docx), PDF, and CSV.</p>
+<p>Supported files: TXT, Markdown, Word (.docx), PDF, and CSV, and audio and video recordings
+  — see <a href="#recordings">Uploading a recording</a>.</p>
 <p><a href="#pipeline">How analysis works</a> · <a href="#method">Choosing an analysis
   method</a></p>
+</section>
+
+<section id="recordings">
+<h2>Uploading a recording</h2>
+<p>Recordings go in the same file field as documents, and one upload may mix them. Audio:
+  .mp3, .wav, .m4a, .flac, .ogg, .aac, .opus. Video: .mp4, .m4v, .mov, .webm — the picture is
+  discarded and only the sound is used.</p>
+<p>A recording is converted to the format the transcriber accepts, split into parts if it is
+  longer than one request allows, and transcribed by Voxtral, Mistral's speech model. The parts
+  are joined back into one transcript. That transcript becomes the material's text, and from
+  there it is analysed exactly like a pasted or uploaded document: structure, then what to look
+  for, then coding, then the summaries. You do not start the analysis a second time. Transcribing
+  an interview of an hour takes a few minutes.</p>
+<h3>What the description of the recording is for</h3>
+<p>The field headed <strong>If you are uploading a recording</strong> asks how many people are in
+  it, who they are, and what each of them talked about. It is sent to the transcriber exactly as
+  you typed it, which is what makes it spell a name the way you wrote it rather than the way it
+  sounds. If you also ask for the second reading, this description is the only thing that can
+  name a voice: without it the speakers can be separated but not identified.</p>
+<h3>What the second reading does, and what it may not do</h3>
+<p>Selecting <strong>Name the voices and repair the transcript</strong> reads the finished
+  transcript back once more, with your description in view. It names each speaker instead of
+  numbering them, restores punctuation, and corrects names and words the transcriber mis-heard.
+  It costs two model calls for each stretch of recording, on top of the transcription itself.</p>
+<p>It may not reword what was said. A stretch that comes back changed beyond a threshold is
+  rejected and the transcript as originally heard is kept, because a tidied paraphrase would
+  become the quotation under a claim. Leaving this unselected is not a loss of analysis: the
+  speakers are still separated, but they are numbered rather than named.</p>
+<h3>The transcript is what the analysis reads</h3>
+<p>Every code, claim and quotation rests on the transcript, not on the sound. A word the
+  transcriber mis-heard is a word the analysis will quote. The material page says that a material
+  was transcribed, how long the recording was, whether the voices were named, and shows your
+  description unedited, so a quotation that reads oddly can be traced to the transcription rather
+  than to the reading.</p>
+<p>You can correct it. On the material page, <strong>Correct material structure</strong> takes a
+  description of the right speakers and sections and works the layout out again, and <strong>Run
+  the analysis again</strong> reads the material a second time from the step you choose — see <a
+  href="#rerun">Running a material again</a>. Both work on the stored transcript; the recording
+  is not transcribed a second time.</p>
 </section>
 
 <section id="pipeline">
