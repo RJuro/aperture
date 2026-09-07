@@ -473,6 +473,31 @@ def _duplicates(conn, pid: str) -> list[dict]:
                 out.append({"a": a, "b": b, "why": " · ".join(why)})
     return out
 
+def _recording(row) -> dict:
+    """What the pages need to know about a material that arrived as a recording.
+
+    The columns live on the material row and are read defensively: a database written before
+    recordings existed has none of them, and a page that asked for one directly would break on
+    every material added before the upgrade.
+    """
+    d = dict(row)
+    seconds = d.get("audio_seconds") or 0
+    return {"from_recording": bool(d.get("audio_file") or seconds),
+            # The file is kept only until it has been transcribed, so its presence is what says
+            # the transcript is not there yet.
+            "waiting": bool(d.get("audio_file")),
+            "note": d.get("audio_note") or "",
+            "cleaned": bool(d.get("audio_clean")),
+            "length": _length(seconds)}
+
+
+def _length(seconds: int) -> str:
+    """A recording's length in the unit a researcher thinks in. Seconds are the file's business."""
+    if not seconds:
+        return ""
+    minutes = round(seconds / 60)
+    return f"{minutes} {'minute' if minutes == 1 else 'minutes'}" if minutes else "under a minute"
+
 
 def _analysis_steps(conn, row) -> list[dict]:
     """A compact receipt of which material-level analyses have actually landed."""
@@ -492,6 +517,13 @@ def _analysis_steps(conn, row) -> list[dict]:
     }
     labels = (("frame", "Structure"), ("angles", "Angles"), ("read", "Coding"),
               ("doc", "Synthesis"))
+    # A recording is transcribed before there is anything to read in it, and that wait is minutes
+    # long. Without a step of its own the receipt showed four waiting steps and no reason for it,
+    # so the researcher could not tell a transcription running from an analysis that never began.
+    rec = _recording(row)
+    if rec["from_recording"]:
+        labels = (("transcribe", "Transcription"),) + labels
+        inferred["transcribe"] = not rec["waiting"] and bool((dict(row).get("text") or "").strip())
     out = []
     for kind, label in labels:
         state = "done" if kind in finished or inferred[kind] else "waiting"
@@ -576,6 +608,9 @@ def _shell(conn, pid: str) -> dict:
         state = ("active" if "active" in states else "failed" if "failed" in states
                  else "done" if states == {"done"} else "waiting")
         said = {"active": "Being read", "done": "Read", "waiting": "Not read yet"}.get(state, "")
+        # Nothing is being read in a recording whose transcript does not exist yet.
+        if state == "active" and _recording(m)["waiting"]:
+            said = "Being transcribed"
         if state == "failed":
             said = "Stopped: " + next(s["error"] for s in steps if s["state"] == "failed")
         nav_materials.append({**dict(m), "display_title": _material_title(m),
@@ -733,7 +768,7 @@ def project_page(conn, pid: str) -> dict:
         # has come without the reader counting four receipts across four rows.
         states = {s["state"] for s in m["analysis"]}
         m["reading"] = ("failed" if "failed" in states else "active" if "active" in states
-                        else "done" if m["analysis_done"] == 4 else "waiting")
+                        else "done" if m["analysis_done"] == len(m["analysis"]) else "waiting")
     reading = {k: sum(1 for m in mats if m["reading"] == k)
                for k in ("done", "active", "failed", "waiting")}
     # One query for the whole grid rather than themes x materials calls to `thread`: at twelve
@@ -825,6 +860,20 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     mat = dict(m)
     mat["display_title"] = _material_title(m)
     mat["analysis"] = _analysis_steps(conn, m)
+    # A material still waiting for its transcript has a placeholder for text and no claims, and
+    # the page has to say that rather than print an empty reading. A transcription that stopped
+    # is the same absence for a different reason, and the page must not offer either as reading.
+    rec = _recording(m)
+    failed = next((s for s in mat["analysis"]
+                   if s["kind"] == "transcribe" and s["state"] == "failed"), None)
+    mat["recording"] = {**rec,
+                        # Transcribed is the transcript existing, not the wait being over: a
+                        # transcription that stopped is also no longer waiting, and the head
+                        # would have said the material was transcribed from a recording that
+                        # was never transcribed at all.
+                        "transcribed": rec["from_recording"] and not rec["waiting"],
+                        "waiting": rec["waiting"] and not failed,
+                        "error": failed["error"] if failed else ""}
     cards = []
     live = [dict(t) for t in store.themes_for_material(conn, pid, mid)]
     for t in live:
