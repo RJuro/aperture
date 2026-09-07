@@ -188,7 +188,7 @@
 {% for m in materials %}
   <li>
     <div class="material-main"><a class="material-name material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
-      <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}</span>
+      <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}{% if m.source_name %} · <span class="source-file" title="The file this material was uploaded as">{{ m.source_name | txt }}</span>{% endif %}</span>
     </div>
     <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of {{ m.analysis | length }} analysis steps complete">
       {% for step in m.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% if step.error %}<span class="dim small">{{ step.error | txt }}</span>{% endif %}{% endfor %}

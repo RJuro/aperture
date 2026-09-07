@@ -13,6 +13,9 @@
           {% if speakers %}<span>{% for s in speakers %}<span class="material">{{ (s.name or s.label) | txt }}</span>{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span>
           {% elif people %}<span>{% for p in people[:3] %}<span class="material">{{ p.name | txt }}</span>{% if not loop.last %}, {% endif %}{% endfor %}{% if people | length > 3 %} and {{ people | length - 3 }} more{% endif %}</span>{% endif %}
           <span>{{ derivation }}</span>
+          {# The file it arrived as. Shown only where the composed title is not already it, so a
+             pasted piece the researcher named themselves does not print its own name twice. #}
+          {% if material.source_name %}<span class="source-file" title="The file this material was uploaded as">{{ material.source_name | txt }}</span>{% endif %}
           {# The fold rides on the same line as the rest of the meta rather than under it: closed
              it is one more twelve-point phrase, and a line of head is a line of summary lost. The
              theme count that used to sit here is the list two sections down, counted twice. #}

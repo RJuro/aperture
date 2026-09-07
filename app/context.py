@@ -362,6 +362,17 @@ def _material_title(row) -> str:
     return titles.standardize(row["title"] or row["name"])
 
 
+def _source_name(row, display_title: str) -> str:
+    """The file this material arrived as, where the composed title is not already it.
+
+    A researcher who uploaded `NYC-OH-0412 transcript.docx` has no way back to the file on their
+    own disk once FRAME has titled it "Mary Grande — interview, 1974", and the two names have to
+    be matched up by hand to check a quote against the source. The filename was in the row the
+    whole time (`material.name`); it was simply never shown once a title existed.
+    """
+    return "" if row["name"] == display_title else row["name"]
+
+
 def _tension_notes(conn, tid: str) -> list[dict]:
     """What has pulled against a frozen theme's definition, each with the material it came from.
 
@@ -665,6 +676,7 @@ def project_page(conn, pid: str) -> dict:
     stale = {m["id"] for m in store.out_of_date(conn, pid)}
     for m in mats:
         m["display_title"] = _material_title(m)
+        m["source_name"] = _source_name(m, m["display_title"])
         m["derivation"] = derivation(conn, m["id"])
         m["out_of_date"] = m["id"] in stale
         m["analysis"] = _analysis_steps(conn, m)
@@ -759,6 +771,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         return {}
     mat = dict(m)
     mat["display_title"] = _material_title(m)
+    mat["source_name"] = _source_name(m, mat["display_title"])
     mat["analysis"] = _analysis_steps(conn, m)
     # A material still waiting for its transcript has a placeholder for text and no claims, and
     # the page has to say that rather than print an empty reading. A transcription that stopped
@@ -897,6 +910,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     for m in store.materials(conn, pid):
         d = dict(m)
         d["display_title"] = _material_title(m)
+        d["source_name"] = _source_name(m, d["display_title"])
         for stage in ("orientation", "reading", "angles", "memo", "residual"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         # Where the project explores, the memo IS what the reading found and DOC wrote no summary

@@ -103,7 +103,43 @@ def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
     for t in (tid, second):
         store.set_hold(conn, t, "candidate")
     said = context.project_page(conn, project)["consolidate"]
-    assert said["themes"] == 2 and said["all_n"] == 0, "two candidates are worth comparing"
+    assert said["themes"] == 2, "two candidates are worth comparing"
+    # `Other` holds no line anywhere, so the material it was never read in is a cell — see below.
+    assert said["all_n"] == 1
+
+
+def test_a_theme_nothing_was_ever_read_for_is_read_for_somewhere(conn, project):
+    """The hole a researcher found on the matrix: a row of "not assessed" all the way across.
+
+    The cross-case pass may coin a candidate over the corpus rather than out of one material, so
+    it starts with no line and no follow row anywhere. Under the count rule alone — read for a
+    theme two cases carry — nothing would ever be read for it, and it would sit there for ever as
+    a potential theme the corpus had never been checked against.
+    """
+    mids = [_material(conn, project, n) for n in range(3)]
+    sid = store.sentences(conn, mids[1])[1][0]
+    store.save_codes(conn, project, mids[1],
+                     [{"name": "leaving", "definition": "what made them go", "sids": [sid]}])
+    code = store.codebook(conn, project)[0]["id"]
+    coined = store.save_theme(conn, project, tid=None, name="Coined over the corpus",
+                              gist="nobody has read for this anywhere", code_ids=[code])
+    store.set_hold(conn, coined, "candidate")
+
+    # Where its codes actually fired, and only there: a candidate nobody read for is not a licence
+    # to send a reader through every material after it.
+    assert store.backfill_cells(conn, project, "all") == [(coined, mids[1])]
+
+    # A candidate that gathers no fired code names nowhere to look, so the corpus is where it is
+    # looked for — the one thing it must not be is left unchecked.
+    bare = store.save_theme(conn, project, tid=None, name="No codes at all", gist="g",
+                            code_ids=[])
+    store.set_hold(conn, bare, "candidate")
+    assert [c for c in store.backfill_cells(conn, project, "all") if c[0] == bare] == \
+        [(bare, m) for m in mids]
+
+    # And once one material has answered, it is a theme one case carries like any other.
+    _line(conn, mids[1], coined)
+    assert not [c for c in store.backfill_cells(conn, project, "all") if c[0] == coined]
 
 
 # ---- the plan -----------------------------------------------------------------------------------

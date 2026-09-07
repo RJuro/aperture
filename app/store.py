@@ -589,15 +589,31 @@ def backfill_cells(conn: sqlite3.Connection, pid: str,
     came back; `opening` is the default and the wider look is asked for with its price in view.
     A theme one case carries is never read for, so a consolidation cannot send a reader through
     the whole corpus after one material's motif.
+
+    A theme NO case carries is the opposite case and is always read for. The cross-case pass may
+    coin a candidate over the corpus rather than out of one material, which leaves it with no line
+    and no follow row anywhere: under the `>= need` rule alone it could never be read for, so it
+    would sit on the matrix as a potential theme nothing in the corpus had ever been checked
+    against — for ever. Its cells are the materials whose coding fired the codes it gathers, which
+    is where it says its evidence is; a candidate that gathers no fired code at all names nowhere
+    to look, so the whole corpus is where it gets looked for.
     """
     carried = carried_cases(conn, pid)
     need = opening_need(conn, pid) if scope == "opening" else 2
     mids = [m["id"] for m in materials(conn, pid)]
     outcomes = followed(conn, pid)
-    return [(t["id"], mid)
-            for t in list(live_themes(conn, pid)) + list(candidates(conn, pid))
-            if len(carried.get(t["id"], ())) >= need
-            for mid in mids if outcomes.get((t["id"], mid)) in (None, "skipped")]
+    out: list[tuple[str, str]] = []
+    for t in list(live_themes(conn, pid)) + list(candidates(conn, pid)):
+        held = len(carried.get(t["id"], ()))
+        if held:
+            if held < need:
+                continue
+            where = mids
+        else:
+            where = [mid for mid in mids if theme_codes(conn, t["id"], mid)] or mids
+        out += [(t["id"], mid) for mid in where
+                if outcomes.get((t["id"], mid)) in (None, "skipped")]
+    return out
 
 
 # ---- cases ------------------------------------------------------------------------------------
