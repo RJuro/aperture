@@ -257,6 +257,33 @@ def test_no_javascript_except_the_one_poller(client, analysed):
         assert "<script" not in html.lower()
 
 
+def test_the_introduction_is_five_cards_that_go_left_to_right_without_a_script(client):
+    """`/how`, the thing a person needs before a project exists: what kind of instrument this is,
+    and above all that it is not a chat window. One card per URL, so the deck needs no script and
+    a card can be linked to — and `at` is clamped, because a query parameter is anybody's."""
+    from app import context, pages
+
+    first = client.get("/how").text
+    assert "<script" not in first.lower(), "the deck is links, not a script"
+    assert 'href="/how?at=2"' in first and 'href="/how?at=0"' not in first
+    assert first.count('class="intro-step') == len(pages.INTRO)
+    assert "chat window" in first, "the one misreading this page exists to correct"
+
+    # Every card renders, each says which it is, and the last offers the way out of the deck.
+    for n in range(1, len(pages.INTRO) + 1):
+        page = client.get(f"/how?at={n}").text
+        assert f"{n} of {len(pages.INTRO)}" in page
+        assert (f'aria-current="step"' in page)
+        said = strip_material(page).lower()
+        for word in context._BANNED:
+            assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on card {n}"
+    assert "Start a project" in client.get(f"/how?at={len(pages.INTRO)}").text
+
+    # Out of range in either direction lands on a card rather than on an empty one.
+    assert "1 of 5" in client.get("/how?at=-4").text
+    assert "5 of 5" in client.get("/how?at=99").text
+
+
 def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back(client, conn,
                                                                                  analysed):
     """Themes go on changing as material arrives. A material synthesised against an older set is

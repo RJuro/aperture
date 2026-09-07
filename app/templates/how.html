@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{#
+  The introduction. Five cards, one at a time, left to right.
+
+  No JavaScript, like the rest of the app: each card is its own URL (`/how?at=3`), so the browser's
+  Back button works, a card can be linked to, and the cross-document view transition already on
+  `:root` does the sliding. The rail is the whole set at once — a reader who wants the third thing
+  and not the first can select it — and the card is where the prose is.
+
+  The prose is here rather than in `pages.py` because it is prose. Only the rail's five short
+  labels live in Python, so that "how many cards are there" has one answer and the clamp on `at`
+  cannot disagree with what the rail draws.
+#}
+{% block main %}
+<section class="section intro-head">
+  <div class="container">
+    <p class="guide-back"><a href="/">All projects</a></p>
+    <p class="eyebrow">Introduction</p>
+    <h1>How reading works here</h1>
+    <p class="lead">Aperture is not a chat window, and there is no prompt to write. You give it
+      your own material; it reads, and everything it writes stays tied to the words it read. Five
+      things worth knowing before you start.</p>
+  </div>
+</section>
+
+<div class="container intro">
+  <nav class="intro-rail" aria-label="Introduction">
+    {% for label in steps %}
+    {% set n = loop.index %}
+    <a class="intro-step{% if n < at %} done{% endif %}" href="/how?at={{ n }}"
+       {% if n == at %}aria-current="step"{% endif %}>
+      <b aria-hidden="true">{{ n }}</b><span>{{ label }}</span></a>
+    {% endfor %}
+  </nav>
+
+  <article class="intro-card">
+    <p class="eyebrow">{{ at }} of {{ steps | length }}</p>
+    {% if at == 1 %}
+    <h2>You bring the material. Nothing else is read.</h2>
+    <p>Interviews, field notes, documents, open responses, recordings. Everything Aperture writes
+      is written about those files and about nothing else — it brings no general knowledge to
+      them, and there is no conversation to have with it. Add a material and the reading begins on
+      its own.</p>
+    <p>It takes minutes rather than seconds, and it continues if you close the page.</p>
+    <p class="intro-where">In a project: <strong>Add material</strong></p>
+
+    {% elif at == 2 %}
+    <h2>Nothing is claimed without the words it came from.</h2>
+    <p>Every claim carries a short quotation from your material, and the quotation is a link:
+      select it and you land on that sentence, marked, in the transcript itself. You are never
+      asked to take a finding on trust.</p>
+    <p>A claim whose quotation cannot be found in the material is not kept. It is set aside, and
+      the page prints it under <strong>Excluded from the analysis</strong> with the reason — so a
+      reading that overreached is visible rather than quietly tidied away.</p>
+    <p class="intro-where">On a material: the quotation under each claim</p>
+
+    {% elif at == 3 %}
+    <h2>Themes are counted, and it is you who promotes them.</h2>
+    <p>A pattern found in one material is a candidate, and stays one. It becomes a theme of the
+      project when enough of your cases carry it — and even then the instrument only counts and
+      puts the question; adding it to the project is your decision, not its.</p>
+    <p>Lock a theme's definition and later material is read against those words instead of
+      quietly rewording them. What pulls against a locked definition is kept beside it as a note,
+      which is the case for unlocking it again.</p>
+    <p class="intro-where">On the project: the table of themes by material</p>
+
+    {% elif at == 4 %}
+    <h2>An empty cell is a question, not a verdict.</h2>
+    <p>Where a theme has nothing in a material, the table says which kind of nothing it is: never
+      looked for, looked for and too thin to keep, passed over by a preliminary review, or not
+      assessed yet. Four different findings that would otherwise all be blank.</p>
+    <p>Absence is something you run. Check a theme against a material and read what comes back —
+      the answer says what was searched, so "not found" means something you can report.</p>
+    <p class="intro-where">On the project: the empty cells, and <strong>Check a claim</strong></p>
+
+    {% else %}
+    <h2>You answer the reading. It does not answer you.</h2>
+    <p>A comment goes onto one piece of the analysis — a line of claims, a theme, a summary — and
+      is used the next time that piece is written. Nothing replies to you in a chat window; the
+      writing changes instead, and the old version stays in the record.</p>
+    <p>Every step, every model call and what each one cost is printed in the analysis record. You
+      can always say how a sentence in your findings came to be there.</p>
+    <p class="intro-where">Anywhere: the comment box under a piece · <strong>Analysis record</strong></p>
+    {% endif %}
+  </article>
+
+  <div class="intro-move">
+    {% if at > 1 %}<a class="btn" href="/how?at={{ at - 1 }}">Back</a>{% endif %}
+    {% if at < steps | length %}
+    <a class="btn btn-primary" href="/how?at={{ at + 1 }}">Next</a>
+    {% else %}
+    <a class="btn btn-primary" href="/">Start a project</a>
+    {% endif %}
+    <a class="intro-skip" href="/guide">Read the full guide</a>
+  </div>
+</div>
+{% endblock %}

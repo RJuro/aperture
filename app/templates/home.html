@@ -11,13 +11,16 @@
     {% for p in projects %}
       <li><a href="/p/{{ p.id }}"><span>{{ p.name | txt }}</span><small>Created {{ p.created_at | when }} <b aria-hidden="true">↗</b></small>{% if p.role and p.role != 'owner' %}<small>Shared by {{ p.owner_name | txt }} · {{ 'can edit' if p.role == 'edit' else 'read only' }}</small>{% endif %}</a></li>
     {% else %}
-      <li class="empty-state">No projects yet. Begin with a research question.</li>
+      {# Nothing of their own to look at yet, which is the one moment the introduction is worth
+         more than the list it is standing in for. #}
+      <li class="empty-state">No projects yet. Begin with a research question — or
+        <a class="intro-link" href="/how">see how reading works here</a> first.</li>
     {% endfor %}
     </ul>
   </section>
   <section class="new-project">
     <h2>New project</h2>
-    <p class="lead">Aperture turns interviews, field notes, documents and open responses into a traceable thematic reading.</p>
+    <p class="lead">Aperture turns interviews, field notes, documents and open responses into a traceable thematic reading. <a class="intro-link" href="/how">How it works</a>.</p>
     <form method="post" action="/p/new" class="form-stack">
       <label>Project name <input name="name" required placeholder="Migration and work"></label>
       {# The label's own text and its help link are one grid child, or `form label`'s single
