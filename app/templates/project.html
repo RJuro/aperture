@@ -149,6 +149,18 @@
    under the table rather than folded into the heading: it changes the themes the researcher has
    just read, and it is decided after reading them, not before. #}
 {% if consolidate and role in ('edit', 'owner') %}
+{# Pressed once, it is a chain of dozens of model calls, and the page it returns to looked exactly
+   as it did before it was pressed — so it was pressed again, and the whole comparison was queued
+   twice. While anything is running the control says so instead of offering itself: the plan is
+   computed from the cells as they stand, and cells that are being written are not cells to plan
+   against. `verbs.compare` refuses the same case, because a form on an old page can still post. #}
+{% if working %}
+<div class="compare">
+  <h3>Compare and update themes</h3>
+  <p class="dim small">This is running now, or is waiting for other work on this project to
+    finish. This page updates itself; the comparison can be started again when it is done.</p>
+</div>
+{% else %}
 <form class="compare" method="post" action="/p/{{ project.id }}/compare">
   <h3>Compare and update themes</h3>
   <p class="dim small">Compare the project's theme definitions and merge overlapping themes where
@@ -177,6 +189,7 @@
   <input id="compare-note" type="text" name="note" placeholder="e.g. the three language themes are one">
   <button class="btn btn-primary">Compare and update themes</button>
 </form>
+{% endif %}
 {% endif %}
 </div>
 </section>

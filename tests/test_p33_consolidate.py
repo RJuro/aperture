@@ -380,6 +380,35 @@ def test_the_owner_starts_one_chain_and_lands_back_on_the_themes(conn, client, m
     assert started[0][0]["note"] == "fold the language themes"
 
 
+def test_it_cannot_be_started_twice_and_the_page_says_it_is_running(conn, client, monkeypatch):
+    """Pressed once, it is a chain of dozens of calls; the page it returned to looked exactly as it
+    had before, so it was pressed again and the whole comparison was queued a second time — over
+    cells the first one was in the middle of filling in."""
+    started: list = []
+    monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: started.append(runs) or "job1")
+    ann = store.create_user(conn, "ann", "battery staple")
+    pid = store.create_project(conn, "Ann's study", owner_id=ann, method="iterative")
+    mid = _material(conn, pid, 0)
+    tid = store.save_theme(conn, pid, tid=None, name="Wide", gist="g", code_ids=[])
+    store.set_hold(conn, tid, "candidate")
+    _line(conn, mid, tid)
+    _line(conn, _material(conn, pid, 1), tid)
+    _material(conn, pid, 2)                     # never read for this theme: one cell to fill
+    _login(client, "ann", "battery staple")
+
+    assert "Compare and update themes</button>" in client.get(f"/p/{pid}").text
+    store.enqueue_job(conn, pid, [{"kind": "consolidate"}])     # the first press, still queued
+
+    r = client.post(f"/p/{pid}/compare", data={"note": "again"})
+    assert r.status_code == 303 and r.headers["location"] == f"/p/{pid}#themes"
+    assert started == [], "the second press queues nothing"
+
+    # And the page says why rather than offering a button that would do nothing.
+    html = client.get(f"/p/{pid}").text
+    assert "Compare and update themes</button>" not in html
+    assert "Compare and update themes</h3>" in html and "running now" in html
+
+
 def test_the_page_offers_it_in_the_researchers_words(conn, client):
     """`consolidate` is our word for this (`context._BANNED`) and a form's action attribute is on
     the page like anything else, so neither the control nor the path says it."""

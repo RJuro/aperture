@@ -285,6 +285,13 @@ def compare(request: Request, pid: str, note: str = Form(""), scope: str = Form(
     _mine(request, conn, pid)
     if scope not in ("opening", "all"):
         raise HTTPException(status_code=404, detail="not here")
+    # Not while anything is running for this project. Chains are serialised, so a second press
+    # does not collide with the first — it QUEUES a second whole comparison, dozens of calls over
+    # cells the first one has just filled in, and nothing on the page said the first had started.
+    # The page hides the button for the same reason; this is the half a form on an old tab, a
+    # double submit or a re-POSTed page cannot get around.
+    if store.summary_state(conn, pid)["working"] or store.active_runs(conn, pid):
+        return RedirectResponse(f"/p/{pid}#themes", status_code=303)
     jobs.start(db.connect, pid, rerun.consolidate_plan(conn, pid, note, scope))
     return RedirectResponse(f"/p/{pid}#themes", status_code=303)
 
