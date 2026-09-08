@@ -19,7 +19,8 @@ made for you. Upload `.txt`, `.md`, `.docx`, `.pdf` or `.csv`.
 - `docs/RESEARCH.md` — what three rounds of trials established before this repository existed.
 - `docs/MODELS.md` — the two providers and what a like-for-like comparison does and does not show.
 - `docs/DEPLOY.md` — the deployment, and the two things the first rollout taught.
-- `docs/prompts/` — every prompt compiled on real data, exactly as the model receives it.
+- `docs/prompts/` — every prompt compiled on real data, exactly as the model receives it. **Stale:** see the handoff below.
+- `docs/HANDOFF-2026-09-08.md` — what the first researcher found using it on her own corpus, what was changed in answer, and what is still open. **Start here** if you are picking this up: it is also where the deploy is written down as not done.
 
 ```bash
 python3 -m pytest tests -q          # the suite, offline, no model calls
