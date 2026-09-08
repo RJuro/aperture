@@ -55,9 +55,13 @@ IDLE_TIMEOUT = 180.0
 # same shape of cost — one call per theme at the end of every chain — over claims already checked
 # against the material. Every other call — READ, THEMES, DOC, PROJECT, CHECK — keeps the
 # provider's default.
+# VOICES and TIDY are the two passes over a machine transcript: one says whose voice each number
+# is from the opening lines and the researcher's own note, the other repunctuates lines whose
+# every change Python then measures. Neither weighs evidence, and both run once per chunk of a
+# recording, so neither is worth a reasoning trace.
 EFFORT = {"frame": "", "angles": "low", "thread": "medium", "account": "medium",
           "verify": "medium", "verify_summary": "medium", "line_summary": "low",
-          "tighten": "medium"}
+          "tighten": "medium", "voices": "low", "tidy": "low"}
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
@@ -182,8 +186,25 @@ def _now() -> str:
     return store.now()
 
 
+def record_audio(label: str, got: dict, model_name: str, started: str, seconds: float,
+                 status: str = "ok", error: str = "") -> None:
+    """One `call` row for one transcription request, and its tokens on the step's counter.
+
+    Transcription is not a chat completion — it is a multipart POST to a different endpoint with a
+    different model, and `app/engine/asr.py` sends it itself — but it is a paid call made inside a
+    step, and the record of what a reading cost has to include it. So the same two things happen
+    as for a chat call: the tokens land on the run row through this context's counter, and the
+    attempt lands in the `call` table. The provider is Mistral whatever `APERTURE_PROVIDER` says,
+    because Voxtral is the only transcriber here, so it is passed rather than asked for.
+    """
+    with _TOKENS:
+        usage["tokens_in"] += got.get("tokens_in") or 0
+        usage["tokens_out"] += got.get("tokens_out") or 0
+    _record(label, 1, got, started, seconds, status, error, made_by="mistral", made_on=model_name)
+
+
 def _record(label: str, attempt: int, got: dict, started: str, seconds: float, status: str,
-            error: str = "") -> None:
+            error: str = "", made_by: str = "", made_on: str = "") -> None:
     """One `call` row for one attempt (AR-09), so a step's dozen calls are no longer one total.
 
     On its OWN connection: a call runs in whatever thread its wave put it in, and a sqlite
@@ -198,8 +219,9 @@ def _record(label: str, attempt: int, got: dict, started: str, seconds: float, s
         from . import db, store
         conn = db.connect()
         try:
-            store.save_call(conn, _run.get(), label, attempt, provider(), model(),
-                            reasoning(label), got, started, seconds, status, error)
+            store.save_call(conn, _run.get(), label, attempt, made_by or provider(),
+                            made_on or model(), "" if made_by else reasoning(label),
+                            got, started, seconds, status, error)
         finally:
             conn.close()
     except Exception as e:                  # noqa: BLE001 — never the calling step's problem

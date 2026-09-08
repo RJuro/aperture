@@ -66,6 +66,23 @@ def test_the_material_page_shows_its_derivation_not_a_bare_number(client, conn, 
     assert str(cited) in html and str(total) in html
 
 
+def test_the_file_a_material_arrived_as_is_still_named_on_its_page_and_in_the_list(client, conn,
+                                                                                    analysed):
+    """FRAME titles the material, and the file it came from stops being visible anywhere — so a
+    quote cannot be checked back against the source on the researcher's own disk without matching
+    a title to a filename by hand. The name was in the row the whole time."""
+    row = store.material(conn, analysed["grande"])
+    assert row["title"] and row["title"] != row["name"], "the fixture retitled it"
+    for url in (f"/p/{analysed['pid']}/m/{analysed['grande']}", f"/p/{analysed['pid']}"):
+        assert row["name"] in client.get(url).text, url
+
+    # And nothing to print where the title IS the name — a pasted piece the researcher named,
+    # which would otherwise carry its own name a second time as if it were a separate fact.
+    from app import context
+    mid = store.add_material(conn, analysed["pid"], "Field notes, week two", "A short note.")
+    assert context.material_page(conn, analysed["pid"], mid)["material"]["source_name"] == ""
+
+
 def test_the_reading_summary_wins_and_the_orientation_shows_before_it_exists(client, conn,
                                                                             analysed):
     html = client.get(f"/p/{analysed['pid']}/m/{analysed['rodwin']}").text
@@ -238,6 +255,33 @@ def test_no_javascript_except_the_one_poller(client, analysed):
     for url in (f"/p/{analysed['pid']}", f"/p/{analysed['pid']}/m/{analysed['grande']}"):
         html = client.get(url).text
         assert "<script" not in html.lower()
+
+
+def test_the_introduction_is_five_cards_that_go_left_to_right_without_a_script(client):
+    """`/how`, the thing a person needs before a project exists: what kind of instrument this is,
+    and above all that it is not a chat window. One card per URL, so the deck needs no script and
+    a card can be linked to — and `at` is clamped, because a query parameter is anybody's."""
+    from app import context, pages
+
+    first = client.get("/how").text
+    assert "<script" not in first.lower(), "the deck is links, not a script"
+    assert 'href="/how?at=2"' in first and 'href="/how?at=0"' not in first
+    assert first.count('class="intro-step') == len(pages.INTRO)
+    assert "chat window" in first, "the one misreading this page exists to correct"
+
+    # Every card renders, each says which it is, and the last offers the way out of the deck.
+    for n in range(1, len(pages.INTRO) + 1):
+        page = client.get(f"/how?at={n}").text
+        assert f"{n} of {len(pages.INTRO)}" in page
+        assert (f'aria-current="step"' in page)
+        said = strip_material(page).lower()
+        for word in context._BANNED:
+            assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on card {n}"
+    assert "Start a project" in client.get(f"/how?at={len(pages.INTRO)}").text
+
+    # Out of range in either direction lands on a card rather than on an empty one.
+    assert "1 of 5" in client.get("/how?at=-4").text
+    assert "5 of 5" in client.get("/how?at=99").text
 
 
 def test_a_material_read_before_the_themes_changed_says_so_and_offers_a_way_back(client, conn,

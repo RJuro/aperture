@@ -197,24 +197,51 @@
 </div>
 {% endif %}
 {% if consolidate and role in ('edit', 'owner') %}
+{# Pressed once, it is a chain of dozens of model calls, and the page it returns to looked exactly
+   as it did before it was pressed — so it was pressed again, and the whole comparison was queued
+   twice. While anything is running the control says so instead of offering itself: the plan is
+   computed from the cells as they stand, and cells that are being written are not cells to plan
+   against. `verbs.compare` refuses the same case, because a form on an old page can still post. #}
+{% if working %}
+<div class="compare">
+  <h3>Compare and update themes</h3>
+  <p class="dim small">This is running now, or is waiting for other work on this project to
+    finish. This page updates itself; the comparison can be started again when it is done.</p>
+</div>
+{% else %}
 <form class="compare" method="post" action="/p/{{ project.id }}/compare">
   <h3>Compare and update themes</h3>
   <p class="dim small">Compare the project's theme definitions and merge overlapping themes where
     appropriate. Additionally check selected themes in materials where they were previously
     unassessed or skipped. This updates the analysis and summaries.</p>
+  {% if consolidate.same %}
+  {# One option is not a choice. A radio group with a single radio cannot be answered wrongly and
+     cannot be un-answered, and it reads as a control that failed to load — so where the two
+     thresholds select the same pairs the page states them in a sentence and posts the default. #}
+  <input type="hidden" name="scope" value="opening">
+  <p class="dim small">Additional checks: {{ consolidate.opening_said }}. The wider threshold —
+    themes with claims in at least 2 {{ consolidate.unit }} — would select the same pairs, so
+    there is nothing to choose between.</p>
+  {% else %}
   <fieldset class="scope-choice">
   <legend>Which themes should receive these additional checks?</legend>
   <label class="choice"><input type="radio" name="scope" value="opening" checked>
     <span>Themes with claims in at least {{ consolidate.need }} of {{ consolidate.total }} {{ consolidate.unit }}<br>
       <span class="dim small">{{ consolidate.opening_said }}</span></span></label>
-  {% if not consolidate.same %}
   <label class="choice"><input type="radio" name="scope" value="all">
     <span>Themes with claims in at least 2 {{ consolidate.unit }}<br>
       <span class="dim small">{{ consolidate.all_said }}</span></span></label>
-  {% endif %}
   </fieldset>
-  {% if consolidate.same %}
-  <p class="dim small">Both scopes currently select the same {{ consolidate.opening_n }} checks.</p>
+  {% endif %}
+  {# The thresholds above are stated in claims, and a theme with claims in nothing is described by
+     neither: it is checked under both, and saying so is the difference between a number that adds
+     up and one that does not. #}
+  {% if consolidate.never %}
+  <p class="dim small">{{ consolidate.never }} {{ 'theme' | plural(consolidate.never) }} here
+    {{ 'has' if consolidate.never == 1 else 'have' }} no claims in any material yet — nothing has
+    been looked for under {{ 'it' if consolidate.never == 1 else 'them' }} anywhere, so
+    {{ 'it is' if consolidate.never == 1 else 'they are' }} checked whichever threshold
+    applies.</p>
   {% endif %}
   <p class="dim small">Each pair is one theme checked in one material. A preliminary review may
     skip a source check; the result will say why. A model call is not a measure of time or cost.</p>
@@ -226,6 +253,7 @@
   <button class="btn btn-primary">Compare and update themes</button>
 </form>
 {% endif %}
+{% endif %}
 </div>
 </section>
 
@@ -236,7 +264,7 @@
 {% for m in materials %}
   <li>
     <div class="material-main"><a class="material-name material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
-      <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}</span>
+      <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}{% if m.source_name %} · <span class="source-file" title="The file this material was uploaded as">{{ m.source_name | txt }}</span>{% endif %}</span>
     </div>
     <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of {{ m.analysis | length }} analysis steps complete">
       {% for step in m.analysis %}<span class="analysis-step {{ step.state }}"><i aria-hidden="true"></i>{{ step.label }}</span>{% if step.error %}<span class="dim small">{{ step.error | txt }}</span>{% endif %}{% endfor %}

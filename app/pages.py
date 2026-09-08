@@ -148,6 +148,27 @@ def _guide_origin(conn, user, origin: str) -> dict:
     return {"href": origin, "label": proj["name"]}
 
 
+# The introduction's five cards, by their rail labels. Here rather than in the template so that
+# how many there are has one answer: the clamp below and the rail the template draws are the same
+# list. The prose of each card is in `how.html`, because it is prose.
+INTRO = ("Your material", "Every claim's words", "Themes are counted", "Empty cells", "Your part")
+
+
+@router.get("/how", response_class=HTMLResponse)
+def how(request: Request, at: int = 1) -> str:
+    """What kind of instrument this is, before a researcher has any material in it.
+
+    Every review of the app so far has been about wording inside a project; this is the thing a
+    person needs before they open one, and the one misreading worth spending a page on is that
+    this is a chatbot with a file upload. One card per URL, so it needs no script and the browser
+    does the moving.
+    """
+    user = getattr(request.state, "user", None)
+    return _render("how.html", {"app_name": context.APP_NAME,
+                                "css_v": context._css_version(),
+                                "steps": INTRO, "at": min(max(at, 1), len(INTRO))}, user)
+
+
 @router.get("/guide", response_class=HTMLResponse)
 def guide(request: Request, from_: str = Query("", alias="from")) -> str:
     """What each control does and what it lets a researcher say. No project: the guide is about

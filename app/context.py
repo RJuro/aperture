@@ -395,6 +395,17 @@ def _material_title(row) -> str:
     return titles.standardize(row["title"] or row["name"])
 
 
+def _source_name(row, display_title: str) -> str:
+    """The file this material arrived as, where the composed title is not already it.
+
+    A researcher who uploaded `NYC-OH-0412 transcript.docx` has no way back to the file on their
+    own disk once FRAME has titled it "Mary Grande — interview, 1974", and the two names have to
+    be matched up by hand to check a quote against the source. The filename was in the row the
+    whole time (`material.name`); it was simply never shown once a title existed.
+    """
+    return "" if row["name"] == display_title else row["name"]
+
+
 def _notes(conn, tid: str) -> list[dict]:
     """What the readings wrote beside a theme's definition, each with the material it came from
     and the `kind` that says which way the reading was going.
@@ -516,9 +527,11 @@ def _recording(row) -> dict:
     d = dict(row)
     seconds = d.get("audio_seconds") or 0
     return {"from_recording": bool(d.get("audio_file") or seconds),
-            # The file is kept only until it has been transcribed, so its presence is what says
-            # the transcript is not there yet.
-            "waiting": bool(d.get("audio_file")),
+            # The recording is kept after it has been transcribed — "run again from the
+            # recording" is at the head of the chain and would fail on every recorded material
+            # without it — so the file's presence cannot be what says the transcript is missing.
+            # Its length is: `audio_seconds` is written only when a transcription has succeeded.
+            "waiting": bool(d.get("audio_file")) and not seconds,
             "note": d.get("audio_note") or "",
             "cleaned": bool(d.get("audio_clean")),
             "length": _length(seconds)}
@@ -753,14 +766,23 @@ def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str,
                          every: list[tuple[str, str]]) -> dict:
     """Everything the comparison control prints, generated from current state (F1).
 
-    `opening`'s threshold is never below two, so its pairs are always a subset of `every`'s — a
-    researcher who switches to the wider scope is told its own threshold in the radio's own
-    words, and the page shows the default (opening) scope's numbers beside the choice that
-    produces them rather than a count that would have to update itself without a script.
+    `opening`'s threshold is never below two, and a theme no case carries at all is read for under
+    both — so its pairs are always a subset of `every`'s, and equal counts mean equal sets. A
+    researcher who switches to the wider scope is told its own threshold in the radio's own words,
+    and the page shows each scope's numbers beside the choice that produces them rather than a
+    count that would have to update itself without a script. Where the two coincide there is no
+    choice to offer and the page says so in a sentence instead — `same`.
     """
     need = store.opening_need(conn, pid)
     total = len(set(store.case_of(conn, pid).values()))
     unit = "cases" if store.cases(conn, pid) else "materials"
+    # A theme no case carries is read for under either threshold — it is the one theme that has to
+    # be, because nothing has ever been read for it anywhere. Counted separately because the radio
+    # labels describe thresholds in claims, and a theme with claims in nothing is described by
+    # neither of them: on an eight-material corpus every remaining pair was one of these, so the
+    # page offered a single radio saying "at least 4 of 8" over pairs that were nothing of the kind.
+    held = store.carried_cases(conn, pid)
+    never = len({tid for tid, _ in every if not held.get(tid)})
 
     def said(cells: list[tuple[str, str]]) -> str:
         """One scope's own price, printed in its own radio. Without a script the page cannot
@@ -771,7 +793,7 @@ def _consolidate_control(conn, pid: str, n_themes: int, opening: list[tuple[str,
         return f'{_n(len(cells), "theme/material pair")} to check · about {calls} model calls'
 
     return {"themes": n_themes, "unit": unit, "need": need, "total": total,
-            "opening_n": len(opening), "all_n": len(every),
+            "opening_n": len(opening), "all_n": len(every), "never": never,
             "opening_said": said(opening), "all_said": said(every),
             "same": len(opening) == len(every)}
 
@@ -793,6 +815,7 @@ def project_page(conn, pid: str) -> dict:
     stale = {m["id"] for m in store.out_of_date(conn, pid)}
     for m in mats:
         m["display_title"] = _material_title(m)
+        m["source_name"] = _source_name(m, m["display_title"])
         m["derivation"] = derivation(conn, m["id"])
         m["out_of_date"] = m["id"] in stale
         m["analysis"] = _analysis_steps(conn, m)
@@ -892,6 +915,7 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         return {}
     mat = dict(m)
     mat["display_title"] = _material_title(m)
+    mat["source_name"] = _source_name(m, mat["display_title"])
     mat["analysis"] = _analysis_steps(conn, m)
     # A material still waiting for its transcript has a placeholder for text and no claims, and
     # the page has to say that rather than print an empty reading. A transcription that stopped
@@ -1036,6 +1060,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     for m in store.materials(conn, pid):
         d = dict(m)
         d["display_title"] = _material_title(m)
+        d["source_name"] = _source_name(m, d["display_title"])
         for stage in ("orientation", "reading", "angles", "memo", "residual"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         # Where the project explores, the memo IS what the reading found and DOC wrote no summary

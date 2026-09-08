@@ -51,6 +51,13 @@ def _text(conn: sqlite3.Connection, run: dict) -> str:
     return (fb["text"] if fb else run.get("note")) or ""
 
 
+def _transcribe(conn, pid, run):
+    """The recording becomes the transcript. Only for a material that arrived as one, and always
+    the first step of its chain: FRAME describes what this step wrote."""
+    from .engine import asr
+    return (asr.run(conn, run["material_id"], run_id=run.get("run_id")) or {}).get("dropped")
+
+
 def _frame(conn, pid, run):
     """FRAME, and — only for speech that never says who is speaking — one more call to work it out.
 
@@ -374,6 +381,7 @@ def _check(conn, pid, run):
 
 #                 line a person can read              what it calls
 STEPS: dict[str, tuple[str, Callable]] = {
+    "transcribe": ("Transcribing {name}",             _transcribe),
     "frame":   ("Working out how this is laid out",   _frame),
     "diarize": ("Working out who is speaking in {name}", _diarize),
     "angles":  ("Working out what to look for in {name}", _angles),
@@ -471,7 +479,10 @@ CALLS = threading.Semaphore(PARALLEL)
 # material and writes that material's moments and follow rows, exactly as DOC does, so a
 # material's synthesis and the passes that follow it are one sequence that runs beside another
 # material's.
-SIDE_BY_SIDE = ({"frame", "angles", "read", "reconcile", "memo"},
+#
+# TRANSCRIBE joins the first group: it reads one recording and writes one material's text, and two
+# recordings transcribing side by side is the same waiting on the network that two framings are.
+SIDE_BY_SIDE = ({"transcribe", "frame", "angles", "read", "reconcile", "memo"},
                 {"screen", "doc", "tighten", "residual", "verify"})
 
 # ...and inside such a stage, these still take their turn, in the order the chain planned them.
@@ -804,8 +815,15 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
     conn = conn_factory()
     try:
         proj = store.project(conn, pid)
+        # A material that arrived as a recording is transcribed before anything looks at its
+        # text — there is no text yet, only a placeholder saying so.
+        recorded = {mid for mid in mids
+                    if (store.material(conn, mid) or {"audio_file": ""})["audio_file"]}
     finally:
         conn.close()
+
+    def first(mid: str) -> tuple[str, ...]:
+        return ("transcribe",) if mid in recorded else ()
     # A project this cannot read has no method to honour, and the chain that has always run is the
     # one to plan for it.
     explore = proj is not None and proj["method"] == "explore"
@@ -816,7 +834,7 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
         # pass over what its coding did not mark. THEMES per material is what this replaces.
         return start(conn_factory, pid, [
             *({"kind": k, "material_id": mid} for mid in mids
-              for k in ("frame", "angles", "read", "reconcile", "memo")),
+              for k in (*first(mid), "frame", "angles", "read", "reconcile", "memo")),
             {"kind": "themes", "material_id": None, "materials": mids},
             *({"kind": k, "material_id": mid} for mid in mids
               for k in (("doc", "tighten", "residual") if rerun.residual_planned()
@@ -826,7 +844,7 @@ def ingest_chain(pid: str, mids: Iterable[str], conn_factory: Callable = db.conn
         ])
     return start(conn_factory, pid, [
         *({"kind": k, "material_id": mid} for mid in mids
-          for k in ("frame", "angles", "read")),
+          for k in (*first(mid), "frame", "angles", "read")),
         # THEMES takes one material because it must see that material's codes by passage; every
         # piece is read before any of them moves the theme set, so DOC writes against the set as
         # it finally stands.

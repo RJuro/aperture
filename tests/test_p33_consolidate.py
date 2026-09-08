@@ -103,7 +103,71 @@ def test_the_control_is_offered_only_when_it_would_do_something(conn, project):
     for t in (tid, second):
         store.set_hold(conn, t, "candidate")
     said = context.project_page(conn, project)["consolidate"]
-    assert said["themes"] == 2 and said["all_n"] == 0, "two candidates are worth comparing"
+    assert said["themes"] == 2, "two candidates are worth comparing"
+    # `Other` holds no line anywhere, so the material it was never read in is a cell — see below.
+    assert said["all_n"] == 1
+
+
+def test_the_control_says_how_many_of_the_pairs_are_themes_nobody_read_for(conn, client):
+    """Both radios describe a threshold in claims — "at least 4 of 8 materials" — and a theme with
+    claims in nothing answers to neither. On a real corpus every remaining pair was one of those,
+    so the page offered a single radio, over pairs its own label did not describe."""
+    ann = store.create_user(conn, "ann", "battery staple")
+    pid = store.create_project(conn, "Ann's study", owner_id=ann, method="iterative")
+    mids = [_material(conn, pid, n) for n in range(3)]
+    carried = store.save_theme(conn, pid, tid=None, name="Carried", gist="g", code_ids=[])
+    _line(conn, mids[0], carried)
+    _line(conn, mids[1], carried)
+    coined = store.save_theme(conn, pid, tid=None, name="Coined over the corpus", gist="g",
+                              code_ids=[])
+    store.set_hold(conn, coined, "candidate")
+    _login(client, "ann", "battery staple")
+
+    said = context.project_page(conn, pid)["consolidate"]
+    assert said["never"] == 1 and said["all_n"] == 4, "one unread cell, and three for the new one"
+    html = " ".join(client.get(f"/p/{pid}").text.split())
+    assert "1 theme here has no claims in any material yet" in html
+
+    # And it says nothing at all where every pair is a theme the corpus does carry.
+    store.save_follow(conn, mids[0], coined, "thin")
+    store.save_follow(conn, mids[1], coined, "thin")
+    store.save_follow(conn, mids[2], coined, "thin")
+    assert context.project_page(conn, pid)["consolidate"]["never"] == 0
+    assert "no claims in any material yet" not in client.get(f"/p/{pid}").text
+
+
+def test_a_theme_nothing_was_ever_read_for_is_read_for_somewhere(conn, project):
+    """The hole a researcher found on the matrix: a row of "not assessed" all the way across.
+
+    The cross-case pass may coin a candidate over the corpus rather than out of one material, so
+    it starts with no line and no follow row anywhere. Under the count rule alone — read for a
+    theme two cases carry — nothing would ever be read for it, and it would sit there for ever as
+    a potential theme the corpus had never been checked against.
+    """
+    mids = [_material(conn, project, n) for n in range(3)]
+    sid = store.sentences(conn, mids[1])[1][0]
+    store.save_codes(conn, project, mids[1],
+                     [{"name": "leaving", "definition": "what made them go", "sids": [sid]}])
+    code = store.codebook(conn, project)[0]["id"]
+    coined = store.save_theme(conn, project, tid=None, name="Coined over the corpus",
+                              gist="nobody has read for this anywhere", code_ids=[code])
+    store.set_hold(conn, coined, "candidate")
+
+    # Where its codes actually fired, and only there: a candidate nobody read for is not a licence
+    # to send a reader through every material after it.
+    assert store.backfill_cells(conn, project, "all") == [(coined, mids[1])]
+
+    # A candidate that gathers no fired code names nowhere to look, so the corpus is where it is
+    # looked for — the one thing it must not be is left unchecked.
+    bare = store.save_theme(conn, project, tid=None, name="No codes at all", gist="g",
+                            code_ids=[])
+    store.set_hold(conn, bare, "candidate")
+    assert [c for c in store.backfill_cells(conn, project, "all") if c[0] == bare] == \
+        [(bare, m) for m in mids]
+
+    # And once one material has answered, it is a theme one case carries like any other.
+    _line(conn, mids[1], coined)
+    assert not [c for c in store.backfill_cells(conn, project, "all") if c[0] == coined]
 
 
 # ---- the plan -----------------------------------------------------------------------------------
@@ -344,6 +408,35 @@ def test_the_owner_starts_one_chain_and_lands_back_on_the_themes(conn, client, m
     assert started[0][0]["note"] == "fold the language themes"
 
 
+def test_it_cannot_be_started_twice_and_the_page_says_it_is_running(conn, client, monkeypatch):
+    """Pressed once, it is a chain of dozens of calls; the page it returned to looked exactly as it
+    had before, so it was pressed again and the whole comparison was queued a second time — over
+    cells the first one was in the middle of filling in."""
+    started: list = []
+    monkeypatch.setattr(jobs, "start", lambda factory, pid, runs: started.append(runs) or "job1")
+    ann = store.create_user(conn, "ann", "battery staple")
+    pid = store.create_project(conn, "Ann's study", owner_id=ann, method="iterative")
+    mid = _material(conn, pid, 0)
+    tid = store.save_theme(conn, pid, tid=None, name="Wide", gist="g", code_ids=[])
+    store.set_hold(conn, tid, "candidate")
+    _line(conn, mid, tid)
+    _line(conn, _material(conn, pid, 1), tid)
+    _material(conn, pid, 2)                     # never read for this theme: one cell to fill
+    _login(client, "ann", "battery staple")
+
+    assert "Compare and update themes</button>" in client.get(f"/p/{pid}").text
+    store.enqueue_job(conn, pid, [{"kind": "consolidate"}])     # the first press, still queued
+
+    r = client.post(f"/p/{pid}/compare", data={"note": "again"})
+    assert r.status_code == 303 and r.headers["location"] == f"/p/{pid}#themes"
+    assert started == [], "the second press queues nothing"
+
+    # And the page says why rather than offering a button that would do nothing.
+    html = client.get(f"/p/{pid}").text
+    assert "Compare and update themes</button>" not in html
+    assert "Compare and update themes</h3>" in html and "running now" in html
+
+
 def test_the_page_offers_it_in_the_researchers_words(conn, client):
     """`consolidate` is our word for this (`context._BANNED`) and a form's action attribute is on
     the page like anything else, so neither the control nor the path says it."""
@@ -364,9 +457,13 @@ def test_the_page_offers_it_in_the_researchers_words(conn, client):
     html = client.get(f"/p/{pid}").text
     assert "Compare and update themes" in html
     # Three materials, so the opening threshold is two — the same as the wider scope's fixed two —
-    # and the one cell nobody read for this theme is what both scopes select here alike.
-    assert "Both scopes currently select the same 1 checks." in html
+    # and the one cell nobody read for this theme is what both scopes select here alike. A radio
+    # group with one radio in it is not a question, so where they coincide there is no group: one
+    # sentence saying what will be checked, and the default carried on the form.
     assert "1 theme/material pair to check · about 4–6 model calls" in html
+    form = re.search(r'<form class="compare".*?</form>', html, re.S).group(0)
+    assert 'type="radio"' not in form and "would select the same pairs" in form
+    assert '<input type="hidden" name="scope" value="opening">' in form
     said = strip_material(html).lower()
     for word in context._BANNED:
         assert not re.search(rf"\b{re.escape(word)}s?\b", said), f"{word!r} on the project page"

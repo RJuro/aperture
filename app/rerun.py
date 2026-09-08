@@ -63,16 +63,30 @@ def _run(kind: str, material_id: str | None = None, theme_id: str | None = None,
 # saying "do that again", from wherever they choose, and re-reading is the whole point of it. The
 # order is the order material arrives in (`jobs.ingest_chain`), so "from the beginning" and "a
 # fresh upload" do the same work in the same sequence.
-CHAIN = ("frame", "angles", "read", "themes", "doc")
+#
+# TRANSCRIBE is at the head and belongs to material that arrived as a recording alone — see
+# `recorded` below. "Run again from the recording" is what a researcher asks for when the voices
+# came back wrong, or when they did not tick the naming pass the first time.
+CHAIN = ("transcribe", "frame", "angles", "read", "themes", "doc")
+
+# The chain for material that arrived as text, which is every material that has no recording to go
+# back to. Offering "from the recording" for one of those would be a button that could only fail.
+TEXT_CHAIN = CHAIN[1:]
 
 # What the page calls each of them. Three of our five names are ours, not the researcher's, and
 # two of those the app may not print at all (PLAN.md §7) — even in a form value — so the form
 # sends the words the page already uses on its receipt and this maps them back.
-PAGE_NAMES = {"structure": "frame", "coding": "read", "synthesis": "doc"}
+PAGE_NAMES = {"structure": "frame", "coding": "read", "synthesis": "doc",
+              "recording": "transcribe"}
+
+
+def chain_for(recorded: bool) -> tuple[str, ...]:
+    """Which steps this material can be run again from."""
+    return CHAIN if recorded else TEXT_CHAIN
 
 
 def from_step(mid: str, step: str, feedback_id: str | None = None, *,
-              explore: bool = False) -> list[dict]:
+              explore: bool = False, recorded: bool = False) -> list[dict]:
     """Everything that happens to one material from `step` onward, then the corpus level.
 
     A note rides on every run rather than only the first, so each step that takes the
@@ -81,10 +95,14 @@ def from_step(mid: str, step: str, feedback_id: str | None = None, *,
     §13 — `reconcile` and `memo` after the reading, `residual` after the synthesis, and the themes
     pass reading this material's evidence rather than its text — which is the same order and the
     same steps `jobs.ingest_chain` plans for it, over a batch of one.
+
+    `recorded` says this material still has the recording it was transcribed from, which is the
+    only thing that makes `transcribe` a step it can be run again from.
     """
-    if step not in CHAIN:
-        raise KeyError(f"no such step {step!r}; expected one of {list(CHAIN)}")
-    chain = list(CHAIN[CHAIN.index(step):])
+    whole = chain_for(recorded)
+    if step not in whole:
+        raise KeyError(f"no such step {step!r}; expected one of {list(whole)}")
+    chain = list(whole[whole.index(step):])
     if explore:
         if "read" in chain:
             chain[chain.index("read") + 1:chain.index("read") + 1] = ["reconcile", "memo"]

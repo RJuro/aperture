@@ -8,7 +8,8 @@
 | `APERTURE_ADMIN` | yes on a shared host | `name:password`. Creates the first admin on first boot when no user exists; the admin then makes users on `/admin`. With no users the instance is open — correct for a laptop, wrong for anything reachable. |
 | `APERTURE_PROVIDER` | no | `minimax` (default) or `mistral`. Never inferred from which key is set. |
 | `MINIMAX_API_KEY` | with `minimax` | MiniMax-M3. The cheaper of the two; used for development and testing. |
-| `MISTRAL_API_KEY` | with `mistral` | GLM-5.2 under the university's Mistral contract. The EU-hosted option. |
+| `MISTRAL_API_KEY` | with `mistral`, and for any transcription | GLM-5.2 under the university's Mistral contract. The EU-hosted option. **Also required to transcribe a recording whatever `APERTURE_PROVIDER` says**: Voxtral is the only transcriber this app has, so the audio call always uses the Mistral credentials. Without it, uploading a recording works and the transcribing step fails on its own run row saying which variable is missing. |
+| `APERTURE_ASR_MODEL` | no | Overrides `voxtral-mini-latest`. |
 | `APERTURE_MODEL` | no | Overrides the provider's default model. |
 | `APERTURE_BASE_URL` | no | Overrides the provider's base URL. |
 | `PORT` | no | Defaults to 8770. Coolify sets it. |
@@ -20,6 +21,14 @@ in a commit message, never printed to a log.
 
 Two things learned deploying this the first time, both of which cost a rollout:
 
+- **The image contains `ffmpeg`, and it has to.** Every uploaded recording is re-encoded to mono
+  16 kHz FLAC before it is sent — an hour of stereo 48 kHz WAV goes from ~690 MB to around a tenth
+  of that, which is what keeps it inside the API's limits — and a recording longer than 150 minutes is cut into
+  pieces with it. Without ffmpeg only an already-mono-16 kHz WAV can be transcribed.
+- **Recordings live on the same volume as the database**, at `$APERTURE_DATA_DIR/audio/<material
+  id>.flac`. What is kept after a successful transcription is the prepared FLAC, not the file the
+  researcher uploaded — a twentieth of the size, and enough to run the transcription again. The
+  file is deleted when the material is removed.
 - **The image must contain `curl`.** Coolify's rollout healthcheck shells out to `curl` (or
   `wget`) inside the new container. `python:3.12-slim` has neither, so a perfectly healthy start
   was judged unhealthy and rolled back. The Dockerfile installs it.

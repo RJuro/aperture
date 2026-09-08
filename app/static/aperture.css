@@ -50,6 +50,9 @@ h1, h2, h3 { text-wrap: balance; }
 .standalone { width: min(1180px, calc(100% - 2 * var(--gutter))); min-height: calc(100vh - 59px); margin: 0 auto; padding-block: clamp(40px, 6vw, 80px); }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .dim, .meta { color: var(--muted); }
+/* A filename reads as a filename: the same monospace the derivations use, so it is not
+   mistaken for part of the title beside it. */
+.source-file { font-family: var(--font-mono); }
 .small { font-size: 13px; }
 .num, .meta { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; }
 .eyebrow { margin: 0 0 10px; color: var(--muted); font: 11px/1.3 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; }
@@ -636,3 +639,46 @@ mark { padding: 2px 1px; border-radius: 2px; color: var(--fg);
    material rather than a warning about it, so it stays the size of the meta line above it. */
 .recording-note { margin: 10px 0 0; max-width: 74ch; color: var(--muted); font-size: 13px; }
 .recording-note-fold { margin-top: 8px; padding-top: 8px; }
+
+/* Introduction — five cards, one per URL (`/how?at=n`).
+
+   The movement between cards is the cross-document view transition already on `:root`; naming the
+   rail and the card gives each its own group, so the rail holds still while the card changes
+   under it — which is what makes a deck read as a deck rather than as five pages. Reduced motion
+   turns the whole thing off at the `@view-transition` rule above, not here. */
+/* Tighter than a `.section` on purpose: the card and the control that advances it are the page,
+   and a deck whose Next button is below the fold is a deck nobody finishes. */
+.intro-head { padding-block: clamp(24px, 2.6vw, 36px) clamp(14px, 1.6vw, 22px); }
+.intro-head h1 { max-width: 20ch; margin: 0; font: 400 clamp(26px, 3.1vw, 36px)/1.14 var(--font-display); letter-spacing: -.01em; }
+.intro-head .lead { margin-top: 10px; font-size: 16px; }
+.intro { max-width: 860px; padding-bottom: clamp(40px, 5vw, 72px); display: grid; gap: 20px; }
+/* One hairline behind the row, so five steps read as one track and not five buttons. */
+.intro-rail { position: relative; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.intro-rail::-webkit-scrollbar { display: none; }
+.intro-rail::before { content: ''; position: absolute; top: 15px; left: 14px; right: 14px; border-top: 1px solid var(--border); }
+.intro-step { position: relative; min-width: 0; flex: 1 0 auto; display: grid; justify-items: center; gap: 8px; padding: 0 8px; color: var(--muted); font-size: 12px; text-align: center; transition: color var(--motion) var(--ease); }
+.intro-step b { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--bg); font: 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; transition: border-color var(--motion) var(--ease), background var(--motion) var(--ease), color var(--motion) var(--ease); }
+.intro-step:hover { color: var(--fg); }
+.intro-step:hover b { border-color: var(--fg); }
+/* Read already: filled, so the row shows how far along the reader is without counting anything. */
+.intro-step.done b { border-color: var(--border); background: var(--fg-soft); color: var(--muted); }
+.intro-step[aria-current='step'] { color: var(--fg); font-weight: 650; }
+.intro-step[aria-current='step'] b { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+.intro-card { padding: clamp(24px, 3.4vw, 40px); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); view-transition-name: intro-card; }
+.intro-card h2 { max-width: 26ch; margin: 0 0 16px; font: 400 clamp(22px, 2.6vw, 30px)/1.2 var(--font-display); letter-spacing: -.005em; }
+.intro-card p { max-width: 66ch; margin: 0 0 12px; }
+.intro-card p:last-child { margin-bottom: 0; }
+/* Where the thing this card describes actually is, in the app's own words for it. */
+.intro-where { margin-top: 20px !important; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font: 12px/1.5 var(--font-mono); }
+.intro-move { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.intro-move .btn:not(.btn-primary) { border-color: var(--border); background: var(--surface); }
+.intro-move .btn:not(.btn-primary):hover { border-color: var(--fg); }
+.intro-skip { margin-left: auto; color: var(--muted); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.intro-skip:hover { color: var(--fg); }
+/* Numbers only, still spread across the full width: the steps keep their equal flex so the
+   hairline runs badge to badge rather than trailing off past the last one. */
+@media (max-width: 620px) {
+  .intro-step span { display: none; }
+  .intro-skip { margin-left: 0; }
+}
+.intro-link { text-decoration: underline; text-underline-offset: 3px; }

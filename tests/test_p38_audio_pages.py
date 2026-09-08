@@ -108,7 +108,7 @@ def test_a_material_that_never_had_a_recording_has_the_four_steps(conn, grande):
 
 def test_a_recording_waiting_for_its_transcript_shows_the_step_it_is_waiting_on(conn, project,
                                                                                grande):
-    recording(conn, grande, file="ellis.m4a", seconds=2760)
+    recording(conn, grande, file="ellis.m4a")
     assert steps(conn, grande)[0] == ("Transcription", "waiting")
     store.start_run(conn, project, "transcribe", grande, "Transcribing DP-40 Grande")
     assert steps(conn, grande)[0] == ("Transcription", "active")
@@ -122,7 +122,7 @@ def test_the_step_is_done_once_the_transcript_stands_in_the_material(conn, grand
 
 
 def test_a_transcription_that_stopped_says_so_with_its_reason(conn, project, grande):
-    recording(conn, grande, file="ellis.m4a", seconds=2760)
+    recording(conn, grande, file="ellis.m4a")
     rid = store.start_run(conn, project, "transcribe", grande, "Transcribing DP-40 Grande")
     store.finish_run(conn, rid, error="the recording could not be converted")
     first = context._analysis_steps(conn, store.material(conn, grande))[0]
@@ -138,7 +138,7 @@ def test_a_recording_being_transcribed_says_so_instead_of_showing_an_empty_readi
     # Until the transcript lands the material's text is a placeholder and it has no claims: this
     # is the page a researcher meets for the several minutes the transcription takes.
     mid = store.add_material(conn, pid, "Ellis interview", "Being transcribed.")
-    recording(conn, mid, file="ellis.m4a", note=NOTE, seconds=2760)
+    recording(conn, mid, file="ellis.m4a", note=NOTE)
     store.start_run(conn, pid, "transcribe", mid, "Transcribing Ellis interview")
     html = client.get(f"/p/{pid}/m/{mid}").text
     assert "This recording is being transcribed. The analysis starts when it is done" in html
@@ -176,7 +176,7 @@ def test_a_stopped_transcription_is_not_reported_as_a_reading(client, conn, anal
     material was being read while the only step it ever had had stopped."""
     pid = analysed["pid"]
     mid = store.add_material(conn, pid, "Ellis interview", "Being transcribed.")
-    recording(conn, mid, file="ellis.m4a", seconds=2760)
+    recording(conn, mid, file="ellis.m4a")
     rid = store.start_run(conn, pid, "transcribe", mid, "Transcribing Ellis interview")
     store.finish_run(conn, rid, error="the recording could not be converted")
     store.start_run(conn, pid, "doc", analysed["grande"], "Writing what stands out in Grande")
@@ -198,7 +198,7 @@ def test_the_recording_pages_add_no_javascript(client, conn, analysed):
 
 def test_the_recording_pages_do_not_speak_our_vocabulary(client, conn, analysed):
     pid, mid = analysed["pid"], analysed["grande"]
-    recording(conn, mid, file="ellis.m4a", note=NOTE, clean=1, seconds=2760)
+    recording(conn, mid, file="ellis.m4a", note=NOTE, clean=1)
     for url in (f"/p/{pid}", f"/p/{pid}/m/{mid}", "/guide"):
         said = strip_material(re.sub(r"<code>.*?</code>", " ", client.get(url).text,
                                      flags=re.S)).lower()
@@ -221,3 +221,18 @@ def test_the_project_page_help_links_all_reach_a_real_section(client, conn, proj
     asked = helps(client.get(f"/p/{project}").text)
     assert "recordings" in asked, "the drawer lost its way to the recordings section"
     assert asked <= set(SECTIONS), f"help links at nothing: {sorted(asked - set(SECTIONS))}"
+
+
+def test_a_transcribed_recording_is_not_still_called_untranscribed(conn, project, grande):
+    """The recording is kept after it is transcribed, so that a researcher can run the material
+    again from it. The page therefore cannot read the file's presence as "no transcript yet" —
+    it reads the length, which is written only when a transcription has succeeded."""
+    from app import context
+
+    recording(conn, grande, file="ellis.m4a", note=NOTE)
+    assert context._recording(store.material(conn, grande))["waiting"] is True
+
+    recording(conn, grande, file="ellis.m4a", note=NOTE, seconds=960)
+    rec = context._recording(store.material(conn, grande))
+    assert rec["waiting"] is False and rec["from_recording"] is True
+    assert rec["length"] == "16 minutes"
