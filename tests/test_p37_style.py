@@ -101,6 +101,22 @@ def test_it_counts_the_shapes_the_rules_name():
     assert prose.count("The corpus shows a pattern of refusal.")["unscoped"] >= 1
 
 
+def test_it_counts_a_claim_made_of_every_case():
+    """PROJECT rule 5's negative half. A researcher reading her own corpus back found the summary
+    saying outputs were "never accepted at face value" where one participant accepted most of one
+    and estimated its error himself — the positive quantifiers were named in the rule and the
+    negative was not, so nothing on the page had anything to say about it."""
+    assert prose.count("The outputs are never accepted at face value.")["universal"] >= 1
+    assert prose.count("No participant queries the figure.")["universal"] >= 1
+    assert prose.count("None of the interviews raise cost.")["universal"] >= 1
+    assert prose.count("In every case the tool is checked first.")["universal"] >= 1
+
+
+def test_a_universal_the_material_itself_said_is_not_counted():
+    """The rules govern the words the reading writes, never the words the material said."""
+    assert "universal" not in prose.count('She said "I never trust it" and moved on.')
+
+
 def test_plain_prose_counts_nothing():
     """The ordinary answer, and it reads as one."""
     clean = ("Four of the six nurses describe handover as a checklist read aloud. Two say it "

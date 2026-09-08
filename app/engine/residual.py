@@ -48,7 +48,12 @@ def run(conn, mid: str, *, run_id: str | None = None) -> dict:
     pid = row["project_id"]
     # The passages no CODE touched — not the ones no claim rests on (`store.uncited`), which is a
     # different remainder and a different question. This one asks what the coding itself missed.
-    marked = {h["sid"] for h in store.hits(conn, mid)}
+    #
+    # The interviewer's lines are left out of the remainder entirely rather than dropped after the
+    # fact: an unmarked question is not something the coding missed, it is something there was
+    # nothing to code. Excluding them here also keeps this pass from proposing an addition that
+    # `store.asked_sids` would only throw away, which would spend a call to produce a note.
+    marked = {h["sid"] for h in store.hits(conn, mid)} | store.asked_sids(conn, mid)
     unmarked = [(sid, text) for sid, text in store.sentences(conn, mid) if sid not in marked]
     block, themes = themes_block(conn, pid, mid)
     if not unmarked or not themes:

@@ -105,7 +105,10 @@ def bind(anchor: str, cited_sids: list[str], sentences: list[tuple[str, str]]) -
 
 
 def new_stats() -> dict:
-    return {"bound": 0, "rebound": 0, "unfound": 0, "over_cap": 0, "missing": 0}
+    # `asked` is not this module's to tally — a quote from the interviewer binds perfectly well and
+    # this module's job ends there. It is counted here so one stats dict carries every reason a
+    # bound quote still did not become a claim (`synth._thread_kept`, `residual`).
+    return {"bound": 0, "rebound": 0, "unfound": 0, "over_cap": 0, "missing": 0, "asked": 0}
 
 
 def apply(claim: dict, cited_sids: list[str], sentences: list[tuple[str, str]],

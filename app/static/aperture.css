@@ -179,6 +179,11 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .summary-copy ~ form { margin-top: 12px; }
 .summary-copy a.cite { color: var(--accent); font: 11px var(--font-mono); vertical-align: .1em; }
 .summary-copy a.cite:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Which material a citation is from, beside the passage id. A corpus summary cites across the
+   whole corpus, and the id alone left a reader guessing at the transcript. Set narrower than the
+   id so a paragraph of prose still reads as prose and not as a bibliography. */
+.cite-who { margin-left: .35em; font-size: 10px; opacity: .75; letter-spacing: .01em; }
+.cite-who::before { content: "· "; opacity: .6; }
 .focus-note { padding-top: 3px; border-top: 1px solid var(--fg); }
 .focus-note blockquote { margin: 18px 0; font: italic 17px/1.55 var(--font-display); }
 .focus-note details > summary, .quiet-details > summary { color: var(--muted); font-size: 12px; }

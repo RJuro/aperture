@@ -237,6 +237,28 @@ def speakers(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
         (mid,)).fetchall()
 
 
+def asked_sids(conn: sqlite3.Connection, mid: str) -> set[str]:
+    """The passages an interviewer speaks. A claim may rest on none of them.
+
+    A researcher reading their own interview back found the instrument citing the interviewer's
+    words as the evidence for a claim about the participant — including where the interviewer had
+    summarised the participant correctly, which is the case that makes the rule absolute rather
+    than a question of accuracy. The reading is meant to be evidence the material gave, and a
+    question the researcher asked is the researcher's own framing handed back as a finding.
+
+    Mechanical, like `turns.scan` and the anchor law: `sentence.speaker` is written at ingest
+    without a model, and `speaker.role` is what FRAME named it. Empty for a material whose
+    speakers were ESTIMATED — see `store.material(...)["speakers_estimated"]`, which the callers
+    check — because a guess at who is talking must not be able to delete evidence in silence.
+    """
+    if (row := material(conn, mid)) is None or row["speakers_estimated"]:
+        return set()
+    return {r["sid"] for r in conn.execute(
+        "SELECT s.sid FROM sentence s JOIN speaker sp "
+        "ON sp.material_id=s.material_id AND sp.label=s.speaker "
+        "WHERE s.material_id=? AND sp.role='interviewer'", (mid,))}
+
+
 def segments(conn: sqlite3.Connection, mid: str) -> list[sqlite3.Row]:
     return conn.execute("SELECT * FROM segment WHERE material_id=? ORDER BY idx", (mid,)).fetchall()
 

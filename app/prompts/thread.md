@@ -11,7 +11,7 @@ what changed, what is at stake, what is refused.
   Bad:   "Handover shapes what is said here."      (a label, not a finding)
   Bad:   "The speaker discusses her shift."        (true of half the material)
 
-Ten rules. Each carries the same weight, and each is checked.
+Eleven rules. Each carries the same weight, and each is checked.
 
 1. Every claim rests on a quote. A moment without a quote is not a moment.
 2. Every quote is copied EXACTLY from the material below, word for word, at most 12 words. A quote
@@ -55,6 +55,14 @@ Ten rules. Each carries the same weight, and each is checked.
     site, a document's subject. It is kept beside the theme as a note from this reading, and only
     where this line holds a moment: a note about how a material carries a theme, filed against a
     line that came back with nothing in it, is a note about nothing.
+11. A line marked `[interviewer]` is a question, not evidence. Read those lines — they are what the
+    answer replies to, and you often need them to see what is being answered — but never quote one.
+    This holds even where the interviewer states the case correctly or sums up what was just said:
+    a quote from the interviewer is the researcher's own words handed back as a finding about the
+    material, which is the one thing a reading cannot be allowed to do. Where the point you want is
+    made in the interviewer's line and confirmed in the reply, quote the reply. Where it is made
+    only in the question, there is no moment to write. Every quote is checked against who spoke it
+    and a moment resting on an interviewer's line is thrown away.
 
 Return JSON in exactly this shape and nothing else:
 

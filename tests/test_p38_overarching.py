@@ -132,8 +132,12 @@ def test_a_citation_to_a_claim_that_is_not_live_is_stripped_from_the_argument(co
     one = out["overarching"]["overarching"][0]
     assert one["argument"] == f"Both are described [{mo}]."
     assert "mo-also-ghost" not in one["exceptions"]
-    assert any("mo-ghost" in n and "mo-also-ghost" in n for n in out["dropped"]), \
-        "one note about missing ids, not one per movement"
+    # One note counting both, not one per movement. The ids themselves are deliberately absent:
+    # they name claims that no longer exist, so a researcher can neither open nor act on them.
+    said = [n for n in out["dropped"] if "superseded" in n]
+    assert len(said) == 1, out["dropped"]
+    assert "2 claims" in said[0], said[0]
+    assert "mo-ghost" not in said[0], "an internal id reached the excluded list"
 
 
 def test_a_tier_that_came_back_empty_is_still_written_over_the_one_before_it(corpus, conn, model):

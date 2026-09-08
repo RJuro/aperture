@@ -367,8 +367,11 @@ def test_two_claims_resting_on_one_passage_are_cited_once(client, conn, analysed
     assert summary.count(f'#{a["sid"]}"') == 1, "one passage was linked twice"
     assert b["id"] not in page, "a raw id was left where its citation was dropped"
     text = client.get(f"/p/{pid}/export.md").text
-    assert f'one story [{a["sid"]}].' in text
-    assert f'{a["sid"]}, {a["sid"]}' not in text, "the record cited one passage as two"
+    # The citation names its material as well as its passage, so a reader of the record can tell
+    # two transcripts from one; what this test is about is that ONE passage yields ONE citation,
+    # so it reads the bracket itself rather than assuming how a citation is spelled inside it.
+    cited = text.split("one story [", 1)[1].split("]", 1)[0]
+    assert cited.count(a["sid"]) == 1, f"the record cited one passage as two: [{cited}]"
 
 
 def test_removing_material_is_never_one_click(client, analysed):

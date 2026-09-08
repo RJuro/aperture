@@ -174,10 +174,17 @@ def layout(conn, mid: str) -> str:
 
     `turns` breaks at each turn (the speaker cue is in the text itself, so it is not repeated),
     `segments` prints each section's label where it starts, `plain` runs straight through.
+
+    An interviewer's line is marked ON EVERY LINE, not only where the cue happens to fall. The cue
+    is written once at the head of a turn, so eight of twelve claims found resting on an
+    interviewer in one project quoted a line that carried no cue at all — the model could not see
+    whose words it was taking, and a rule it cannot see is one it cannot follow. The mark is what
+    makes `asked_sids` a rule the reading is shown rather than a verdict sprung on it afterwards.
     """
     row = store.material(conn, mid)
     display = (row["display"] if row else "") or "plain"
     labels = {s["sid"]: s["label"] for s in store.segments(conn, mid)}
+    asked = store.asked_sids(conn, mid)
     out: list[str] = []
     turn = object()
     for r in store.sentence_rows(conn, mid):
@@ -186,7 +193,8 @@ def layout(conn, mid: str) -> str:
         if display == "turns" and r["turn_idx"] != turn:
             out.append("")
         turn = r["turn_idx"]
-        out.append(f"{r['sid']}  {r['text']}")
+        mark = "  [interviewer]" if r["sid"] in asked else ""
+        out.append(f"{r['sid']}{mark}  {r['text']}")
     return "\n".join(out).strip() or "(this material has no text)"
 
 
@@ -370,6 +378,9 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
                       "moments, so the line that was there still stands"], anchor.new_stats()
     nums = numbers(sents)
     stats, dropped, kept = anchor.new_stats(), [], []
+    # Whose words may carry a claim. The prompt says it and the layout marks it, and this is the
+    # check behind both: a rule the model is asked to follow and nobody enforces is not a rule.
+    asked = store.asked_sids(conn, mid)
     # Every moment is bound first and the cap applied to the SURVIVORS. Slicing first threw away
     # untested moments and could then leave the line under the floor.
     for m in data.get("moments") or []:
@@ -386,9 +397,20 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
                            if quote else "a moment was dropped: it carried no quote")
             continue
         quote, sids = bound
+        # Bound, real, and still not evidence: the words are the interviewer's. Said as its own
+        # outcome rather than folded into the anchor's, because the quote IS in the material and
+        # a note saying otherwise would send a researcher looking for a fault that is not there.
+        if sids[0] in asked:
+            stats["asked"] += 1
+            dropped.append("a moment was dropped: its quote is the interviewer speaking, not the "
+                           f'material — "{clip(quote)}"')
+            continue
         kept.append({"claim": claim, "anchor": quote, "sid": sids[0]})
     if len(kept) > MAX_MOMENTS:
-        dropped.append(f'the line for "{theme["name"]}" kept the first {MAX_MOMENTS} of {len(kept)} claims')
+        # Said as what was dropped, not as what was kept: this list is headed "Excluded from the
+        # analysis", and a note whose verb is "kept" reads there as a contradiction.
+        dropped.append(f'the line for "{theme["name"]}" ran to {len(kept)} claims and the last '
+                       f'{len(kept) - MAX_MOMENTS} were dropped, at {MAX_MOMENTS} to a line')
         kept = kept[:MAX_MOMENTS]
     # A line of one, two or three claims is KEPT, and the page marks it sparse — it reads that
     # off `len(moments) < MIN_MOMENTS`, so nothing is stored for it. The floor used to delete such
@@ -893,9 +915,13 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     reading_of, more_odd = foreign(reading_of, allowed)
     dropped = script_notes(odd + more_odd) + said
     if dangling:
-        dropped.append(f"the summary cited {len(dangling)} claim(s) that do not exist or are no "
-                       f"longer live — {', '.join(sorted(set(dangling)))} — and those citations "
-                       "were removed")
+        # Without the ids. They are this database's internal names for claims that no longer
+        # exist, so there is nothing for a researcher to look up and nothing to do about one;
+        # printing them put `mo7aa0189e1` in front of a reader of the excluded list, who
+        # reasonably read it as something they were expected to act on.
+        n = len(set(dangling))
+        dropped.append(f"the corpus summary cited {n} claim{'' if n == 1 else 's'} that a later "
+                       "reading had already superseded, and those citations were removed from it")
     store.save_summary(conn, "project", pid, "reading", summary, run_id)
     # Written even when it is empty, so a fresh summary never sits over an older reading of it.
     store.save_summary(conn, "project", pid, "interpretation", reading_of, run_id)

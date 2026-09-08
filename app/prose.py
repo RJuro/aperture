@@ -56,6 +56,20 @@ SMELLS: dict[str, list[re.Pattern]] = {
         re.compile(r"\b(the corpus|the material|these accounts)\s+"
                    r"(shows?|tells?|narrates?|says?|describes?)\b", re.I),
     ],
+    # PROJECT rule 5 — a quantifier that speaks for every case, counted so a reader can check it
+    # against the ids in the same bracket. The NEGATIVE form is why this exists: rule 5 named
+    # "all", "every" and "consistently" and a corpus summary came back saying outputs were
+    # "never accepted at face value" over a corpus where one participant accepted most of one.
+    # A universal is often the right sentence, so this counts and a reader rules (docs/EVAL.md).
+    "universal": [
+        re.compile(r"\b(never|always|invariably|universally|unanimously|uniformly)\b", re.I),
+        re.compile(r"\b(in|with)\s+(every|all|no)\s+(case|cases|instance|instances)\b", re.I),
+        re.compile(r"\bwithout\s+exception\b", re.I),
+        re.compile(r"\b(none|neither)\s+of\s+the\s+\w+", re.I),
+        re.compile(r"\b(no|every|all|each)\s+"
+                   r"(participants?|interviewees?|speakers?|materials?|accounts?|cases?)\b", re.I),
+        re.compile(r"\b(everyone|nobody|no\s+one)\b", re.I),
+    ],
 }
 
 

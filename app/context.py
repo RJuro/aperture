@@ -133,8 +133,14 @@ def cite(text: str, index: dict, pid: str) -> Markup:
             if t is None:
                 continue
             out.append(f'<span class="summary">{_emph(_esc(part[at:m.start()]))}</span>')
+            # The material's name, not only the passage id. A corpus summary cites across every
+            # material at once, and "S155" alone says which passage but not which interview — a
+            # researcher checking a claim was reading sid numbers for proximity to guess whether
+            # two citations came from the same transcript. The name it already links to is the
+            # answer, and the index has been carrying it all along.
             out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
-                       f'?theme={t["theme_id"]}#{t["sid"]}">{t["sid"]}</a>')
+                       f'?theme={t["theme_id"]}#{t["sid"]}" title="{_esc(t["material_title"])}">'
+                       f'{t["sid"]}<span class="cite-who">{_esc(t["material_short"])}</span></a>')
             at = m.end()
         out.append(f'<span class="summary">{_emph(_esc(part[at:]))}</span>')
         return "".join(out)
@@ -146,9 +152,36 @@ def cite(text: str, index: dict, pid: str) -> Markup:
     return Markup("".join(f"<p>{one(p)}</p>" for p in paras) or "")
 
 
+def _cite_label(t: dict) -> str:
+    """A citation as a reader meets it in the record: which material, then which passage.
+
+    The corpus summary cites across every material at once, so a bare `[S041]` names a passage in
+    a document the reader must then work out. Two citations one line apart may be the same
+    transcript or two, and the record gave no way to tell — the same gap the page had, in the
+    document a blind judge reads. Separated by `;` where several are grouped, since a name and a
+    passage id already sit either side of a space.
+    """
+    who = str(t.get("material_short") or "").strip()
+    return f'{who} {t["sid"]}' if who else str(t["sid"])
+
+
+def _short_title(row) -> str:
+    """The material as a citation names it: whoever it is of, without the kind and the year.
+
+    `titles.compose` writes "Mary Grande — interview, 1989"; inline in a three-hundred-word
+    summary the tail is noise repeated at every citation, and the head is the whole question a
+    reader is asking. The full title rides along as the link's tooltip.
+    """
+    return _material_title(row).split(" — ")[0].strip() or _material_title(row)
+
+
 def _cite_index(conn, pid: str) -> dict:
-    return {m["id"]: dict(m) for mat in store.materials(conn, pid)
-            for m in store.moments(conn, mat["id"])}
+    out = {}
+    for mat in store.materials(conn, pid):
+        short, full = _short_title(mat), _material_title(mat)
+        for m in store.moments(conn, mat["id"]):
+            out[m["id"]] = {**dict(m), "material_short": short, "material_title": full}
+    return out
 
 
 # ---- the material, with this theme's quotes marked ----------------------------------------------
@@ -979,8 +1012,9 @@ def _export_resolve_ids(text: str, index: dict) -> str:
     """
     text = _live_cites(text, index)
     text = _CITE_GROUP.sub(
-        lambda m: "[" + ", ".join(index[i]["sid"] for i in _CITE.findall(m.group(1))) + "]", text)
-    return _CITE.sub(lambda m: f"[{index[m.group(0)]['sid']}]", text)
+        lambda m: "[" + "; ".join(_cite_label(index[i]) for i in _CITE.findall(m.group(1))) + "]",
+        text)
+    return _CITE.sub(lambda m: f"[{_cite_label(index[m.group(0)])}]", text)
 
 
 def export(conn, pid: str, resolve: bool = True) -> dict:
