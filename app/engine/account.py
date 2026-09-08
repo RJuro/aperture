@@ -54,6 +54,7 @@ SHARED_SHOWN = 40
 # and a per-material query would have to know to ask about them.
 _COVERAGE = """
 SELECT m.id AS material_id, m.name AS name, m.title AS title, m.kind AS kind,
+       m.given_title AS given_title,
        COUNT(mo.id) AS claims
   FROM material m
   LEFT JOIN moment mo ON mo.material_id = m.id AND mo.theme_id = ? AND mo.status = 'live'

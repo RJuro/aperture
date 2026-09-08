@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 17
+SCHEMA_VERSION = 18
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS material (
     year TEXT DEFAULT '', state TEXT NOT NULL DEFAULT 'added', created_at TEXT NOT NULL,
     speakers_estimated INTEGER DEFAULT 0, case_id TEXT,
     audio_file TEXT DEFAULT '', audio_note TEXT DEFAULT '', audio_clean INTEGER DEFAULT 0,
-    audio_seconds REAL);
+    audio_seconds REAL, given_title TEXT DEFAULT '');
 
 -- What the researcher says is one unit of analysis: a participant, an interview, a time point.
 -- A file is not a case — two files from one participant are two materials and one case, and a
@@ -276,6 +276,11 @@ def migrate(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE material ADD COLUMN audio_note TEXT DEFAULT ''")
         conn.execute("ALTER TABLE material ADD COLUMN audio_clean INTEGER DEFAULT 0")
         conn.execute("ALTER TABLE material ADD COLUMN audio_seconds REAL")
+    if "given_title" not in have:
+        # A title the researcher typed, which is the only kind FRAME may not overwrite. Kept
+        # BESIDE the composed title rather than replacing it, so clearing the field is a return to
+        # the automatic name and needs no second column to remember what that was.
+        conn.execute("ALTER TABLE material ADD COLUMN given_title TEXT DEFAULT ''")
     if "case_id" not in have:
         # Null on every material read before cases existed, which is the honest reading of them:
         # nobody had said which files were one participant, so each one still counts as its own.

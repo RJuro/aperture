@@ -182,3 +182,43 @@ def test_reading_again_is_work_not_something_the_researcher_said(app, analysed, 
 def test_reading_again_ignores_a_material_that_is_already_current(app, analysed):
     app.post(f"/p/{analysed['pid']}/refresh", data={"material_id": analysed["grande"]})
     assert app.planned == []
+
+
+def test_a_researcher_renames_a_material_and_a_reframe_does_not_undo_it(app, conn, analysed):
+    """FRAME's title is a machine's best account of who is in the material. The project usually
+    calls the thing something else — an index-card number, a pseudonym where the transcript uses a
+    real name — and that name has to survive the structure being worked out again, which is why it
+    is kept beside the composed title rather than written into it.
+
+    It costs nothing: no row of feedback, no run, no model call.
+    """
+    pid, mid = analysed["pid"], analysed["grande"]
+
+    assert app.post(f"/p/{pid}/m/{mid}/rename",
+                    data={"title": "  Card 12  "}).status_code == 303
+    assert store.material(conn, mid)["given_title"] == "Card 12", "and its whitespace is tidied"
+    assert app.planned == [], "renaming reads nothing again"
+    for url in (f"/p/{pid}/m/{mid}", f"/p/{pid}", f"/p/{pid}/record"):
+        assert "Card 12" in app.get(url).text, url
+
+    # The composed title is untouched underneath, so working the structure out again cannot take
+    # the name away — the defect that putting it in `title` would have had.
+    store.save_frame(conn, mid, kind="interview", display="turns", title="Grande, M.",
+                     speakers=[], segments=[])
+    assert "Card 12" in app.get(f"/p/{pid}/m/{mid}").text
+
+    # And empty is the way back to the composed title, which needs no second column to remember.
+    assert app.post(f"/p/{pid}/m/{mid}/rename", data={"title": ""}).status_code == 303
+    html = app.get(f"/p/{pid}/m/{mid}").text
+    assert "Card 12" not in html
+    assert '<h1 class="material">Grande, M.</h1>' in html, "the composed title, back again"
+
+
+def test_a_material_in_another_project_is_not_renameable_through_this_one(app, conn, analysed):
+    """The id is in the URL. Without the check, anyone who may edit any project could rename a
+    material in a project that is not theirs."""
+    other = store.create_project(conn, "Someone else's", method="iterative")
+    mid = store.add_material(conn, other, "theirs.txt", "Their text.")
+    assert app.post(f"/p/{analysed['pid']}/m/{mid}/rename",
+                    data={"title": "mine now"}).status_code == 404
+    assert store.material(conn, mid)["given_title"] == ""

@@ -336,6 +336,26 @@ def rerun_material(request: Request, pid: str, mid: str, step: str = Form("read"
     return RedirectResponse(f"/p/{pid}/m/{mid}", status_code=303)
 
 
+@router.post("/p/{pid}/m/{mid}/rename")
+def rename(request: Request, pid: str, mid: str, title: str = Form("")):
+    """What the researcher calls this material. Nothing is re-read and no call is made.
+
+    A composed title is a machine's best account of who is in the material and what it is, and it
+    is often not what the project calls the thing — "DP-40" on the researcher's own index card, or
+    a pseudonym where the transcript uses a real name. Left empty it goes back to the composed
+    title, which is why the name is kept in a column of its own.
+    """
+    conn = connection()
+    _mine(request, conn, pid)
+    # The id is in the URL, so a material in somebody else's project would otherwise be renamed by
+    # anyone who may edit any project at all.
+    mat = store.material(conn, mid)
+    if mat is None or mat["project_id"] != pid:
+        raise HTTPException(status_code=404, detail="not here")
+    store.rename_material(conn, mid, title)
+    return _back(request, f"/p/{pid}/m/{mid}")
+
+
 @router.post("/p/{pid}/m/{mid}/reframe")
 def reframe(request: Request, pid: str, mid: str, hint: str = Form("")):
     """"This is laid out wrong." Re-describes the material's shape and nothing else — no sentence

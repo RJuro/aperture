@@ -116,6 +116,17 @@ def add_material(conn: sqlite3.Connection, pid: str, name: str, text: str) -> st
     return mid
 
 
+def rename_material(conn: sqlite3.Connection, mid: str, title: str) -> None:
+    """What the researcher calls this material. Empty is a return to the composed title.
+
+    Its own column, not `title`: the composed one is written by FRAME and rewritten every time the
+    structure is worked out again, so a name typed into it would survive until the first re-frame
+    and then quietly disappear. Beside it, the automatic name is still there to fall back to.
+    """
+    conn.execute("UPDATE material SET given_title=? WHERE id=?", (" ".join(title.split()), mid))
+    conn.commit()
+
+
 def save_audio(conn: sqlite3.Connection, mid: str, filename: str, fileobj,
                *, note: str = "", clean: bool = False) -> str:
     """Put the uploaded recording on the volume and say on the material where it went.
@@ -1050,7 +1061,8 @@ def open_questions(conn: sqlite3.Connection, pid: str,
     text stands in until a material writes its own, so nothing already written disappears.
     """
     rows = list(conn.execute(
-        "SELECT s.text AS text, m.id AS material_id, m.title AS title, m.name AS name "
+        "SELECT s.text AS text, m.id AS material_id, m.title AS title, m.name AS name, "
+        "m.given_title AS given_title "
         "FROM summary s JOIN material m ON m.id = s.ref_id "
         "WHERE s.scope='material' AND s.stage='questions' AND s.status='live' "
         "AND m.project_id=? AND m.removed_at IS NULL ORDER BY s.rowid DESC", (pid,)))

@@ -392,7 +392,13 @@ def _row(r) -> dict | None:
 
 
 def _material_title(row) -> str:
-    return titles.standardize(row["title"] or row["name"])
+    """What every page calls this material: the researcher's own name for it if they typed one,
+    then the title FRAME composed, then the file it arrived as.
+
+    `.get`, because not every query that reaches here selects the whole row — a narrow select that
+    predates the column would otherwise raise rather than fall back."""
+    d = dict(row)
+    return titles.standardize(d.get("given_title") or d["title"] or d["name"])
 
 
 def _source_name(row, display_title: str) -> str:
@@ -916,6 +922,9 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     mat = dict(m)
     mat["display_title"] = _material_title(m)
     mat["source_name"] = _source_name(m, mat["display_title"])
+    # What the rename control offers to go back to: the same title with the researcher's own name
+    # for it taken out, which is the only way the page can name it while it is being overridden.
+    mat["automatic_title"] = titles.standardize(mat["title"] or mat["name"])
     mat["analysis"] = _analysis_steps(conn, m)
     # A material still waiting for its transcript has a placeholder for text and no claims, and
     # the page has to say that rather than print an empty reading. A transcription that stopped

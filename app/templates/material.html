@@ -42,6 +42,18 @@
         <a class="btn btn-secondary" href="#record">View source text</a>
         <details class="head-menu"><summary aria-label="More material options">•••</summary>
           <div class="menu-sheet wide-menu">
+            {# First, because it is the only one of these that costs nothing and undoes itself:
+               the composed title stays underneath, so an empty field is the way back to it. #}
+            <details><summary>Rename this material</summary>
+              <form method="post" action="/p/{{ project.id }}/m/{{ material.id }}/rename" class="form-stack compact">
+                <label>What to call it here
+                  <input name="title" value="{{ material.given_title | txt }}" placeholder="{{ material.display_title | txt }}"></label>
+                <p class="dim small">Used everywhere this material is named. Leave it empty to go
+                  back to <span class="material">{{ material.automatic_title | txt }}</span>.
+                  Nothing is read again.</p>
+                <button class="btn btn-secondary">Rename</button>
+              </form>
+            </details>
             <details><summary>Correct material structure</summary>
               <form method="post" action="/p/{{ project.id }}/m/{{ material.id }}/reframe" class="form-stack compact">
                 <label>Describe the correct speakers, sections, or row structure <textarea name="hint" rows="3"></textarea></label>
