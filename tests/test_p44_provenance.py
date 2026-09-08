@@ -91,3 +91,18 @@ def test_a_citation_with_no_material_name_still_prints_its_passage(conn):
     """The fallback is the old behaviour, never a bare space or a dangling separator."""
     assert context._cite_label({"sid": "S010", "material_short": ""}) == "S010"
     assert context._cite_label({"sid": "S010", "material_short": "Rodwin"}) == "Rodwin S010"
+
+
+# ---- the source pane ----------------------------------------------------------------------------
+
+def test_the_source_pane_names_the_text_and_the_theme_marked_in_it(conn, analysed, client):
+    """`.record-pane` is sticky and the page head is not, so once a reader has scrolled a line of
+    claims the pane is the only thing naming what they are looking at. It said "Source text" and
+    "this theme" and neither of them was a name."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    theme = store.live_themes(conn, pid)[0]
+    html = client.get(f"/p/{pid}/m/{mid}?theme={theme['id']}").text
+    head = html.split('class="record-head"', 1)[1].split("</section>", 1)[0]
+    assert context._material_title(store.material(conn, mid)) in head
+    assert theme["name"] in head
+    assert "this theme" not in head
