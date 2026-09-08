@@ -144,7 +144,15 @@
     </ol>
   </section>
   <section class="record-pane text" id="record">
-    <div class="record-head"><strong>Source text</strong><span class="meta">Highlighted passages support this theme</span></div>
+    {# Which text, and which theme is marked in it. The pane is sticky and the page head is not,
+       so a reader who has scrolled a line of claims has had the material's name off the top of
+       the screen for some time and was being shown an unlabelled window of transcript. Both
+       names are here rather than one: the highlighting means nothing without the theme it is
+       highlighting for, and that was only ever said as "this theme". #}
+    <div class="record-head">
+      <span class="record-of"><strong>Source text</strong><span class="material">{{ material.display_title | txt }}</span></span>
+      <span class="meta record-marking"><i class="swatch" aria-hidden="true"></i>Highlighted: <span class="material">{{ selected.name | txt }}</span></span>
+    </div>
     <div class="record-body">
   {% for b in blocks %}
     {% if b.label %}<h3 class="material">{{ b.label | txt }}</h3>{% endif %}

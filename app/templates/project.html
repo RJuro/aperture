@@ -38,6 +38,29 @@
     <div>
       <h2>Project summary</h2>
       {% if summary %}<div class="summary-copy">{{ summary_html }}</div>
+      {# The tier the summary gathers the themes into, between what the reading shows and what it
+         may mean. Each entry links the themes it gathers, so the argument can be read against
+         them; what the summary placed nowhere is printed rather than left out, because a theme
+         missing from every group is a fact about the summary and not a gap to tidy away. #}
+      {% if overarching or ungathered %}
+      <h3>Overarching themes</h3>
+      {% for o in overarching %}
+      <section class="overarching">
+        <h4>{{ o.name | prose }}</h4>
+        {% if o.organising_idea %}<p class="gist">{{ o.organising_idea | prose }}</p>{% endif %}
+        <p>Gathers {% for g in o.gathers %}<a href="/p/{{ project.id }}/t/{{ g.id }}">{{ g.name | txt }}</a>{% if not loop.last %}, {% endif %}{% else %}no theme this project still holds{% endfor %}.</p>
+        {% if o.boundary %}<p>What sorts a theme into this one rather than the nearest other: <span class="gist">{{ o.boundary | prose }}</span></p>{% endif %}
+        {% if o.exceptions %}<p>Exceptions</p><div class="summary-copy">{{ o.exceptions | cite(cites, project.id) }}</div>{% endif %}
+        {% if o.argument %}<div class="summary-copy">{{ o.argument | cite(cites, project.id) }}</div>{% endif %}
+      </section>
+      {% endfor %}
+      {% if ungathered %}
+      <h4>Themes no overarching theme gathers</h4>
+      <ul class="mats">
+      {% for u in ungathered %}<li><a href="/p/{{ project.id }}/t/{{ u.id }}">{{ u.name | txt }}</a>{% if u.why %} — <span class="gist">{{ u.why | prose }}</span>{% endif %}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% endif %}
       {% if interpretation and interpretation.text %}
       <h3>Possible interpretation</h3>
       <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}
@@ -148,6 +171,31 @@
    the whole corpus at once — so it prints what it would cost before it is pressed, and it stands
    under the table rather than folded into the heading: it changes the themes the researcher has
    just read, and it is decided after reading them, not before. #}
+{# Arithmetic over what the readings already wrote, beside the one control that can merge two
+   themes. It is a list to read, not a queue to work through: the paragraph says which control
+   merges, because a pair printed next to a button reads as something the button will act on. #}
+{% if duplicates %}
+<div class="duplicates">
+  <h3>Possible duplicates</h3>
+  <p>Each pair is two project themes that may be one theme. This list changes nothing and starts
+    nothing: two themes are merged only when you run Compare and update themes. Read both
+    definitions and decide whether they name one pattern.</p>
+  <ul class="mats">
+  {% for d in duplicates %}
+    <li>
+      <p class="small">{{ d.why }}</p>
+      <div class="pair">
+      {% for t in [d.a, d.b] %}
+        <div><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a>
+          <p class="gist">{{ t.gist | prose }}</p>
+          {% if t.nearest_note %}<p class="gist">{{ t.nearest_note | prose }}</p>{% endif %}</div>
+      {% endfor %}
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}
 {% if consolidate and role in ('edit', 'owner') %}
 {# Pressed once, it is a chain of dozens of model calls, and the page it returns to looked exactly
    as it did before it was pressed — so it was pressed again, and the whole comparison was queued

@@ -182,6 +182,11 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .summary-copy ~ form { margin-top: 12px; }
 .summary-copy a.cite { color: var(--accent); font: 11px var(--font-mono); vertical-align: .1em; }
 .summary-copy a.cite:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Which material a citation is from, beside the passage id. A corpus summary cites across the
+   whole corpus, and the id alone left a reader guessing at the transcript. Set narrower than the
+   id so a paragraph of prose still reads as prose and not as a bibliography. */
+.cite-who { margin-left: .35em; font-size: 10px; opacity: .75; letter-spacing: .01em; }
+.cite-who::before { content: "· "; opacity: .6; }
 .focus-note { padding-top: 3px; border-top: 1px solid var(--fg); }
 .focus-note blockquote { margin: 18px 0; font: italic 17px/1.55 var(--font-display); }
 .focus-note details > summary, .quiet-details > summary { color: var(--muted); font-size: 12px; }
@@ -353,8 +358,16 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 .quote-link::after { content: '”  ↗'; }
 .quote-link:hover { color: var(--fg); text-decoration: underline; text-underline-offset: 4px; }
 .record-pane { position: sticky; top: 132px; max-height: calc(100vh - 148px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); view-transition-name: record; }
-.record-head { min-height: 54px; flex: 0 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); }
+.record-head { min-height: 54px; flex: 0 0 auto; padding: 8px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; border-bottom: 1px solid var(--border); }
 .record-head strong { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+/* The pane is sticky and the page head is not, so this is the only place the material is named
+   once a reader has scrolled. The title takes the room it needs and truncates rather than
+   pushing the theme it is highlighting for off the row. */
+.record-of { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.record-of .material { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.record-marking { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+/* The same ink as the highlight itself, so the legend and the marks read as one thing. */
+.record-marking .swatch { width: 11px; height: 11px; flex: 0 0 auto; border-radius: 2px; background: color-mix(in oklch, var(--accent) 20%, transparent); box-shadow: inset 0 -2px 0 var(--accent); }
 .record-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; padding: clamp(20px, 3.3vw, 46px); color: color-mix(in oklch, var(--fg) 84%, var(--surface)); font: 13px/1.78 var(--font-mono); }
 .record-body pre { margin: 0 0 1.05em; white-space: pre-wrap; overflow-wrap: anywhere; color: inherit; font: inherit; }
 .record-body pre > b { margin-right: 7px; color: var(--muted); font-size: 10px; font-weight: 400; user-select: none; }
@@ -365,7 +378,13 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
    snapping on — the eye needs the moment to find it. */
 .s:target { background: var(--accent-soft); box-shadow: 0 0 0 4px var(--accent-soft), inset 3px 0 0 var(--accent); animation: passage-found .42s cubic-bezier(.2, .7, .2, 1); }
 @keyframes passage-found { from { background: transparent; box-shadow: 0 0 0 4px transparent, inset 3px 0 0 transparent; } }
-mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); color: var(--fg); }
+/* A highlight has to survive being the only thing on a scrolled screen. At `--accent-soft` (11%
+   of the accent) it was a tint a reader could lose against the pane, and it carried its whole
+   meaning in colour — nothing for anyone who does not separate this blue from this grey. The
+   underline is the part that does not depend on seeing the hue. */
+mark { padding: 2px 1px; border-radius: 2px; color: var(--fg);
+       background: color-mix(in oklch, var(--accent) 20%, transparent);
+       box-shadow: inset 0 -2px 0 var(--accent); }
 .research-actions { border-top: 1px solid var(--border); }
 .action-drawer { margin-top: 0; }
 .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 4px 0 34px; }
@@ -583,6 +602,23 @@ mark { padding: 2px 1px; border-radius: 2px; background: var(--accent-soft); col
    inside the field rather than pushing it wider. */
 .compare .choice { font-size: 13px; }
 .compare .btn { margin-top: 4px; justify-self: start; }
+
+/* Possible duplicates */
+/* Two definitions read against each other, which is the only way the question can be answered —
+   side by side where there is room for two columns, stacked where there is not. It sits above the
+   compare form and outside it: nothing here submits anything. */
+.duplicates { max-width: 78ch; margin-top: 30px; }
+.duplicates > h3 { margin: 0 0 6px; }
+.pair { display: grid; gap: 16px; margin-top: 6px; }
+.pair p { margin: 4px 0 0; }
+@media (min-width: 700px) { .pair { grid-template-columns: 1fr 1fr; gap: 28px; } }
+
+/* Overarching themes */
+/* The tier reads as one argument each, so an entry keeps a measure and a rule down its left to
+   separate it from the next; it is prose under the summary, not a card. */
+.overarching { max-width: 72ch; margin-top: 18px; padding-left: 16px; border-left: 2px solid var(--border); }
+.overarching h4 { margin: 0; }
+.overarching > p { margin: 6px 0 0; }
 
 /* Assessment status */
 /* A no-count cell prints a short word instead of a dash, so what it means is legible without a

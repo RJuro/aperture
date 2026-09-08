@@ -31,32 +31,37 @@ carrying it does that — and nothing you return can alter a frozen one.
 8. Fold an open theme into another by giving it `"merge_into": "<the id it becomes part of>"` — never by leaving it out of your answer. The target may be frozen; a frozen theme is never itself folded away.
 9. Group codes by what they mean, not by where they were found. You are told nothing about which materials a code appears in or how often, and the gist says nothing about it either — where a theme reaches is worked out later, over the evidence.
 10. Keep each theme at one level of abstraction — a pattern the codes share, not a summary of one passage and not a restatement of a single code's name.
-11. A theme names a pattern that could recur in material not yet read. An event in one life — a fire, a crossing, an illness, a death — however consequential in that life, is not a theme; it is an instance of a theme about what such events do. Gather the code under such a theme or leave it ungathered.
+11. A theme names a pattern that could recur in material not yet read. An event in one life — a fire, a strike, an illness, a death — however consequential in that life, is not a theme; it is an instance of a theme about what such events do. Gather the code under such a theme or leave it ungathered.
 12. Leave a code out rather than force it: a code that fits nowhere stays ungathered, and that is a finding.
 13. An open theme keeps its name and its gist unless a code it must gather contradicts the gist as written. Never widen a definition so that more material fits it — "violence" does not become "violence, restriction, or erasure" because a new material speaks of rules; if the material just read shows a related but different pattern, that is a candidate, and the existing theme keeps its definition. A theme whose name no longer says what its definition says is renamed or split, never stretched. Rewording for its own sake is not done: a researcher who has read a theme should still recognise it, word for word where possible.
 14. A FROZEN theme is returned with its `id` and its `code_names` and nothing else. If a name or a gist comes back for it, it is ignored. Where a passage below pulls against a frozen definition — a code you would gather under it that the gist as written would exclude, or a pattern here that the name misdescribes — say so in `tensions`: the theme's `id`, the `material` id the passage came from, and at most 25 words naming what pulls and which way. A tension is a note for the researcher, not a rewrite; write it even when it is small, and write none when there is none.
 15. A CANDIDATE appears in `candidates` only if the passages below carry its pattern in a material other than the one it was seen in: give its `id` and the `code_names` that belong under it. Do not reword a candidate to make new material fit it. A candidate the new material does not carry is left out of your answer, and nothing is lost by that — a candidate left out stays a candidate.
 16. A pattern present in the codes below that no project theme and no candidate defines becomes a new candidate: `"new": true`, a name, a gist, and its `code_names`. At most {{max_new}} new candidates in one answer; if the codes support more, keep the ones that gather most and leave the rest ungathered. A new candidate obeys rules 5 to 12 like any theme.
+17. Give every open theme and every candidate a `nearest`: the `id` of the live theme or candidate it is most easily confused with, and `differs`, at most 20 words saying what sorts a passage into this one rather than that one. A theme that cannot say what sorts a passage into it rather than into its neighbour is not a separate theme: where you cannot name the difference, give `merge_into` and no `nearest`. Write `"nearest": null` where nothing else is close — that is an answer, not a gap, and a neighbour is not invented to fill the field. A `nearest` id that is not another live theme or candidate of this project is dropped and that theme is stored with none. A frozen theme is not asked for one.
 
 Return exactly this shape:
 
 {"themes": [
-  {"id": "t9f2c1", "name": "Work and staying",
-   "gist": "Earning is described less as a livelihood than as the condition of remaining.",
-   "code_names": ["Work as what makes staying possible", "Sending money home"]},
-  {"id": "t0aa41", "code_names": ["Being asked where you are from"]},
-  {"id": "t44ab0", "name": "Labour", "gist": "Overlaps with work and staying.",
+  {"id": "t9f2c1", "name": "Handover as where errors are caught",
+   "gist": "Passages where a mistake made earlier is noticed as one shift hands work to the next.",
+   "code_names": ["Handover as a checklist read aloud", "Catching a missed dose"],
+   "nearest": {"id": "t0aa41", "differs": "This is the moment of noticing; that is the record written afterwards."}},
+  {"id": "t0aa41", "code_names": ["Writing up what was done"]},
+  {"id": "t44ab0", "name": "Shift changeover", "gist": "Overlaps with handover as where errors are caught.",
    "code_names": [], "merge_into": "t9f2c1"}
 ],
  "candidates": [
-  {"id": "tc77e2", "code_names": ["Keeping a second household"]},
-  {"new": true, "name": "Being read as a stranger",
-   "gist": "Encounters where the speaker is placed as an outsider before anything is said.",
-   "code_names": ["Being asked where you are from"]}
+  {"id": "tc77e2", "code_names": ["Asking a colleague to check"]},
+  {"new": true, "name": "Paperwork as protection",
+   "gist": "Records described as kept for what they will show about the work afterwards.",
+   "code_names": ["Writing up what was done"],
+   "nearest": {"id": "t9f2c1", "differs": "This is what a record is for; that is what a handover catches."}}
 ],
  "tensions": [
-  {"id": "t0aa41", "material": "m8953fe1a68", "note": "Here the placing is done by other migrants, which the gist does not foresee."}
+  {"id": "t0aa41", "material": "m8953fe1a68", "note": "In the ward notes the writing up is done by a manager, which the gist does not foresee."}
 ]}
+
+{{style_short}}
 
 ---
 THE EVIDENCE: every code of the project, its definition, and passages that carry it from different

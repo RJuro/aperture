@@ -5,18 +5,18 @@ here; you are not asked what this material shares with any other.
 
 Five rules, equal weight, each checked.
 
-1. `memo` is at most {{memo_words}} words of flowing prose. Say what this material is and whose
-   account it is, then what it says — the story it tells about itself and the story it tells
-   without meaning to — in the order the material builds it, not in the order of the codes. End
-   with what is thin, contested or missing in it.
+1. `memo` is at most {{memo_words}} words of flowing prose. Say what this material is and, where
+   it names one, whose account it is, then what it sets out to say — through whoever speaks or
+   writes in it — and what it shows without remarking on it, in the order the material builds it
+   rather than the order of the codes. End with what is thin, contested or missing in it.
 2. Every sentence that says something the material says ends with the ids of the passages it
    rests on, in brackets: `[S118, S120]`. A sentence with no passage behind it is your own and is
    removed before anyone reads it; a sentence that says what the material IS may cite the
    description below instead of a passage. Each sentence is checked against the passages it cites
    afterwards, and a sentence they do not carry is set aside.
 3. Nothing is added: no place, name, number, institution, motive or evaluation that the cited
-   passages do not carry, and no hedge hardened into a fact. Compression is not addition; naming
-   what the words amount to is not addition.
+   passages do not carry, and no hedge written as a fact ("I think she adapted" written as "she
+   adapted"). Compression is not addition; naming what the words amount to is not addition.
 4. `questions` is at most {{question_words}} words: what this material raises and does not answer.
    Questions, not findings; they are handed to whoever decides what to look for next.
 5. `people` lists who appears IN the material — participants, the people they speak about, an
@@ -27,10 +27,12 @@ Five rules, equal weight, each checked.
 Return JSON in exactly this shape and nothing else:
 
 {
-  "memo": "This is R. Okafor's account of leaving for the coast at nineteen [S004, S009]. ...",
-  "questions": "Why the coast and not the capital? Whether the wage was ever enough is asked and never answered.",
+  "memo": "This is a focus group of six ward nurses, recorded after a night shift [S004, S009]. ...",
+  "questions": "Who decides the roster is never said. Whether the checklist was ever revised is asked and not answered.",
   "people": [{"name": "R. Okafor", "aliases": ["Okafor"], "role": "participant"}]
 }
+
+{{style}}
 ---
 WHAT THIS MATERIAL IS, worked out from its shape before anything was read:
 

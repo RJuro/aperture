@@ -512,12 +512,24 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
     return out
 
 
+# Slots a prompt fills from a file beside it rather than from its caller: how to write the prose a
+# researcher reads. One file for every prompt that includes it, so the voice cannot drift a step at
+# a time, and declared in the template — `{{style}}` on the page — rather than spliced in by
+# Python, so what the model is shown is still readable in one file.
+#
+# `style` is the whole block; `style_short` is the four rules that bear on a name, a gist or a
+# fifteen-word note. A caller passing either is the drift this catches: the block is not the
+# caller's to vary.
+RESERVED = {"style": "_style", "style_short": "_style_short"}
+
+
 def prompt(name: str, **slots: str) -> tuple[str, str]:
     """Load `prompts/<name>.md` and fill its slots. The file is split at the first line that is
     exactly `---`: everything above is the system message, everything below the user message.
 
     Slots are `{{name}}`. A slot the file does not use is an error — it means the prompt and the
-    code that fills it have drifted apart, which is exactly the bug this catches."""
+    code that fills it have drifted apart, which is exactly the bug this catches. `{{style}}` and
+    `{{style_short}}` are the exception: the file beside it supplies them, never the caller."""
     path = Path(__file__).parent / "prompts" / f"{name}.md"
     text = path.read_text()
     head, _, body = text.partition("\n---\n")
@@ -530,12 +542,18 @@ def prompt(name: str, **slots: str) -> tuple[str, str]:
     # contain {{...}} must not read as a slot — it would have killed the run, or worse, filled
     # itself from a neighbouring slot.
     wanted = set(re.findall(r"\{\{(\w+)\}\}", text))
+    if taken := sorted(set(slots) & set(RESERVED)):
+        raise LLMError(f"{path}: {taken} is filled from its own file, not by the caller")
     if extra := sorted(set(slots) - wanted):
         raise LLMError(f"{path} has no slot(s) {extra}")
-    if missing := sorted(wanted - set(slots)):
+    filled = dict(slots)
+    for slot, fname in RESERVED.items():
+        if slot in wanted:
+            filled[slot] = (path.parent / f"{fname}.md").read_text().strip()
+    if missing := sorted(wanted - set(filled)):
         raise LLMError(f"{path}: unfilled slots {missing}")
 
     def fill(s: str) -> str:
-        return re.sub(r"\{\{(\w+)\}\}", lambda m: str(slots[m.group(1)]), s)
+        return re.sub(r"\{\{(\w+)\}\}", lambda m: str(filled[m.group(1)]), s)
 
     return fill(head).strip(), fill(body).strip()

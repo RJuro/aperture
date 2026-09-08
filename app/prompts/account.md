@@ -7,7 +7,7 @@ block showing none of them still names its material. You also see, by name, ever
 this theme does not appear at all, and which of this theme's passages are also read under other
 themes.
 
-Eight rules. Each one carries the same weight, and each one is checked.
+Eleven rules. Each one carries the same weight, and each one is checked.
 
 1. Every statement you make rests on claims that already exist, cited by id in square brackets:
    `[mo1a2b3c4d5]`, or `[mo1a2b3c4d5, mo6e7f8g9h0]` for several.
@@ -43,16 +43,29 @@ Eight rules. Each one carries the same weight, and each one is checked.
    beside the theme wherever this account is read. Do not restate it in words. Do not write
    "all", "every", "each", "consistently", "no exceptions", "across the corpus", or "in N of M
    materials". Write about what the claims say and how they differ; the reader has the count.
-7. A statement about what a material shows rests on a claim FROM that material. "The fathers
-   accept their lot" needs a cited claim about a father from each material it speaks for; where
-   one material has no such claim, say that it does not, or narrow the statement to the
-   materials that do.
+7. A statement about what a material shows rests on a claim FROM that material. "The nurses
+   accept the roster as it stands" needs a cited claim about the roster from each material it
+   speaks for; where one material has no such claim, say that it does not, or narrow the
+   statement to the materials that do.
 8. A claim is one reading of one passage. Where a passage is also read under another theme, that
    other reading is listed below. Do not present this theme's reading as the only one: say what
    this theme finds in the passage, and where the other theme's claim runs in a different
    direction — the same event told as a gift there and as a constraint here — say so in one
    clause. Every word is your own and none of them assume a speaker: these materials may be
    interviews, focus groups, field notes, documents, or answers to an open question.
+9. Where a material's block carries a note from the reading, say in one sentence how that
+   material stands to the definition — the exception it is, or the edge it sits at. Do not fold it
+   in as if it were an ordinary instance. Where no block carries a note, this rule says nothing.
+10. Where the theme's definition names a cause, a consequence or a mechanism — one thing
+    prompting, producing, enabling or breaking another — say whether the cited claims carry that
+    link itself or only its two ends. If only the ends, say so in one sentence, and say which
+    claims would be needed. Where the definition names no such link, this rule says nothing.
+11. Where claims carry the material's own evaluation of what it describes — a judgment made
+    after the fact about what something cost, achieved, failed at or meant, by whoever speaks or
+    writes in it — keep it apart from the description: say what is described, then how the
+    material weighs it, and cite each separately. An evaluation made in one material is not read
+    into another, and a description is not read as an evaluation. Where no material weighs what
+    it describes, this rule says nothing.
 
 The evidence below is a list of claims, each with its id and the quote it rests on. Call them
 claims. The researcher reading you does not use any other word for them.
@@ -70,29 +83,32 @@ Return JSON in exactly this shape, and nothing else:
               axis they diverge — what kind of material, what circumstance, what position
               separates the ones that say one thing from the ones that say another. Say what
               varies with what: what appears beside this, and what never appears beside it. Say
-              what is thin — claimed once and nowhere else. Where a passage is also read under
-              another theme, say what this theme's reading adds. Every statement carries ids in
-              brackets like this [mo1a2b3c4d5] as its evidence, drawn from more than one material
-              wherever the pattern spans them."
+              which claims stand alone: made in one material and in no other. Where a passage is
+              also read under another theme, say what this theme's reading adds. Every statement
+              carries ids in brackets like this [mo1a2b3c4d5] as its evidence, drawn from more
+              than one material wherever the pattern spans them."
 }
 
-Worked, on a theme called "Work and trade":
+Worked, on a theme called "Handover as where errors are caught":
 
 {
-  "account": "Leaving is given as a matter of work, and the trade that paid was a small one — a
-              stall, a yard, a cousin's shop [mo1a2b3c4d5, mo6e7f8g9h0]. The claims divide on
-              whether that trade was chosen or fallen into, and the division runs with how the
-              leaving was arranged: where a relative was already waiting, the trade is told as a
-              step [mo7a8b9c0d1]; where no one was, it is told as what was left [mo2e3f4g5h6].
-              What is thin is money sent home: claimed once, in one account of a first year, and
-              nowhere else [mo9c8d7e6f5]. The stall passage is also read under Family obligation,
-              as a duty owed; here it is a livelihood, and the two readings do not disagree so
-              much as look at different words of the same sentence [mo1a2b3c4d5]. Two of the
-              written accounts do not carry this theme; they stop at arrival, and the claims say
-              nothing about why."
+  "account": "The materials that carry this theme describe handover as the point at which a
+              mistake from the previous shift is noticed [mo1a2b3c4d5, mo6e7f8g9h0]. Two of them
+              describe the catch as chance; one nurse says she happened to read the chart before
+              the round [mo7a8b9c0d1]. Two describe the checklist working as it was meant to
+              [mo2e3f4g5h6]. One claim stands alone: a mistake noticed at handover and not passed
+              on to the ward manager, made in one material and in no other [mo9c8d7e6f5]. The
+              chart passage is also read under Paperwork as protection, as a record kept for the
+              ward's sake; here it is read as the moment of noticing, and the two readings take
+              different sentences of the same turn [mo7a8b9c0d1]. The two sets of field notes
+              describe handover and make no claim about a mistake being caught [mo3b4c5d6e7]. The
+              material that carries no claim under this theme was read for it and what came back
+              was set aside; the claims say nothing about why."
 }
 
 No key other than `account`. No text outside the JSON object.
+
+{{style}}
 ---
 THE THEME you are writing about, as it stands now:
 
@@ -109,7 +125,8 @@ WHAT THE RESEARCHER SAID ABOUT THIS THEME, IN THEIR OWN WORDS. Take it as instru
 WHAT THE READING FOUND UNDER THIS THEME, material by material. Where a material's claims are more
 than this prompt has room for, its block holds examples selected from across it and its heading
 says how many of how many you are being shown. The id in brackets before each claim is the id you
-cite:
+cite. A block that begins `note from the reading:` carries what the reading of that material had
+to say about how it sits under this theme's definition; a block without one had nothing to say:
 
 {{materials}}
 

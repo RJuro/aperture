@@ -19,7 +19,7 @@ reader was already sent to find and did not.
 """
 from __future__ import annotations
 
-from .. import anchor, llm, store
+from .. import anchor, llm, prose, store
 from . import check, synth, verify
 
 # What the note may cost the reader. The prompt asks for 40 words and this is the guard.
@@ -48,7 +48,12 @@ def run(conn, mid: str, *, run_id: str | None = None) -> dict:
     pid = row["project_id"]
     # The passages no CODE touched — not the ones no claim rests on (`store.uncited`), which is a
     # different remainder and a different question. This one asks what the coding itself missed.
-    marked = {h["sid"] for h in store.hits(conn, mid)}
+    #
+    # The interviewer's lines are left out of the remainder entirely rather than dropped after the
+    # fact: an unmarked question is not something the coding missed, it is something there was
+    # nothing to code. Excluding them here also keeps this pass from proposing an addition that
+    # `store.asked_sids` would only throw away, which would spend a call to produce a note.
+    marked = {h["sid"] for h in store.hits(conn, mid)} | store.asked_sids(conn, mid)
     unmarked = [(sid, text) for sid, text in store.sentences(conn, mid) if sid not in marked]
     block, themes = themes_block(conn, pid, mid)
     if not unmarked or not themes:
@@ -127,6 +132,11 @@ def _apply(conn, mid: str, additions: list[dict], none_for: set[str], note: str,
         # than the reader who looked already did.
         if outcomes.get((tid, mid)) == "skipped":
             store.save_follow(conn, mid, tid, "residual", run_id)
+    # The note and the claims this pass wrote, counted against the prose rules the prompt carries.
+    # The additions are counted before VERIFY has ruled on them: the rules govern how a claim is
+    # written, and a claim the check later sets aside was still written this way.
+    if style := prose.note(note, *(a["claim"] for a in additions)):
+        dropped.append(style)
     if note:
         store.save_summary(conn, "material", mid, "residual", note, run_id)
     return {"additions": additions, "none_for": sorted(none_for), "note": note,

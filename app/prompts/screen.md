@@ -20,19 +20,21 @@ Six rules. Each carries the same weight.
 3. `pass` means nothing in the account or the coding belongs to it. Say in `why` what the nearest
    thing was and why it is not this theme, in your own words.
 4. When you cannot tell — the account is thin, the codes are worded generally, the theme's
-   definition is close to something here without falling inside it — the answer is `look`. Reading
-   costs a call; a missed theme costs a finding.
+   definition is close to something here without falling inside it — the answer is `look`: an
+   unnecessary reading costs one call; a theme passed over is not read for at all.
 5. `why` is at most 15 words. It is about where to look, never a claim about the material: not
-   "the speaker's mother regretted the move" but "three codes about the mother's stance".
+   "the ward was short-staffed that night" but "three codes about who was on the night shift".
 6. Every word is your own and assumes no speaker. This may be an interview, a focus group, field
    notes, a document, or answers to an open question.
 
 Return exactly this shape:
 
 {"verdicts": [
-  {"id": "t9f2c1", "verdict": "look", "why": "two codes about earning and staying, several passages"},
-  {"id": "t0aa41", "verdict": "pass", "why": "nothing on official encounters; the papers code is about a wedding"}
+  {"id": "t9f2c1", "verdict": "look", "why": "two codes about handover and what it leaves out, several passages"},
+  {"id": "t0aa41", "verdict": "pass", "why": "nothing on training; the courses code is about a rota clash"}
 ]}
+
+{{style_short}}
 
 ---
 WHAT THIS MATERIAL IS, worked out from its shape:

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import titles
 
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS user (
@@ -107,14 +107,16 @@ CREATE TABLE IF NOT EXISTS theme (
     status TEXT NOT NULL DEFAULT 'live', merged_into TEXT,
     hold TEXT NOT NULL DEFAULT 'open',
     stable_passes INTEGER NOT NULL DEFAULT 0, pass_fingerprint TEXT NOT NULL DEFAULT '',
-    proposed_at TEXT);
+    proposed_at TEXT,
+    nearest_id TEXT, nearest_note TEXT DEFAULT '');
 
 -- What pulled against a frozen theme's definition in one material, in at most 25 words. It is
 -- shown to the researcher beside the theme and never written into the gist: new material is
 -- applied to a frozen theme, and what does not fit is the case for unfreezing it, not a rewrite.
 CREATE TABLE IF NOT EXISTS theme_note (
     id TEXT PRIMARY KEY, theme_id TEXT NOT NULL, material_id TEXT, run_id TEXT,
-    text TEXT NOT NULL, created_at TEXT NOT NULL);
+    text TEXT NOT NULL, created_at TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'tension');
 
 CREATE TABLE IF NOT EXISTS theme_history (
     theme_id TEXT NOT NULL, name TEXT NOT NULL, gist TEXT DEFAULT '', codes TEXT DEFAULT '',
@@ -334,6 +336,20 @@ def migrate(conn: sqlite3.Connection) -> None:
             "SELECT id, material_id, theme_id, outcome, run_id, status FROM follow;"
             "DROP TABLE follow;"
             "ALTER TABLE follow_new RENAME TO follow;")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(theme_note)")}
+    if "kind" not in have:
+        # What sort of note this is. 'tension' is what one material pulled against a FROZEN
+        # theme's definition; 'fit' is where a material carries an open theme in a way its
+        # definition did not foresee. Every row written before this column was a tension —
+        # nothing else could write one — so that is what they become.
+        conn.execute("ALTER TABLE theme_note ADD COLUMN kind TEXT NOT NULL DEFAULT 'tension'")
+    have = {r[1] for r in conn.execute("PRAGMA table_info(theme)")}
+    if "nearest_id" not in have:
+        # The live theme this one is most easily confused with, and what sorts a passage into
+        # this one rather than that. Null on every theme named before the reading was asked for
+        # it, which is the honest reading: nobody had said what it was nearest to.
+        conn.execute("ALTER TABLE theme ADD COLUMN nearest_id TEXT")
+        conn.execute("ALTER TABLE theme ADD COLUMN nearest_note TEXT DEFAULT ''")
     have = {r[1] for r in conn.execute("PRAGMA table_info(summary)")}
     if "fingerprint" not in have:
         # What a theme's account was written from, so the step that writes every account can tell

@@ -2,6 +2,12 @@
 {% block main %}
 <section class="section project-head"><div class="container">
 <h1>{{ theme.name | txt }}</h1><p class="lead">{{ theme.gist | prose }}</p><p class="meta head-stat">{{ derivation }} <a class="help" href="/guide?from=/p/{{ project.id }}/t/{{ theme.id }}#reach" title="How to read these counts" aria-label="Help: How to read these counts">?</a></p>
+{# What the definition above stands beside: the overarching themes that gather this one, and the
+   theme it is most easily confused with. Both are empty on every theme named before the reading
+   was asked for them, and a label with nothing after it says less than no label, so neither line
+   prints until there is something in it. #}
+{% if gathered_under %}<p class="meta">Gathered under: {{ gathered_under | join(', ') }}</p>{% endif %}
+{% if nearest %}<p class="meta">Most easily confused with <a href="/p/{{ project.id }}/t/{{ nearest.id }}">{{ nearest.name | txt }}</a>{% if nearest.note %} — <span class="gist">{{ nearest.note | prose }}</span>{% endif %}</p>{% endif %}
 {# Where the researcher has taken this theme, and the one control that moves it. Locking a
    theme's definition is not analysis and spends nothing: it fixes the name and the gist so new
    material is applied to the theme rather than allowed to rewrite it. #}
@@ -39,13 +45,28 @@ you send feedback below.</p>
 <p class="summary">{{ theme.gist | prose }}</p>
 {% endif %}
 
-{% if theme.hold == 'frozen' and notes %}
+{# Two kinds of note, never one list: they are written from opposite directions and a reader who
+   cannot tell them apart cannot use either. Neither is gated on the definition being locked —
+   the fit notes are written while it is open, and the section used to be, so they were the one
+   thing the reading says about a live definition that no page printed. #}
+{% set tensions = notes | selectattr('kind', 'equalto', 'tension') | list %}
+{% set fits = notes | selectattr('kind', 'equalto', 'fit') | list %}
+{% if tensions %}
 {# The case for unlocking, in the readings' own words. Never folded into the gist: a theme whose
    definition is locked is the researcher's to change, and what challenges it is evidence, not an
    edit. #}
 <h2>Evidence that challenges this definition</h2>
 <ul class="mats tensions">
-{% for n in notes %}<li class="gist">{{ n.text | prose }} <span class="dim">{{ n.display_title | txt }} · {{ n.created_at | when }}</span></li>{% endfor %}
+{% for n in tensions %}<li class="gist">{{ n.text | prose }} <span class="dim">{{ n.display_title | txt }} · {{ n.created_at | when }}</span></li>{% endfor %}
+</ul>
+{% endif %}
+{% if fits %}
+<h2>Materials this definition did not foresee</h2>
+<p class="dim">Each of these was read under this theme and carries it as a kind of case, actor,
+setting or time the definition does not name. The definition is unchanged; this is a note from
+the reading, for you to place or to write into it.</p>
+<ul class="mats tensions">
+{% for n in fits %}<li class="gist">From the reading of {{ n.display_title | txt }}: {{ n.text | prose }} <span class="dim">{{ n.created_at | when }}</span></li>{% endfor %}
 </ul>
 {% endif %}
 

@@ -16,11 +16,13 @@ Every rule below carries the same weight.
 Return exactly this shape:
 
 {"relations": [
-  {"local": "Work as what makes staying possible", "relation": "narrower",
-   "project": "Making a living", "why": "Staying is one of the things this code says earning buys."},
-  {"local": "Waiting for papers", "relation": "distinct", "project": null,
-   "why": "No existing code is about documents or the time they take."}
+  {"local": "Handover as where mistakes are caught", "relation": "narrower",
+   "project": "What a handover is for", "why": "Catching a mistake is one of the purposes this code gathers."},
+  {"local": "Waiting for a bed", "relation": "distinct", "project": null,
+   "why": "No existing code is about admissions or the time they take."}
 ]}
+
+{{style_short}}
 
 ---
 

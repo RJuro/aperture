@@ -122,6 +122,37 @@ def test_a_prompt_template_carries_no_corpus_specific_text():
         text = f.read_text()
         for word in ("Grande", "Rodwin", "Trieste", "Ellis Island", "packing house", "Denver"):
             assert word not in text, f"{f.name} carries corpus text: {word!r}"
+        # A leading underscore is a FRAGMENT — a block a scaffold includes through a reserved
+        # slot, not a prompt anything calls. It has no slots of its own by definition, and the
+        # rule above is the one that matters for it: a fragment goes into every prompt that
+        # includes it, so corpus text in one would reach further than corpus text anywhere else.
+        if f.name.startswith("_"):
+            continue
         # a slot the engine does not fill would be caught at compile time; a slot-free block of
         # prose longer than a worked example is the shape a leaked finding takes
         assert len(re.findall(r"\{\{\w+\}\}", text)) >= 3, f"{f.name} has too few slots to be a scaffold"
+
+
+def test_no_prompt_teaches_the_domain_the_instrument_is_judged_on():
+    """A template is universal; the corpus it is measured against is not.
+
+    Every prompt used to carry migration-shaped worked examples — "Work as what makes staying
+    possible", "Sending money home", a stall and a farm and a port — while the seeds and the
+    benchmark were Ellis Island oral histories. A model shown those examples and then that corpus
+    cannot be told apart from one that learned the domain from the prompt: the reading would look
+    strongest on exactly the material the examples came from, and no run could show otherwise.
+
+    The examples now come from wards, field notes and policy documents, which nothing here is
+    judged on. This is about the vocabulary a template teaches, so it reads the template only —
+    what a researcher's own focus or material says is theirs and never ours.
+    """
+    from pathlib import Path
+    prompts = Path(__file__).resolve().parent.parent / "app" / "prompts"
+    taught = ("migrat", "emigrat", "immigrant", "homeland", "old country", "pogrom", "steerage",
+              "diaspora", "the crossing", "sending money home", "port of entry")
+    for f in sorted(prompts.glob("*.md")):
+        low = f.read_text().lower()
+        for word in taught:
+            assert word not in low, (
+                f"{f.name} teaches the benchmark's own domain: {word!r}. Worked examples come "
+                f"from a domain the instrument is not judged on.")

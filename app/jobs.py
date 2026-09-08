@@ -145,13 +145,18 @@ def _themes(conn, pid, run):
     from .engine import themes
     before = _theme_set(conn, pid)
     if mids := run.get("materials"):
-        themes.run_cross(conn, pid, list(mids), feedback=_text(conn, run),
-                         run_id=run.get("run_id"))
+        out = themes.run_cross(conn, pid, list(mids), feedback=_text(conn, run),
+                               run_id=run.get("run_id"))
     else:
-        themes.run(conn, pid, feedback=_text(conn, run), material_id=run.get("material_id"),
-                   run_id=run.get("run_id"))
+        out = themes.run(conn, pid, feedback=_text(conn, run),
+                         material_id=run.get("material_id"), run_id=run.get("run_id"))
     if _theme_set(conn, pid) == before and run.get("run_id"):
         store.mark_unchanged(conn, run["run_id"])
+    # What the pass set aside on the way — a `nearest` naming no theme of this project, a code
+    # name the codebook does not have. Every other step hands these back to be written on its run
+    # row; this one dropped them on the floor, so the record could say the theme set had not moved
+    # without ever saying what had been discarded to leave it that way.
+    return (out or {}).get("dropped")
 
 
 def _consolidate(conn, pid, run):

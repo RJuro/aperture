@@ -12,8 +12,9 @@ claim that adds a motive the quote does not carry. Those go to blind judges (`do
 What *is* mechanical is how much of each there is room for, and that is what this counts: themes
 per material, how many rest on one material, how many distinct passages each theme cites and how
 often two themes cite the same one, how much of the corpus is cited at all, how many claims a
-verify step set aside, how many times the prose says *all* or *every*, stray non-Latin characters,
-an id written twice inside one bracket, and the tokens each step spent.
+verify step set aside, how many times the prose says *all* or *every*, how many phrases of the
+kind the prose rules name are in it, stray non-Latin characters, an id written twice inside one
+bracket, and the tokens each step spent.
 
 From a database it also counts what the four-condition comparison needs and a record cannot say:
 the model calls under those steps with their attempts, cached and reasoning tokens and seconds;
@@ -32,6 +33,12 @@ import sqlite3
 import sys
 import unicodedata
 from pathlib import Path
+
+# `--record` answers before anything opens a database, so the repo has to be importable here
+# rather than inside `main`. `app.prose` holds the same patterns the chain writes its run notes
+# from, and counting a finished record with a second copy of them would let the two drift apart.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app import prose  # noqa: E402
 
 # Words that assert a pattern holds without exception. Counted where the model generalises — the
 # theme accounts and the corpus summary — never in the material's own words.
@@ -53,6 +60,23 @@ def hedges(texts: list[str]) -> dict[str, int]:
     unanimous, and the word is only worth a look when the account cannot show it."""
     joined = "\n".join(texts).lower()
     return {w: len(re.findall(rf"\b{re.escape(w)}\b", joined)) for w in HEDGES}
+
+
+def prose_style(texts: list[str]) -> dict[str, int]:
+    """How many phrases of each kind the prose rules name appear, and the total of them.
+
+    The same prose the totalising words are counted in, and read the same way: this is how much of
+    the prompts' own register came back, not a verdict on any sentence. A high total is a reason
+    to read the accounts, and some of what it counts will be the right sentence — the material
+    itself sometimes says "not X but Y". Python counts and readers score (`docs/EVAL.md`), so
+    nothing here decides whether a record is better written than another.
+
+    Every kind is emitted, zeros included, so `--compare` lines up two records that fire different
+    ones.
+    """
+    found = prose.count(*texts)
+    out = {kind: found.get(kind, 0) for kind in prose.SMELLS}
+    return {**out, "total": sum(out.values())}
 
 
 def non_latin(text: str) -> list[str]:
@@ -94,7 +118,8 @@ def _blank(source: str) -> dict:
             "claims_per_theme": {}, "materials_per_theme": {}, "passages_per_theme": {},
             "shared_passage_share_per_theme": {}, "shared_passage_share": 0.0,
             "cited_passages": 0, "total_passages": None, "cited_share": None,
-            "set_aside": {}, "hedge_words": {}, "non_latin": {}, "doubled_ids": [],
+            "set_aside": {}, "hedge_words": {}, "prose_style": {}, "non_latin": {},
+            "doubled_ids": [],
             "tokens_per_step": {},
             # Only the database knows these. A record prints neither the calls under a step nor
             # the pairs nothing was written for, so off a record they stay null — "not measured",
@@ -149,6 +174,7 @@ def from_db(conn: sqlite3.Connection, pid: str) -> dict:
     corpus = [r[0] for r in conn.execute(
         "SELECT text FROM summary WHERE scope='project' AND ref_id=? AND status='live'", (pid,))]
     out["hedge_words"] = hedges(accounts + corpus)
+    out["prose_style"] = prose_style(accounts + corpus)
 
     prose = accounts + corpus + [t[2] or "" for t in themes] + [
         r[0] for r in conn.execute(
@@ -385,6 +411,7 @@ def from_record(path: Path | str) -> dict:
                                                              for n in excluded),
                         "notes_total": len(excluded)}
     out["hedge_words"] = hedges(accounts + [top.get("Across the corpus", "")])
+    out["prose_style"] = prose_style(accounts + [top.get("Across the corpus", "")])
     out["non_latin"] = _non_latin_report([md], md)
     out["doubled_ids"] = doubled_ids(md)
     for m in _TOKENS.finditer(top.get("Processing history", "")):
@@ -436,7 +463,6 @@ def main(argv: list[str] | None = None) -> int:
     if not a.data:
         ap.error("give --data, --record or --compare")
 
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     import os
     os.environ["APERTURE_DATA_DIR"] = str(a.data)
     from app import db

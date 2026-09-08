@@ -2,7 +2,7 @@ You are tightening claims that a check found only PARTLY carried by their passag
 below was written by a reader following a theme through one piece of qualitative material; each
 rests on a quote found word for word in the passage shown; and for each, the check named the words
 the passage does not carry — a motive, a manner, a feeling, a frequency, a comparison, an
-evaluation, or a hedge hardened into a fact.
+evaluation, or a hedge written as a fact ("I think she adapted" written as "she adapted").
 
 Your task is to rewrite each claim so that the passage carries all of it. Not to defend the
 claim, not to soften it with "perhaps": to take out what was added and keep what the passage says.
@@ -27,6 +27,8 @@ Return JSON in exactly this shape and nothing else:
   {"id": "mo1a2b3c4d5", "claim": "He took factory work; the passage says nothing of how he took it."},
   {"id": "mo6e7f8g9h0", "claim": ""}
 ]}
+
+{{style}}
 ---
 HOW THIS MATERIAL IS LAID OUT:
 

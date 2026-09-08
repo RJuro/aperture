@@ -55,6 +55,28 @@
 <h3>Project summary</h3>
 <div class="summary-copy">{{ summary.text | cite(cites, project.id) }}</div>
 {% else %}<p class="dim">No project summary yet.</p>{% endif %}
+{# The same tier as the project page, in the same place — between what the reading shows and what
+   it may mean — so a reader who has learned it there does not meet a second arrangement here.
+   The links go to the themes' own entries below rather than off to their pages. #}
+{% if overarching or ungathered %}
+<h3>Overarching themes</h3>
+{% for o in overarching %}
+<section class="overarching">
+  <h4>{{ o.name | prose }}</h4>
+  {% if o.organising_idea %}<p class="gist">{{ o.organising_idea | prose }}</p>{% endif %}
+  <p>Gathers {% for g in o.gathers %}<a href="#t-{{ g.id }}">{{ g.name | txt }}</a>{% if not loop.last %}, {% endif %}{% else %}no theme this project still holds{% endfor %}.</p>
+  {% if o.boundary %}<p>What sorts a theme into this one rather than the nearest other: <span class="gist">{{ o.boundary | prose }}</span></p>{% endif %}
+  {% if o.exceptions %}<p>Exceptions</p><div class="summary-copy">{{ o.exceptions | cite(cites, project.id) }}</div>{% endif %}
+  {% if o.argument %}<div class="summary-copy">{{ o.argument | cite(cites, project.id) }}</div>{% endif %}
+</section>
+{% endfor %}
+{% if ungathered %}
+<h4>Themes no overarching theme gathers</h4>
+<ul class="mats">
+{% for u in ungathered %}<li><a href="#t-{{ u.id }}">{{ u.name | txt }}</a>{% if u.why %} — <span class="gist">{{ u.why | prose }}</span>{% endif %}</li>{% endfor %}
+</ul>
+{% endif %}
+{% endif %}
 {% if interpretation and interpretation.text %}
 <h3>Possible interpretation</h3>
 <div class="summary-copy">{{ interpretation.text | cite(cites, project.id) }}</div>
@@ -81,11 +103,22 @@
   <h3><a href="/p/{{ project.id }}/t/{{ t.id }}">{{ t.name | txt }}</a></h3>
   <p class="gist">{{ t.gist | prose }}</p>
   <p class="meta">{{ t.derivation }} · {{ t.hold }}</p>
+  {% if t.nearest %}<p class="meta">Most easily confused with <a href="#t-{{ t.nearest.id }}">{{ t.nearest.name | txt }}</a>{% if t.nearest.note %} — <span class="gist">{{ t.nearest.note | prose }}</span>{% endif %}</p>{% endif %}
   {% if t.account %}<div class="summary-copy">{{ t.account.text | cite(cites, project.id) }}</div>{% endif %}
-  {% if t.hold == 'frozen' and t.notes %}
+  {# The two kinds of note, told apart as they are on the theme page and shown whether or not the
+     definition is locked: a fit note is written while it can still change. #}
+  {% set tensions = t.notes | selectattr('kind', 'equalto', 'tension') | list %}
+  {% set fits = t.notes | selectattr('kind', 'equalto', 'fit') | list %}
+  {% if tensions %}
   <h4>Evidence that challenges this definition</h4>
   <ul class="mats tensions">
-  {% for n in t.notes %}<li class="gist"><span class="num">{{ n.created_at[:10] }}</span> {{ n.text | prose }} <span class="dim">{{ n.display_title | txt }}</span></li>{% endfor %}
+  {% for n in tensions %}<li class="gist"><span class="num">{{ n.created_at[:10] }}</span> {{ n.text | prose }} <span class="dim">{{ n.display_title | txt }}</span></li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if fits %}
+  <h4>Materials this definition did not foresee</h4>
+  <ul class="mats tensions">
+  {% for n in fits %}<li class="gist"><span class="num">{{ n.created_at[:10] }}</span> From the reading of {{ n.display_title | txt }}: {{ n.text | prose }}</li>{% endfor %}
   </ul>
   {% endif %}
   {% for m in t.carrying %}
