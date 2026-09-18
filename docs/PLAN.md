@@ -168,7 +168,7 @@ One poller for the progress line, nothing else. No spaCy. Tests replay recorded 
 | Provider | Base | Key | Default model | Use |
 |---|---|---|---|---|
 | `minimax` (default) | `https://api.minimaxi.com/v1` | `MINIMAX_API_KEY` | `MiniMax-M3` | development, testing, cost |
-| `mistral` | `https://api.mistral.ai/v1` | `MISTRAL_API_KEY` | `glm-5-2` | EU deployment under the university contract |
+| `mistral` | `https://api.mistral.ai/v1` | `MISTRAL_API_KEY` | `zai-glm-latest` (→ 5.3; see MODELS.md) | EU deployment under the university contract |
 
 Each is overridable (`APERTURE_BASE_URL`, `APERTURE_MODEL`). Calls are **streamed**, so the timeout
 is an idle timeout — a long think does not trip a cap but a real hang still dies. `<think>…</think>`

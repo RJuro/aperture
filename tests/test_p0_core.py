@@ -63,7 +63,7 @@ def test_the_orientation_survives_the_reading_summary(conn, grande):
 
 def test_the_provider_is_chosen_by_env_and_never_guessed(monkeypatch):
     monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
-    assert (llm.provider(), llm.model()) == ("mistral", "glm-5-2")
+    assert (llm.provider(), llm.model()) == ("mistral", "zai-glm-latest")
     monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
     assert (llm.provider(), llm.model()) == ("minimax", "MiniMax-M3")
     monkeypatch.setenv("APERTURE_PROVIDER", "openai")
@@ -147,31 +147,41 @@ def test_a_reasoning_models_thinking_never_reaches_the_json():
     assert llm._content(None) == ""
 
 
+def _on(monkeypatch, version):
+    """Pretend the provider resolved the configured model to `version`, without the network."""
+    llm._resolved.cache_clear()
+    llm._sent_as.cache_clear()
+    monkeypatch.setattr(llm, "recorded_model", lambda: version)
+
+
 def test_reasoning_effort_is_per_provider_and_can_be_turned_off(monkeypatch):
     monkeypatch.delenv("APERTURE_REASONING", raising=False)
     monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
-    assert llm.reasoning() == "high", "GLM reasons only when asked; off is a thinner reading"
-    monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
-    assert llm.reasoning() == "", "M3 reasons by default and takes no instruction"
-    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    _on(monkeypatch, "zai-glm-5-2")
+    assert llm.reasoning() == "high", "GLM 5.2 reasons only when asked; off is a thinner reading"
     monkeypatch.setenv("APERTURE_REASONING", "off")
-    assert llm.reasoning() == ""
+    assert llm.reasoning() == "", "on 5.2, off is nothing sent"
     monkeypatch.setenv("APERTURE_REASONING", "low")
     assert llm.reasoning() == "low"
+
+    monkeypatch.delenv("APERTURE_REASONING")
+    monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
+    assert llm.reasoning() == "", "M3 reasons by default and takes no instruction"
+    monkeypatch.setenv("APERTURE_REASONING", "medium")
+    assert llm.reasoning() == "medium", "the override is passed on; M3 ignores what it is sent"
 
 
 def test_a_call_that_only_describes_a_layout_is_not_asked_to_think(monkeypatch, real_chat_json):
     """Working out a layout is not judgement, and thinking about it is minutes and money spent
-    copying labels a Python scan already found."""
+    copying labels a Python scan already found. On GLM 5.2, that is: see the next test."""
     sent = []
     monkeypatch.setattr(llm, "_send", lambda body, timeout: sent.append(body) or '{"ok": 1}')
     monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
     monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    _on(monkeypatch, "zai-glm-5-2")
 
-    real_chat_json("s", "u", label="frame")
-    real_chat_json("s", "u", label="read")
-    real_chat_json("s", "u", label="thread")
-    real_chat_json("s", "u", label="account")
+    for label in ("frame", "read", "thread", "account"):
+        real_chat_json("s", "u", label=label)
     assert "reasoning_effort" not in sent[0]
     assert sent[1]["reasoning_effort"] == "high", "a call that judges keeps the provider's default"
     assert sent[2]["reasoning_effort"] == "medium", \
@@ -182,6 +192,45 @@ def test_a_call_that_only_describes_a_layout_is_not_asked_to_think(monkeypatch, 
     monkeypatch.setenv("APERTURE_REASONING", "medium")
     real_chat_json("s", "u", label="frame")
     assert sent[4]["reasoning_effort"] == "medium", "the override turns the whole run up at once"
+
+
+def test_glm_5_3_is_never_sent_nothing_and_never_sent_medium(monkeypatch, real_chat_json):
+    """The same levels mean different things on 5.3. Sent nothing it reasons without limit — both
+    real THREAD calls ran to the 32,000-token cap and came back unparseable — and `medium`, which
+    THREAD, ACCOUNT, VERIFY and TIGHTEN all ask for, is refused with a 400. A model switch that
+    left the table alone would have failed every material's DOC step on its first theme."""
+    sent = []
+    monkeypatch.setattr(llm, "_send", lambda body, timeout: sent.append(body) or '{"ok": 1}')
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    monkeypatch.delenv("APERTURE_REASONING", raising=False)
+    _on(monkeypatch, "zai-glm-5-3")
+
+    labels = ["frame", "read", "thread", "account", "verify", "tighten", "angles", "voices"]
+    for label in labels:
+        real_chat_json("s", "u", label=label)
+    said = dict(zip(labels, (b.get("reasoning_effort") for b in sent)))
+    assert all(said.values()), f"nothing sent is a runaway on 5.3: {said}"
+    assert "medium" not in said.values(), f"medium is a 400 on 5.3: {said}"
+    assert said == {"frame": "low", "read": "high", "thread": "high", "account": "high",
+                    "verify": "high", "tighten": "high", "angles": "low", "voices": "low"}
+
+    # Turning the whole run off is a runaway too, so it is sent as the least 5.3 will do.
+    monkeypatch.setenv("APERTURE_REASONING", "off")
+    real_chat_json("s", "u", label="read")
+    assert sent[-1]["reasoning_effort"] == "low"
+
+
+def test_a_version_nobody_measured_is_sent_as_the_newest_one_that_was(monkeypatch, caplog):
+    """The alias only moves forward. When it moves again, the levels are sent the way the newest
+    measured GLM takes them — and the log says they have not been measured, since a new GLM
+    changing what this parameter means is how 5.3 nearly failed every THREAD call."""
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    monkeypatch.delenv("APERTURE_REASONING", raising=False)
+    _on(monkeypatch, "zai-glm-5-4")
+    assert llm.reasoning("thread") == "high"
+    assert "zai-glm-5-4" in caplog.text and "not measured" in caplog.text
+    llm._sent_as.cache_clear()
 
 
 def test_a_busy_provider_is_waited_out_and_says_so_while_it_waits(monkeypatch, real_chat_json):
@@ -320,7 +369,37 @@ def test_switching_provider_cannot_inherit_the_other_ones_endpoint(monkeypatch):
     monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
     base, _ = llm._endpoint()
     assert base == "https://api.mistral.ai/v1"
-    assert llm.model() == "glm-5-2"
+    assert llm.model() == "zai-glm-latest"
     monkeypatch.setenv("APERTURE_PROVIDER", "minimax")
     assert llm._endpoint()[0] == "https://minimax.example/v1"
     assert llm.model() == "pinned-to-minimax"
+
+
+def test_the_record_names_the_version_an_alias_resolved_to(monkeypatch):
+    """`zai-glm-latest` is what is asked for and what the answer echoes back, so a run on the
+    alias would be recorded as the alias for ever — including runs a later GLM wrote after the
+    alias moved. The record asks the provider what the alias is and keeps the most specific name."""
+    class Listing:
+        def json(self):
+            return {"data": [
+                {"id": "glm-5-2", "aliases": ["zai-glm-5-2"]},
+                {"id": "zai-glm-latest", "aliases": ["zai-glm-5-3", "zai-glm-5"]}]}
+
+    llm._resolved.cache_clear()
+    monkeypatch.setattr(llm.httpx, "get", lambda *a, **k: Listing())
+    monkeypatch.setenv("APERTURE_PROVIDER", "mistral")
+    monkeypatch.setenv("MISTRAL_API_KEY", "k")
+    assert llm.model() == "zai-glm-latest", "the alias is what is asked for"
+    assert llm.recorded_model() == "zai-glm-5-3", "and the version is what is written down"
+
+    # A lookup that fails costs the record its precision, never a call.
+    llm._resolved.cache_clear()
+    monkeypatch.setattr(llm.httpx, "get", lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
+    assert llm.recorded_model() == "zai-glm-latest"
+
+    # And with no key there is no call to record, so nothing is looked up.
+    llm._resolved.cache_clear()
+    monkeypatch.delenv("MISTRAL_API_KEY")
+    monkeypatch.setattr(llm.httpx, "get", lambda *a, **k: pytest.fail("reached the network"))
+    assert llm.recorded_model() == "zai-glm-latest"
+    llm._resolved.cache_clear()

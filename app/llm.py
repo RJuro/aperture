@@ -4,7 +4,7 @@ Two providers, both first-class, chosen by APERTURE_PROVIDER and never inferred 
 happens to be set:
 
     minimax (default)  https://api.minimaxi.com/v1   MINIMAX_API_KEY   MiniMax-M3
-    mistral            https://api.mistral.ai/v1     MISTRAL_API_KEY   glm-5-2
+    mistral            https://api.mistral.ai/v1     MISTRAL_API_KEY   zai-glm-latest
 
 Calls are STREAMED, which makes `timeout` an idle timeout: the call runs as long as tokens keep
 arriving and dies only after that many seconds of silence. This matters — a long <think> trace on
@@ -20,6 +20,7 @@ phase once against M3, commit the recordings, and the suite replays them offline
 from __future__ import annotations
 
 import contextlib
+import functools
 import contextvars
 import hashlib
 import json
@@ -43,7 +44,10 @@ log = logging.getLogger("aperture")
 # a third fewer claims, so "off" is not a neutral default here — it is a thinner reading.
 PROVIDERS = {
     "minimax": ("https://api.minimaxi.com/v1", "MINIMAX_API_KEY", "MiniMax-M3", ""),
-    "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY", "glm-5-2", "high"),
+    # The alias, not a version: Mistral moves it to Z.ai's newest GLM behind the scenes (5.2 →
+    # 5.3 in September 2026), which is what the researcher asked for. What the record calls it is
+    # the version it resolved to — `recorded_model` — never the alias.
+    "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY", "zai-glm-latest", "high"),
 }
 DEFAULT_PROVIDER = "minimax"
 IDLE_TIMEOUT = 180.0
@@ -62,6 +66,23 @@ IDLE_TIMEOUT = 180.0
 EFFORT = {"frame": "", "angles": "low", "thread": "medium", "account": "medium",
           "verify": "medium", "verify_summary": "medium", "line_summary": "low",
           "tighten": "medium", "voices": "low", "tidy": "low"}
+
+# How a level above is actually SENT, per GLM version — the same parameter means different things
+# on different GLMs. EFFORT is written in 5.2's words; this translates it for the version that
+# answers. Measured 2026-09-18, on a real THREAD prompt (51k characters) and two small ones:
+#
+#   zai-glm-5-2   nothing  → no reasoning at all (the reason FRAME is sent nothing)
+#                 medium   → 5.2k–6.2k output tokens, 45–56 s, 11 claims (twice)
+#   zai-glm-5-3   nothing  → reasons without limit: both THREAD calls ran to the 32,000-token cap
+#                            in over three minutes and returned nothing that could be parsed
+#                 high     → 4.0k–10.6k tokens, 17–44 s, 10 and 13 claims
+#                 medium   → refused with a 400, which would have failed every THREAD call
+#
+# So on 5.3 nothing is never sent — not even for FRAME — and medium is high. A version not here is
+# sent as the newest one that is, and says so in the log: the alias only moves forward, and a new
+# GLM changing the meaning of this parameter again is exactly what this table exists to catch.
+SENT_AS = {"zai-glm-5-2": {}, "zai-glm-5-3": {"medium": "high", "": "low"}}
+NEWEST_KNOWN = "zai-glm-5-3"
 
 _THINK = re.compile(r"<think>.*?</think>", re.S)
 _FENCE = re.compile(r"^\s*```(?:json)?\s*|\s*```\s*$", re.S)
@@ -220,7 +241,7 @@ def _record(label: str, attempt: int, got: dict, started: str, seconds: float, s
         conn = db.connect()
         try:
             store.save_call(conn, _run.get(), label, attempt, made_by or provider(),
-                            made_on or model(), "" if made_by else reasoning(label),
+                            made_on or recorded_model(), "" if made_by else reasoning(label),
                             got, started, seconds, status, error)
         finally:
             conn.close()
@@ -255,6 +276,41 @@ def model() -> str:
     return os.environ.get(f"{p.upper()}_MODEL") or PROVIDERS[p][2]
 
 
+@functools.lru_cache(maxsize=None)
+def _resolved(name: str, base: str, key: str) -> str:
+    """The most specific name the provider gives `name`: `zai-glm-5-3` for `zai-glm-latest`.
+
+    The answer to a call names the model as it was asked for, so a run on the alias would be
+    recorded as "zai-glm-latest" for ever — including the runs a later GLM wrote, once the alias
+    has moved. The record exists so a researcher can say what wrote a sentence; an alias is not an
+    answer to that. Most version numbers wins, because that is what "specific" means in these
+    names; anything that fails falls back to the name as configured, since a record that is vague
+    about the model must never be able to lose a call that has already been paid for.
+
+    ponytail: once per process, so an alias that moves while the container runs is recorded as
+    the old version until the next deploy. Re-resolve per run if that ever matters.
+    """
+    try:
+        r = httpx.get(f"{base}/models", headers={"Authorization": f"Bearer {key}"}, timeout=10)
+        for m in r.json().get("data", []):
+            names = [m["id"], *(m.get("aliases") or [])]
+            if name in names:
+                return max(names, key=lambda n: (len(re.findall(r"\d+", n)), len(n)))
+    except Exception as e:                  # noqa: BLE001 — bookkeeping, never the call's problem
+        log.warning("model %s not resolved: %.80s", name, e)
+    return name
+
+
+def recorded_model() -> str:
+    """What the record says wrote this: the configured model with any alias resolved. Only where
+    a key is set — without one no call is made, and the tests never reach the network."""
+    try:
+        base, key = _endpoint()
+    except LLMError:
+        return model()
+    return _resolved(model(), base, key)
+
+
 def reasoning(label: str = "") -> str:
     """How hard the model should think on this call, where the provider takes an instruction.
     `off` sends nothing; a provider whose default is already to reason is left alone. The env
@@ -265,7 +321,19 @@ def reasoning(label: str = "") -> str:
         v = EFFORT.get(label, v) if v else v     # a provider that takes no effort is sent none
     else:
         v = v.strip().lower()
-    return "" if v in ("", "off", "none", "default") else v
+    v = "" if v in ("", "off", "none", "default") else v
+    # A provider that takes no instruction is sent none, whatever the override asked for.
+    return _sent_as(recorded_model()).get(v, v) if PROVIDERS[provider()][3] else v
+
+
+@functools.lru_cache(maxsize=None)
+def _sent_as(version: str) -> dict:
+    """The translation for this version, or the newest known one's — logged once per version."""
+    if version in SENT_AS:
+        return SENT_AS[version]
+    log.warning("model %s: reasoning levels not measured for it; sending them as %s",
+                version, NEWEST_KNOWN)
+    return SENT_AS[NEWEST_KNOWN]
 
 
 def _endpoint() -> tuple[str, str]:
@@ -499,7 +567,7 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
         else:
             _record(label, attempt, got, began, time.monotonic() - t1, "ok")
             break
-    log.info("llm label=%s provider=%s model=%s in=%d out=%d%s s=%.1f", label, provider(), model(),
+    log.info("llm label=%s provider=%s model=%s in=%d out=%d%s s=%.1f", label, provider(), recorded_model(),
              usage.get("tokens_in", 0) - spent[0], usage.get("tokens_out", 0) - spent[1],
              # Only where the provider said so. Silence is not a cache miss.
              f" cached={got['tokens_cached']}" if "tokens_cached" in got else "",

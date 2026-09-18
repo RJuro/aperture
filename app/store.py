@@ -1197,7 +1197,7 @@ def start_run(conn: sqlite3.Connection, pid: str, kind: str, mid: str | None, li
     rid = db.new_id("r")
     conn.execute("INSERT INTO run (id, project_id, kind, material_id, provider, model, started, "
                  "line, job_id) VALUES (?,?,?,?,?,?,?,?,?)",
-                 (rid, pid, kind, mid, llm.provider(), llm.model(), now(), line, job))
+                 (rid, pid, kind, mid, llm.provider(), llm.recorded_model(), now(), line, job))
     conn.commit()
     return rid
 
