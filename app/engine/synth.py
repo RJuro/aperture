@@ -716,9 +716,16 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         # it was written before any of these lines, over the passages rather than over them.
         return {"summary": "", "threads": threads, "dropped": dropped,
                 "anchors": {k: totals[k] for k in ("bound", "rebound", "unfound")}}
+    # Where each line sits in the material, worked out from its claims' passages by Python: rule
+    # 1 asks the summary to say "from where to where" a line runs, and that used to be the reason
+    # the whole material was in the prompt.
+    order = {sid: i for i, (sid, _) in enumerate(store.sentences(conn, mid), 1)}
+    total = len(order)
     shown = []
     for t in threads:
-        shown.append(f'## {live[t["theme_id"]]["name"]}\n' + "\n".join(
+        at = sorted(order.get(m["sid"], 0) for m in t["moments"])
+        shown.append(f'## {live[t["theme_id"]]["name"]}\n'
+                     f'covers passages {at[0]} to {at[-1]} of {total}\n' + "\n".join(
             _claim_line(m) for m in t["moments"]))
     orientation = store.get_summary(conn, "material", mid, "orientation")
     said_here = feedback_block(conn, pid, mid, None)
@@ -727,7 +734,11 @@ def doc(conn, mid: str, *, only_theme: str | None = None, summary_only: bool = F
         frame=frame_block(conn, mid),
         focus=proj["focus"] or "Nothing in particular. Read it on its own terms.",
         threads="\n\n".join(shown) or "No line held in this material.",
-        material=layout(conn, mid),
+        # No material. The summary was shown the whole transcript beside the lines, and wrote from
+        # the transcript: a worker's home remedies "traced to a certificate", an elderly client
+        # given a sex the transcript withholds, two shifts folded into one — none of it in a claim,
+        # all of it in the text, and the check afterwards could only flag and keep. What the lines
+        # do not carry the summary now cannot say; it can only call it thin.
         summary_words=SUMMARY_WORDS, question_words=BRIEF_WORDS,
     )
     if stop and stop():

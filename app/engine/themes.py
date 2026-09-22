@@ -87,6 +87,13 @@ def _themes_block(conn: sqlite3.Connection, rows: list[sqlite3.Row],
         line = f'- id {t["id"]} · "{t["name"]}" — {t["gist"] or "no gist yet"}'
         if where:
             line += f'\n  seen in: {_seen_in(conn, t["id"])}'
+        # What the reading found a definition did not foresee, written by DOC under the line it
+        # wrote. It reached the theme page and the corpus summary and never this pass, so a
+        # definition could not answer its own notes: "relatives undermining the worker's care",
+        # defined as the client's family, sat over a note saying one of them was her own child.
+        for n in store.theme_notes(conn, t["id"]):
+            if n["kind"] == "fit":
+                line += f'\n  the reading noted: {n["text"]}'
         out.append(line + f"\n  gathers: {codes}")
     return "\n".join(out)
 

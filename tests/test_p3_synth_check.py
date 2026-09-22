@@ -340,3 +340,24 @@ def test_a_found_check_carries_the_quote_that_makes_it_true(ready, conn, model, 
     assert out["verdict"] == "found"
     assert out["anchors"] and out["anchors"][0]["sid"] == sid
     assert store.checks(conn, ready["pid"])[-1]["verdict"] == "found"
+
+
+def test_the_summary_is_written_over_the_lines_and_never_sees_the_material(ready, conn, model,
+                                                                            quote):
+    """The summary was shown the whole transcript beside the lines and wrote from the transcript:
+    home remedies "traced to a certificate", an elderly client given a sex the text withholds,
+    two shifts folded into one — none of it in a claim, all of it in the text, and the check that
+    followed could only flag and keep. Now the lines are all it is shown, with where each runs."""
+    queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
+    synth.doc(conn, ready["mid"])
+    shown = model.shown("doc")
+    sentences = store.sentences(conn, ready["mid"])
+    quoted = {m["sid"] for m in store.moments(conn, ready["mid"])}
+    unquoted = [t for sid, t in sentences if sid not in quoted and len(t.split()) >= 8]
+    assert unquoted, "the fixture needs a sentence no claim quotes"
+    for text in unquoted[:20]:
+        assert " ".join(text.split()[:6]) not in shown, "the material reached the summary"
+    for m in store.moments(conn, ready["mid"]):
+        assert m["anchor"] in shown, "but every quote a claim rests on does"
+    assert "covers passages" in shown and f"of {len(sentences)}" in shown, \
+        "and where each line runs is worked out by Python, not read off the transcript"

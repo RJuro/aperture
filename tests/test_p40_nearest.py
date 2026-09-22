@@ -219,3 +219,20 @@ def test_the_prompt_shows_how_to_point_at_a_candidate_with_no_id_yet():
         text = (PROMPTS / name).read_text()
         assert '"nearest": {"name": "Paperwork as protection"' in text, name
         assert "never make up an id" in text, name
+
+
+def test_what_the_reading_found_a_definition_did_not_foresee_reaches_the_theme_step(conn, project,
+                                                                                    grande, model):
+    """DOC writes it under the line; it reached the theme page and the corpus summary and never
+    the pass that owns the definition, so a gist could not answer its own note."""
+    tid = _open(conn, project, "Relatives undermining the worker's care")
+    store.add_theme_note(conn, tid, grande, None, "one undermining relative is her own child",
+                         kind="fit")
+    store.add_theme_note(conn, tid, grande, None, "a tension, which is a different kind")
+    model.queue({"themes": [], "candidates": []})
+    themes.run(conn, project)
+    shown = model.shown("themes")
+    assert "the reading noted: one undermining relative is her own child" in shown
+    assert "the reading noted: a tension" not in shown, "a tension note is for a frozen theme"
+    for name in ("themes.md", "themes_cross.md"):
+        assert '"the reading noted"' in (PROMPTS / name).read_text(), name
