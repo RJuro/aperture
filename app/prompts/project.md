@@ -63,6 +63,8 @@ and argue with the second. A sentence that reads what the corpus shows belongs i
 an overarching theme's `argument`; a sentence that says what it may mean belongs in
 `interpretation`, and nowhere else.
 
+{{one_case}}
+
 The caps, as numbers: summary {{summary_words}} words, each overarching `name` 8 words and each
 `argument` {{overarching_words}}, interpretation {{interpretation_words}}.
 

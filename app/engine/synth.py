@@ -821,7 +821,8 @@ def _candidate_claims(conn, pid: str, live_moments: dict,
     return out, shown
 
 
-def _candidates_block(cands: list, shown: dict[str, list[str]]) -> str:
+def _candidates_block(cands: list, shown: dict[str, list[str]],
+                      unforeseen: dict[str, list[str]] | None = None) -> str:
     """The live candidates by id, name and definition, with the claims of theirs the material
     blocks are printing.
 
@@ -836,9 +837,23 @@ def _candidates_block(cands: list, shown: dict[str, list[str]]) -> str:
     out = []
     for t in cands:
         ids = shown.get(t["id"]) or []
-        out.append(f'{t["id"]}  {t["name"]} — {t["gist"] or "no gist yet"} — '
-                   + (f'claims: {", ".join(ids)}' if ids else "none of its claims are shown below"))
+        line = (f'{t["id"]}  {t["name"]} — {t["gist"] or "no gist yet"} — '
+                + (f'claims: {", ".join(ids)}' if ids else "none of its claims are shown below"))
+        # What the reading found this definition did not foresee. An account carries these for an
+        # open theme; a candidate has no account, so this was the only way they could reach this
+        # level, and they did not. A reading noted that a worker's judgment was overridden by her
+        # CLIENT's family, not her own — and the interpretation built on the candidate merged the
+        # two households anyway, because the note that would have stopped it was never shown.
+        for note in (unforeseen or {}).get(t["id"], []):
+            line += f"\n    not foreseen by this definition: {note}"
+        out.append(line)
     return "\n".join(out)
+
+
+ONE_CASE = ("THIS PROJECT HAS ONE CASE SO FAR. Write the `summary` only. Return `\"overarching\": []`, "
+            "`\"ungathered\": []` and `\"interpretation\": \"\"`: a tier gathers themes across "
+            "cases and an interpretation relates the tier's parts, and with one case there is "
+            "nothing across. Rules 8 to 12 wait for the second case.")
 
 
 def project(conn, pid: str, *, run_id: str | None = None) -> dict:
@@ -877,6 +892,14 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
             evidenced |= {r["material_id"] for r in live_moments.values() if r["theme_id"] == tid}
     claims, cand_ids = _candidate_claims(conn, pid, live_moments, evidenced)
     cands = store.candidates(conn, pid)
+    unforeseen = {t["id"]: [n["text"] for n in store.theme_notes(conn, t["id"])
+                            if n["kind"] == "fit"] for t in cands}
+    # A tier gathers themes ACROSS cases, and an interpretation says how the tier's parts relate.
+    # Over one case both are a synthesis of a corpus that does not exist yet: a reviewer of a
+    # single 21-minute interview found them restating the candidate themes, and the one analytic
+    # error in the record — two households merged into one — was made there. Counted in cases,
+    # not files, for the reason every other count here is.
+    one_case = len(set(store.case_of(conn, pid).values())) < 2
     mats = []
     for m in store.materials(conn, pid):
         summary = store.get_summary(conn, "material", m["id"])
@@ -892,7 +915,8 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
         "project",
         focus=(proj["focus"] if proj else "") or "Nothing in particular.",
         accounts="\n\n".join(accounts) or "No theme has an account yet.",
-        candidates=_candidates_block(cands, cand_ids),
+        candidates=_candidates_block(cands, cand_ids, unforeseen),
+        one_case=ONE_CASE if one_case else "",
         materials="\n\n".join(mats) or "No material has been read yet.",
         feedback="\n\n".join(fb) or "The researcher has not said anything about the project yet.",
         summary_words=PROJECT_WORDS, interpretation_words=INTERPRETATION_WORDS,
@@ -905,12 +929,17 @@ def project(conn, pid: str, *, run_id: str | None = None) -> dict:
     # last.
     allowed = allowed_text(conn, pid)
     summary, dangling = _strip_dangling(words(data.get("summary"), PROJECT_WORDS), live_moments)
-    reading_of, more = _strip_dangling(words(data.get("interpretation"), INTERPRETATION_WORDS),
-                                       live_moments)
-    dangling += more
-    tier, said, tier_dangling = _overarching(data, live_themes, {t["id"] for t in cands},
-                                             live_moments)
-    dangling += tier_dangling
+    if one_case:
+        # Held in Python whatever came back: the prompt asks for neither, and a rule the model
+        # must obey is weaker than one it cannot break.
+        reading_of, tier, said = "", {"overarching": [], "ungathered": []}, []
+    else:
+        reading_of, more = _strip_dangling(words(data.get("interpretation"),
+                                                 INTERPRETATION_WORDS), live_moments)
+        dangling += more
+        tier, said, tier_dangling = _overarching(data, live_themes, {t["id"] for t in cands},
+                                                 live_moments)
+        dangling += tier_dangling
     summary, odd = foreign(summary, allowed)
     reading_of, more_odd = foreign(reading_of, allowed)
     dropped = script_notes(odd + more_odd) + said

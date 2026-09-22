@@ -15,7 +15,11 @@ import re
 
 # A cue is an upper-case-ish name followed by a colon at a line start. Kept deliberately narrow:
 # a false positive costs a wrongly split turn, which is visible on the page.
-CUE = re.compile(r"^[ \t]*([A-Z][A-Za-z'.\- ]{1,28}?)[ \t]*:", re.MULTILINE)
+# One letter is a name: `R:` and `L:`, `I:`, `Q:` and `A:` are how a great many transcripts mark
+# turns. The name used to need two characters, and an interview with a turn on nearly every line
+# came back "0 line starts" for both of its speakers. Recurrence is still what keeps a one-letter
+# header out, exactly as it does for a longer one.
+CUE = re.compile(r"^[ \t]*([A-Z][A-Za-z'.\- ]{0,28}?)[ \t]*:", re.MULTILINE)
 MIN_TURNS = 3          # recurrence: what separates a speaker from a header label
 MIN_VERIFY = 2         # a model-proposed label must appear at least this often to be believed
 

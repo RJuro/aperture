@@ -144,3 +144,50 @@ def test_the_same_file_twice_makes_one_material_and_says_so(client, conn, projec
     assert "problem=" in r.headers["location"]
     page = client.get(f"/p{r.headers['location'].split('/p', 1)[1]}").text
     assert "a.txt is already in this project." in page
+
+
+# ---- a PDF page, words whole ---------------------------------------------------------------------
+
+class _Page:
+    """A pypdf page as `intake._page` sees it: two readings of the same text."""
+
+    def __init__(self, default: str, layout: str):
+        self.default, self.layout = default, layout
+
+    def extract_text(self, extraction_mode: str = "plain", **_):
+        return self.layout if extraction_mode == "layout" else self.default
+
+
+def test_a_pdf_page_keeps_its_words_whole():
+    """pypdf's default reading starts a line wherever the PDF starts a run of text, which can be
+    mid-word. A Library of Congress transcript was stored as "vacation d ays" and "why did we co
+    me there", and three of its claims were then — correctly — found not to be in the material."""
+    from app import intake
+    page = _Page(default="L: They are supposed to get vacation d\nays just like their employers do.",
+                 layout="L:   They are supposed to get vacation days\njust like their employers do.")
+    text = intake._page(page)
+    assert "vacation days" in text, "the layout reading, words whole"
+    assert "L: They" in text, "and the spaces it pads a line with are gone"
+
+
+def test_a_page_in_columns_keeps_its_reading_order():
+    """Layout mode prints two columns side by side, one line from each — sentences from two
+    columns interleaved, which is worse than a split word. Such a page keeps the default order."""
+    from app import intake
+    left = ["The first column runs down here", "and carries on in order"]
+    right = ["while the second column", "is a different argument"]
+    page = _Page(default="\n".join(left + right),
+                 layout="\n".join(f"{a}        {b}" for a, b in zip(left, right)))
+    assert intake._page(page) == "\n".join(left + right)
+
+
+# ---- one-letter speakers -------------------------------------------------------------------------
+
+def test_a_one_letter_speaker_is_a_speaker():
+    """`R:` and `L:` on nearly every line, and the scan found "0 line starts" for both: the name
+    had to be two characters. Recurrence still keeps a one-letter header label out."""
+    from app import turns
+    text = "\n".join(["A: Header line once."] + ["R: A question?", "L: An answer."] * 5)
+    assert turns.speakers(text) == ["L", "R"]
+    assert turns.occurrences(text, "R") == 5
+    assert "A" not in turns.speakers(text), "said once, so it is a label and not a voice"

@@ -192,3 +192,30 @@ def test_the_fold_criterion_is_shown_only_when_the_researcher_asked_to_consolida
         in shown
     assert "A shared subject is not a shared pattern, and similar wording is not a reason to fold."\
         in shown
+
+
+def test_two_candidates_coined_in_one_answer_can_name_each_other(conn, project, model):
+    """Neither has an id when the answer is written, so the model made one up in the prompt's own
+    example shape ("tc29b8e") and the boundary was dropped. On a first material every theme is
+    new, so every boundary went. A new candidate is pointed at by its name instead."""
+    model.queue({"themes": [], "candidates": [
+        {"new": True, "name": "The day-off law", "gist": "g", "code_names": [],
+         "nearest": {"name": "Organising  as  RELIEF", "differs": DIFFERS}},
+        {"new": True, "name": "Organising as relief", "gist": "g", "code_names": [],
+         "nearest": {"name": "Nothing by this name", "differs": DIFFERS}},
+    ]})
+    out = themes.run(conn, project)
+
+    ids = {c["name"]: c["id"] for c in store.candidates(conn, project)}
+    assert _nearest(conn, ids["The day-off law"]) == (ids["Organising as relief"], DIFFERS), \
+        "matched by name, whitespace and case aside"
+    assert _nearest(conn, ids["Organising as relief"]) == (None, "")
+    assert any("Nothing by this name" in note for note in out["dropped"]), \
+        "a name that matches nothing is reported by that name, not silently"
+
+
+def test_the_prompt_shows_how_to_point_at_a_candidate_with_no_id_yet():
+    for name in ("themes.md", "themes_cross.md"):
+        text = (PROMPTS / name).read_text()
+        assert '"nearest": {"name": "Paperwork as protection"' in text, name
+        assert "never make up an id" in text, name

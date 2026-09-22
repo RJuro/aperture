@@ -37,7 +37,7 @@ carrying it does that — and nothing you return can alter a frozen one.
 14. A FROZEN theme is returned with its `id` and its `code_names` and nothing else. If a name or a gist comes back for it, it is ignored. Where a passage below pulls against a frozen definition — a code you would gather under it that the gist as written would exclude, or a pattern here that the name misdescribes — say so in `tensions`: the theme's `id`, the `material` id the passage came from, and at most 25 words naming what pulls and which way. A tension is a note for the researcher, not a rewrite; write it even when it is small, and write none when there is none.
 15. A CANDIDATE appears in `candidates` only if the passages below carry its pattern in a material other than the one it was seen in: give its `id` and the `code_names` that belong under it. Do not reword a candidate to make new material fit it. A candidate the new material does not carry is left out of your answer, and nothing is lost by that — a candidate left out stays a candidate.
 16. A pattern present in the codes below that no project theme and no candidate defines becomes a new candidate: `"new": true`, a name, a gist, and its `code_names`. At most {{max_new}} new candidates in one answer; if the codes support more, keep the ones that gather most and leave the rest ungathered. A new candidate obeys rules 5 to 12 like any theme.
-17. Give every open theme and every candidate a `nearest`: the `id` of the live theme or candidate it is most easily confused with, and `differs`, at most 20 words saying what sorts a passage into this one rather than that one. A theme that cannot say what sorts a passage into it rather than into its neighbour is not a separate theme: where you cannot name the difference, give `merge_into` and no `nearest`. Write `"nearest": null` where nothing else is close — that is an answer, not a gap, and a neighbour is not invented to fill the field. A `nearest` id that is not another live theme or candidate of this project is dropped and that theme is stored with none. A frozen theme is not asked for one.
+17. Give every open theme and every candidate a `nearest`: the `id` of the live theme or candidate it is most easily confused with, and `differs`, at most 20 words saying what sorts a passage into this one rather than that one. A theme that cannot say what sorts a passage into it rather than into its neighbour is not a separate theme: where you cannot name the difference, give `merge_into` and no `nearest`. A candidate you are coining in this same answer has no `id` yet: name it instead, `"nearest": {"name": "its name exactly as you wrote it", "differs": "…"}`, and never make up an id for it. Write `"nearest": null` where nothing else is close — that is an answer, not a gap, and a neighbour is not invented to fill the field. A `nearest` id that is not another live theme or candidate of this project is dropped and that theme is stored with none. A frozen theme is not asked for one.
 
 Return exactly this shape:
 
@@ -55,7 +55,11 @@ Return exactly this shape:
   {"new": true, "name": "Paperwork as protection",
    "gist": "Records described as kept for what they will show about the work afterwards.",
    "code_names": ["Writing up what was done"],
-   "nearest": {"id": "t9f2c1", "differs": "This is what a record is for; that is what a handover catches."}}
+   "nearest": {"id": "t9f2c1", "differs": "This is what a record is for; that is what a handover catches."}},
+  {"new": true, "name": "Records as evidence against the worker",
+   "gist": "Records described as something that can be turned on the person who kept them.",
+   "code_names": ["Fear of what the file shows"],
+   "nearest": {"name": "Paperwork as protection", "differs": "This is the record as a threat; that is the record as a shield."}}
 ],
  "tensions": [
   {"id": "t0aa41", "material": "m8953fe1a68", "note": "In the ward notes the writing up is done by a manager, which the gist does not foresee."}

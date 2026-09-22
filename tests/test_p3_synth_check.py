@@ -265,9 +265,11 @@ def test_the_project_level_reads_the_accounts_and_may_not_introduce_a_quote(read
     assert out["dropped"]
 
 
-def test_what_the_corpus_shows_and_what_it_may_mean_are_two_rows(ready, conn, model, quote):
+def test_what_the_corpus_shows_and_what_it_may_mean_are_two_rows(ready, conn, model, quote,
+                                                                   rodwin):
     """A reader must be able to cite the first and argue with the second, so they are stored
-    apart and the plain call still hands back the grounded one."""
+    apart and the plain call still hands back the grounded one. With a second material, since an
+    interpretation is written only once there is more than one case."""
     queue_doc(model, conn, ready["pid"], {ready["tid"]: _moments(quote, ready["mid"])})
     synth.doc(conn, ready["mid"])
     live = [m["id"] for m in store.moments(conn, ready["mid"])]

@@ -920,6 +920,9 @@ def project_page(conn, pid: str) -> dict:
             "cases": [{**dict(c), "materials": by_case.get(c["id"], [])}
                       for c in store.cases(conn, pid)],
             "single_group": _single_group(), "consolidate": consolidate,
+            # `synth.project` writes no tier and no interpretation over one case; the page says
+            # so rather than leaving a reader to wonder where they went.
+            "one_case": len(set(store.case_of(conn, pid).values())) < 2,
             "assessed_legend": assessed_legend,
             "duplicates": _duplicates(conn, pid),
             **_overarching(conn, pid),

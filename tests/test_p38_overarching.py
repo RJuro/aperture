@@ -25,9 +25,10 @@ synth = pytest.importorskip("app.engine.synth")
 
 
 @pytest.fixture
-def corpus(conn, project, grande, quote):
+def corpus(conn, project, grande, rodwin, quote):
     """Two open themes with a real claim each and an account over it — enough for the corpus
-    summary to have themes to place and ids to cite."""
+    summary to have themes to place and ids to cite. Two materials, because a tier is written
+    only once there is a second case to gather across (`test_one_case_has_no_tier_...`)."""
     store.save_summary(conn, "material", grande, "orientation", "A recorded interview.")
     store.save_summary(conn, "material", grande, "reading", "What the reading found here.")
     themes = {}
@@ -39,6 +40,7 @@ def corpus(conn, project, grande, quote):
                                                 "anchor": " ".join(text.split()[:8]), "sid": sid}])
         store.save_summary(conn, "theme", tid, "reading", f"What {name} amounts to.")
         themes[name] = tid
+    store.save_summary(conn, "material", rodwin, "reading", "What the reading found there.")
     return {"pid": project, "mid": grande, "themes": themes,
             "ids": [m["id"] for m in store.moments(conn, grande)]}
 
@@ -232,3 +234,43 @@ def test_a_fit_note_is_cut_to_the_note_it_is_meant_to_be(corpus, conn, model, qu
                  summary="One handover is described.",
                  fit=" ".join(["word"] * 60))
     assert len(store.theme_notes(conn, tid)[0]["text"].split()) <= synth.FIT_WORDS + 1
+
+
+def test_one_case_has_no_tier_and_no_interpretation(conn, project, grande, quote, model):
+    """A tier gathers themes across cases, and an interpretation relates the tier's parts. Over one
+    interview both restated the candidate themes, and the record's one analytic error — two
+    households merged into one — was made in them. So with one case the prompt asks for the
+    summary only, and Python holds that whatever comes back."""
+    tid = store.save_theme(conn, project, tid=None, name="Handover", gist="g", code_ids=[])
+    sid, text = quote(grande, at=40)
+    store.save_moments(conn, grande, tid, [{"claim": "c", "anchor": " ".join(text.split()[:8]),
+                                            "sid": sid}])
+    mo = store.moments(conn, grande)[0]["id"]
+    model.queue({"summary": f"Handover recurs [{mo}].",
+                 "overarching": [{"name": "A tier anyway", "gathers": [tid],
+                                  "organising_idea": "x", "boundary": "y", "exceptions": "none",
+                                  "argument": f"Across the corpus [{mo}]."}],
+                 "interpretation": f"This may mean something [{mo}]."})
+    out = synth.project(conn, project)
+
+    assert "THIS PROJECT HAS ONE CASE" in model.shown("project")
+    assert out["summary"].startswith("Handover recurs")
+    assert out["overarching"] == {"overarching": [], "ungathered": []}
+    assert out["interpretation"] == ""
+    assert store.get_summary(conn, "project", project, "interpretation")["text"] == ""
+
+
+def test_what_a_candidates_definition_did_not_foresee_reaches_the_corpus_summary(conn, project,
+                                                                                 grande, model):
+    """The reading noted that the overriding family was the CLIENT's, not the worker's; the note
+    hung on a candidate, candidates have no account, and the step that merged the two households
+    was never shown it."""
+    tid = store.save_theme(conn, project, tid=None, name="Care judgment inside kin", gist="g",
+                           code_ids=[])
+    store.set_hold(conn, tid, "candidate")
+    nid = store.add_theme_note(conn, tid, grande, None, "the client's kin rather than the worker's")
+    conn.execute("UPDATE theme_note SET kind='fit' WHERE id=?", (nid,)); conn.commit()
+    model.queue({"summary": "s"})
+    synth.project(conn, project)
+    assert "not foreseen by this definition: the client's kin rather than the worker's" \
+        in model.shown("project")

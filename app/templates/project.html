@@ -61,6 +61,10 @@
       </ul>
       {% endif %}
       {% endif %}
+      {% if one_case %}
+      <p class="dim small">Overarching themes and a possible interpretation are written once the
+        project has a second case: with one, there is nothing yet to gather across.</p>
+      {% endif %}
       {% if interpretation and interpretation.text %}
       <h3>Possible interpretation</h3>
       <div class="summary-copy">{{ interpretation_html }}</div>{% endif %}

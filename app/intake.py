@@ -17,6 +17,7 @@ from __future__ import annotations
 import csv
 import io
 import os
+import re
 
 KINDS = (".txt", ".md", ".docx", ".pdf", ".csv")
 _ID_MAX = 24            # longer than this, or with a space in it, and a first column is an answer
@@ -41,6 +42,36 @@ def _docx(data: bytes) -> str:
     return "\n".join(p.text for p in docx.Document(io.BytesIO(data)).paragraphs)
 
 
+# A page is laid out in columns when this share of its lines has a wide gap between two runs of
+# text. Measured on thirteen real PDFs: single-column pages sat at 0–19%, two-column papers and a
+# patent at 92–100%, nothing in between.
+COLUMNS_AT = 0.5
+_GAP = re.compile(r"\S {4,}\S")
+
+
+def _page(page) -> str:
+    """One page's text, words whole.
+
+    pypdf's default reading starts a new line wherever the PDF starts a new run of text, and a
+    run can start in the middle of a word. A Library of Congress transcript came out as "vacation
+    d ays" and "why did we co me there" — 74 words split on its own pages, and on most real PDFs
+    tried, 7 to 29 a page. Every quote across one of those splits is then correctly reported as
+    not in the material, because it is not in what was stored: three of an interview's claims
+    were thrown out that way, one of them the only record of her hours being cut.
+
+    Layout mode reads by position and keeps words whole. On a page set in columns it would print
+    the columns side by side, one line from each, which is worse than a split word — so such a
+    page keeps the default reading order. ponytail: a column page still carries its default-mode
+    splits; re-joining runs by glyph position is the upgrade if a two-column source matters.
+    """
+    laid = page.extract_text(extraction_mode="layout") or ""
+    lines = [ln for ln in laid.split("\n") if ln.strip()]
+    if lines and sum(bool(_GAP.search(ln)) for ln in lines) / len(lines) >= COLUMNS_AT:
+        return page.extract_text() or ""
+    # Layout mode indents with spaces to where the text sat on the page; the words are what matter.
+    return "\n".join(re.sub(r"[ \t]+", " ", ln).strip() for ln in laid.split("\n"))
+
+
 def _pdf(data: bytes) -> str:
     import pypdf
 
@@ -49,7 +80,7 @@ def _pdf(data: bytes) -> str:
     # that points nowhere sends it down its own rebuild path instead, which reads the objects.
     if b"startxref" not in data:
         data += b"\nstartxref\n0\n%%EOF\n"
-    return "\n".join(p.extract_text() or "" for p in pypdf.PdfReader(io.BytesIO(data)).pages)
+    return "\n".join(_page(p) for p in pypdf.PdfReader(io.BytesIO(data)).pages)
 
 
 def _csv(data: bytes) -> str:

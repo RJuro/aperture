@@ -426,11 +426,20 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
     # nothing the researcher could go and compare it against, so it is stored as no nearest at all
     # and said on the run. `null` is not that: a theme with nothing close to it has answered, and
     # the answer is kept.
-    live = ({t["id"] for t in store.live_themes(conn, pid)}
-            | {c["id"] for c in store.candidates(conn, pid)})
+    rows_now = list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid))
+    live = {t["id"] for t in rows_now}
+    # A candidate coined in this same answer has no id when the answer is written, so it can only
+    # be pointed at by name. Before this, two new candidates could not name each other at all —
+    # the model made up an id in the prompt's own example shape ("tc29b8e") and the boundary was
+    # dropped — and on a first material every theme is new, so every boundary went.
+    by_name = {" ".join(t["name"].split()).casefold(): t["id"] for t in rows_now}
     for tid, answer in near:
         said = answer if isinstance(answer, dict) else {}
         nid = str(said.get("id") or "").strip() or None
+        if nid not in live and said.get("name"):
+            # Unmatched, the name is what the run note reports, rather than nothing at all.
+            nid = by_name.get(" ".join(str(said["name"]).split()).casefold(),
+                              nid or repr(str(said["name"])))
         if nid is not None and (nid not in live or nid == tid):
             dropped.append(f"theme {tid} is nearest to {nid}, which is not another live theme of "
                            "this project; the boundary was not stored")
