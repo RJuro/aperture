@@ -2,7 +2,11 @@
 
 {{ app_name }} · started {{ project.created_at[:10] }} · {{ materials | length }} {{ 'material' | plural(materials | length) }} · {{ themes | length }} {{ 'theme' | plural(themes | length) }}
 
-- [Across the corpus](#across-the-corpus)
+{% if materials %}Citations name a material by its code, then the passage: `[{{ materials[0].short }} S012]` is passage S012 of {{ materials[0].display_title }}.
+{% for m in materials %}
+- **{{ m.short }}** — {{ m.display_title }}{% endfor %}
+
+{% endif %}- [Across the corpus](#across-the-corpus)
 - [Themes](#themes)
 - [Materials](#materials)
 - [Questions checked against the materials](#questions-checked-against-the-materials)

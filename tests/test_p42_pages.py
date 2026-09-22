@@ -111,7 +111,7 @@ def test_a_dangling_citation_in_the_argument_is_taken_out_and_a_live_one_becomes
                            exceptions="One interview does not [mo0000deadbeef].")])
     html = client.get(f"/p/{pid}").text
     assert f'?theme={mo["theme_id"]}#{mo["sid"]}' in html
-    assert f'>{mo["sid"]}<' in html
+    assert f' {mo["sid"]}</a>' in html, "the material's code, then the bare id"
     assert "mo0000deadbeef" not in html and "[]" not in html
 
 

@@ -222,3 +222,16 @@ def test_a_material_in_another_project_is_not_renameable_through_this_one(app, c
     assert app.post(f"/p/{analysed['pid']}/m/{mid}/rename",
                     data={"title": "mine now"}).status_code == 404
     assert store.material(conn, mid)["given_title"] == ""
+
+
+def test_the_code_citations_carry_is_set_beside_the_name_and_left_alone_when_not_sent(app, conn,
+                                                                                      analysed):
+    pid, mid = analysed["pid"], analysed["grande"]
+    app.post(f"/p/{pid}/m/{mid}/rename", data={"title": "", "short": "P07"})
+    assert store.material(conn, mid)["short_title"] == "P07"
+    assert "P07" in app.get(f"/p/{pid}").text, "and the materials list shows it"
+
+    # A post that sends the name alone does not reset the code.
+    app.post(f"/p/{pid}/m/{mid}/rename", data={"title": "Card 12"})
+    assert store.material(conn, mid)["short_title"] == "P07"
+    assert app.planned == [], "nothing is read again for either"

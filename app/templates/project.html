@@ -263,7 +263,7 @@
 <ul class="material-list">
 {% for m in materials %}
   <li>
-    <div class="material-main"><a class="material-name material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
+    <div class="material-main"><abbr class="cite-key" title="Cited as {{ m.short | txt }}">{{ m.short | txt }}</abbr> <a class="material-name material" href="/p/{{ project.id }}/m/{{ m.id }}">{{ m.display_title | txt }}</a>
       <span class="meta">{{ (m.kind or 'material') | replace('_', ' ') | capitalize }} · {{ m.derivation }}{% if m.source_name %} · <span class="source-file" title="The file this material was uploaded as">{{ m.source_name | txt }}</span>{% endif %}</span>
     </div>
     <div class="analysis-receipt" aria-label="{{ m.analysis_done }} of {{ m.analysis | length }} analysis steps complete">

@@ -140,7 +140,7 @@ def cite(text: str, index: dict, pid: str) -> Markup:
             # answer, and the index has been carrying it all along.
             out.append(f'<a class="claim cite" href="/p/{pid}/m/{t["material_id"]}'
                        f'?theme={t["theme_id"]}#{t["sid"]}" title="{_esc(t["material_title"])}">'
-                       f'{t["sid"]}<span class="cite-who">{_esc(t["material_short"])}</span></a>')
+                       f'<span class="cite-who">{_esc(t["material_short"])}</span> {t["sid"]}</a>')
             at = m.end()
         out.append(f'<span class="summary">{_emph(_esc(part[at:]))}</span>')
         return "".join(out)
@@ -165,20 +165,42 @@ def _cite_label(t: dict) -> str:
     return f'{who} {t["sid"]}' if who else str(t["sid"])
 
 
-def _short_title(row) -> str:
-    """The material as a citation names it: whoever it is of, without the kind and the year.
+def _shorts(conn, pid: str) -> dict[str, str]:
+    """Material id → the code its citations carry: "LA", "MG", or the researcher's own "P07".
 
-    `titles.compose` writes "Mary Grande — interview, 1989"; inline in a three-hundred-word
-    summary the tail is noise repeated at every citation, and the head is the whole question a
-    reader is asking. The full title rides along as the link's tooltip.
+    The short title before this was the head of the full one, which is a name when FRAME found a
+    person and a sentence when it did not: "[S276 Livicia Antoine interview, Domestic Workers
+    United]" in the middle of a summary, at every citation. A code is the same length whatever
+    the title is.
+
+    Unique within the project, in the order the materials were added, so the first "MG" stays "MG"
+    when a second one arrives as "MG2". A researcher's own code is taken as written and a derived
+    one steps around it. ponytail: removing the first of two MGs renames the second to "MG" on
+    the next render — store the derived code if a stable one is ever needed across removals.
     """
-    return _material_title(row).split(" — ")[0].strip() or _material_title(row)
+    rows = store.materials(conn, pid)
+    given = {r["id"]: dict(r).get("short_title") or "" for r in rows}
+    taken = {g for g in given.values() if g}
+    out = {}
+    for r in rows:
+        if given[r["id"]]:
+            out[r["id"]] = given[r["id"]]
+            continue
+        base = titles.abbreviate(_material_title(r))
+        code, n = base, 1
+        while code in taken:
+            n += 1
+            code = f"{base}{n}"
+        taken.add(code)
+        out[r["id"]] = code
+    return out
 
 
 def _cite_index(conn, pid: str) -> dict:
     out = {}
+    shorts = _shorts(conn, pid)
     for mat in store.materials(conn, pid):
-        short, full = _short_title(mat), _material_title(mat)
+        short, full = shorts[mat["id"]], _material_title(mat)
         for m in store.moments(conn, mat["id"]):
             out[m["id"]] = {**dict(m), "material_short": short, "material_title": full}
     return out
@@ -819,9 +841,11 @@ def project_page(conn, pid: str) -> dict:
         return {}
     mats = [dict(m) for m in store.materials(conn, pid)]
     stale = {m["id"] for m in store.out_of_date(conn, pid)}
+    shorts = _shorts(conn, pid)
     for m in mats:
         m["display_title"] = _material_title(m)
         m["source_name"] = _source_name(m, m["display_title"])
+        m["short"] = shorts[m["id"]]
         m["derivation"] = derivation(conn, m["id"])
         m["out_of_date"] = m["id"] in stale
         m["analysis"] = _analysis_steps(conn, m)
@@ -922,6 +946,9 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
     mat = dict(m)
     mat["display_title"] = _material_title(m)
     mat["source_name"] = _source_name(m, mat["display_title"])
+    mat["short"] = _shorts(conn, pid)[mid]
+    # The code as it would be derived, so the control can say what an empty field goes back to.
+    mat["short_derived"] = titles.abbreviate(mat["display_title"])
     # What the rename control offers to go back to: the same title with the researcher's own name
     # for it taken out, which is the only way the page can name it while it is being overridden.
     mat["automatic_title"] = titles.standardize(mat["title"] or mat["name"])
@@ -1066,10 +1093,12 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
     themes = {t["id"]: dict(t) for t in
               list(store.live_themes(conn, pid)) + list(store.candidates(conn, pid))}
     mats = []
+    shorts = _shorts(conn, pid)
     for m in store.materials(conn, pid):
         d = dict(m)
         d["display_title"] = _material_title(m)
         d["source_name"] = _source_name(m, d["display_title"])
+        d["short"] = shorts[m["id"]]
         for stage in ("orientation", "reading", "angles", "memo", "residual"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         # Where the project explores, the memo IS what the reading found and DOC wrote no summary

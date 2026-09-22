@@ -30,7 +30,7 @@
   <div>
     <p class="contents-head"><a href="#materials">Materials</a></p>
     <ul class="mats">
-    {% for m in materials %}<li><a href="#m-{{ m.id }}">{{ m.display_title | txt }}</a></li>
+    {% for m in materials %}<li><abbr class="cite-key" title="Cited as">{{ m.short | txt }}</abbr> <a href="#m-{{ m.id }}">{{ m.display_title | txt }}</a></li>
     {% else %}<li class="dim">No materials yet.</li>
     {% endfor %}
     </ul>

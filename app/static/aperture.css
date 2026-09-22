@@ -185,8 +185,14 @@ input::placeholder, textarea::placeholder { color: var(--faint); }
 /* Which material a citation is from, beside the passage id. A corpus summary cites across the
    whole corpus, and the id alone left a reader guessing at the transcript. Set narrower than the
    id so a paragraph of prose still reads as prose and not as a bibliography. */
-.cite-who { margin-left: .35em; font-size: 10px; opacity: .75; letter-spacing: .01em; }
-.cite-who::before { content: "· "; opacity: .6; }
+/* The material's code, before the passage id, as the record prints it: "LA S276". Real text and
+   a real space, not generated content — a `::before` separator does not survive a copy, and a
+   researcher pasting a sentence out got "S276Livicia Antoine interview…" glued together. */
+.cite-who { font-weight: 650; letter-spacing: .02em; }
+/* The same code wherever a material is listed, so a reader learns "LA" before meeting it in a
+   summary. An `abbr`, because that is what it is; no dotted underline, it is a label. */
+.cite-key { display: inline-block; min-width: 2.2em; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font: 600 10.5px/1.5 var(--font-mono); letter-spacing: .03em; text-align: center; text-decoration: none; vertical-align: .08em; }
+.short-input { max-width: 12ch; font-family: var(--font-mono); }
 .focus-note { padding-top: 3px; border-top: 1px solid var(--fg); }
 .focus-note blockquote { margin: 18px 0; font: italic 17px/1.55 var(--font-display); }
 .focus-note details > summary, .quiet-details > summary { color: var(--muted); font-size: 12px; }

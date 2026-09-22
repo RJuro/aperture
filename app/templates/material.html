@@ -13,6 +13,7 @@
           {% if speakers %}<span>{% for s in speakers %}<span class="material">{{ (s.name or s.label) | txt }}</span>{% if s.role %} ({{ s.role | txt }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</span>
           {% elif people %}<span>{% for p in people[:3] %}<span class="material">{{ p.name | txt }}</span>{% if not loop.last %}, {% endif %}{% endfor %}{% if people | length > 3 %} and {{ people | length - 3 }} more{% endif %}</span>{% endif %}
           <span>{{ derivation }}</span>
+          <span>Cited as <abbr class="cite-key">{{ material.short | txt }}</abbr></span>
           {# The file it arrived as. Shown only where the composed title is not already it, so a
              pasted piece the researcher named themselves does not print its own name twice. #}
           {% if material.source_name %}<span class="source-file" title="The file this material was uploaded as">{{ material.source_name | txt }}</span>{% endif %}
@@ -51,7 +52,13 @@
                 <p class="dim small">Used everywhere this material is named. Leave it empty to go
                   back to <span class="material">{{ material.automatic_title | txt }}</span>.
                   Nothing is read again.</p>
-                <button class="btn btn-secondary">Rename</button>
+                {# The code citations carry — a researcher with their own participant codes
+                   ("P07") wants those in the summary, not initials. #}
+                <label>Code in citations
+                  <input name="short" value="{{ material.short_title | txt }}" placeholder="{{ material.short_derived | txt }}" maxlength="12" class="short-input"></label>
+                <p class="dim small">Short enough to sit inside a sentence, e.g. a participant code.
+                  Leave it empty for <abbr class="cite-key">{{ material.short_derived | txt }}</abbr>.</p>
+                <button class="btn btn-secondary">Save</button>
               </form>
             </details>
             <details><summary>Correct material structure</summary>

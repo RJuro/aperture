@@ -41,22 +41,45 @@ def test_a_citation_carries_the_material_it_rests_on(conn, analysed):
     assert index[m["id"]]["material_short"] in html, "and now says which material that is"
 
 
-def test_the_short_name_drops_the_kind_and_keeps_the_person(conn, analysed):
-    """`titles.compose` writes "M. Grande — interview, 1989"; inline at every citation the tail is
-    noise repeated at every id, and the head is the whole question the reader is asking."""
-    mid = analysed["grande"]
-    conn.execute("UPDATE material SET title=? WHERE id=?", ("M. Grande — interview, 1989", mid))
+def test_a_citation_carries_a_code_not_a_sentence(conn, analysed):
+    """A title is a name when FRAME found a person and a sentence when it did not, and the head of
+    it was what citations carried: "[S276 Livicia Antoine interview, Domestic Workers United]" at
+    every citation in a summary. A code is the same length whatever the title is."""
+    pid, mid = analysed["pid"], analysed["grande"]
+    conn.execute("UPDATE material SET title=? WHERE id=?",
+                 ("Livicia Antoine interview, Domestic Workers United", mid))
     conn.commit()
-    row = store.material(conn, mid)
-    assert context._short_title(row) == "M. Grande"
-    assert context._material_title(row) == "M. Grande — interview, 1989"
+    assert context._shorts(conn, pid)[mid] == "LA"
+    m = store.moments(conn, mid)[0]
+    html = str(context.cite(f"A claim [{m['id']}].", context._cite_index(conn, pid), pid))
+    assert f'<span class="cite-who">LA</span> {m["sid"]}</a>' in html
+    assert "Domestic Workers United</span>" not in html, "the full title is the tooltip only"
 
 
-def test_a_title_with_no_kind_is_left_whole(conn, analysed):
-    """A material named only by its file has no tail to drop, and losing part of it would leave
-    the citation naming something that is not the material."""
-    row = store.material(conn, analysed["grande"])
-    assert context._short_title(row) == context._material_title(row) == "Grande, M."
+def test_two_materials_with_the_same_initials_are_told_apart_in_the_order_they_came(conn, analysed):
+    """The first MG stays MG when a second one arrives — a citation already read as MG must not
+    come to mean somebody else."""
+    pid = analysed["pid"]
+    for mid, title in ((analysed["grande"], "Mary Grande"), (analysed["rodwin"], "Maria Gomez")):
+        conn.execute("UPDATE material SET title=? WHERE id=?", (title, mid))
+    conn.commit()
+    shorts = context._shorts(conn, pid)
+    assert (shorts[analysed["grande"]], shorts[analysed["rodwin"]]) == ("MG", "MG2")
+
+
+def test_a_researchers_own_code_wins_and_a_derived_one_steps_around_it(conn, analysed):
+    """A project with participant codes wants "P07" in its summary, not initials — and a derived
+    code must never land on a code the researcher chose."""
+    pid = analysed["pid"]
+    conn.execute("UPDATE material SET title='Mary Grande' WHERE id=?", (analysed["grande"],))
+    conn.execute("UPDATE material SET title='Rodwin' WHERE id=?", (analysed["rodwin"],))
+    conn.commit()
+    store.set_short_title(conn, analysed["rodwin"], "  M G  ")   # whitespace goes, as typed
+    shorts = context._shorts(conn, pid)
+    assert shorts[analysed["rodwin"]] == "MG", "taken as written"
+    assert shorts[analysed["grande"]] == "MG2", "the derived one steps around it"
+    store.set_short_title(conn, analysed["rodwin"], "")
+    assert context._shorts(conn, pid)[analysed["rodwin"]] == "Ro", "empty is the derived code again"
 
 
 def test_two_materials_cite_under_two_names(conn, analysed):
@@ -84,7 +107,8 @@ def test_the_record_names_the_material_beside_the_passage(conn, analysed, client
     m = store.moments(conn, analysed["grande"])[0]
     store.save_summary(conn, "project", pid, "reading", f"A finding [{m['id']}].")
     text = client.get(f"/p/{pid}/export.md").text
-    assert f'A finding [Grande, M. {m["sid"]}].' in text
+    assert f'A finding [GM {m["sid"]}].' in text
+    assert "- **GM** — Grande, M." in text, "and the record opens with the key to the codes"
 
 
 def test_a_citation_with_no_material_name_still_prints_its_passage(conn):

@@ -127,6 +127,17 @@ def rename_material(conn: sqlite3.Connection, mid: str, title: str) -> None:
     conn.commit()
 
 
+SHORT_MAX = 12
+
+
+def set_short_title(conn: sqlite3.Connection, mid: str, short: str) -> None:
+    """The code citations carry for this material — "P07" rather than a derived "LA". Empty goes
+    back to the derived one. Capped, because the whole point is that it fits inline."""
+    conn.execute("UPDATE material SET short_title=? WHERE id=?",
+                 ("".join(short.split())[:SHORT_MAX], mid))
+    conn.commit()
+
+
 def save_audio(conn: sqlite3.Connection, mid: str, filename: str, fileobj,
                *, note: str = "", clean: bool = False) -> str:
     """Put the uploaded recording on the volume and say on the material where it went.

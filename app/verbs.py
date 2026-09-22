@@ -337,7 +337,8 @@ def rerun_material(request: Request, pid: str, mid: str, step: str = Form("read"
 
 
 @router.post("/p/{pid}/m/{mid}/rename")
-def rename(request: Request, pid: str, mid: str, title: str = Form("")):
+def rename(request: Request, pid: str, mid: str, title: str = Form(""),
+           short: str | None = Form(None)):
     """What the researcher calls this material. Nothing is re-read and no call is made.
 
     A composed title is a machine's best account of who is in the material and what it is, and it
@@ -353,6 +354,9 @@ def rename(request: Request, pid: str, mid: str, title: str = Form("")):
     if mat is None or mat["project_id"] != pid:
         raise HTTPException(status_code=404, detail="not here")
     store.rename_material(conn, mid, title)
+    # Only where the form sent it, so a post that names the material alone leaves its code be.
+    if short is not None:
+        store.set_short_title(conn, mid, short)
     return _back(request, f"/p/{pid}/m/{mid}")
 
 
