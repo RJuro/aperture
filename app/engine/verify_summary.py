@@ -38,7 +38,13 @@ WHY_WORDS = 12
 # A sentence ends at . ! or ? before a space or the end of the text — except after an initial or a
 # common abbreviation, where the stop belongs to the word. No dependency and no model: the split
 # only has to be good enough to quote a sentence back to a researcher.
-_END = re.compile(r"[.!?]+(?=\s|$)")
+#
+# A citation written AFTER the stop — "…paid her $40. [S118]" — is taken with the sentence it
+# follows. The memo prompt asks for the ids "at the end" of each sentence, and a writer that put
+# them after the full stop had every sentence cut at the stop and its citation handed to the
+# next: fourteen of one memo's sixteen sentences were then set aside as citing nothing, and the
+# material's whole account was two sentences, one of them flagged.
+_END = re.compile(r"[.!?]+(?:[ \t]*\[[^\[\]]*\])*(?=\s|$)")
 _ABBREV = re.compile(r"(?:\b[A-Za-z]|\bMr|\bMrs|\bMs|\bDr|\bProf|\bSt|\bvs|\betc|\bNo"
                      r"|\be\.g|\bi\.e)\.$", re.I)
 

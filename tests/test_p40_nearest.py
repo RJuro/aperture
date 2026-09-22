@@ -236,3 +236,27 @@ def test_what_the_reading_found_a_definition_did_not_foresee_reaches_the_theme_s
     assert "the reading noted: a tension" not in shown, "a tension note is for a frozen theme"
     for name in ("themes.md", "themes_cross.md"):
         assert '"the reading noted"' in (PROMPTS / name).read_text(), name
+
+
+def test_a_candidate_corrects_its_gist_for_a_note_and_for_nothing_else(conn, project, grande,
+                                                                        model):
+    """"The law it won", over a note saying the organisation did not win that law. A candidate is
+    not reworded to fit a new material — that is how it would confirm itself — but a note the
+    reading left under it is from a material it already stood over, and is the one licence."""
+    tid = _candidate(conn, project, "Organising as the law it won")
+    model.queue({"themes": [], "candidates": [
+        {"id": tid, "code_names": [], "gist": "reworded to fit"}]})
+    themes.run(conn, project)
+    row = lambda: conn.execute("SELECT name, gist FROM theme WHERE id=?", (tid,)).fetchone()
+    assert row()["gist"] == "a definition", "no note, no licence"
+
+    store.add_theme_note(conn, tid, grande, None, "the day-off law was not the organisation's win",
+                         kind="fit")
+    model.queue({"themes": [], "candidates": [
+        {"id": tid, "name": "A new name", "code_names": [],
+         "gist": "organising as a claim on laws others passed"}]})
+    themes.run(conn, project)
+    assert row()["gist"] == "organising as a claim on laws others passed"
+    assert row()["name"] == "Organising as the law it won", "the name is never the model's to move"
+    for name in ("themes.md", "themes_cross.md"):
+        assert "The one exception" in (PROMPTS / name).read_text(), name

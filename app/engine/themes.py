@@ -394,7 +394,14 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
             # codes THIS material carries, and a candidate that lost the codes it was coined
             # from would stop being marked in the material it came from.
             have = {c["id"] for c in store.theme_codes(conn, row["id"])}
-            store.save_theme(conn, pid, tid=row["id"], name=row["name"], gist=row["gist"],
+            # The one licence to touch a candidate's gist: a note the reading left under it says
+            # the definition misdescribes what a material it already stood over carries. The note
+            # is written by DOC, after this pass, so it is always from an earlier material than the
+            # one being read — never from the one the candidate is being fitted to. Without a
+            # note, the gist stays to the character; the name stays whatever happens.
+            noted = any(n["kind"] == "fit" for n in store.theme_notes(conn, row["id"]))
+            gist = (str(t.get("gist") or "").strip() or row["gist"]) if noted else row["gist"]
+            store.save_theme(conn, pid, tid=row["id"], name=row["name"], gist=gist,
                              run_id=run_id,
                              code_ids=sorted(have | set(_code_ids(t, by_name))))
             saved.append(row["id"])

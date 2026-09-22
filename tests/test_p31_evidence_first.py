@@ -486,3 +486,19 @@ def test_the_residual_pass_can_be_left_out_of_the_chain_entirely(explored, conn,
     assert "residual" in [r["kind"] for r in _planned(monkeypatch, explored["pid"],
                                                       [explored["grande"]])], \
         "anything but 'off' is the chain of §13 entire"
+
+
+def test_a_citation_after_the_full_stop_belongs_to_the_sentence_it_follows():
+    """The memo prompt asks for the ids at the end of each sentence. Written after the stop, every
+    sentence was cut at the stop and its citation handed to the next — fourteen of sixteen set
+    aside as citing nothing, and a material's whole account was two sentences."""
+    from app.engine import memo, verify_summary
+    text = "She was paid forty dollars. [S118] She did not think of it as pay. [S120, S121]"
+    assert verify_summary.sentences(text) == ["She was paid forty dollars. [S118]",
+                                              "She did not think of it as pay. [S120, S121]"]
+    kept, notes, cited = memo._uncited(text, {}, {"S118", "S120", "S121"})
+    assert notes == [] and cited == {"S118", "S120", "S121"}
+    assert kept == text
+    # And the style the prompt shows is untouched.
+    assert verify_summary.sentences("Paid [S118]. Not pay [S120].") == ["Paid [S118].",
+                                                                       "Not pay [S120]."]
