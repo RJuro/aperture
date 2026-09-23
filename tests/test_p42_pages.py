@@ -272,3 +272,17 @@ def test_plain_prose_counts_nothing_and_says_so_as_a_nought(conn, analysed):
     m = eval_metrics.from_db(conn, analysed["pid"])
     assert m["prose_style"]["total"] == 0
     assert "prose_style.total" in eval_metrics.compare(m, m)
+
+
+def test_a_materials_claims_open_onto_the_whole_theme(client, conn, analysed):
+    """Beside one material's claims the theme was only ever seen through that material. The
+    panel over them carries its account across the project and every other material's claims,
+    each linked to its own reading."""
+    pid, tid = analysed["pid"], analysed["themes"]["Work and trade"]
+    store.save_summary(conn, "theme", tid, "reading", "ACCOUNT across both interviews.")
+    html = client.get(f"/p/{pid}/m/{analysed['grande']}?theme={tid}").text
+    panel = html[html.index('class="whole-theme"'):html.index('class="evidence-head"')]
+    assert "The whole theme, across the project · 1 other material" in panel
+    assert "ACCOUNT across both interviews." in panel
+    assert f'/p/{pid}/m/{analysed["rodwin"]}?theme={tid}#reading' in panel
+    assert panel.count('<p class="claim">') == 3            # Rodwin's three, not Grande's own

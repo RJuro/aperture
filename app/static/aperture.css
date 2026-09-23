@@ -691,3 +691,16 @@ mark { padding: 2px 1px; border-radius: 2px; color: var(--fg);
 
 /* The spoken brief: the player spans its column. */
 #brief audio { width: 100%; margin-block: .5rem; }
+
+/* The whole theme over one material's claims: folded by default, the claims stay the page. */
+.whole-theme { margin: 0 0 22px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); }
+.whole-theme > summary { cursor: pointer; font: 600 13px var(--font-display); }
+.whole-theme[open] > summary { margin-bottom: 10px; }
+.whole-theme h4 { margin: 18px 0 6px; font: 600 14px var(--font-display); }
+.whole-theme h4 .num { margin-left: 6px; color: var(--muted); font-weight: 400; }
+.whole-theme .gist { color: var(--muted); }
+.other-claims { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.other-claims .claim { margin: 0; }
+.other-claims .quote { color: var(--muted); font: 12px/1.5 var(--font-mono); }
+.other-claims .quote::before { content: '“'; }
+.other-claims .quote::after { content: '”'; }

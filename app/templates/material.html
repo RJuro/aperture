@@ -145,6 +145,19 @@
   <p class="theme-stats meta">{{ selected.moments | length }} {{ 'claim' | plural(selected.moments | length) }} · based on {{ selected.codes | length }} {{ 'code' | plural(selected.codes | length) }}</p></div>
 <div class="reading-grid">
   <section class="evidence-list">
+    {% set whole = selected.whole %}
+    <details class="whole-theme">
+      <summary>The whole theme, across the project{% if whole.others %} · {{ whole.others | length }} other {{ 'material' | plural(whole.others | length) }}{% endif %}</summary>
+      <p class="gist">{{ selected.gist | prose }}</p>
+      {% if whole.account_html %}<h4>What it amounts to across the project</h4><div class="summary-copy">{{ whole.account_html }}</div>{% endif %}
+      {% if whole.fits %}<h4>What this definition did not foresee</h4>
+      <ul class="mats">{% for n in whole.fits %}<li class="gist">From the reading of {{ n.display_title | txt }}: {{ n.text | prose }}</li>{% endfor %}</ul>{% endif %}
+      {% for o in whole.others %}
+      <h4><a href="/p/{{ project.id }}/m/{{ o.id }}?theme={{ selected.id }}#reading">{{ o.display_title | txt }}</a> <span class="num">{{ o.moments | length }} {{ 'claim' | plural(o.moments | length) }}</span></h4>
+      <ul class="other-claims">{% for x in o.moments %}<li><p class="claim">{{ x.claim | txt }}</p><span class="quote">{{ x.anchor | txt }}</span></li>{% endfor %}</ul>
+      {% else %}<p class="dim small">No other material carries claims for this theme yet.</p>{% endfor %}
+      <p class="small"><a href="/p/{{ project.id }}/t/{{ selected.id }}">Open the theme page</a></p>
+    </details>
     <h3 class="evidence-head">Key claims <a class="help" href="/guide?from=/p/{{ project.id }}/m/{{ material.id }}#lines" title="What a line of claims is, and why some are short" aria-label="Help: What a line of claims is, and why some are short">?</a></h3>
     <ol class="claims">
     {% for x in selected.moments %}

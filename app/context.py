@@ -1010,17 +1010,36 @@ def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict
         x["also_under"] = [{"id": t, "name": names[t]}
                            for t in dict.fromkeys(also.get(x["sid"], []))
                            if t != selected["id"] and t in names]
+    index = _cite_index(conn, pid)
+    if selected:
+        selected["whole"] = _whole_theme(conn, pid, mid, selected["id"], index)
     summary = _row(store.get_summary(conn, "material", mid))
     return {**_shell(conn, pid), "project": dict(p), "material": mat, "cards": cards,
             "page_section": "materials",
             "selected": selected, "derivation": derivation(conn, mid),
             "summary": summary,
-            "summary_html": cite(summary["text"], _cite_index(conn, pid), pid) if summary else "",
+            "summary_html": cite(summary["text"], index, pid) if summary else "",
             "people": [dict(x) for x in store.people(conn, mid)],
             "speakers": [dict(x) for x in store.speakers(conn, mid)],
             "blocks": blocks(conn, mid, mat.get("display") or "plain", quotes),
             "set_aside": store.set_aside(conn, pid, mid),
             "checks": _checks(conn, pid, mid)}
+
+
+def _whole_theme(conn, pid: str, mid: str, tid: str, index: dict) -> dict:
+    """The theme beyond this material, for the panel over its claims: what it amounts to across
+    the project, what the readings noted its definition does not foresee, and the claims every
+    other material carries under it. Read beside one material's claims, a theme is otherwise only
+    ever seen through that one material."""
+    account = store.get_summary(conn, "theme", tid)
+    others = []
+    for m in store.materials(conn, pid):
+        if m["id"] != mid and (ms := store.thread(conn, m["id"], tid)):
+            others.append({"id": m["id"], "display_title": _material_title(m),
+                           "moments": [dict(x) for x in ms]})
+    return {"account_html": cite(account["text"], index, pid) if account else "",
+            "fits": [n for n in _notes(conn, tid) if n["kind"] == "fit"],
+            "others": others}
 
 
 def theme_page(conn, pid: str, tid: str) -> dict:
