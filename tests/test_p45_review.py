@@ -70,3 +70,19 @@ def test_a_line_keeps_one_moment_to_a_passage(conn, project, grande, quote):
         store.sentences(conn, grande), theme, project, run_id=None)
     assert [m["claim"] for m in kept] == ["First."]
     assert any(f"already has one on {sid}" in d for d in dropped)
+
+
+def test_a_claim_a_little_over_the_ask_is_kept_whole(conn, project, grande, quote):
+    """The prompt asks for 30 words; a 34-word claim used to reach the page cut off with "…"."""
+    sid, text = quote(grande)
+    tid = store.save_theme(conn, project, tid=None, name="Care", gist="care", code_ids=[])
+    theme = dict(conn.execute("SELECT * FROM theme WHERE id=?", (tid,)).fetchone())
+    claim = ("When the parent calls to ask what she gave the crying child, she answers that the "
+             "child is hot or hungry and tells the parent to wash it and feed it, then burp it "
+             "and sing.")
+    assert 30 < len(claim.split()) <= synth.CLAIM_CAP
+    kept, _, _ = synth._thread_kept(
+        conn, grande, tid, {"moments": [{"claim": claim, "anchor": " ".join(text.split()[:6]),
+                                         "sid": sid}], "summary": "s", "fit": ""},
+        store.sentences(conn, grande), theme, project, run_id=None)
+    assert kept[0]["claim"] == claim

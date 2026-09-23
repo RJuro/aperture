@@ -63,7 +63,7 @@ def _ask(batch: list[dict], sents, where, frame: str) -> dict[str, str]:
             continue
         cid = str(c.get("id") or "")
         if cid in mine:
-            out[cid] = synth.words(c.get("claim"), synth.CLAIM_WORDS)
+            out[cid] = synth.words(c.get("claim"), synth.CLAIM_CAP)
     return out
 
 

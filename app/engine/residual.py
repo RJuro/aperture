@@ -76,7 +76,7 @@ def run(conn, mid: str, *, run_id: str | None = None) -> dict:
             if not isinstance(a, dict):
                 continue
             tid = str(a.get("theme") or "")
-            claim = synth.words(a.get("claim"), synth.CLAIM_WORDS)
+            claim = synth.words(a.get("claim"), synth.CLAIM_CAP)
             quote = str(a.get("anchor") or "").strip()
             if tid not in themes:
                 dropped.append(f'an addition named a theme this project does not have: "{tid}"')

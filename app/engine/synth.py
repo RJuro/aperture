@@ -38,6 +38,10 @@ log = logging.getLogger("aperture")
 
 MIN_MOMENTS, MAX_MOMENTS = 4, 14
 SUMMARY_WORDS, PROJECT_WORDS, BRIEF_WORDS, CLAIM_WORDS, GIST_WORDS = 320, 300, 120, 30, 40
+# What a claim is cut at. The prompt asks for CLAIM_WORDS; the guard sits above that, as the one on a
+# theme's name does, so an answer a few words over is kept whole. At the ask itself a 34-word claim
+# about a parent's phone call reached the page ending "tells the parent to wash it and feed …".
+CLAIM_CAP = 45
 # What the corpus may mean, as against what it shows: shorter, because it is the movement a
 # researcher argues with rather than the one they cite.
 INTERPRETATION_WORDS = 150
@@ -386,7 +390,7 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
     for m in data.get("moments") or []:
         if not isinstance(m, dict):
             continue
-        claim = words(m.get("claim"), CLAIM_WORDS)
+        claim = words(m.get("claim"), CLAIM_CAP)
         quote = str(m.get("anchor") or "").strip()
         bound = anchor.apply(m, [cited(m.get("sid"), nums)], sents, stats)   # the anchor law
         if not claim:

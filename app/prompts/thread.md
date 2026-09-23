@@ -24,7 +24,7 @@ Eleven rules. Each carries the same weight, and each is checked.
    is kept and marked sparse, and it is a finding. Never pad, and never invent a moment to reach a
    number. If the theme is not present, return an empty list. One moment to a passage, and two
    moments that make the same claim are one: keep the one whose quote carries it best. Every
-   claim is at most {{claim_words}} words; a longer one is cut off where it stands.
+   claim is at most {{claim_words}} words; one far longer is cut off where it stands.
 5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
    focus group, field notes, a document, or answers to an open question.
 6. A claim says no more than its passage says. It may compress and it may name what the words
