@@ -263,14 +263,17 @@ def export(request: Request, pid: str) -> Response:
 
 
 @router.get("/p/{pid}/brief.mp3")
-def brief_audio(request: Request, pid: str) -> Response:
+def brief_audio(request: Request, pid: str, download: int = 0) -> Response:
+    """The recording, played in the page or, with `download`, saved under the project's name."""
     from .engine import brief
     conn = connection()
     _mine(request, conn, pid)
     path = brief.audio_path(pid)
     if not path.exists():
         raise HTTPException(status_code=404, detail="not here")
-    return FileResponse(path, media_type="audio/mpeg")
+    name = f'{store.project(conn, pid)["name"]} brief'
+    return FileResponse(path, media_type="audio/mpeg",
+                        headers=_attachment(name, ".mp3") if download else None)
 
 
 @router.get("/p/{pid}/export.docx")

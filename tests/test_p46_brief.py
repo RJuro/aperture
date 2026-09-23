@@ -12,6 +12,14 @@ from app import store, tts
 from app.engine import brief
 
 
+@pytest.fixture
+def client(conn, monkeypatch):
+    from fastapi.testclient import TestClient
+    from app import main, pages
+    monkeypatch.setattr(pages, "connection", lambda: conn, raising=False)
+    return TestClient(main.app)
+
+
 def test_the_brief_is_written_over_the_record_and_recorded(conn, analysed, model, monkeypatch):
     pid = analysed["pid"]
     said = {}
@@ -106,3 +114,17 @@ def test_a_status_request_that_stalls_is_waiting_not_failure(monkeypatch, tmp_pa
     monkeypatch.setattr(tts.httpx, "Client",
                         lambda **k: real(transport=httpx.MockTransport(handler), **k))
     assert tts.speak("x", tmp_path / "b.mp3").read_bytes() == b"ID3"
+
+
+def test_the_recording_plays_and_downloads_under_the_projects_name(client, conn, analysed):
+    pid = analysed["pid"]
+    assert client.get(f"/p/{pid}/brief.mp3").status_code == 404
+    path = brief.audio_path(pid)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"ID3")
+    played = client.get(f"/p/{pid}/brief.mp3")
+    assert played.content == b"ID3" and "attachment" not in played.headers.get(
+        "content-disposition", "")
+    saved = client.get(f"/p/{pid}/brief.mp3?download=1")
+    assert 'attachment; filename="' in saved.headers["content-disposition"]
+    assert saved.headers["content-disposition"].endswith(' brief.mp3"')
