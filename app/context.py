@@ -937,7 +937,19 @@ def project_page(conn, pid: str) -> dict:
             "summary_state": store.summary_state(conn, pid),
             "focus_history": [f for f in fb if f["target_kind"] == "focus"],
             "questions": store.open_questions(conn, pid),
+            **_brief(conn, pid),
             "checks": _checks(conn, pid)}
+
+
+def _brief(conn, pid: str) -> dict:
+    """The spoken brief: its text, whether a recording stands beside it, whether one is being made
+    now, and whether this instance has a voice at all."""
+    from . import tts
+    from .engine import brief
+    return {"brief": _row(store.get_summary(conn, "project", pid, "brief")),
+            "brief_audio": brief.audio_path(pid).exists(),
+            "brief_working": any(r["kind"] == "brief" for r in store.active_runs(conn, pid)),
+            "voice": tts.configured()}
 
 
 def material_page(conn, pid: str, mid: str, theme_id: str | None = None) -> dict:
@@ -1102,7 +1114,7 @@ def export(conn, pid: str, resolve: bool = True) -> dict:
         d["display_title"] = _material_title(m)
         d["source_name"] = _source_name(m, d["display_title"])
         d["short"] = shorts[m["id"]]
-        for stage in ("orientation", "reading", "angles", "memo", "residual"):
+        for stage in ("orientation", "reading", "angles", "lenses", "memo", "residual"):
             d[stage] = _row(store.get_summary(conn, "material", m["id"], stage))
         # Where the project explores, the memo IS what the reading found and DOC wrote no summary
         # beside it, so it stands in the same place in the record (PLAN.md §13).

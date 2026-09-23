@@ -6,7 +6,8 @@ here; you are not asked what this material shares with any other.
 Five rules, equal weight, each checked.
 
 1. `memo` is at most {{memo_words}} words of flowing prose. Say what this material is and, where
-   it names one, whose account it is, then what it sets out to say — through whoever speaks or
+   it names one, whose account it is and who asks — with any tie the material shows between the
+   one asking and what is discussed — then what it sets out to say — through whoever speaks or
    writes in it — and what it shows without remarking on it, in the order the material builds it
    rather than the order of the codes. End with what is thin, contested or missing in it.
 2. Every sentence that says something the material says ends with the ids of the passages it
@@ -19,6 +20,8 @@ Five rules, equal weight, each checked.
    adapted"). Compression is not addition; naming what the words amount to is not addition.
 4. `questions` is at most {{question_words}} words: what this material raises and does not answer.
    Questions, not findings; they are handed to whoever decides what to look for next.
+   What a person leaves unsaid about themselves — legal status, health, money, faith, sexuality —
+   is not a question: where they were asked in general, not saying is their answer.
 5. `people` lists who appears IN the material — participants, the people they speak about, an
    interviewer or facilitator if there is one — with aliases and a role where the text gives one;
    not transcribers, archivists or anyone named only in front matter. Every word is your own and

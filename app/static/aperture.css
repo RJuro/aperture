@@ -688,3 +688,6 @@ mark { padding: 2px 1px; border-radius: 2px; color: var(--fg);
   .intro-skip { margin-left: 0; }
 }
 .intro-link { text-decoration: underline; text-underline-offset: 3px; }
+
+/* The spoken brief: the player spans its column. */
+#brief audio { width: 100%; margin-block: .5rem; }

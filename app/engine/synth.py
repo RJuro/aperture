@@ -353,7 +353,7 @@ def _thread_prompt(conn, mid: str, tid: str) -> tuple[tuple[str, str], list, dic
         codes=_theme_codes_block(conn, mid, tid),
         claimed=_claimed_block(conn, mid, tid),
         feedback=feedback_block(conn, pid, mid, tid),
-        max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS,
+        max_moments=MAX_MOMENTS, summary_words=THREAD_WORDS, claim_words=CLAIM_WORDS,
     )
     return prompt, store.sentences(conn, mid), theme, pid
 
@@ -404,6 +404,13 @@ def _thread_kept(conn, mid: str, tid: str, data: dict, sents: list, theme, pid: 
             stats["asked"] += 1
             dropped.append("a moment was dropped: its quote is the interviewer speaking, not the "
                            f'material — "{clip(quote)}"')
+            continue
+        # One moment to a passage within a line. Two claims on one sentence under one theme read
+        # as two findings where the material said one thing once, and the count beside the theme
+        # took both.
+        if any(k["sid"] == sids[0] for k in kept):
+            dropped.append(f'a moment was dropped: the line already has one on {sids[0]} — '
+                           f'"{clip(claim)}"')
             continue
         kept.append({"claim": claim, "anchor": quote, "sid": sids[0]})
     if len(kept) > MAX_MOMENTS:

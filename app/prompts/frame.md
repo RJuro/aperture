@@ -42,8 +42,11 @@ every field is required.
    `segments` is `[]` unless `display` is `segments`.
 
 7. `orientation` is at most 150 words of plain prose: what this material is, who is in it, what
-   it covers, when and how it was produced. Describe the material. Do not report findings, do
-   not summarise arguments, do not say what it shows.
+   it covers, when and how it was produced. Where there is an interviewer or facilitator, say who
+   and any tie the material itself shows between them and what is discussed — an interviewer
+   addressed as the founder of the organisation being talked about, a recording made in its
+   offices. Describe the material. Do not report findings, do not summarise arguments, do not say
+   what it shows.
 
 A worked answer, with the exact shape:
 

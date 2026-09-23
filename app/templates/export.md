@@ -76,7 +76,7 @@ Most easily confused with {{ t.nearest.name }}{% if t.nearest.note %} — {{ t.n
 {% for n in tensions %}- {{ n.created_at[:10] }} — {{ n.text }}{% if n.display_title %} — {{ n.display_title }}{% endif %}
 {% endfor %}
 {% endif %}{% if fits %}
-##### Materials this definition did not foresee
+##### What this definition did not foresee
 
 {% for n in fits %}- {{ n.created_at[:10] }} — From the reading of {{ n.display_title }}: {{ n.text }}
 {% endfor %}
@@ -117,7 +117,7 @@ is dropped whole and would look the same as absence here:
 
 {% for n in t.set_aside %}- {{ n.note }}{% if n.material %} — {{ n.material }}{% endif %}
 {% endfor %}{% endif %}
-{% else %}Every material contains claims for this theme.
+{% else %}{{ 'The material contains' if materials | length == 1 else 'Every material contains' }} claims for this theme.
 {% endif %}
 {% endfor %}{% endfor %}{% if not themes %}No themes yet.
 
@@ -143,7 +143,11 @@ Speakers: {% for s in m.speakers %}{{ s.label }}{% if s.name %}, identified as {
 #### What to look for
 
 {{ m.angles.text }}
-{% endif %}
+{% if m.lenses %}
+Which of these became themes:
+
+{{ m.lenses.text }}
+{% endif %}{% endif %}
 {% for th in m.threads %}#### {{ th.theme.name }}
 
 {{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}

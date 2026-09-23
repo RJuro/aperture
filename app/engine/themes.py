@@ -235,6 +235,61 @@ def _memos_block(conn: sqlite3.Connection, mids: list[str]) -> str:
     return "\n\n".join(out) or "No memo accompanies this pass."
 
 
+# Rule 18 in both prompts. A consolidation re-reads the whole corpus, where one line per angle per
+# material is a report nobody asked for, so it is asked for only when materials were just read.
+NO_LENSES = "Not asked in this pass. Return no `lenses`."
+LENS_WHY_WORDS = 15
+
+
+def _lenses_block(conn: sqlite3.Connection, mids: list[str]) -> str:
+    """Where each material just read was pointed before it was read — the angles by name — so the
+    pass can say which of them a theme took up. The review that asked for this found the angles
+    naming kinship and emotional management and no theme taking either up, with nothing on the
+    page saying so."""
+    from . import angles
+    out = []
+    for mid in mids:
+        m = store.material(conn, mid)
+        row = store.get_summary(conn, "material", mid, "angles")
+        names = angles.listed(row["text"] if row else "")
+        if m is None or not names:
+            continue
+        out.append(f"## {m['title'] or m['name']} (material {mid})\n"
+                   + "\n".join(f"- {n}" for n, _ in names))
+    return "\n\n".join(out) or NO_LENSES
+
+
+def _save_lenses(conn: sqlite3.Connection, answer, rows_now, *, material_id: str | None,
+                 mids: set[str] | None, run_id: str | None) -> None:
+    """Each material's angles, each with the theme that took up its ground or the pass's reason
+    why none did — kept as text beside the angles. An angle the answer did not mention says so;
+    an angle it named that the material never had is not written."""
+    from . import angles, synth
+    names = {t["id"]: t["name"] for t in rows_now}
+    by_name = {" ".join(t["name"].split()).casefold(): t["name"] for t in rows_now}
+    said: dict[str, dict[str, dict]] = {}
+    for e in [e for e in (answer or []) if isinstance(e, dict)]:
+        mid = material_id or (str(e.get("material") or "") if mids else "")
+        if mid and (material_id or mid in mids):
+            key = " ".join(str(e.get("angle") or "").split()).casefold()
+            said.setdefault(mid, {})[key] = e
+    for mid, got in said.items():
+        row = store.get_summary(conn, "material", mid, "angles")
+        lines = []
+        for name, _ in angles.listed(row["text"] if row else ""):
+            e = got.get(" ".join(name.split()).casefold())
+            if e is None:
+                lines.append(f"{name} — the theme pass did not say.")
+                continue
+            t = str(e.get("theme") or "").strip()
+            theme = names.get(t) or by_name.get(" ".join(t.split()).casefold())
+            why = synth.words(e.get("why"), LENS_WHY_WORDS).rstrip(".")
+            lines.append(f"{name} — taken up by {theme}." if theme else
+                         f"{name} — no theme took this up{': ' + why if why else ''}.")
+        if lines:
+            store.save_summary(conn, "material", mid, "lenses", "\n".join(lines), run_id)
+
+
 def _code_ids(t: dict, by_name: dict[str, str]) -> list[str]:
     names = t.get("code_names") or []
     return [by_name[n] for n in ([names] if isinstance(names, str) else names) if n in by_name]
@@ -272,6 +327,7 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
     {themes: [tid], merged: [tid], dropped: [note]} — `themes` being every theme this pass wrote,
     candidates included, and `dropped` what it set aside, for the run row."""
     system, user = llm.prompt("themes", material=_material_block(conn, material_id),
+                              lenses=_lenses_block(conn, [material_id] if material_id else []),
                               **_slots(conn, pid, feedback))
     out = llm.chat_json(system, user, label="themes")
     return _apply(conn, pid, out, material_id=material_id, run_id=run_id)
@@ -316,7 +372,9 @@ def run_cross(conn: sqlite3.Connection, pid: str, mids: list[str], *, feedback: 
     if consolidating:
         slots["ceiling"] += " " + CONSOLIDATING
     system, user = llm.prompt("themes_cross", evidence=_evidence_block(conn, pid, mids),
-                              memos=_memos_block(conn, mids), **slots)
+                              memos=_memos_block(conn, mids),
+                              lenses=NO_LENSES if consolidating else _lenses_block(conn, mids),
+                              **slots)
     out = llm.chat_json(system, user, label="themes")
     # No material_id: a tension raised here belongs to whichever material's passage raised it, and
     # the answer says which. `mids` is what that id is checked against.
@@ -460,6 +518,9 @@ def _apply(conn: sqlite3.Connection, pid: str, out: dict, *, material_id: str | 
             nid = None
         store.set_nearest(conn, tid, nid,
                           synth.words(said.get("differs"), NEAREST_WORDS) if nid else "")
+
+    _save_lenses(conn, out.get("lenses"), rows_now, material_id=material_id, mids=mids,
+                 run_id=run_id)
 
     # The saturation signal (PLAN.md §12), bookkeeping only: how many passes in a row this theme's
     # words and codes stood still. The researcher reads it and freezes; the instrument only counts.

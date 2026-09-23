@@ -84,6 +84,17 @@
       {% endif %}
       {% if questions %}<details class="quiet-details"><summary>Open questions from the analysis</summary>
       {% for q in questions %}<p>{% if q.material %}From {{ q.material | txt }}: {% endif %}{{ q.text | prose }}</p>{% endfor %}</details>{% endif %}
+      {% if summary %}<details class="quiet-details" id="brief" {{ 'open' if brief_working }}><summary>Spoken brief</summary>
+        <p class="dim small">About five minutes, read aloud, for someone who has not read the material: what the project is, its themes and what each rests on, and what is unsettled.</p>
+        {% if brief %}{% if brief_audio %}<audio controls preload="none" src="/p/{{ project.id }}/brief.mp3?v={{ brief.id }}"></audio>
+        {% else %}<p class="dim small">This brief has no recording{% if not voice %}: no voice is set up here{% else %}: the voice could not be reached when it was written{% endif %}.</p>{% endif %}
+        <div class="summary-copy">{{ brief.text | prose }}</div>{% endif %}
+        {% if brief_working %}<p class="dim small">Being written and recorded now.</p>
+        {% elif role in ('edit', 'owner') %}<form method="post" action="/p/{{ project.id }}/brief" class="form-stack compact">
+          <label><span>Anything it should attend to (optional)</span><input name="note" type="text"></label>
+          <button class="btn btn-small btn-secondary">{{ 'Write and record it again' if brief else 'Write and record a spoken brief' }}</button>
+        </form>{% endif %}
+      </details>{% endif %}
     </div>
     <aside class="focus-note">
       <p class="eyebrow">Research focus <a class="help" href="/guide?from=/p/{{ project.id }}#focus" title="What the research focus does" aria-label="Help: What the research focus does">?</a></p>

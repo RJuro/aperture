@@ -116,7 +116,7 @@
   </ul>
   {% endif %}
   {% if fits %}
-  <h4>Materials this definition did not foresee</h4>
+  <h4>What this definition did not foresee</h4>
   <ul class="mats tensions">
   {% for n in fits %}<li class="gist"><span class="num">{{ n.created_at[:10] }}</span> From the reading of {{ n.display_title | txt }}: {{ n.text | prose }}</li>{% endfor %}
   </ul>
@@ -178,7 +178,7 @@
   {% if m.orientation %}<h4>Material overview</h4><div class="summary-copy">{{ m.orientation.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.reading %}<h4>Material summary</h4><div class="summary-copy">{{ m.reading.text | cite(cites, project.id) }}</div>{% endif %}
   {% if m.residual %}<p class="dim small">What the coding did not mark, read afterwards: {{ m.residual.text | txt }}</p>{% endif %}
-  {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div></details>{% endif %}
+  {% if m.angles %}<details class="quiet-details"><summary>What to look for</summary><div class="summary-copy">{{ m.angles.text | cite(cites, project.id) }}</div>{% if m.lenses %}<h4>Which of these became themes</h4><div class="summary-copy">{{ m.lenses.text | cite(cites, project.id) }}</div>{% endif %}</details>{% endif %}
   {% for th in m.threads %}
   <h4 id="m-{{ m.id }}-t-{{ th.theme.id }}"><a href="#t-{{ th.theme.id }}">{{ th.theme.name | txt }}</a> <span class="dim">{{ th.moments | length }} {{ 'claim' | plural(th.moments | length) }}</span></h4>
   {% if th.summary %}<div class="summary-copy">{{ th.summary.text | cite(cites, project.id) }}</div>{% endif %}

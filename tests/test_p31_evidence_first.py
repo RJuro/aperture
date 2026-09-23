@@ -455,7 +455,7 @@ def test_the_exploratory_chain_reads_each_material_then_asks_the_corpus_once(exp
     assert cross[0]["materials"] == [explored["grande"], explored["rodwin"]]
     assert jobs.line(conn, cross[0]) == "Finding themes across 2 materials"
     assert jobs.line(conn, {"kind": "memo", "material_id": explored["grande"]}) == \
-        "Writing what Grande says on its own terms"
+        "Writing up Grande on its own terms"
     assert jobs.line(conn, {"kind": "residual", "material_id": explored["grande"]}) == \
         "Reading what the coding did not mark in Grande"
 

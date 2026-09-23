@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader
 
 from . import accounts, context, db, store, word
@@ -260,6 +260,17 @@ def export(request: Request, pid: str) -> Response:
     body = _render("export.md", ctx)
     return Response(body, media_type="text/markdown; charset=utf-8",
                     headers=_attachment(ctx["project"]["name"], ".md"))
+
+
+@router.get("/p/{pid}/brief.mp3")
+def brief_audio(request: Request, pid: str) -> Response:
+    from .engine import brief
+    conn = connection()
+    _mine(request, conn, pid)
+    path = brief.audio_path(pid)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="not here")
+    return FileResponse(path, media_type="audio/mpeg")
 
 
 @router.get("/p/{pid}/export.docx")

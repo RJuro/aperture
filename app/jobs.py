@@ -370,6 +370,11 @@ def _project(conn, pid, run):
     return (synth.project(conn, pid, run_id=run.get("run_id")) or {}).get("dropped")
 
 
+def _brief(conn, pid, run):
+    from .engine import brief
+    brief.run(conn, pid, feedback=_text(conn, run), run_id=run.get("run_id"))
+
+
 def _check(conn, pid, run):
     from .engine import check
     mid = run.get("material_id")
@@ -387,7 +392,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "angles":  ("Working out what to look for in {name}", _angles),
     "read":    ("Reading {name}",                     _read),
     "reconcile": ("Comparing {name}'s codes with the project's", _reconcile),
-    "memo":    ("Writing what {name} says on its own terms", _memo),
+    "memo":    ("Writing up {name} on its own terms", _memo),
     "themes":  ("Finding themes",                     _themes),
     "consolidate": ("Comparing every theme across the corpus", _consolidate),
     "screen":  ("Deciding where to look in {name}",   _screen),
@@ -401,6 +406,7 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "accounts": ("Writing where each theme runs across everything", _accounts),
     "project": ("Updating the project summary",       _project),
     "check":   ("Checking that against the material", _check),
+    "brief":   ("Writing and recording the spoken brief", _brief),
 }
 
 

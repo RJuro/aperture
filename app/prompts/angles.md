@@ -19,7 +19,7 @@ Every rule below carries the same weight and every field is required.
    already is; only the first {{max_angles}} are kept, so put the strongest first.
 
 4. `name` each angle in at most 8 words. A name says where to look — a subject, a tension, a
-   relation, a silence.
+   relation, a silence, or how the material was made: who asks, and what the questions lead to.
 
 5. Give every angle a `why` of at most 40 words: what in THIS material invites this angle. Point
    at something actually in the text in front of you. An angle you could have written without

@@ -148,6 +148,22 @@ def prose(field: str, subareas: list[str], angles: list[dict]) -> str:
     return "\n\n".join(out)
 
 
+def listed(text: str) -> list[tuple[str, str]]:
+    """(name, why) of each angle, read back out of the prose `prose` wrote — the only place the
+    angles are kept. After the header, each blank-line block is one angle: its name, then its
+    why indented, then its questions."""
+    blocks = (text or "").split("\n\n")
+    head = next((i for i, b in enumerate(blocks) if b.startswith("Ways into this material")), None)
+    if head is None:
+        return []
+    out = []
+    for b in blocks[head + 1:]:
+        lines = b.split("\n")
+        if lines[0].strip():
+            out.append((lines[0].strip(), lines[1].strip() if len(lines) > 1 else ""))
+    return out
+
+
 def block(conn: sqlite3.Connection, mid: str) -> str:
     """What READ is shown — the same prose the researcher reads. One text, two surfaces, so the
     two cannot disagree about what the reading was pointed at."""

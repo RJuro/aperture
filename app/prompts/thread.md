@@ -22,7 +22,9 @@ Eleven rules. Each carries the same weight, and each is checked.
 4. At most {{max_moments}} moments, drawn from across the whole material — beginning, middle and
    end. If this theme is present only once or twice here, return those one or two: a sparse line
    is kept and marked sparse, and it is a finding. Never pad, and never invent a moment to reach a
-   number. If the theme is not present, return an empty list.
+   number. If the theme is not present, return an empty list. One moment to a passage, and two
+   moments that make the same claim are one: keep the one whose quote carries it best. Every
+   claim is at most {{claim_words}} words; a longer one is cut off where it stands.
 5. Every word outside the quotes is your own and assumes no speaker. This may be an interview, a
    focus group, field notes, a document, or answers to an open question.
 6. A claim says no more than its passage says. It may compress and it may name what the words
@@ -36,7 +38,9 @@ Eleven rules. Each carries the same weight, and each is checked.
    its passage afterwards and a claim the passage does not carry is set aside.
 7. Every claim falls inside this theme's definition, shown below. A strong passage that fits
    another theme better is left to that theme, whatever the theme's codes marked; a claim that has
-   to bend the definition to be filed here belongs elsewhere or nowhere.
+   to bend the definition to be filed here belongs elsewhere or nowhere. A passage set against the
+   theme — a good household described as unlike the ones where "they yell at you" — is not an
+   instance of it: file it here only as the contrast, and say in the claim that it is one.
 8. Prefer passages no other theme has claimed in this material. The passages already carrying a
    claim under another theme are listed below with that theme's claim. Such a passage may carry a
    claim here only if this theme reads something in it that the other did not, and your claim says
@@ -61,7 +65,9 @@ Eleven rules. Each carries the same weight, and each is checked.
     a quote from the interviewer is the researcher's own words handed back as a finding about the
     material, which is the one thing a reading cannot be allowed to do. Where the point you want is
     made in the interviewer's line and confirmed in the reply, quote the reply. Where it is made
-    only in the question, there is no moment to write. Every quote is checked against who spoke it
+    only in the question, there is no moment to write. Where the reply only agrees with words the
+   question supplied ("They never give you a day off?" — "No."), the claim says it answers that
+   question. Every quote is checked against who spoke it
     and a moment resting on an interviewer's line is thrown away.
 
 Return JSON in exactly this shape and nothing else:

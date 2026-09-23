@@ -156,7 +156,7 @@ def test_a_fit_note_and_a_tension_note_are_told_apart_on_an_open_theme(client, c
 
     html = client.get(f"/p/{pid}/t/{work}").text
     assert "Evidence that challenges this definition" in html
-    assert "Materials this definition did not foresee" in html
+    assert "What this definition did not foresee" in html
     assert "From the reading of Grande, M.: the participant sells nothing" in html
     assert "the definition names a trade and this material names an employer" in html
 
@@ -171,7 +171,7 @@ def test_a_theme_with_only_tension_notes_does_not_grow_an_empty_fit_heading(clie
     store.add_theme_note(conn, work, analysed["grande"], None, "the wage is not a trade")
     html = client.get(f"/p/{pid}/t/{work}").text
     assert "Evidence that challenges this definition" in html
-    assert "Materials this definition did not foresee" not in html
+    assert "What this definition did not foresee" not in html
 
 
 # ---- WP-6c: what a theme is nearest to --------------------------------------------------------

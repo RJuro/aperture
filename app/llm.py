@@ -585,7 +585,7 @@ def chat_json(system: str, user: str, *, label: str = "", timeout: float | None 
 # a time, and declared in the template — `{{style}}` on the page — rather than spliced in by
 # Python, so what the model is shown is still readable in one file.
 #
-# `style` is the whole block; `style_short` is the four rules that bear on a name, a gist or a
+# `style` is the whole block; `style_short` is the five rules that bear on a name, a gist or a
 # fifteen-word note. A caller passing either is the drift this catches: the block is not the
 # caller's to vary.
 RESERVED = {"style": "_style", "style_short": "_style_short"}

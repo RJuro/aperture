@@ -296,6 +296,18 @@ def compare(request: Request, pid: str, note: str = Form(""), scope: str = Form(
     return RedirectResponse(f"/p/{pid}#themes", status_code=303)
 
 
+@router.post("/p/{pid}/brief")
+def brief(request: Request, pid: str, note: str = Form("")):
+    """Write the spoken brief, and record it. Only on request: it is one call over the whole
+    record and a few minutes of someone else's GPU, and nothing in the chain reads it. The
+    researcher's note rides on the run, verbatim, like a comparison's."""
+    conn = connection()
+    _mine(request, conn, pid)
+    if not any(r["kind"] == "brief" for r in store.active_runs(conn, pid)):
+        jobs.start(db.connect, pid, [{"kind": "brief", "note": note.strip()}])
+    return RedirectResponse(f"/p/{pid}#brief", status_code=303)
+
+
 @router.post("/p/{pid}/focus")
 def focus(request: Request, pid: str, focus: str = Form("")):
     """What the researcher is looking for. Nothing re-runs: it shapes the next reading, and

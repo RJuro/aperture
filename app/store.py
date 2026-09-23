@@ -1019,7 +1019,7 @@ def get_summary(conn: sqlite3.Connection, scope: str, ref_id: str,
     # themes move (PLAN.md §13) — and DOC writes no summary beside it.
     return conn.execute(
         "SELECT * FROM summary WHERE scope=? AND ref_id=? AND status='live' "
-        "AND stage NOT IN ('questions','residual') "
+        "AND stage NOT IN ('questions','residual','lenses','brief') "
         "ORDER BY CASE stage WHEN 'memo' THEN 0 WHEN 'reading' THEN 1 WHEN 'orientation' THEN 2 "
         "WHEN 'angles' THEN 3 ELSE 4 END LIMIT 1", (scope, ref_id)).fetchone()
 

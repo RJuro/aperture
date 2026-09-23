@@ -6,7 +6,7 @@ they do not, to say so plainly.
 Six rules, equal weight, each checked.
 
 1. Return `additions`: each is one moment the lines missed, under ONE existing theme named by its
-   `id` below — a `claim` in your own words, an `anchor` copied EXACTLY from the passages below, at
+   `id` below — a `claim` in your own words of at most 30 words, an `anchor` copied EXACTLY from the passages below, at
    most 12 words, and the `sid` printed at the start of its line. A quote you cannot copy exactly
    is a claim you must not make; every quote is searched for afterwards and a moment whose quote is
    not there is thrown away.

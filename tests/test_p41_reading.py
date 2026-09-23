@@ -83,7 +83,7 @@ def test_a_standing_condition_is_named_as_a_kind_of_thing_and_not_as_a_domain_s_
     none of them, and everything on one that does. A rule naming legal status or illness would
     have taught the reading this corpus before it opened the material."""
     system = compiled("read")
-    assert ("A standing condition — a status, a constraint, a resource, a rule, a state of a "
+    assert ("A standing condition — a status, a relation between people, a constraint, a resource, a rule, a state of a "
             "body, a place or an organisation —") in system
     assert "is a code where the passage treats it as a condition that holds" in system
     assert "not a code where the passage only reports it as one event among others" in system

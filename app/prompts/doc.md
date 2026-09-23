@@ -22,6 +22,8 @@ Five rules, equal weight, each checked.
    does not answer, and the questions the corpus so far has left open that this piece bears on.
    QUESTIONS, not findings. They are handed to whoever works out what to look for in the next
    piece. If a sentence here states what the corpus shows, it is in the wrong place — delete it.
+   What a person leaves unsaid about themselves — legal status, health, money, faith, sexuality —
+   is not a question: where they were asked in general, not saying is their answer.
 4. `people` lists who appears in the lines and in the description of the material — participants,
    the people the claims and quotes speak about, an interviewer or facilitator if there is one —
    with aliases and a role where the text gives one. A relation is a role only where a quote says

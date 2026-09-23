@@ -17,6 +17,10 @@ HOW TO WRITE. Every sentence outside a quotation follows these.
    think", a document's "may". Add none of your own.
 7. Prefer a plain relation to a figure: "is supported by" over "rests on", "is about" over
    "carries", "differs from" over "pulls against".
+8. Where the material leaves a person's sex open — a translation's "he/she", a speaker's "they"
+   — keep it open: "the client", "the child". Never choose "he" or "she" for them.
+9. Two passages about different occasions stay two occasions: a sentence citing both says what
+   each one is, and does not tell them as one event.
 
     Not this: "Handover is a ritual, not a safeguard: the checklist is read, the substance
               vanishes."

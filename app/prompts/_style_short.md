@@ -4,5 +4,6 @@ HOW TO WRITE. Every sentence outside a quotation follows these.
 2. Scope, inside the sentence: which material, how many, which speaker or author where the
    material names one — not "the corpus", not "these accounts".
 3. No contrast for effect: no "not X but Y", "X, not Y", "not merely", "at once".
-4. Prefer a plain relation to a figure: "is supported by" over "rests on", "is about" over
+4. Where the material leaves a person's sex open — a translation's "he/she" — keep it open.
+5. Prefer a plain relation to a figure: "is supported by" over "rests on", "is about" over
    "carries", "differs from" over "pulls against".
