@@ -23,6 +23,7 @@ MAX_CHARS = 25_000
 POLL = 5.0
 # A cold RunPod worker is the long part.
 CEILING = 1200.0
+SUBMIT_WAIT = 600.0
 _sleep = time.sleep
 
 
@@ -57,9 +58,13 @@ def speak(text: str, into: Path, title: str = "") -> Path:
     try:
         with httpx.Client(headers={"Authorization": f"Bearer {key}"},
                           timeout=httpx.Timeout(30.0, read=120.0)) as c:
+            # Accepting a job is slow too when the service is busy: live, a submit took over 120 s
+            # and one came back 502 after 102. A submit abandoned early may still have been queued,
+            # and trying again would record the brief twice, so it is given long enough to answer.
             r = c.post(f"{base}/api/generate", json={
                 "text": body, "title": title or None,
-                "voice": os.environ.get("TTS_VOICE") or VOICE})
+                "voice": os.environ.get("TTS_VOICE") or VOICE},
+                timeout=httpx.Timeout(30.0, read=SUBMIT_WAIT))
             if r.status_code != 200:
                 raise SpeechError(f"the voice refused the text ({r.status_code})")
             job, waited = r.json()["job_id"], 0.0
@@ -81,7 +86,8 @@ def speak(text: str, into: Path, title: str = "") -> Path:
                     raise SpeechError(f"the voice was still working after {int(CEILING)} s")
                 _sleep(POLL)
                 waited += POLL
-            a = c.get(f"{base}/api/audio/{job}", params={"format": "mp3"})
+            a = c.get(f"{base}/api/audio/{job}", params={"format": "mp3"},
+                      timeout=httpx.Timeout(30.0, read=300.0))
     except httpx.HTTPError as e:
         raise SpeechError(f"the voice could not be reached ({type(e).__name__})") from e
     if a.status_code != 200 or not a.content:
