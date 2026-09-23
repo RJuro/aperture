@@ -96,17 +96,20 @@ def test_what_a_voice_would_misread_is_taken_out_and_paragraphs_kept():
     assert got == "Heading\nShe said so, see the notes or.\n\nNext part."
 
 
-def test_a_status_request_that_stalls_is_waiting_not_failure(monkeypatch, tmp_path):
+def test_a_status_request_that_stalls_or_errors_is_waiting_not_failure(monkeypatch, tmp_path):
     monkeypatch.setenv("TTS_API_KEY", "k")
     monkeypatch.setattr(tts, "_sleep", lambda s: None)
-    states = iter(["stall", "completed"])
+    states = iter(["stall", "page", "completed"])
 
     def handler(req: httpx.Request) -> httpx.Response:
         if req.url.path == "/api/generate":
             return httpx.Response(200, json={"job_id": "j1"})
         if req.url.path == "/api/status/j1":
-            if next(states) == "stall":
+            state = next(states)
+            if state == "stall":
                 raise httpx.ReadTimeout("busy", request=req)
+            if state == "page":
+                return httpx.Response(502, text="<html>Bad gateway</html>")
             return httpx.Response(200, json={"status": "completed"})
         return httpx.Response(200, content=b"ID3")
 

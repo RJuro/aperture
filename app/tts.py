@@ -64,11 +64,14 @@ def speak(text: str, into: Path, title: str = "") -> Path:
                 raise SpeechError(f"the voice refused the text ({r.status_code})")
             job, waited = r.json()["job_id"], 0.0
             while True:
-                # A busy service can sit on a status request past the read timeout. That is the
-                # job still running, not the voice gone; the ceiling still holds.
+                # A busy service can sit on a status request past the read timeout, or answer it
+                # with a proxy's error page. That is the job still running, not the voice gone;
+                # the ceiling still holds. (Live, 2026-09-23: a page that was not JSON failed a
+                # recording 219 s in.)
                 try:
-                    s = c.get(f"{base}/api/status/{job}").json()
-                except httpx.TimeoutException:
+                    r = c.get(f"{base}/api/status/{job}")
+                    s = r.json() if r.status_code == 200 else {}
+                except (httpx.TransportError, ValueError):
                     s = {}
                 if s.get("status") == "completed":
                     break

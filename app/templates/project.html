@@ -89,7 +89,8 @@
         <p class="dim small">About five minutes, read aloud, for someone who has not read the material: what the project is, its themes and what each rests on, and what is unsettled.</p>
         {% if brief %}{% if brief_audio %}<audio controls preload="none" src="/p/{{ project.id }}/brief.mp3?v={{ brief.id }}"></audio>
         <p class="small"><a href="/p/{{ project.id }}/brief.mp3?v={{ brief.id }}&amp;download=1" download>Download MP3</a></p>
-        {% elif not brief_working %}<p class="dim small">This brief has no recording{% if not voice %}: no voice is set up here{% else %}: the voice could not be reached when it was written{% endif %}.</p>{% endif %}
+        {% elif not brief_working %}<p class="dim small">This brief has no recording{% if not voice %}: no voice is set up here{% else %}: the voice could not be reached when it was written{% endif %}.</p>
+        {% if voice and role in ('edit', 'owner') %}<form method="post" action="/p/{{ project.id }}/brief"><input type="hidden" name="record_only" value="1"><button class="btn btn-small">Record it</button></form>{% endif %}{% endif %}
         <details class="quiet-details"><summary>Read the brief</summary><div class="summary-copy">{{ brief.text | prose }}</div></details>{% endif %}
         {% if brief_working %}<p class="dim small">Being written and recorded now.</p>
         {% elif role in ('edit', 'owner') %}<form method="post" action="/p/{{ project.id }}/brief" class="form-stack compact">
