@@ -61,8 +61,10 @@ def speak(text: str, into: Path, title: str = "") -> Path:
             # Accepting a job is slow too when the service is busy: live, a submit took over 120 s
             # and one came back 502 after 102. A submit abandoned early may still have been queued,
             # and trying again would record the brief twice, so it is given long enough to answer.
+            # `gpu`: a brief is 650-800 words, just under the length the service would otherwise
+            # read on its own CPU, where it took over forty minutes (RJuro/tts-skill#3).
             r = c.post(f"{base}/api/generate", json={
-                "text": body, "title": title or None,
+                "text": body, "title": title or None, "engine": "gpu",
                 "voice": os.environ.get("TTS_VOICE") or VOICE},
                 timeout=httpx.Timeout(30.0, read=SUBMIT_WAIT))
             if r.status_code != 200:

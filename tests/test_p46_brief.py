@@ -81,6 +81,7 @@ def test_the_client_submits_polls_and_fetches(monkeypatch, tmp_path):
     out = tts.speak("One — two.", tmp_path / "b.mp3", title="t")
     assert out.read_bytes() == b"ID3mp3"
     assert b"One, two." in sent["body"]
+    assert b'"engine":"gpu"' in sent["body"].replace(b" ", b"")
 
 
 def test_no_key_is_a_sentence(monkeypatch, tmp_path):
