@@ -303,8 +303,8 @@ def brief(request: Request, pid: str, note: str = Form("")):
     researcher's note rides on the run, verbatim, like a comparison's."""
     conn = connection()
     _mine(request, conn, pid)
-    if not any(r["kind"] == "brief" for r in store.active_runs(conn, pid)):
-        jobs.start(db.connect, pid, [{"kind": "brief", "note": note.strip()}])
+    if not any(r["kind"] in ("brief", "speak") for r in store.active_runs(conn, pid)):
+        jobs.start(db.connect, pid, [{"kind": "brief", "note": note.strip()}, {"kind": "speak"}])
     return RedirectResponse(f"/p/{pid}#brief", status_code=303)
 
 

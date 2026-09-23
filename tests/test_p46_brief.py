@@ -23,6 +23,7 @@ def test_the_brief_is_written_over_the_record_and_recorded(conn, analysed, model
     monkeypatch.setattr(tts, "speak", speak)
     model.queue({"brief": "This project reads two interviews."})
     brief.run(conn, pid, feedback="Keep it short.")
+    brief.speak(conn, pid)
 
     assert store.get_summary(conn, "project", pid, "brief")["text"] == \
         "This project reads two interviews."
@@ -44,6 +45,7 @@ def test_a_voice_that_fails_leaves_the_text_and_no_old_recording(conn, analysed,
     monkeypatch.setattr(tts, "speak", down)
     model.queue({"brief": "A new brief."})
     brief.run(conn, pid)
+    brief.speak(conn, pid)
     assert store.get_summary(conn, "project", pid, "brief")["text"] == "A new brief."
     assert not old.exists()
 

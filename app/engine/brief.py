@@ -15,8 +15,9 @@ from .. import db, llm, store, tts
 
 log = logging.getLogger(__name__)
 
-# About five minutes read aloud.
-BRIEF_WORDS = 750
+# About five minutes read aloud, asked for as an aim with room above it: asked for 750 as a cap,
+# a two-interview project came back cut before its ending, nine themes deep.
+AIM_WORDS, BRIEF_WORDS = 650, 800
 
 # The record is long where a corpus is: every claim of every material is printed in full at the
 # end of it. The themes, their accounts and each material's summary come first.
@@ -40,13 +41,13 @@ def record(conn: sqlite3.Connection, pid: str) -> str:
 
 def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         run_id: str | None = None) -> None:
-    """Nothing is returned for the run row: its notes are printed under "Excluded from the
-    analysis", and a voice that did not answer excludes nothing. The page says when a brief has
-    no recording; the reason goes to the log."""
+    """Write the brief. Nothing is returned for the run row: its notes are printed under
+    "Excluded from the analysis", and neither step here excludes anything. The page says when a
+    brief has no recording; the reason goes to the log."""
     from . import synth
     proj = store.project(conn, pid)
     system, user = llm.prompt(
-        "brief", record=record(conn, pid), brief_words=BRIEF_WORDS,
+        "brief", record=record(conn, pid), brief_words=BRIEF_WORDS, aim_words=AIM_WORDS,
         focus=proj["focus"] or "The researcher has not said what they are looking for.",
         feedback=feedback.strip() or "The researcher has said nothing about this brief.")
     out = llm.chat_json(system, user, label="brief")
@@ -55,9 +56,20 @@ def run(conn: sqlite3.Connection, pid: str, *, feedback: str = "",
         log.warning("brief project=%s came back empty; the one before it stands", pid)
         return
     store.save_summary(conn, "project", pid, "brief", text, run_id)
-    path = audio_path(pid)
+    # The recording that stood is for the brief that just went: gone now, so the page never plays
+    # it over this one. `speak` makes the new one.
+    audio_path(pid).unlink(missing_ok=True)
+
+
+def speak(conn: sqlite3.Connection, pid: str) -> None:
+    """Read the live brief aloud. Its own step, because a cold voice can take ten minutes and the
+    writing step holds one of the process's model-call permits for as long as it runs."""
+    row = store.get_summary(conn, "project", pid, "brief")
+    if row is None or not row["text"].strip() or audio_path(pid).exists():
+        return                              # nothing to read, or this brief is already recorded
     try:
-        tts.speak(text, path, title=f"Aperture brief: {proj['name']}")
+        tts.speak(row["text"], audio_path(pid),
+                  title=f"Aperture brief: {store.project(conn, pid)['name']}")
     except tts.SpeechError as e:
-        path.unlink(missing_ok=True)
+        audio_path(pid).unlink(missing_ok=True)
         log.warning("brief project=%s written and not spoken: %s", pid, e)

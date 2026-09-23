@@ -22,6 +22,7 @@ while those modules are still being built.
 """
 from __future__ import annotations
 
+import contextlib
 import contextvars
 import json
 import logging
@@ -375,6 +376,11 @@ def _brief(conn, pid, run):
     brief.run(conn, pid, feedback=_text(conn, run), run_id=run.get("run_id"))
 
 
+def _speak(conn, pid, run):
+    from .engine import brief
+    brief.speak(conn, pid)
+
+
 def _check(conn, pid, run):
     from .engine import check
     mid = run.get("material_id")
@@ -406,7 +412,8 @@ STEPS: dict[str, tuple[str, Callable]] = {
     "accounts": ("Writing where each theme runs across everything", _accounts),
     "project": ("Updating the project summary",       _project),
     "check":   ("Checking that against the material", _check),
-    "brief":   ("Writing and recording the spoken brief", _brief),
+    "brief":   ("Writing the spoken brief",           _brief),
+    "speak":   ("Recording the spoken brief",         _speak),
 }
 
 
@@ -474,6 +481,7 @@ PARALLEL = 4
 # reading waits for the reading before it (`IN_TURN`) outside this, so no step can ever sit on a
 # permit while waiting for a step that needs one.
 CALLS = threading.Semaphore(PARALLEL)
+NO_PERMIT = {"speak"}
 
 # The kinds a material may run while another material is running them, in the groups they may
 # form. Each of these is shown only its own material and writes only its own material's rows.
@@ -553,7 +561,9 @@ def _step(conn: sqlite3.Connection, pid: str, run: dict, *, job: str | None,
             if _another_chain(conn, pid, job, kind):
                 store.set_run_line(conn, rid, LEFT_TO_THE_LAST)
             else:
-                with CALLS:                 # the shared provider budget, across every project
+                # The voice is not the model provider: recording waits on another service, and
+                # holding a model-call permit through a cold start starves every other project.
+                with (contextlib.nullcontext() if kind in NO_PERMIT else CALLS):
                     notes = STEPS[kind][1](conn, pid, run)
     except Exception as e:                              # the sequence stops; the process does not
         error = f"{type(e).__name__}: {e}"

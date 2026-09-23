@@ -948,7 +948,7 @@ def _brief(conn, pid: str) -> dict:
     from .engine import brief
     return {"brief": _row(store.get_summary(conn, "project", pid, "brief")),
             "brief_audio": brief.audio_path(pid).exists(),
-            "brief_working": any(r["kind"] == "brief" for r in store.active_runs(conn, pid)),
+            "brief_working": any(r["kind"] in ("brief", "speak") for r in store.active_runs(conn, pid)),
             "voice": tts.configured()}
 
 

@@ -10,12 +10,14 @@ and the claims the reading made. Everything in the brief comes from that record.
 
 Ten rules, equal weight.
 
-1. `brief` is at most {{brief_words}} words of plain spoken prose: paragraphs, no headings, no
-   lists, no bullet points, no markdown, no symbols a voice would read out.
+1. `brief` is about {{aim_words}} words of plain spoken prose: paragraphs, no headings, no
+   lists, no bullet points, no markdown, no symbols a voice would read out. Anything past
+   {{brief_words}} words is cut off where it stands, and the ending goes with it.
 2. Open by saying what the project is — what material, how much of it, and what the researcher
-   is looking for — in two or three sentences. Then say how many themes you will take the
-   listener through, and name them.
-3. Then take the themes one at a time, the best-supported first. For each: say what the theme
+   is looking for — in two or three sentences. Then say which themes you will take the
+   listener through.
+3. Then take at most five themes one at a time, the best-supported first, and name any others
+   together in one sentence. For each of the five: say what the theme
    is about in words a listener grasps at once, what the material shows under it, one concrete
    instance from the claims, and where it is thin — resting on one material, on few claims, or
    still a candidate rather than a theme of the project.
