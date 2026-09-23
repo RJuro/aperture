@@ -79,3 +79,30 @@ def test_no_key_is_a_sentence(monkeypatch, tmp_path):
     monkeypatch.delenv("TTS_API_KEY", raising=False)
     with pytest.raises(tts.SpeechError, match="TTS_API_KEY"):
         tts.speak("x", tmp_path / "b.mp3")
+
+
+
+def test_what_a_voice_would_misread_is_taken_out_and_paragraphs_kept():
+    got = tts.spoken("# Heading\nShe said so [LA S012] — see [the notes](https://x.org) "
+                     "or www.x.org.\n\n\n\nNext **part**.")
+    assert got == "Heading\nShe said so, see the notes or.\n\nNext part."
+
+
+def test_a_status_request_that_stalls_is_waiting_not_failure(monkeypatch, tmp_path):
+    monkeypatch.setenv("TTS_API_KEY", "k")
+    monkeypatch.setattr(tts, "_sleep", lambda s: None)
+    states = iter(["stall", "completed"])
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path == "/api/generate":
+            return httpx.Response(200, json={"job_id": "j1"})
+        if req.url.path == "/api/status/j1":
+            if next(states) == "stall":
+                raise httpx.ReadTimeout("busy", request=req)
+            return httpx.Response(200, json={"status": "completed"})
+        return httpx.Response(200, content=b"ID3")
+
+    real = httpx.Client
+    monkeypatch.setattr(tts.httpx, "Client",
+                        lambda **k: real(transport=httpx.MockTransport(handler), **k))
+    assert tts.speak("x", tmp_path / "b.mp3").read_bytes() == b"ID3"

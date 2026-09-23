@@ -1,8 +1,8 @@
 """Speech, from Roman's Kokoro service (tts.rjuro.com; the GPU behind it runs on RunPod).
 
-Submit the text, poll until the job is done, fetch the MP3 through the service itself — the signed
-storage link expires after a fortnight, so the file is kept here and the link never is. English
-voices only.
+One job per brief: the service splits the text into model-sized pieces itself and returns one MP3.
+Submit, poll, fetch the MP3 through the service — the signed storage link expires after a
+fortnight, so the file is kept here and the link never is. English voices only.
 
 A voice that cannot be reached is a sentence, never a traceback: the brief's text is written
 before this is called, and it stands whatever happens here.
@@ -17,9 +17,12 @@ from pathlib import Path
 import httpx
 
 VOICE = "af_heart"
+# The service's own limit per request. A brief is capped at 800 words, about 5,000 characters, so
+# this is a guard and never a reason to split.
+MAX_CHARS = 25_000
 POLL = 5.0
-# A cold RunPod worker is the long part; a warm one reads a five-minute brief in well under one.
-CEILING = 600.0
+# A cold RunPod worker is the long part.
+CEILING = 1200.0
 _sleep = time.sleep
 
 
@@ -32,26 +35,41 @@ def configured() -> bool:
 
 
 def spoken(text: str) -> str:
-    """What Kokoro should be handed: dashes read as pauses, asterisks and markup not at all."""
-    text = re.sub(r"\s*[—–]\s*", ", ", text.replace("*", ""))
-    return re.sub(r"^#+\s*", "", text, flags=re.M).strip()
+    """What Kokoro should be handed. It reads a heading's `#` as "hashtag", a URL aloud and a
+    bracketed code letter by letter, so those go; dashes become pauses. Blank lines stay: they
+    carry through as pauses between paragraphs."""
+    text = re.sub(r"^[ \t]*#+[ \t]*", "", text.replace("*", ""), flags=re.M)
+    text = re.sub(r"\[([^\]]+)\]\((?:https?://)?[^)]+\)", r"\1", text)      # [words](link)
+    text = re.sub(r"[ \t]*\[[^\]]*\]", "", text)                             # [LA S012]
+    text = re.sub(r"\s*(?:https?://|www\.)\S+?(?=[.,;:!?)]*(?:\s|$))", "", text)
+    text = re.sub(r"[ \t]*[—–][ \t]*", ", ", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def speak(text: str, into: Path, title: str = "") -> Path:
     key = os.environ.get("TTS_API_KEY") or ""
     if not key:
         raise SpeechError("no voice is set up here (TTS_API_KEY is not set)")
+    body = spoken(text)
+    if len(body) > MAX_CHARS:
+        raise SpeechError(f"the text is {len(body)} characters and the voice takes {MAX_CHARS}")
     base = (os.environ.get("TTS_API_URL") or "https://tts.rjuro.com").rstrip("/")
-    auth = {"Authorization": f"Bearer {key}"}
     try:
-        with httpx.Client(headers=auth, timeout=httpx.Timeout(30.0, read=120.0)) as c:
-            r = c.post(f"{base}/api/generate", json={"text": spoken(text), "title": title or None,
-                                                     "voice": os.environ.get("TTS_VOICE") or VOICE})
+        with httpx.Client(headers={"Authorization": f"Bearer {key}"},
+                          timeout=httpx.Timeout(30.0, read=120.0)) as c:
+            r = c.post(f"{base}/api/generate", json={
+                "text": body, "title": title or None,
+                "voice": os.environ.get("TTS_VOICE") or VOICE})
             if r.status_code != 200:
                 raise SpeechError(f"the voice refused the text ({r.status_code})")
             job, waited = r.json()["job_id"], 0.0
             while True:
-                s = c.get(f"{base}/api/status/{job}").json()
+                # A busy service can sit on a status request past the read timeout. That is the
+                # job still running, not the voice gone; the ceiling still holds.
+                try:
+                    s = c.get(f"{base}/api/status/{job}").json()
+                except httpx.TimeoutException:
+                    s = {}
                 if s.get("status") == "completed":
                     break
                 if s.get("status") == "failed":
